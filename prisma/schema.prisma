@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  SYNC_FAILED
+}
+
+model Appointment {
+  id            Int               @id @default(autoincrement())
+  name          String            @db.VarChar(100)
+  phone         String            @db.VarChar(10)
+  date          DateTime          @db.Date
+  timeSlot      DateTime          @map("time_slot") @db.Time(0)
+  status        AppointmentStatus @default(CONFIRMED)
+  googleEventId String?           @map("google_event_id") @db.VarChar(255)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@unique([date, timeSlot])
+  @@index([phone, status])
+  @@index([date])
+  @@map("appointments")
+}

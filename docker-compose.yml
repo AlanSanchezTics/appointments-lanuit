@@ -1,0 +1,23 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: appointments
+      MYSQL_ROOT_PASSWORD: root
+      TZ: America/Mexico_City
+    command: --default-time-zone='-06:00'
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+volumes:
+  mysql_data:
