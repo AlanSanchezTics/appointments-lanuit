@@ -82,4 +82,26 @@ describe("POST /api/reservar", () => {
       error: "MONTH_NOT_ALLOWED",
     });
   });
+
+  it("returns 409 when the booking lock times out", async () => {
+    bookAppointmentMock.mockRejectedValueOnce(new Error("LOCK_TIMEOUT"));
+
+    const { POST } = await import("@/app/api/reservar/route");
+    const response = await POST(
+      new Request("http://localhost/api/reservar", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "LOCK_TIMEOUT",
+    });
+  });
 });

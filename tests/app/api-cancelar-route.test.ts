@@ -34,6 +34,31 @@ describe("POST /api/cancelar", () => {
     });
   });
 
+  it("returns 200 and surfaces sync warnings when Google deletion fails", async () => {
+    cancelAppointmentMock.mockResolvedValueOnce({
+      appointmentId: 3,
+      status: "CANCELLED",
+      syncReason: "CALENDAR_DELETE_FAILED",
+    });
+
+    const { POST } = await import("@/app/api/cancelar/route");
+    const response = await POST(
+      new Request("http://localhost/api/cancelar", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: "5512345678",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      appointmentId: 3,
+      status: "CANCELLED",
+      syncReason: "CALENDAR_DELETE_FAILED",
+    });
+  });
+
   it("returns 404 when there is no active appointment", async () => {
     cancelAppointmentMock.mockRejectedValueOnce(new Error("APPOINTMENT_NOT_FOUND"));
 

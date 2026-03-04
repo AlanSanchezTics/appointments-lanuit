@@ -17,7 +17,8 @@ export async function POST(request: Request) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = message === "SLOT_NOT_AVAILABLE" || message === "PHONE_ALREADY_BOOKED" ? 409 : 400;
+    const status =
+      message === "SLOT_NOT_AVAILABLE" || message === "PHONE_ALREADY_BOOKED" || message === "LOCK_TIMEOUT" ? 409 : 400;
 
     return NextResponse.json({ error: message }, { status });
   }

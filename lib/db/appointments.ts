@@ -68,6 +68,49 @@ export async function findActiveAppointmentByPhone(phone: string, dateFloor: str
   return record ? mapAppointment(record) : null;
 }
 
+export async function findActiveAppointmentByPhoneForUpdate(
+  tx: Prisma.TransactionClient,
+  phone: string,
+  dateFloor: string,
+) {
+  const records = await tx.$queryRaw<
+    Array<{
+      id: number;
+      name: string;
+      phone: string;
+      date: Date;
+      time_slot: Date;
+      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      google_event_id: string | null;
+    }>
+  >`
+    SELECT id, name, phone, date, time_slot, status, google_event_id
+    FROM appointments
+    WHERE phone = ${phone}
+      AND status IN ('CONFIRMED', 'SYNC_FAILED')
+      AND date > ${dateFloor}
+    ORDER BY date ASC, time_slot ASC
+    LIMIT 1
+    FOR UPDATE
+  `;
+
+  const record = records[0];
+
+  if (!record) {
+    return null;
+  }
+
+  return mapAppointment({
+    id: record.id,
+    name: record.name,
+    phone: record.phone,
+    date: record.date,
+    timeSlot: record.time_slot,
+    status: record.status,
+    googleEventId: record.google_event_id,
+  });
+}
+
 export async function listMonthAppointments(monthStart: string, monthEndExclusive: string) {
   const records = await prisma.appointment.findMany({
     where: {
