@@ -3,9 +3,15 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { formatLongDate, formatTimeSlotLabel } from "@/lib/datetime/mexico-city";
+import {
+  formatLongDate,
+  formatTimeSlotLabel,
+} from "@/lib/datetime/mexico-city";
 
-import type { BookingDraft, BookingSuccess } from "@/components/booking/booking-wizard";
+import type {
+  BookingDraft,
+  BookingSuccess,
+} from "@/components/booking/booking-wizard";
 
 type BookingSuccessStepProps = {
   draft: BookingDraft;
@@ -13,7 +19,11 @@ type BookingSuccessStepProps = {
   onWhatsAppRedirect: (url: string) => void;
 };
 
-export function BookingSuccessStep({ draft, success, onWhatsAppRedirect }: BookingSuccessStepProps) {
+export function BookingSuccessStep({
+  draft,
+  success,
+  onWhatsAppRedirect,
+}: BookingSuccessStepProps) {
   return (
     <div className="space-y-8 text-center">
       <div className="relative pt-2">
@@ -32,31 +42,53 @@ export function BookingSuccessStep({ draft, success, onWhatsAppRedirect }: Booki
         <h1 className="font-[family-name:var(--font-display)] text-[2.6rem] font-semibold leading-[1] tracking-[-0.045em]">
           Tu cita ha sido agendada exitosamente
         </h1>
-        <p className="text-[0.98rem] font-medium tracking-[-0.01em] text-[var(--muted)]">Muchas gracias</p>
+        <p className="text-[0.98rem] font-medium tracking-[-0.01em] text-[var(--muted)]">
+          Muchas gracias
+        </p>
       </header>
 
       <section className="rounded-[1.9rem] border border-[var(--border)] bg-white/80 px-5 py-5 text-left shadow-[var(--shadow-soft)]">
         <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-sm">
-          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Fecha</dt>
-          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">{formatLongDate(draft.date ?? "")}</dd>
-          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Hora</dt>
-          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">{formatTimeSlotLabel(draft.timeSlot ?? "09:00")}</dd>
-          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Nombre</dt>
-          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">{draft.name}</dd>
+          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+            Fecha
+          </dt>
+          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
+            {formatLongDate(draft.date ?? "")}
+          </dd>
+          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+            Hora
+          </dt>
+          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
+            {formatTimeSlotLabel(draft.timeSlot ?? "09:00")}
+          </dd>
+          <dt className="font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+            Nombre
+          </dt>
+          <dd className="text-[0.98rem] font-semibold tracking-[-0.02em] text-[var(--foreground)]">
+            {draft.name}
+          </dd>
         </dl>
       </section>
 
       {success.status === "SYNC_FAILED" ? (
         <p className="rounded-[1.4rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-left text-[0.84rem] font-medium tracking-[-0.01em] text-[var(--muted)]">
-          La reserva quedo registrada. La sincronizacion con calendario se completara despues.
+          La reserva quedo registrada. La sincronizacion con calendario se
+          completara despues.
         </p>
       ) : null}
 
       <div className="space-y-4">
-        <Button className="w-full py-4 text-[1.02rem] font-semibold" onClick={() => onWhatsAppRedirect(success.whatsappUrl)} type="button">
-          Enviar confirmacion por WhatsApp
+        <Button
+          className="w-full py-4 text-[1.02rem] font-semibold"
+          onClick={() => onWhatsAppRedirect(success.whatsappUrl)}
+          type="button"
+        >
+          Enviar confirmación por WhatsApp
         </Button>
-        <Link className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]" href="/">
+        <Link
+          className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+          href="/"
+        >
           Volver al inicio
         </Link>
       </div>
@@ -66,8 +98,20 @@ export function BookingSuccessStep({ draft, success, onWhatsAppRedirect }: Booki
 
 function CheckIcon() {
   return (
-    <svg aria-hidden="true" fill="none" height="26" viewBox="0 0 24 24" width="26">
-      <path d="M6 12.75L10.25 17 18 8.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="26"
+      viewBox="0 0 24 24"
+      width="26"
+    >
+      <path
+        d="M6 12.75L10.25 17 18 8.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.4"
+      />
     </svg>
   );
 }

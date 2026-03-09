@@ -9,7 +9,7 @@ vi.mock("@/lib/db/appointments", () => ({
       name: "Ana Lopez",
       phone: "5512345678",
       date: "2026-03-04",
-      timeSlot: "09:00",
+      timeSlot: "17:00",
       status: "CONFIRMED",
       googleEventId: null,
     },
@@ -21,7 +21,17 @@ describe("availability service", () => {
     const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
     const day = result.find((entry) => entry.date === "2026-03-04");
 
-    expect(day?.slots).not.toContain("09:00");
+    expect(day?.slots).not.toContain("17:00");
+  });
+
+  it("enforces minimum gap only against occupied slots", async () => {
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day?.slots).not.toContain("14:00");
+    expect(day?.slots).toContain("10:00");
+    expect(day?.slots).toContain("13:00");
+    expect(day?.slots).not.toContain("18:00");
   });
 
   it("does not expose weekends", async () => {

@@ -103,4 +103,30 @@ integrationSuite("bookAppointment integration", () => {
 
     expect(records).toHaveLength(1);
   });
+
+  it("allows booking a slot if it has at least 4h gap against confirmed appointments", async () => {
+    const now = new Date("2026-03-03T12:00:00.000Z");
+
+    await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "17:00",
+      },
+      now,
+    );
+
+    await expect(
+      bookAppointment(
+        {
+          name: "Bety Ruiz",
+          phone: "5512345679",
+          date: "2026-03-04",
+          timeSlot: "10:00",
+        },
+        now,
+      ),
+    ).resolves.toMatchObject({ status: "CONFIRMED" });
+  });
 });

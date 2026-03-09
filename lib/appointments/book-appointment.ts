@@ -3,7 +3,8 @@ import { Prisma } from "@prisma/client";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import { acquireBookingLocks, lockConflictingAppointments, releaseBookingLocks } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
-import { hasMinimumGap } from "@/lib/availability/rules";
+import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { buildWhatsappUrl } from "@/lib/whatsapp/message";
 import { bookingSchema, validateBookingRules } from "@/lib/validation/appointment";
@@ -59,8 +60,9 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
         });
 
         const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
+        const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
 
-        if (occupiedSlots.includes(input.timeSlot) || !hasMinimumGap(input.timeSlot, occupiedSlots)) {
+        if (!availableSlots.includes(input.timeSlot)) {
           throw new Error("SLOT_NOT_AVAILABLE");
         }
 

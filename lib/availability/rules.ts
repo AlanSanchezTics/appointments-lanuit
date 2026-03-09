@@ -7,10 +7,16 @@ export function isWeekdayBookingDate(date: string) {
 }
 
 export function hasMinimumGap(candidateSlot: string, existingSlots: string[]) {
-  const candidateHour = parseTimeSlot(candidateSlot).hour;
+  const candidateTime = parseTimeSlot(candidateSlot);
+  const candidateMinutes = candidateTime.hour * 60 + candidateTime.minute;
 
   return existingSlots.every((slot) => {
-    const existingHour = parseTimeSlot(slot).hour;
-    return Math.abs(candidateHour - existingHour) >= APPOINTMENT_GAP_HOURS;
+    const existingTime = parseTimeSlot(slot);
+    const existingMinutes = existingTime.hour * 60 + existingTime.minute;
+    return Math.abs(candidateMinutes - existingMinutes) >= APPOINTMENT_GAP_HOURS * 60;
   });
+}
+
+export function getAvailableStartSlots(baseSlots: readonly string[], occupiedSlots: string[]) {
+  return baseSlots.filter((slot) => !occupiedSlots.includes(slot) && hasMinimumGap(slot, occupiedSlots));
 }

@@ -1,7 +1,7 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { getCurrentDateKey, isCurrentMonth } from "@/lib/datetime/mexico-city";
 import { listMonthAppointments } from "@/lib/db/appointments";
-import { hasMinimumGap, isWeekdayBookingDate } from "@/lib/availability/rules";
+import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
 
 export type DayAvailability = {
   date: string;
@@ -47,7 +47,7 @@ export async function getMonthAvailability(month: string, now = new Date()) {
     .filter((date) => isWeekdayBookingDate(date))
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
-      const slots = BASE_TIME_SLOTS.filter((slot) => !occupiedSlots.includes(slot) && hasMinimumGap(slot, occupiedSlots));
+      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
 
       return { date, slots };
     })
