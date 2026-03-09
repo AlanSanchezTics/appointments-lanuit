@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Confirmar Detalles - Manicure Booking</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#B67362", // Dusty Rose
+                        "background-light": "#FDF9F6", // Cream
+                        "background-dark": "#1A1614", // Darker coffee tone
+                        "accent-gold": "#D4AF37",
+                        "soft-border": "#E8DED6"
+                    },
+                    fontFamily: {
+                        display: ["Playfair Display", "serif"],
+                        sans: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        'xl': '1.5rem',
+                        '2xl': '2rem',
+                    },
+                },
+            },
+        };
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+        h1, h2, .font-serif, .label-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4">
+    <div
+        class="w-full max-w-[400px] bg-white dark:bg-neutral-900 rounded-[3rem] shadow-2xl overflow-hidden border-[8px] border-neutral-100 dark:border-neutral-800 relative">
+        <div class="h-10 flex justify-between items-center px-8 pt-4">
+            <span class="text-xs font-semibold dark:text-white">9:41</span>
+            <div class="flex gap-1.5 items-center">
+                <span class="material-symbols-outlined text-[16px] dark:text-white">signal_cellular_alt</span>
+                <span class="material-symbols-outlined text-[16px] dark:text-white">wifi</span>
+                <span class="material-symbols-outlined text-[16px] dark:text-white">battery_full</span>
+            </div>
+        </div>
+        <div class="p-6 space-y-8">
+            <header class="flex items-center gap-4">
+                <button
+                    class="w-10 h-10 rounded-full border border-soft-border dark:border-neutral-700 flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:bg-stone-50 transition-colors">
+                    <span class="material-symbols-outlined">arrow_back_ios_new</span>
+                </button>
+                <div>
+                    <span class="text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-bold block">Paso 2 de
+                        2</span>
+                    <h1 class="text-2xl font-display text-neutral-800 dark:text-neutral-100">Confirmar Detalles</h1>
+                </div>
+            </header>
+            <section class="relative">
+                <div
+                    class="bg-stone-50 dark:bg-neutral-800/50 rounded-[2rem] p-8 border border-soft-border dark:border-neutral-800 shadow-sm">
+                    <div class="space-y-6">
+                        <div class="border-b border-soft-border dark:border-neutral-800 pb-4">
+                            <span class="label-serif text-sm italic text-primary block mb-1">Servicio</span>
+                            <p class="text-lg font-medium text-neutral-800 dark:text-neutral-100">Manicure Clásico</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 border-b border-soft-border dark:border-neutral-800 pb-4">
+                            <div>
+                                <span class="label-serif text-sm italic text-primary block mb-1">Fecha</span>
+                                <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">Miércoles 06 de
+                                    Marzo</p>
+                            </div>
+                            <div>
+                                <span class="label-serif text-sm italic text-primary block mb-1">Hora</span>
+                                <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">09:00 AM</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <span class="label-serif text-sm italic text-primary block mb-1">Nombre</span>
+                                <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">Ana García</p>
+                            </div>
+                            <div>
+                                <span class="label-serif text-sm italic text-primary block mb-1">Teléfono</span>
+                                <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">+52 55 1234 5678
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute -right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                        <div class="w-1 h-12 bg-primary/20 rounded-full"></div>
+                    </div>
+                </div>
+            </section>
+            <div class="pt-4 space-y-4">
+                <button
+                    class="w-full bg-primary hover:bg-[#A06456] text-white py-5 rounded-2xl font-semibold text-lg shadow-xl shadow-primary/30 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                    Confirmar Cita
+                    <span class="material-symbols-outlined">check_circle</span>
+                </button>
+                <button
+                    class="w-full flex items-center justify-center gap-1 text-neutral-400 hover:text-primary transition-colors py-2 group">
+                    <span
+                        class="material-symbols-outlined text-sm group-hover:translate-x-[-2px] transition-transform">edit</span>
+                    <span class="text-sm font-medium">Editar información</span>
+                </button>
+                <div class="bg-accent-gold/5 border border-accent-gold/20 rounded-xl p-4 flex gap-3">
+                    <span class="material-symbols-outlined text-accent-gold">info</span>
+                    <p class="text-[11px] text-neutral-500 leading-relaxed">
+                        Recibirás un recordatorio por WhatsApp 2 horas antes de tu cita. Cancelaciones con 24h de
+                        anticipación.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="h-8 flex items-center justify-center">
+            <div class="w-32 h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full"></div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,16 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5efe6;
-  --foreground: #1f1a17;
-  --accent: #b36a5e;
-  --accent-dark: #7f463d;
-  --surface: rgba(255, 250, 245, 0.88);
-  --surface-strong: #fff9f4;
-  --border: rgba(127, 70, 61, 0.18);
-  --muted: #6f655d;
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --background: #f8f4f1;
+  --foreground: #2d2926;
+  --accent: #e49f53;
+  --accent-dark: #c9853d;
+  --surface: rgba(248, 244, 241, 0.94);
+  --surface-strong: #f8f4f1;
+  --surface-alt: #e0d4cd;
+  --card: rgba(255, 255, 255, 0.78);
+  --border: rgba(224, 212, 205, 0.85);
+  --border-strong: rgba(45, 41, 38, 0.12);
+  --muted: #7c736d;
+  --muted-light: #b8aba3;
+  --error: #9f4c3a;
+  --error-soft: rgba(159, 76, 58, 0.14);
+  --error-surface: rgba(159, 76, 58, 0.05);
+  --warning-soft: rgba(228, 159, 83, 0.24);
+  --warning-surface: rgba(228, 159, 83, 0.08);
+  --shadow-soft: 0 20px 40px rgba(45, 41, 38, 0.1);
+  --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.28);
+  --font-display: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-body: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
 * {
@@ -19,8 +30,9 @@
 
 html {
   background:
-    radial-gradient(circle at top left, rgba(179, 106, 94, 0.18), transparent 28%),
-    linear-gradient(180deg, #f7f0e8 0%, #f2e7dc 100%);
+    radial-gradient(circle at top left, rgba(228, 159, 83, 0.14), transparent 22%),
+    radial-gradient(circle at 82% 12%, rgba(224, 212, 205, 0.42), transparent 12%),
+    linear-gradient(180deg, #fbf8f5 0%, #f1e7e1 100%);
 }
 
 body {
@@ -28,6 +40,9 @@ body {
   min-height: 100vh;
   color: var(--foreground);
   background: transparent;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -38,4 +53,24 @@ a {
 button,
 input {
   font: inherit;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::selection {
+  background: rgba(228, 159, 83, 0.22);
+  color: var(--foreground);
 }

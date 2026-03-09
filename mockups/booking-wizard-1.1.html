@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Calendario - Manicure Booking</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600&amp;family=Material+Icons&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#B67362", // Dusty Rose
+                        "background-light": "#FDF9F6", // Cream
+                        "background-dark": "#1A1614", // Darker coffee tone
+                        "accent-gold": "#D4AF37",
+                        "soft-border": "#E8DED6"
+                    },
+                    fontFamily: {
+                        display: ["Playfair Display", "serif"],
+                        sans: ["Plus Jakarta Sans", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        'xl': '1.5rem',
+                        '2xl': '2rem',
+                    },
+                },
+            },
+        };
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+        h1, h2, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4">
+    <div
+        class="w-full max-w-[400px] bg-white dark:bg-neutral-900 rounded-[3rem] shadow-2xl overflow-hidden border-[8px] border-neutral-100 dark:border-neutral-800 relative h-[844px] flex flex-col">
+        <div class="h-10 flex justify-between items-center px-8 pt-4 flex-shrink-0">
+            <span class="text-xs font-semibold dark:text-white">9:41</span>
+            <div class="flex gap-1.5 items-center">
+                <span class="material-icons text-[16px] dark:text-white">signal_cellular_alt</span>
+                <span class="material-icons text-[16px] dark:text-white">wifi</span>
+                <span class="material-icons text-[16px] dark:text-white">battery_full</span>
+            </div>
+        </div>
+        <div class="p-6 pb-2">
+            <div class="flex justify-between items-center mb-8">
+                <button
+                    class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <h1 class="text-2xl font-display text-neutral-800 dark:text-neutral-100">Marzo 2024</h1>
+                <button
+                    class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-7 mb-4">
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Dom</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Lun</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Mar</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Mié</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Jue</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vie</div>
+                <div class="text-center text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Sáb</div>
+            </div>
+            <div class="grid grid-cols-7 gap-y-2">
+                <div class="h-12 flex items-center justify-center text-neutral-300 dark:text-neutral-700 text-sm">25
+                </div>
+                <div class="h-12 flex items-center justify-center text-neutral-300 dark:text-neutral-700 text-sm">26
+                </div>
+                <div class="h-12 flex items-center justify-center text-neutral-300 dark:text-neutral-700 text-sm">27
+                </div>
+                <div class="h-12 flex items-center justify-center text-neutral-300 dark:text-neutral-700 text-sm">28
+                </div>
+                <div class="h-12 flex items-center justify-center text-neutral-300 dark:text-neutral-700 text-sm">29
+                </div>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">1</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">2</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">3</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">4</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">5</button>
+                <div class="h-12 flex items-center justify-center">
+                    <button
+                        class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg shadow-primary/30">6</button>
+                </div>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">7</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">8</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">9</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">10</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">11</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">12</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">13</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">14</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">15</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">16</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">17</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">18</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">19</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">20</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">21</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">22</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">23</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">24</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">25</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">26</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">27</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">28</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">29</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">30</button>
+                <button
+                    class="h-12 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-full">31</button>
+            </div>
+        </div>
+        <div class="px-8 mt-4 flex gap-6 items-center flex-grow">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-primary"></div>
+                <span class="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Seleccionado</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full border border-soft-border bg-white"></div>
+                <span class="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Disponible</span>
+            </div>
+        </div>
+        <div class="p-6 pt-2 pb-8 flex-shrink-0">
+            <button
+                class="w-full bg-primary hover:bg-[#A06456] text-white py-5 rounded-2xl font-semibold text-lg shadow-xl shadow-primary/30 transition-all transform active:scale-[0.98] flex items-center justify-center">
+                Listo
+            </button>
+            <p class="text-center text-[11px] text-neutral-400 mt-4">Toca un día para ver horarios disponibles</p>
+        </div>
+        <div class="h-8 flex items-center justify-center flex-shrink-0">
+            <div class="w-32 h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full"></div>
+        </div>
+    </div>
+
+</body>
+
+</html>

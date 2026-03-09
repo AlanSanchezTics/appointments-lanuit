@@ -20,8 +20,8 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
     if (days.length === 0) {
       return (
-        <main className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-16">
-          <section className="w-full rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+        <main className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10 sm:px-6">
+          <section className="w-full max-w-md rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-8 text-center shadow-[0_30px_80px_rgba(52,37,31,0.15)]">
             <h1 className="font-[family-name:var(--font-display)] text-4xl">Sin horarios disponibles</h1>
             <p className="mt-3 text-sm text-[var(--muted)]">No quedan espacios para el mes activo.</p>
           </section>
@@ -30,7 +30,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
     }
 
     return (
-      <main className="mx-auto min-h-screen max-w-5xl px-6 py-16">
+      <main className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
         <MonthView month={month} days={days} />
       </main>
     );
