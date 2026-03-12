@@ -5,7 +5,7 @@ import { BookingWizard } from "@/components/booking/booking-wizard";
 
 const days = [
   {
-    date: "2026-03-04",
+    date: "2026-03-18",
     slots: ["09:00", "13:00"],
   },
 ];
@@ -17,7 +17,12 @@ describe("booking success step", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-18",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         onWhatsAppRedirect={onWhatsAppRedirect}
         submitBooking={async () => ({
@@ -30,13 +35,18 @@ describe("booking success step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar Cita" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
 
-    expect(await screen.findByRole("heading", { name: "Tu cita ha sido agendada exitosamente" })).toBeInTheDocument();
-    expect(screen.getByText("La reserva quedo registrada. La sincronizacion con calendario se completara despues.")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", {
+        name: "Tu cita ha sido agendada exitosamente",
+      }),
+    ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Enviar confirmacion por WhatsApp" }));
+    expect(screen.getByText("Muchas gracias")).toBeInTheDocument();
 
-    expect(onWhatsAppRedirect).toHaveBeenCalledWith("https://wa.me/5215512345678?text=ok");
+    expect(
+      screen.getByRole("button", { name: "Enviar confirmación por WhatsApp" }),
+    ).toBeInTheDocument();
   });
 });

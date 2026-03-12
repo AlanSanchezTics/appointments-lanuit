@@ -68,7 +68,7 @@ integrationSuite("bookAppointment integration", () => {
     ).rejects.toThrow("PHONE_ALREADY_BOOKED");
   });
 
-  it("rejects concurrent bookings that violate the minimum gap on the same day", async () => {
+  it("rejects concurrent bookings in the same pair on the same day", async () => {
     const now = new Date("2026-03-03T12:00:00.000Z");
 
     const results = await Promise.allSettled([
@@ -104,7 +104,7 @@ integrationSuite("bookAppointment integration", () => {
     expect(records).toHaveLength(1);
   });
 
-  it("allows booking a slot if it has at least 4h gap against confirmed appointments", async () => {
+  it("rejects booking a slot that violates backward spacing with a later occupied slot", async () => {
     const now = new Date("2026-03-03T12:00:00.000Z");
 
     await bookAppointment(
@@ -123,10 +123,56 @@ integrationSuite("bookAppointment integration", () => {
           name: "Bety Ruiz",
           phone: "5512345679",
           date: "2026-03-04",
-          timeSlot: "10:00",
+          timeSlot: "14:00",
         },
         now,
       ),
-    ).resolves.toMatchObject({ status: "CONFIRMED" });
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
+  });
+
+  it("rejects a fourth active booking on the same day", async () => {
+    const now = new Date("2026-03-03T12:00:00.000Z");
+
+    await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
+      now,
+    );
+
+    await bookAppointment(
+      {
+        name: "Bety Ruiz",
+        phone: "5512345679",
+        date: "2026-03-04",
+        timeSlot: "14:00",
+      },
+      now,
+    );
+
+    await bookAppointment(
+      {
+        name: "Carla Diaz",
+        phone: "5512345680",
+        date: "2026-03-04",
+        timeSlot: "17:00",
+      },
+      now,
+    );
+
+    await expect(
+      bookAppointment(
+        {
+          name: "Diana Mora",
+          phone: "5512345681",
+          date: "2026-03-04",
+          timeSlot: "18:00",
+        },
+        now,
+      ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
   });
 });

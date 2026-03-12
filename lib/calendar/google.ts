@@ -148,7 +148,7 @@ export async function createCalendarEvent(input: { name: string; date: string; t
     const response = await calendar.events.insert({
       calendarId,
       requestBody: {
-        summary: `Cita de ${input.name}`,
+        summary: `${input.name}`,
         start: {
           dateTime: range.start,
           timeZone: REQUIRED_TIMEZONE,

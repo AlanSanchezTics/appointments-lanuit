@@ -70,7 +70,7 @@ describe("google calendar client", () => {
     expect(insertMock).toHaveBeenCalledWith({
       calendarId: "calendar-id",
       requestBody: {
-        summary: "Cita de Ana",
+        summary: "Ana",
         start: {
           dateTime: "2026-03-04T09:00:00",
           timeZone: "America/Mexico_City",

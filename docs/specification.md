@@ -69,14 +69,21 @@ Restricciones:
 - 17:00
 - 18:00
 
-### 4.3 Duración y Separación
+### 4.3 Regla Direccional por Pares + Máximo Diario
 
 - Duración del evento en Google Calendar: 3 horas.
-- Separación mínima entre inicios de citas: 4 horas.
+- Pares oficiales de horarios:
+  - (09:00, 10:00)
+  - (13:00, 14:00)
+  - (17:00, 18:00)
+- Límite diario: máximo 3 citas activas por día.
+- Restricción estructural: máximo 1 cita activa por par.
 
-Regla formal:
+Regla direccional formal:
 
-    abs(start_time_nuevo - start_time_existente) >= 4 horas
+- Si existe una cita en la primera hora de un par $i$, se bloquea la segunda hora de todos los pares anteriores ($j < i$).
+- Si existe una cita en la segunda hora de un par $i$, se bloquea la primera hora de todos los pares posteriores ($j > i$).
+- Un slot candidato es válido solo si cumple simultáneamente todas las restricciones inducidas por todas las citas activas del día (composición global).
 
 ---
 
@@ -192,7 +199,7 @@ Tabla: appointments
 3. Fallo Google → Estado SYNC_FAILED.
 4. Reserva mismo día → Rechazar.
 5. Usuario con cita activa intenta reservar → Bloquear.
-6. Todos los horarios ocupados → Día no visible.
+6. Día con 3 citas activas válidas (una por par) → Día no visible.
 7. Manipulación frontend → Backend recalcula.
 8. Cancelación simultánea y nueva reserva → Resolver vía transacciones.
 9. Cambio horario verano → Usar siempre America/Mexico_City.
@@ -204,7 +211,7 @@ Tabla: appointments
 1. MySQL es fuente de verdad.
 2. Google Calendar es sistema espejo.
 3. No existen traslapes.
-4. Separación mínima de 4 horas.
+4. Regla direccional por pares y máximo 3 citas activas por día.
 5. Solo una cita activa por teléfono.
 6. Solo lunes a viernes.
 7. No mismo día.
