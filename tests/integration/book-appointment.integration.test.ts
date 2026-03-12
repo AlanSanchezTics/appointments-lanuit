@@ -12,6 +12,12 @@ vi.mock("@/lib/calendar/sync-appointment", () => ({
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 const integrationSuite = hasDatabase ? describe : describe.skip;
 
+type SlotRow = {
+  id: number;
+  phone: string;
+  status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+};
+
 integrationSuite("bookAppointment integration", () => {
   beforeEach(async () => {
     await resetAppointmentsTable();
@@ -66,6 +72,100 @@ integrationSuite("bookAppointment integration", () => {
         new Date("2026-03-03T12:00:00.000Z"),
       ),
     ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+  });
+
+  it("allows booking a slot that was previously cancelled", async () => {
+    const now = new Date("2026-03-03T12:00:00.000Z");
+
+    const initial = await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
+      now,
+    );
+
+    await prisma.appointment.update({
+      where: {
+        id: initial.appointmentId,
+      },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
+    const rebooked = await bookAppointment(
+      {
+        name: "Bety Ruiz",
+        phone: "5512345679",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
+      now,
+    );
+
+    expect(rebooked.status).toBe("CONFIRMED");
+
+    const appointments = await prisma.$queryRaw<Array<SlotRow>>`
+      SELECT id, phone, status
+      FROM appointments
+      WHERE date = '2026-03-04'
+        AND time_slot = '09:00:00'
+      ORDER BY id ASC
+    `;
+
+    expect(appointments).toHaveLength(2);
+    expect(appointments[0]?.status).toBe("CANCELLED");
+    expect(appointments[0]?.phone).toBe("5512345678");
+    expect(appointments[1]?.status).toBe("CONFIRMED");
+    expect(appointments[1]?.phone).toBe("5512345679");
+  });
+
+  it("allows only one active booking when two requests race for the exact same slot", async () => {
+    const now = new Date("2026-03-03T12:00:00.000Z");
+
+    const results = await Promise.allSettled([
+      bookAppointment(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        },
+        now,
+      ),
+      bookAppointment(
+        {
+          name: "Bety Ruiz",
+          phone: "5512345679",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        },
+        now,
+      ),
+    ]);
+
+    const fulfilled = results.filter((item) => item.status === "fulfilled");
+    const rejected = results.filter((item) => item.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+
+    const rejectionReason = (rejected[0] as PromiseRejectedResult).reason;
+    expect(rejectionReason).toBeInstanceOf(Error);
+    expect((rejectionReason as Error).message).toBe("SLOT_NOT_AVAILABLE");
+
+    const activeInSlot = await prisma.$queryRaw<Array<SlotRow>>`
+      SELECT id, phone, status
+      FROM appointments
+      WHERE date = '2026-03-04'
+        AND time_slot = '09:00:00'
+        AND status IN ('CONFIRMED', 'SYNC_FAILED')
+    `;
+
+    expect(activeInSlot).toHaveLength(1);
   });
 
   it("rejects concurrent bookings in the same pair on the same day", async () => {
@@ -148,7 +248,7 @@ integrationSuite("bookAppointment integration", () => {
         name: "Bety Ruiz",
         phone: "5512345679",
         date: "2026-03-04",
-        timeSlot: "14:00",
+        timeSlot: "13:00",
       },
       now,
     );
@@ -158,7 +258,7 @@ integrationSuite("bookAppointment integration", () => {
         name: "Carla Diaz",
         phone: "5512345680",
         date: "2026-03-04",
-        timeSlot: "17:00",
+        timeSlot: "18:00",
       },
       now,
     );

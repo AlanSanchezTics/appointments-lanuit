@@ -169,14 +169,14 @@ export function BookingWizardStep1({
 
           <label className="relative block" htmlFor="booking-phone">
             <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
-              Telefono
+              Teléfono
             </span>
             <input
               id="booking-phone"
               className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
               inputMode="numeric"
               onChange={(event) => onDraftChange({ phone: event.target.value })}
-              placeholder="+52 55 1234 5678"
+              placeholder="322 123 4567"
               value={draft.phone}
             />
           </label>

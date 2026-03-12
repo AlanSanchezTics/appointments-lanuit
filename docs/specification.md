@@ -154,19 +154,25 @@ Requisitos obligatorios:
 
 - Transacciones MySQL.
 - SELECT ... FOR UPDATE.
-- Índice único compuesto:
+- Índice compuesto no único para rendimiento de consultas por slot:
 
-  UNIQUE(date, time_slot)
+  INDEX(date, time_slot)
 
 Orden:
 
 1. START TRANSACTION
 2. Validar disponibilidad con bloqueo
-3. INSERT
+3. INSERT (siempre crea una nueva fila)
 4. COMMIT
 5. Crear evento Google
 
 Google Calendar no es fuente de verdad.
+
+Histórico de cancelaciones:
+
+- Re-reservar un slot previamente cancelado crea una nueva fila.
+- Las filas CANCELLED se conservan como historial.
+- La disponibilidad y conflictos se calculan solo sobre estados activos (CONFIRMED, SYNC_FAILED).
 
 ---
 
@@ -186,7 +192,7 @@ Tabla: appointments
 
 Índices:
 
-- UNIQUE(date, time_slot)
+- INDEX(date, time_slot)
 - INDEX(phone, status)
 - INDEX(date)
 

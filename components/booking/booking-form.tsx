@@ -39,7 +39,10 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
         }),
       });
 
-      const payload = (await response.json()) as { error?: string; whatsappUrl?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        whatsappUrl?: string;
+      };
 
       if (!response.ok) {
         setMessage(payload.error ?? "No se pudo reservar la cita.");
@@ -58,7 +61,10 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-[var(--muted)]" htmlFor="booking-name">
+        <label
+          className="block text-sm font-medium text-[var(--muted)]"
+          htmlFor="booking-name"
+        >
           Nombre
         </label>
         <input
@@ -71,8 +77,11 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
         />
       </div>
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-[var(--muted)]" htmlFor="booking-phone">
-          Telefono
+        <label
+          className="block text-sm font-medium text-[var(--muted)]"
+          htmlFor="booking-phone"
+        >
+          Teléfono
         </label>
         <input
           id="booking-phone"
@@ -80,14 +89,16 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
           onChange={(event) => setPhone(event.target.value)}
           className="w-full rounded-3xl border border-[var(--border)] bg-white px-4 py-3 outline-none ring-0"
           placeholder="5512345678"
-          inputMode="numeric"
+          inputMode="tel"
           required
         />
       </div>
       <Button className="w-full" type="submit" disabled={isPending}>
         {isPending ? "Reservando..." : "Confirmar cita"}
       </Button>
-      {message ? <p className="text-sm text-[var(--accent-dark)]">{message}</p> : null}
+      {message ? (
+        <p className="text-sm text-[var(--accent-dark)]">{message}</p>
+      ) : null}
     </form>
   );
 }
