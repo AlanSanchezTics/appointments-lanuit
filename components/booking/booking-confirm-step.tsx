@@ -93,7 +93,7 @@ export function BookingConfirmStep({
 
       <div className="space-y-4">
         <Button
-          className="w-full py-4 text-[1.02rem] font-semibold"
+          className="w-full py-4 text-[1.02rem] font-extrabold"
           disabled={isPending}
           onClick={onConfirm}
           type="button"
@@ -101,7 +101,7 @@ export function BookingConfirmStep({
           {isPending ? "Un momento..." : "Confirmar cita"}
         </Button>
         <button
-          className="mx-auto block text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+          className="mx-auto w-full text-[0.9rem] py-2 font-medium tracking-[-0.01em] text-[var(--muted)] cursor-pointer border border-[var(--border)] rounded-full transition hover:text-[var(--foreground)]"
           onClick={onBack}
           type="button"
         >
@@ -112,7 +112,7 @@ export function BookingConfirmStep({
             i
           </span>
           <p className="text-[0.76rem] font-medium leading-relaxed tracking-[-0.01em] text-[var(--muted)]">
-            Recibiras un recordatorio por WhatsApp un día antes de tu cita.
+            Recibirás un recordatorio por WhatsApp un día antes de tu cita.
           </p>
         </div>
       </div>

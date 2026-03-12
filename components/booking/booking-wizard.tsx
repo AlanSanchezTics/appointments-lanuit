@@ -118,7 +118,7 @@ export function BookingWizard({
   return (
     <>
       <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
-        <div className="rounded-[2.15rem] border border-[rgba(255,255,255,0.72)] bg-[var(--surface-strong)] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] md:px-6 md:py-7">
+        <div className="rounded-[2.15rem] border border-[rgba(255,255,255,0.72)] bg-white px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] md:px-6 md:py-7">
           <div>
             {step === "details" ? (
               <BookingWizardStep1

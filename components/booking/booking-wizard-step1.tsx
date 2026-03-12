@@ -45,7 +45,7 @@ export function BookingWizardStep1({
               Paso 1 de 2
             </p>
             <h1 className="font-[family-name:var(--font-display)] text-[2.35rem] font-semibold leading-[1.02] tracking-[-0.04em] text-[var(--foreground)]">
-              Agendar Cita
+              Agendar cita
             </h1>
           </div>
           <button
@@ -65,7 +65,7 @@ export function BookingWizardStep1({
       <section className="space-y-4 border-t border-[var(--border)] pt-6">
         <div className="flex items-center justify-between gap-4">
           <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-            Dias disponibles
+            Días disponibles
           </p>
           <button
             className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)] transition hover:text-[var(--accent-dark)]"
@@ -76,15 +76,15 @@ export function BookingWizardStep1({
           </button>
         </div>
 
-        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2 items-center justify-stretch">
           {highlightedDays.map((day) => {
             const isSelected = draft.date === day.date;
 
             return (
               <button
                 key={day.date}
-                aria-label={`Seleccionar dia ${formatShortWeekdayLabel(day.date)} ${formatDayOfMonthLabel(day.date)}`}
-                className={`min-h-24 min-w-16 flex-shrink-0 rounded-[1.7rem] border px-2 py-3 text-center transition ${
+                aria-label={`Seleccionar día ${formatShortWeekdayLabel(day.date)} ${formatDayOfMonthLabel(day.date)}`}
+                className={`min-h-24 w-[100%] rounded-[1.7rem] border px-2 py-3 text-center transition ${
                   isSelected
                     ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
@@ -201,9 +201,6 @@ export function BookingWizardStep1({
             →
           </span>
         </Button>
-        <p className="text-center text-[0.83rem] font-medium tracking-[-0.01em] text-[var(--muted)]">
-          Continuaras a la confirmación de tu cita
-        </p>
       </div>
     </div>
   );
