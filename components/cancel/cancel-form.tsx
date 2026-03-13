@@ -150,7 +150,14 @@ export function CancelForm() {
               type="submit"
               disabled={isSearching}
             >
-              {isSearching ? "Buscando..." : "Buscar cita"}
+              {isSearching ? (
+                "Buscando..."
+              ) : (
+                <>
+                  <SearchIcon />
+                  <span className="ml-2">Buscar cita</span>
+                </>
+              )}
             </Button>
             <div className="flex justify-center">
               <Link
@@ -169,9 +176,13 @@ export function CancelForm() {
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
                 Paso 2 de 3
               </p>
-              <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em]">
-                Revisa tu cita
+              <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
+                Confirmar Cancelación
               </h2>
+              <p className="text-[var(--muted)]">
+                Hemos encontrado la siguiente cita vinculada a tu número de
+                teléfono.
+              </p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
               </div>
@@ -180,6 +191,14 @@ export function CancelForm() {
             <section className="rounded-[2rem] border border-[var(--border)] bg-white/80 p-6 shadow-[var(--shadow-soft)]">
               <dl className="space-y-5">
                 <div>
+                  <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                    Nombre
+                  </dt>
+                  <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
+                    {appointment.name}
+                  </dd>
+                </div>
+                <div className="border-t border-[var(--border)] pt-5">
                   <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
                     Fecha
                   </dt>
@@ -205,14 +224,6 @@ export function CancelForm() {
                     </dd>
                   </div>
                 </div>
-                <div className="border-t border-[var(--border)] pt-5">
-                  <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                    Nombre
-                  </dt>
-                  <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
-                    {appointment.name}
-                  </dd>
-                </div>
               </dl>
             </section>
 
@@ -221,6 +232,13 @@ export function CancelForm() {
                 {cancelError}
               </p>
             ) : null}
+
+            <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[2rem]">
+              <b>Importante</b>
+              <br />
+              Toma en cuenta que al cancelar esta cita, el horario quedará
+              disponible para que alguien más la tome.
+            </p>
 
             <div className="space-y-4 flex flex-col items-center">
               <Button
@@ -343,6 +361,32 @@ function CalendarTimesIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="20"
+      viewBox="0 0 20 20"
+      width="20"
+    >
+      <circle
+        cx="8.5"
+        cy="8.5"
+        r="6.25"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M13.75 13.75L17.5 17.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.6"
       />
     </svg>
   );

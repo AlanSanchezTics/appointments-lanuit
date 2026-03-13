@@ -91,7 +91,13 @@ export function BookingConfirmStep({
           onClick={onConfirm}
           type="button"
         >
-          {isPending ? "Un momento..." : "Confirmar cita"}
+          {isPending ? (
+            "Un momento..."
+          ) : (
+            <>
+              Confirmar cita <CheckCircleIcon />
+            </>
+          )}
         </Button>
         <div className="flex justify-center">
           <Link
@@ -99,7 +105,7 @@ export function BookingConfirmStep({
             onClick={onBack}
             href="#"
           >
-            Editar información
+            <PencilIcon /> Editar información
           </Link>
         </div>
         <div className="flex gap-3 rounded-[1.25rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-4 text-left">
@@ -125,22 +131,41 @@ function formatPhoneForDisplay(phone: string) {
   return `${trimmed.slice(0, 3)} ${trimmed.slice(3, 6)} ${trimmed.slice(6)}`;
 }
 
-function ArrowLeftIcon() {
+function CheckCircleIcon() {
   return (
     <svg
-      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
       fill="none"
-      height="18"
-      viewBox="0 0 18 18"
-      width="18"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="h-6 w-6 text-white ml-1.5"
     >
       <path
-        d="M11.25 14.25L6 9l5.25-5.25"
-        stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.8"
+        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="mr-1.5 h-5 w-5 text-(--muted)"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.862 4.487l1.688-1.688a2.25 2.25 0 113.182 3.182L10.5 17.213a4.5 4.5 0 01-1.897 1.13L6 19l.657-2.603a4.5 4.5 0 011.13-1.897l9.075-9.013z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25l3 3" />
     </svg>
   );
 }
