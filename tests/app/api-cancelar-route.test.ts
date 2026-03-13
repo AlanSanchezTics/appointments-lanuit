@@ -23,6 +23,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
+          appointmentId: 3,
         }),
       }),
     );
@@ -47,6 +48,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
+          appointmentId: 3,
         }),
       }),
     );
@@ -68,6 +70,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
+          appointmentId: 3,
         }),
       }),
     );
@@ -78,8 +81,8 @@ describe("POST /api/cancelar", () => {
     });
   });
 
-  it("returns 400 for non-existent cancellations blocked by business rules", async () => {
-    cancelAppointmentMock.mockRejectedValueOnce(new Error("PAST_APPOINTMENT"));
+  it("returns 400 for malformed cancellation payloads", async () => {
+    cancelAppointmentMock.mockRejectedValueOnce(new Error("INVALID_PAYLOAD"));
 
     const { POST } = await import("@/app/api/cancelar/route");
     const response = await POST(
@@ -87,13 +90,14 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
+          appointmentId: 0,
         }),
       }),
     );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: "PAST_APPOINTMENT",
+      error: "INVALID_PAYLOAD",
     });
   });
 });

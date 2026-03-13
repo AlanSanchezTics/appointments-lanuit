@@ -134,13 +134,20 @@ El mensaje debe codificarse usando encodeURIComponent.
 ## 8. Flujo de Cancelación
 
 1. Usuario ingresa teléfono.
-2. Sistema busca cita activa futura.
-3. Muestra detalles.
+2. Sistema busca cita cancelable con estas condiciones simultáneas:
+   - Estatus `CONFIRMED`.
+   - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
+   - Dentro del mes activo.
+3. Si existe coincidencia, se muestran detalles de la cita y acciones:
+   - `Cancelar cita`.
+   - `Regresar al inicio`.
 4. Usuario confirma cancelación.
 5. Backend:
-   - Cambia estado a CANCELLED.
-   - Elimina evento en Google Calendar.
-6. El horario vuelve a estar disponible automáticamente.
+   - Cambia estado a `CANCELLED`.
+   - Elimina evento en Google Calendar (si existe `google_event_id`).
+6. UI muestra el mensaje final:
+   - `Tu cita ha sido cancelada con exito`.
+7. El horario vuelve a estar disponible automáticamente.
 
 No se pueden cancelar citas pasadas.
 

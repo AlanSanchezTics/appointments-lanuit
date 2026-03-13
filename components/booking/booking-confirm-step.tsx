@@ -7,6 +7,7 @@ import {
 } from "@/lib/datetime/mexico-city";
 
 import type { BookingDraft } from "@/components/booking/booking-wizard";
+import Link from "next/link";
 
 type BookingConfirmStepProps = {
   draft: BookingDraft;
@@ -27,14 +28,6 @@ export function BookingConfirmStep({
     <div className="space-y-8">
       <header className="space-y-4">
         <div className="flex items-start gap-4">
-          <button
-            aria-label="Volver al paso anterior"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--foreground)] shadow-[var(--shadow-soft)] transition hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-            onClick={onBack}
-            type="button"
-          >
-            <ArrowLeftIcon />
-          </button>
           <div className="space-y-2">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
               Paso 2 de 2
@@ -67,7 +60,7 @@ export function BookingConfirmStep({
             </div>
             <div>
               <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                Telefono
+                Teléfono
               </dt>
               <dd className="mt-1 text-[1rem] font-semibold tracking-[-0.02em]">
                 {formatPhoneForDisplay(draft.phone)}
@@ -93,20 +86,22 @@ export function BookingConfirmStep({
 
       <div className="space-y-4">
         <Button
-          className="w-full py-4 text-[1.02rem] font-extrabold"
+          className="w-full py-4 text-[1.02rem]"
           disabled={isPending}
           onClick={onConfirm}
           type="button"
         >
           {isPending ? "Un momento..." : "Confirmar cita"}
         </Button>
-        <button
-          className="mx-auto w-full text-[0.9rem] py-2 font-medium tracking-[-0.01em] text-[var(--muted)] cursor-pointer border border-[var(--border)] rounded-full transition hover:text-[var(--foreground)]"
-          onClick={onBack}
-          type="button"
-        >
-          Editar información
-        </button>
+        <div className="flex justify-center">
+          <Link
+            className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+            onClick={onBack}
+            href="#"
+          >
+            Editar información
+          </Link>
+        </div>
         <div className="flex gap-3 rounded-[1.25rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-4 text-left">
           <span className="mt-0.5 text-[0.95rem] font-semibold text-[var(--accent-dark)]">
             i

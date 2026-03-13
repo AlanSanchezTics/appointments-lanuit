@@ -68,6 +68,28 @@ export async function findActiveAppointmentByPhone(phone: string, dateFloor: str
   return record ? mapAppointment(record) : null;
 }
 
+export async function findConfirmedFutureAppointmentByPhoneInMonth(
+  phone: string,
+  dateFloor: string,
+  monthStart: string,
+  monthEndExclusive: string,
+) {
+  const record = await prisma.appointment.findFirst({
+    where: {
+      phone,
+      status: "CONFIRMED",
+      date: {
+        gt: new Date(`${dateFloor}T00:00:00.000Z`),
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+  });
+
+  return record ? mapAppointment(record) : null;
+}
+
 export async function findActiveAppointmentByPhoneForUpdate(
   tx: Prisma.TransactionClient,
   phone: string,
@@ -90,6 +112,54 @@ export async function findActiveAppointmentByPhoneForUpdate(
       AND status IN ('CONFIRMED', 'SYNC_FAILED')
       AND date > ${dateFloor}
     ORDER BY date ASC, time_slot ASC
+    LIMIT 1
+    FOR UPDATE
+  `;
+
+  const record = records[0];
+
+  if (!record) {
+    return null;
+  }
+
+  return mapAppointment({
+    id: record.id,
+    name: record.name,
+    phone: record.phone,
+    date: record.date,
+    timeSlot: record.time_slot,
+    status: record.status,
+    googleEventId: record.google_event_id,
+  });
+}
+
+export async function findConfirmedFutureAppointmentByIdForUpdate(
+  tx: Prisma.TransactionClient,
+  appointmentId: number,
+  phone: string,
+  dateFloor: string,
+  monthStart: string,
+  monthEndExclusive: string,
+) {
+  const records = await tx.$queryRaw<
+    Array<{
+      id: number;
+      name: string;
+      phone: string;
+      date: Date;
+      time_slot: Date;
+      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      google_event_id: string | null;
+    }>
+  >`
+    SELECT id, name, phone, date, time_slot, status, google_event_id
+    FROM appointments
+    WHERE id = ${appointmentId}
+      AND phone = ${phone}
+      AND status = 'CONFIRMED'
+      AND date > ${dateFloor}
+      AND date >= ${monthStart}
+      AND date < ${monthEndExclusive}
     LIMIT 1
     FOR UPDATE
   `;

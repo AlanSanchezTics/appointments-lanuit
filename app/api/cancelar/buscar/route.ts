@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { cancelAppointment } from "@/lib/appointments/cancel-appointment";
+import { findCancelableAppointment } from "@/lib/appointments/find-cancelable-appointment";
 
 export const dynamic = "force-dynamic";
 
@@ -8,10 +8,9 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
       phone: string;
-      appointmentId: number;
     };
 
-    const response = await cancelAppointment(payload);
+    const response = await findCancelableAppointment(payload);
     return NextResponse.json(response);
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";

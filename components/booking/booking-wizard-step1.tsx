@@ -13,6 +13,7 @@ import type {
   BookingDraft,
   BookingValidationErrors,
 } from "@/components/booking/booking-wizard";
+import Link from "next/link";
 
 type BookingWizardStep1Props = {
   month: string;
@@ -201,6 +202,14 @@ export function BookingWizardStep1({
             →
           </span>
         </Button>
+        <div className="flex justify-center">
+          <Link
+            className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+            href="/"
+          >
+            Regresar
+          </Link>
+        </div>
       </div>
     </div>
   );

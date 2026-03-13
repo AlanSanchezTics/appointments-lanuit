@@ -2,6 +2,11 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
 };
 
+type ButtonVariantsOptions = {
+  variant?: NonNullable<ButtonProps["variant"]>;
+  className?: string;
+};
+
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
     "bg-[var(--accent)] text-white shadow-[var(--shadow-button)] hover:bg-[var(--accent-dark)] focus-visible:outline-[var(--accent-dark)]",
@@ -10,6 +15,16 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   ghost:
     "bg-transparent text-[var(--muted)] hover:text-[var(--foreground)] focus-visible:outline-[var(--accent)]",
 };
+
+const baseButtonClasses =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-bold tracking-[-0.01em] transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+
+export function buttonVariants({
+  variant = "primary",
+  className = "",
+}: ButtonVariantsOptions = {}) {
+  return `${baseButtonClasses} ${variantClasses[variant]} ${className}`;
+}
 
 export function Button({
   className = "",
@@ -20,7 +35,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-bold tracking-[-0.01em] transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${variantClasses[variant]} ${className}`}
+      className={buttonVariants({ variant, className })}
       {...props}
     />
   );

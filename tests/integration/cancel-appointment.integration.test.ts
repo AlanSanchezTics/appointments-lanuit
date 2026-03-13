@@ -42,6 +42,7 @@ integrationSuite("cancelAppointment integration", () => {
     const result = await cancelAppointment(
       {
         phone: "5512345678",
+        appointmentId: appointment.id,
       },
       new Date("2026-03-03T12:00:00.000Z"),
     );
@@ -78,6 +79,7 @@ integrationSuite("cancelAppointment integration", () => {
     const result = await cancelAppointment(
       {
         phone: "5512345678",
+        appointmentId: appointment.id,
       },
       new Date("2026-03-03T12:00:00.000Z"),
     );
@@ -96,5 +98,27 @@ integrationSuite("cancelAppointment integration", () => {
 
     expect(refreshed.status).toBe("CANCELLED");
     expect(refreshed.googleEventId).toBe("google-event-2");
+  });
+
+  it("rejects cancellation when the appointment is not CONFIRMED", async () => {
+    const appointment = await prisma.appointment.create({
+      data: {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: new Date("2026-03-04T00:00:00.000Z"),
+        timeSlot: new Date("1970-01-01T09:00:00.000Z"),
+        status: "SYNC_FAILED",
+      },
+    });
+
+    await expect(
+      cancelAppointment(
+        {
+          phone: "5512345678",
+          appointmentId: appointment.id,
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("APPOINTMENT_NOT_FOUND");
   });
 });

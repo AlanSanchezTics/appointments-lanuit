@@ -3,61 +3,347 @@
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  formatLongDate,
+  formatTimeSlotLabel,
+} from "@/lib/datetime/mexico-city";
+import Link from "next/link";
+
+type CancellationStep = "lookup" | "review" | "success";
+
+type CancelableAppointment = {
+  appointmentId: number;
+  name: string;
+  phone: string;
+  date: string;
+  timeSlot: string;
+  status: "CONFIRMED";
+};
 
 export function CancelForm() {
+  const [step, setStep] = useState<CancellationStep>("lookup");
   const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [appointment, setAppointment] = useState<CancelableAppointment | null>(
+    null,
+  );
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [isSearching, startSearchTransition] = useTransition();
+  const [isCancelling, startCancelTransition] = useTransition();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleLookup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setLookupError(null);
+    setCancelError(null);
 
-    startTransition(async () => {
-      setMessage(null);
+    if (!/^[0-9]{10}$/.test(phone.trim())) {
+      setLookupError("Ingresa un telefono de 10 digitos.");
+      return;
+    }
+
+    startSearchTransition(async () => {
+      const response = await fetch("/api/cancelar/buscar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone: phone.trim() }),
+      });
+
+      const payload = (await response.json()) as CancelableAppointment & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setLookupError(getLookupErrorMessage(payload.error ?? "UNKNOWN_ERROR"));
+        return;
+      }
+
+      setAppointment(payload);
+      setStep("review");
+    });
+  }
+
+  function handleCancel() {
+    if (!appointment) {
+      return;
+    }
+
+    startCancelTransition(async () => {
+      setCancelError(null);
 
       const response = await fetch("/api/cancelar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({
+          phone: appointment.phone,
+          appointmentId: appointment.appointmentId,
+        }),
       });
 
-      const payload = (await response.json()) as { error?: string; status?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+      };
 
       if (!response.ok) {
-        setMessage(payload.error ?? "No se pudo cancelar la cita.");
+        setCancelError(getCancelErrorMessage(payload.error ?? "UNKNOWN_ERROR"));
         return;
       }
 
-      setMessage("Tu cita fue cancelada correctamente.");
+      setStep("success");
     });
   }
 
+  function handleReset() {
+    setStep("lookup");
+    setAppointment(null);
+    setLookupError(null);
+    setCancelError(null);
+    setPhone("");
+  }
+
   return (
-    <form className="space-y-4 rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_20px_60px_rgba(31,26,23,0.08)]" onSubmit={handleSubmit}>
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">Cancelar</p>
-        <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none">Gestiona tu cita</h1>
-      </header>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-[var(--muted)]" htmlFor="cancel-phone">
-          Telefono
-        </label>
-        <input
-          id="cancel-phone"
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          className="w-full rounded-3xl border border-[var(--border)] bg-white px-4 py-3 outline-none"
-          placeholder="5512345678"
-          inputMode="numeric"
-          required
-        />
+    <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
+      <div className="rounded-[2.15rem] border border-[rgba(255,255,255,0.72)] bg-white px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] md:px-6 md:py-7">
+        {step === "lookup" ? (
+          <form className="space-y-8" onSubmit={handleLookup}>
+            <header className="space-y-4">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
+                Paso 1 de 3
+              </p>
+              <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] font-semibold leading-[1.02] tracking-[-0.04em]">
+                Cancelar cita
+              </h1>
+              <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
+                <div className="h-full w-1/3 rounded-full bg-[var(--accent)]" />
+              </div>
+            </header>
+
+            <div className="space-y-2">
+              <label className="relative block" htmlFor="cancel-phone">
+                <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
+                  Teléfono
+                </span>
+                <input
+                  id="cancel-phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                  placeholder="3221234567"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  required
+                />
+              </label>
+            </div>
+
+            {lookupError ? (
+              <p className="rounded-3xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)]">
+                {lookupError}
+              </p>
+            ) : null}
+
+            <Button
+              className="w-full py-4 text-[1.02rem] font-semibold mb-[1rem]"
+              type="submit"
+              disabled={isSearching}
+            >
+              {isSearching ? "Buscando..." : "Buscar cita"}
+            </Button>
+            <div className="flex justify-center">
+              <Link
+                className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+                href="/"
+              >
+                Regresar
+              </Link>
+            </div>
+          </form>
+        ) : null}
+
+        {step === "review" && appointment ? (
+          <div className="space-y-8">
+            <header className="space-y-4">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
+                Paso 2 de 3
+              </p>
+              <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em]">
+                Revisa tu cita
+              </h2>
+              <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
+                <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
+              </div>
+            </header>
+
+            <section className="rounded-[2rem] border border-[var(--border)] bg-white/80 p-6 shadow-[var(--shadow-soft)]">
+              <dl className="space-y-5">
+                <div>
+                  <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                    Fecha
+                  </dt>
+                  <dd className="mt-1 text-[1.2rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+                    {formatLongDate(appointment.date)}
+                  </dd>
+                </div>
+                <div className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-5">
+                  <div>
+                    <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                      Hora
+                    </dt>
+                    <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
+                      {formatTimeSlotLabel(appointment.timeSlot)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                      Telefono
+                    </dt>
+                    <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
+                      {formatPhoneForDisplay(appointment.phone)}
+                    </dd>
+                  </div>
+                </div>
+                <div className="border-t border-[var(--border)] pt-5">
+                  <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                    Nombre
+                  </dt>
+                  <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
+                    {appointment.name}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            {cancelError ? (
+              <p className="rounded-3xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)]">
+                {cancelError}
+              </p>
+            ) : null}
+
+            <div className="space-y-4 flex flex-col items-center">
+              <Button
+                className="w-full py-4 text-[1.02rem] font-semibold"
+                onClick={handleCancel}
+                disabled={isCancelling}
+              >
+                {isCancelling ? "Cancelando..." : "Cancelar cita"}
+              </Button>
+              <Link
+                className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+                onClick={handleReset}
+                href="#"
+              >
+                Volver
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "success" ? (
+          <div className="space-y-8">
+            <div className="relative pt-2">
+              <span className="absolute right-4 top-0 h-3.5 w-3.5 rounded-full bg-[rgba(222,195,121,0.9)]" />
+              <span className="absolute left-10 top-18 h-5 w-5 rounded-full bg-[rgba(228,159,83,0.12)]" />
+              <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-full bg-[rgba(228,159,83,0.08)]">
+                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[rgba(228,159,83,0.1)]">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-[var(--accent)] text-[var(--accent)]">
+                    <CalendarTimesIcon />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <header className="space-y-4">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
+                Paso 3 de 3
+              </p>
+              <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
+                Tu cita ha sido cancelada con éxito
+              </h2>
+              <p className="text-[var(--muted)]">
+                Que pena que no puedas venir :(
+              </p>
+              <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
+                <div className="h-full w-full rounded-full bg-[var(--accent)]" />
+              </div>
+            </header>
+            <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[1.5rem]">
+              Gracias por avisar. Si lo necesitas, puedes volver a reservar
+              dentro del mes activo.
+            </p>
+
+            <div className="flex justify-center">
+              <Link
+                className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+                href="/"
+              >
+                Volver al inicio
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </div>
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Cancelando..." : "Cancelar cita"}
-      </Button>
-      {message ? <p className="text-sm text-[var(--accent-dark)]">{message}</p> : null}
-    </form>
+    </section>
+  );
+}
+
+function getLookupErrorMessage(code: string) {
+  if (code === "APPOINTMENT_NOT_FOUND") {
+    return "No encontramos una cita confirmada futura en el mes activo.";
+  }
+
+  return "No se pudo buscar tu cita. Intenta de nuevo.";
+}
+
+function getCancelErrorMessage(code: string) {
+  if (code === "APPOINTMENT_NOT_FOUND") {
+    return "La cita ya no esta disponible para cancelar.";
+  }
+
+  return "No se pudo cancelar la cita. Intenta de nuevo.";
+}
+
+function formatPhoneForDisplay(phone: string) {
+  const trimmed = phone.replace(/\D/g, "");
+
+  if (trimmed.length !== 10) {
+    return phone;
+  }
+
+  return `${trimmed.slice(0, 3)} ${trimmed.slice(3, 6)} ${trimmed.slice(6)}`;
+}
+function CalendarTimesIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="40"
+      viewBox="0 0 20 20"
+      width="40"
+    >
+      <rect
+        x="2.75"
+        y="3.5"
+        width="14.5"
+        height="13.75"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M6.5 2.75V5.25M13.5 2.75V5.25M2.75 8H17.25"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M8 11.25L12 15.25M12 11.25L8 15.25"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
   );
 }
