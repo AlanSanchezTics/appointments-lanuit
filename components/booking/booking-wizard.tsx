@@ -244,6 +244,10 @@ function getApiErrorMessage(code: string) {
     return "Hubo un conflicto temporal al reservar. Intenta de nuevo.";
   }
 
+  if (code === "PAST_TIME_SLOT") {
+    return "Ese horario ya paso. Elige uno disponible.";
+  }
+
   return "No se pudo reservar la cita. Intenta de nuevo.";
 }
 

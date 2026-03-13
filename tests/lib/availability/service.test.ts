@@ -92,4 +92,13 @@ describe("availability service", () => {
     expect(result.some((entry) => entry.date === "2026-03-07")).toBe(false);
     expect(result.some((entry) => entry.date === "2026-03-08")).toBe(false);
   });
+
+  it("includes current day only with remaining slots", async () => {
+    listMonthAppointmentsMock.mockResolvedValueOnce([]);
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T19:30:00.000Z"));
+    const today = result.find((entry) => entry.date === "2026-03-03");
+
+    expect(today?.slots).toEqual(["14:00", "17:00", "18:00"]);
+  });
 });

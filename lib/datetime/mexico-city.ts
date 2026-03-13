@@ -39,6 +39,13 @@ const dayLabelFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: REQUIRED_TIMEZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
 export function getCurrentMonthKey(now = new Date()) {
   return monthFormatter.format(now);
 }
@@ -47,12 +54,30 @@ export function getCurrentDateKey(now = new Date()) {
   return dateFormatter.format(now);
 }
 
+export function getCurrentTimeKey(now = new Date()) {
+  return timeFormatter.format(now);
+}
+
 export function isCurrentMonth(month: string, now = new Date()) {
   return month === getCurrentMonthKey(now);
 }
 
 export function isFutureDate(date: string, now = new Date()) {
   return date > getCurrentDateKey(now);
+}
+
+export function isFutureDateTime(date: string, timeSlot: string, now = new Date()) {
+  const currentDate = getCurrentDateKey(now);
+
+  if (date > currentDate) {
+    return true;
+  }
+
+  if (date < currentDate) {
+    return false;
+  }
+
+  return timeSlot >= getCurrentTimeKey(now);
 }
 
 export function isWeekdayInMexicoCity(date: string) {

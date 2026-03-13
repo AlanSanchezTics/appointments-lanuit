@@ -1,5 +1,5 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { getCurrentDateKey, isCurrentMonth } from "@/lib/datetime/mexico-city";
+import { getCurrentDateKey, getCurrentTimeKey, isCurrentMonth } from "@/lib/datetime/mexico-city";
 import { listMonthAppointments } from "@/lib/db/appointments";
 import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
 
@@ -35,6 +35,7 @@ export async function getMonthAvailability(month: string, now = new Date()) {
   const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);
   const appointmentsByDate = new Map<string, string[]>();
   const currentDate = getCurrentDateKey(now);
+  const currentTime = getCurrentTimeKey(now);
 
   for (const appointment of bookedAppointments) {
     const dayAppointments = appointmentsByDate.get(appointment.date) ?? [];
@@ -43,11 +44,17 @@ export async function getMonthAvailability(month: string, now = new Date()) {
   }
 
   return getMonthDays(month)
-    .filter((date) => date > currentDate)
+    .filter((date) => date >= currentDate)
     .filter((date) => isWeekdayBookingDate(date))
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
-      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
+      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots).filter((slot) => {
+        if (date !== currentDate) {
+          return true;
+        }
+
+        return slot >= currentTime;
+      });
 
       return { date, slots };
     })

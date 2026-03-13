@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { isCurrentMonth, isFutureDate, isWeekdayInMexicoCity } from "@/lib/datetime/mexico-city";
+import { isCurrentMonth, isFutureDateTime, isWeekdayInMexicoCity } from "@/lib/datetime/mexico-city";
 
 export const bookingSchema = z.object({
   name: z
@@ -25,8 +25,8 @@ export function validateBookingRules(input: z.infer<typeof bookingSchema>, now =
     throw new Error("MONTH_NOT_ALLOWED");
   }
 
-  if (!isFutureDate(input.date, now)) {
-    throw new Error("SAME_DAY_NOT_ALLOWED");
+  if (!isFutureDateTime(input.date, input.timeSlot, now)) {
+    throw new Error("PAST_TIME_SLOT");
   }
 
   if (!isWeekdayInMexicoCity(input.date)) {

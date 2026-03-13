@@ -56,6 +56,6 @@ describe("booking wizard", () => {
     );
 
     expect(screen.getByRole("button", { name: "Siguiente" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Regresar al inicio" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Regresar" })).toBeInTheDocument();
   });
 });
