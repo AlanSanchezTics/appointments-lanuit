@@ -4,7 +4,7 @@ const acquireBookingLocksMock = vi.fn(async () => undefined);
 const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
 const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
 const releaseBookingLocksMock = vi.fn(async () => undefined);
-const findActiveReservationLockForSlotForUpdateMock = vi.fn(async () => null);
+const listActiveReservationLocksForDateMock = vi.fn(async () => []);
 const deleteActiveReservationLocksByPhoneMock = vi.fn(async () => undefined);
 const createReservationLockMock = vi.fn(async () => ({
   id: 1,
@@ -25,7 +25,7 @@ vi.mock("@/lib/db/appointments", () => ({
   cleanupExpiredReservationLocks: cleanupExpiredReservationLocksMock,
   lockConflictingAppointments: lockConflictingAppointmentsMock,
   releaseBookingLocks: releaseBookingLocksMock,
-  findActiveReservationLockForSlotForUpdate: findActiveReservationLockForSlotForUpdateMock,
+  listActiveReservationLocksForDate: listActiveReservationLocksForDateMock,
   deleteActiveReservationLocksByPhone: deleteActiveReservationLocksByPhoneMock,
   createReservationLock: createReservationLockMock,
 }));
@@ -76,14 +76,16 @@ describe("reservation slot locks", () => {
   it("rejects lock acquisition when slot is already locked", async () => {
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
-    findActiveReservationLockForSlotForUpdateMock.mockResolvedValueOnce({
+    listActiveReservationLocksForDateMock.mockResolvedValueOnce([
+      {
       id: 2,
       date: "2026-03-16",
       timeSlot: "09:00",
       phone: "5511111111",
       lockToken: "other-lock",
       expiresAt: "2026-03-13T12:09:00.000Z",
-    });
+      },
+    ]);
 
     const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
 
@@ -98,6 +100,35 @@ describe("reservation slot locks", () => {
         new Date("2026-03-13T12:00:00.000Z"),
       ),
     ).rejects.toThrow("SLOT_LOCKED");
+  });
+
+  it("rejects incompatible lock by directional rule even when exact slot differs", async () => {
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+    listActiveReservationLocksForDateMock.mockResolvedValueOnce([
+      {
+        id: 2,
+        date: "2026-03-16",
+        timeSlot: "17:00",
+        phone: "5511111111",
+        lockToken: "other-lock",
+        expiresAt: "2026-03-13T12:09:00.000Z",
+      },
+    ]);
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    await expect(
+      acquireReservationSlotLock(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-16",
+          timeSlot: "14:00",
+        },
+        new Date("2026-03-13T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
   });
 
   it("releases lock by token", async () => {

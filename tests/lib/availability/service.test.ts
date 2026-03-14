@@ -127,4 +127,23 @@ describe("availability service", () => {
 
     expect(day?.slots).not.toContain("13:00");
   });
+
+  it("applies directional rule against active locks", async () => {
+    listMonthAppointmentsMock.mockResolvedValueOnce([]);
+    listMonthActiveReservationLocksMock.mockResolvedValueOnce([
+      {
+        id: 10,
+        date: "2026-03-04",
+        timeSlot: "17:00",
+        phone: "5512345678",
+        lockToken: "lock-1",
+        expiresAt: "2026-03-03T12:10:00.000Z",
+      },
+    ]);
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day?.slots).toEqual(["09:00", "13:00"]);
+  });
 });

@@ -57,8 +57,7 @@ export async function getMonthAvailability(month: string, now = new Date()) {
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
       const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
-      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots)
-        .filter((slot) => !activeLockSlots.includes(slot))
+      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, [...occupiedSlots, ...activeLockSlots])
         .filter((slot) => {
         if (date !== currentDate) {
           return true;

@@ -254,6 +254,24 @@ export async function listMonthActiveReservationLocks(monthStart: string, monthE
   return records.map(mapReservationLock);
 }
 
+export async function listActiveReservationLocksForDate(
+  tx: Prisma.TransactionClient,
+  date: string,
+  now = new Date(),
+) {
+  const records = await tx.reservationLock.findMany({
+    where: {
+      date: new Date(`${date}T00:00:00.000Z`),
+      expiresAt: {
+        gt: now,
+      },
+    },
+    orderBy: [{ timeSlot: "asc" }, { createdAt: "asc" }],
+  });
+
+  return records.map(mapReservationLock);
+}
+
 export async function lockConflictingAppointments(tx: Prisma.TransactionClient, date: string, phone: string) {
   await tx.$queryRaw`
     SELECT id

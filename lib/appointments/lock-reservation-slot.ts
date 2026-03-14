@@ -8,7 +8,7 @@ import {
   cleanupExpiredReservationLocks,
   createReservationLock,
   deleteActiveReservationLocksByPhone,
-  findActiveReservationLockForSlotForUpdate,
+  listActiveReservationLocksForDate,
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
@@ -64,24 +64,20 @@ export async function acquireReservationSlotLock(rawInput: unknown, now = new Da
         },
       });
 
+      await deleteActiveReservationLocksByPhone(tx, input.phone, now);
+      const activeLocks = await listActiveReservationLocksForDate(tx, input.date, now);
       const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
-      const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
+      const lockedSlots = activeLocks.map((item) => item.timeSlot);
+      const allOccupiedSlots = [...occupiedSlots, ...lockedSlots];
+      const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, allOccupiedSlots);
 
       if (!availableSlots.includes(input.timeSlot)) {
+        if (lockedSlots.includes(input.timeSlot)) {
+          throw new Error("SLOT_LOCKED");
+        }
+
         throw new Error("SLOT_NOT_AVAILABLE");
       }
-
-      const activeLockInSlot = await findActiveReservationLockForSlotForUpdate(tx, {
-        date: input.date,
-        timeSlot: input.timeSlot,
-        now,
-      });
-
-      if (activeLockInSlot) {
-        throw new Error("SLOT_LOCKED");
-      }
-
-      await deleteActiveReservationLocksByPhone(tx, input.phone, now);
 
       return createReservationLock(tx, {
         date: input.date,
