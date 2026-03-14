@@ -19,6 +19,13 @@ export async function findCancelableAppointment(rawInput: unknown, now = new Dat
     throw new Error("APPOINTMENT_NOT_FOUND");
   }
 
+  // SI la cita es dentro de las próximas 24 horas, no se puede cancelar por este medio
+  const appointmentDateTime = new Date(`${appointment.date}T${appointment.timeSlot}:00.000Z`);
+  const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+  if (hoursUntilAppointment < 24) {
+    throw new Error("APPOINTMENT_IS_COMMING_SOON");
+  }
+
   return {
     appointmentId: appointment.id,
     name: appointment.name,

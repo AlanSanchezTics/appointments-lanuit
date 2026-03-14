@@ -6,7 +6,7 @@ import {
 } from "@/lib/datetime/mexico-city";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Logo2 from "@/assets/images/logo.png";
+import Logo from "@/assets/images/logo.png";
 
 export default function HomePage() {
   const month = getCurrentMonthKey();
@@ -16,7 +16,7 @@ export default function HomePage() {
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6 rounded-[2.5rem] border border-[var(--border)] bg-white p-8 shadow-[0_30px_80px_rgba(31,26,23,0.08)]">
           <Image
-            src={Logo2}
+            src={Logo}
             alt="La Nuit Nail Studio"
             className="mx-auto h-48 w-auto"
           />

@@ -8,6 +8,8 @@ import {
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
 import Link from "next/link";
+import Image from "next/image";
+import Logo from "@/assets/images/logo.png";
 
 type CancellationStep = "lookup" | "review" | "success";
 
@@ -110,6 +112,11 @@ export function CancelForm() {
         {step === "lookup" ? (
           <form className="space-y-8" onSubmit={handleLookup}>
             <header className="space-y-4">
+              <Image
+                src={Logo}
+                alt="La Nuit Nail Studio"
+                className="mx-auto h-48 w-auto"
+              />
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
                 Paso 1 de 3
               </p>
@@ -309,6 +316,10 @@ export function CancelForm() {
 function getLookupErrorMessage(code: string) {
   if (code === "APPOINTMENT_NOT_FOUND") {
     return "No encontramos una cita confirmada futura en el mes activo.";
+  }
+
+  if (code === "APPOINTMENT_IS_COMMING_SOON") {
+    return "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.";
   }
 
   return "No se pudo buscar tu cita. Intenta de nuevo.";
