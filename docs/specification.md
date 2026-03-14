@@ -123,9 +123,12 @@ No existe estado PENDING persistente.
 
 Mensaje base:
 
-    Hola Pau, soy {Nombre}.
-    Te agendé para el día {Fecha} a las {Hora}.
-    Muchas gracias.
+    Hola Pau ✨
+    soy {Nombre} ✌️.
+    Ya te agendé para el día {Fecha} a las {Hora}.
+    Muchas gracias y bonito día 😊
+
+    (Para cancelar tu cita accede a https://dominio.com/cancelar)
 
 El mensaje debe codificarse usando encodeURIComponent.
 

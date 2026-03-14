@@ -120,9 +120,12 @@ export function CancelForm() {
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
                 Paso 1 de 3
               </p>
-              <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] font-semibold leading-[1.02] tracking-[-0.04em]">
+              <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
                 Cancelar cita
               </h1>
+              <p className="text-[var(--muted)]">
+                Para comenzar, por favor ingresa tu número de teléfono.
+              </p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-1/3 rounded-full bg-[var(--accent)]" />
               </div>
