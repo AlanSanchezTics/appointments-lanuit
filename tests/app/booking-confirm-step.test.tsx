@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { BookingWizard } from "@/components/booking/booking-wizard";
@@ -11,7 +11,13 @@ const days = [
 ];
 
 describe("booking confirm step", () => {
-  it("shows selected details and preserves the draft when returning to step 1", () => {
+  it("shows selected details and preserves the draft when returning to step 1", async () => {
+    const acquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+    });
+    const releaseLock = vi.fn().mockResolvedValue(undefined);
+
     render(
       <BookingWizard
         days={days}
@@ -22,30 +28,33 @@ describe("booking confirm step", () => {
           phone: "5512345678",
         }}
         month="2026-03"
+        acquireLock={acquireLock}
+        releaseLock={releaseLock}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(
-      screen.getByRole("heading", { name: "Confirmar Detalles" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Confirmar Detalles" })).toBeInTheDocument();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByText("551 234 5678")).toBeInTheDocument();
     expect(screen.getByText("09:00 AM")).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Editar información/i }),
-    );
+    fireEvent.click(screen.getByRole("link", { name: /Editar información/i }));
 
-    expect(screen.getByDisplayValue("Ana Garcia")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("5512345678")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("Ana Garcia")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("5512345678")).toBeInTheDocument();
+    expect(releaseLock).toHaveBeenCalledWith("lock-1");
   });
 
   it("maps backend booking conflicts into inline feedback", async () => {
     const submitBooking = vi
       .fn()
       .mockRejectedValue(new Error("SLOT_NOT_AVAILABLE"));
+    const acquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+    });
 
     render(
       <BookingWizard
@@ -58,14 +67,47 @@ describe("booking confirm step", () => {
         }}
         month="2026-03"
         submitBooking={submitBooking}
+        acquireLock={acquireLock}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
+    await screen.findByRole("heading", { name: "Confirmar Detalles" });
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByText("Ese horario ya no esta disponible. Elige otro."),
     ).toBeInTheDocument();
+  });
+
+  it("returns to step 1 when the temporary lock expires", async () => {
+    const acquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2020-03-13T12:00:02.000Z",
+    });
+    const releaseLock = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-17",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        acquireLock={acquireLock}
+        releaseLock={releaseLock}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await waitFor(() => {
+      expect(releaseLock).toHaveBeenCalledWith("lock-1");
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/El bloqueo temporal expiro/i)).toBeInTheDocument();
+    });
   });
 });

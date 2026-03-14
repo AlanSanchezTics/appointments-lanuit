@@ -13,6 +13,10 @@ const days = [
 describe("booking success step", () => {
   it("renders the success screen and redirects through the WhatsApp CTA", async () => {
     const onWhatsAppRedirect = vi.fn();
+    const acquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+    });
 
     render(
       <BookingWizard
@@ -25,6 +29,7 @@ describe("booking success step", () => {
         }}
         month="2026-03"
         onWhatsAppRedirect={onWhatsAppRedirect}
+        acquireLock={acquireLock}
         submitBooking={async () => ({
           appointmentId: 1,
           status: "SYNC_FAILED",
@@ -35,7 +40,8 @@ describe("booking success step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
+    await screen.findByRole("heading", { name: "Confirmar Detalles" });
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByRole("heading", {

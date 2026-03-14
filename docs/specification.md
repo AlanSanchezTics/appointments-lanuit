@@ -57,8 +57,10 @@ Restricciones:
 ### 4.1 Días válidos
 
 - Solo lunes a viernes.
-- No se permiten citas el mismo día.
+- Se permiten citas el mismo día **solo** si el horario seleccionado aún no ha pasado en la zona `America/Mexico_City`.
+- Horarios del mismo día ya transcurridos no deben mostrarse como disponibles.
 - Si todos los horarios de un día están ocupados, el día no debe mostrarse disponible.
+- Los horarios con lock temporal vigente tampoco deben mostrarse como disponibles.
 
 ### 4.2 Horarios Base
 
@@ -112,14 +114,21 @@ No existe estado PENDING persistente.
 2. Selecciona día disponible.
 3. Selecciona horario disponible.
 4. Ingresa nombre y teléfono.
-5. Confirma cita.
-6. Backend:
+5. Al avanzar al paso de confirmación, backend crea lock temporal de slot (`TTL = 10 minutos`).
+6. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
+7. Usuario confirma cita.
+8. Backend:
    - Inicia transacción.
+   - Limpia locks expirados.
+   - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
    - Valida disponibilidad.
    - Inserta cita CONFIRMED.
+   - Elimina lock temporal consumido.
    - Commit.
-7. Crea evento en Google Calendar.
-8. Redirige a WhatsApp con mensaje codificado.
+9. Crea evento en Google Calendar.
+10. Redirige a WhatsApp con mensaje codificado.
+
+Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
 
 Mensaje base:
 
@@ -141,6 +150,7 @@ El mensaje debe codificarse usando encodeURIComponent.
    - Estatus `CONFIRMED`.
    - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
    - Dentro del mes activo.
+   - La cita debe estar al menos a 24 horas de distancia; si faltan menos de 24 horas, no se permite cancelación por este medio.
 3. Si existe coincidencia, se muestran detalles de la cita y acciones:
    - `Cancelar cita`.
    - `Regresar al inicio`.
@@ -168,13 +178,22 @@ Requisitos obligatorios:
 
   INDEX(date, time_slot)
 
-Orden:
+Locking temporal adicional:
+
+- Tabla `reservation_locks` para bloquear slot durante el paso de confirmación.
+- `TTL` fijo de 10 minutos por lock.
+- Sin cron obligatorio: cleanup lazy en endpoints de lock/confirm y filtro por `expires_at > now` en disponibilidad.
+
+Orden de confirmación:
 
 1. START TRANSACTION
-2. Validar disponibilidad con bloqueo
-3. INSERT (siempre crea una nueva fila)
-4. COMMIT
-5. Crear evento Google
+2. Limpiar locks expirados (`expires_at <= now`)
+3. Validar lock temporal vigente (`lock_token`) con bloqueo
+4. Validar disponibilidad con bloqueo
+5. INSERT (siempre crea una nueva fila)
+6. Eliminar lock consumido
+7. COMMIT
+8. Crear evento Google
 
 Google Calendar no es fuente de verdad.
 
@@ -206,6 +225,22 @@ Tabla: appointments
 - INDEX(phone, status)
 - INDEX(date)
 
+Tabla: reservation_locks
+
+- id (PK)
+- date DATE
+- time_slot TIME
+- phone VARCHAR(10)
+- lock_token VARCHAR(191) UNIQUE
+- expires_at DATETIME
+- created_at DATETIME
+- updated_at DATETIME
+
+Índices:
+
+- INDEX(date, time_slot, expires_at)
+- INDEX(phone, expires_at)
+
 ---
 
 ## 11. Casos Edge
@@ -219,6 +254,9 @@ Tabla: appointments
 7. Manipulación frontend → Backend recalcula.
 8. Cancelación simultánea y nueva reserva → Resolver vía transacciones.
 9. Cambio horario verano → Usar siempre America/Mexico_City.
+10. Intento de cancelar una cita con menos de 24 horas de anticipación → Rechazar en flujo web de cancelación.
+11. Lock temporal expirado durante confirmación → Rechazar (`LOCK_EXPIRED_OR_INVALID`) y pedir reselección.
+12. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
 
 ---
 
@@ -230,10 +268,11 @@ Tabla: appointments
 4. Regla direccional por pares y máximo 3 citas activas por día.
 5. Solo una cita activa por teléfono.
 6. Solo lunes a viernes.
-7. No mismo día.
+7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
 8. Solo mes en curso.
 9. Confirmación atómica.
 10. Cancelación libera horario.
+11. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
 
 ## 13. Stack de tecnologías
 

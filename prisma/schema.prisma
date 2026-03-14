@@ -29,3 +29,18 @@ model Appointment {
   @@index([date])
   @@map("appointments")
 }
+
+model ReservationLock {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  timeSlot  DateTime @map("time_slot") @db.Time(0)
+  phone     String   @db.VarChar(10)
+  lockToken String   @unique @map("lock_token") @db.VarChar(191)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([date, timeSlot, expiresAt])
+  @@index([phone, expiresAt])
+  @@map("reservation_locks")
+}

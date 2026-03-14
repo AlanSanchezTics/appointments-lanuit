@@ -1,0 +1,111 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const acquireBookingLocksMock = vi.fn(async () => undefined);
+const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
+const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
+const releaseBookingLocksMock = vi.fn(async () => undefined);
+const findActiveReservationLockForSlotForUpdateMock = vi.fn(async () => null);
+const deleteActiveReservationLocksByPhoneMock = vi.fn(async () => undefined);
+const createReservationLockMock = vi.fn(async () => ({
+  id: 1,
+  date: "2026-03-14",
+  timeSlot: "09:00",
+  phone: "5512345678",
+  lockToken: "lock-123",
+  expiresAt: "2026-03-13T12:10:00.000Z",
+}));
+
+const transactionMock = vi.fn();
+const findFirstMock = vi.fn();
+const findManyMock = vi.fn();
+const releaseDeleteManyMock = vi.fn();
+
+vi.mock("@/lib/db/appointments", () => ({
+  acquireBookingLocks: acquireBookingLocksMock,
+  cleanupExpiredReservationLocks: cleanupExpiredReservationLocksMock,
+  lockConflictingAppointments: lockConflictingAppointmentsMock,
+  releaseBookingLocks: releaseBookingLocksMock,
+  findActiveReservationLockForSlotForUpdate: findActiveReservationLockForSlotForUpdateMock,
+  deleteActiveReservationLocksByPhone: deleteActiveReservationLocksByPhoneMock,
+  createReservationLock: createReservationLockMock,
+}));
+
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    $transaction: transactionMock,
+    reservationLock: {
+      deleteMany: releaseDeleteManyMock,
+    },
+  },
+}));
+
+describe("reservation slot locks", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
+        appointment: {
+          findFirst: findFirstMock,
+          findMany: findManyMock,
+        },
+      }),
+    );
+  });
+
+  it("acquires a lock for an available slot", async () => {
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+    const result = await acquireReservationSlotLock(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-16",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-13T12:00:00.000Z"),
+    );
+
+    expect(result.lockToken).toBe("lock-123");
+    expect(result.expiresAt).toBe("2026-03-13T12:10:00.000Z");
+    expect(createReservationLockMock).toHaveBeenCalledOnce();
+  });
+
+  it("rejects lock acquisition when slot is already locked", async () => {
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+    findActiveReservationLockForSlotForUpdateMock.mockResolvedValueOnce({
+      id: 2,
+      date: "2026-03-16",
+      timeSlot: "09:00",
+      phone: "5511111111",
+      lockToken: "other-lock",
+      expiresAt: "2026-03-13T12:09:00.000Z",
+    });
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    await expect(
+      acquireReservationSlotLock(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-16",
+          timeSlot: "09:00",
+        },
+        new Date("2026-03-13T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("SLOT_LOCKED");
+  });
+
+  it("releases lock by token", async () => {
+    releaseDeleteManyMock.mockResolvedValueOnce({ count: 1 });
+
+    const { releaseReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+    const result = await releaseReservationSlotLock({ lockToken: "lock-123" });
+
+    expect(result).toEqual({ released: true });
+  });
+});

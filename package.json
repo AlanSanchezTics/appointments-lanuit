@@ -9,11 +9,18 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:integration": "vitest run --maxWorkers=1 tests/integration",
+    "test:integration:file": "vitest run --maxWorkers=1",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "locks:cleanup": "node --env-file=.env scripts/cleanup-reservation-locks.mjs",
     "calendar:smoke": "node --env-file=.env scripts/google-calendar-smoke.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:status": "prisma migrate status",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:resolve:applied": "prisma migrate resolve --applied",
+    "prisma:resolve:rolledback": "prisma migrate resolve --rolled-back",
     "prisma:push": "prisma db push"
   },
   "dependencies": {

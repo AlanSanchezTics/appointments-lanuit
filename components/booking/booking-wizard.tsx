@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { BookingConfirmStep } from "@/components/booking/booking-confirm-step";
 import { BookingSuccessStep } from "@/components/booking/booking-success-step";
@@ -24,6 +24,11 @@ export type BookingSuccess = {
   whatsappUrl: string;
 };
 
+export type SlotLock = {
+  lockToken: string;
+  expiresAt: string;
+};
+
 export type BookingValidationErrors = {
   date?: string;
   timeSlot?: string;
@@ -36,7 +41,9 @@ type BookingWizardProps = {
   month: string;
   days: DayAvailability[];
   initialDraft?: Partial<BookingDraft>;
-  submitBooking?: (draft: BookingDraft) => Promise<BookingSuccess>;
+  acquireLock?: (draft: BookingDraft) => Promise<SlotLock>;
+  releaseLock?: (lockToken: string) => Promise<void>;
+  submitBooking?: (draft: BookingDraft, lockToken: string) => Promise<BookingSuccess>;
   onWhatsAppRedirect?: (url: string) => void;
 };
 
@@ -44,6 +51,8 @@ export function BookingWizard({
   month,
   days,
   initialDraft,
+  acquireLock = acquireReservationLock,
+  releaseLock = releaseReservationLock,
   submitBooking = submitBookingDraft,
   onWhatsAppRedirect = (url) => window.location.assign(url),
 }: BookingWizardProps) {
@@ -52,17 +61,55 @@ export function BookingWizard({
   const [errors, setErrors] = useState<BookingValidationErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
+  const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [draft, setDraft] = useState<BookingDraft>(() => ({
     date: getInitialField(initialDraft, "date", days[0]?.date ?? null),
-    timeSlot: getInitialField(
-      initialDraft,
-      "timeSlot",
-      days[0]?.slots[0] ?? null,
-    ),
+    timeSlot: getInitialField(initialDraft, "timeSlot", days[0]?.slots[0] ?? null),
     name: getInitialField(initialDraft, "name", ""),
     phone: getInitialField(initialDraft, "phone", ""),
   }));
+
+  useEffect(() => {
+    return () => {
+      if (activeLock?.lockToken) {
+        void releaseLock(activeLock.lockToken).catch(() => undefined);
+      }
+    };
+  }, [activeLock?.lockToken, releaseLock]);
+
+  useEffect(() => {
+    if (!activeLock || step !== "confirm") {
+      setRemainingSeconds(0);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const nextSeconds = Math.floor((new Date(activeLock.expiresAt).getTime() - Date.now()) / 1000);
+      setRemainingSeconds(Math.max(0, nextSeconds));
+    };
+
+    updateRemaining();
+    const interval = window.setInterval(updateRemaining, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [activeLock, step]);
+
+  useEffect(() => {
+    if (step !== "confirm" || !activeLock || remainingSeconds > 0) {
+      return;
+    }
+
+    startTransition(async () => {
+      await releaseLock(activeLock.lockToken).catch(() => undefined);
+      setActiveLock(null);
+      setSubmitError(getApiErrorMessage("LOCK_EXPIRED_OR_INVALID"));
+      setStep("details");
+    });
+  }, [activeLock, remainingSeconds, releaseLock, startTransition, step]);
 
   function updateDraft(nextDraft: Partial<BookingDraft>) {
     setDraft((current) => ({
@@ -88,7 +135,31 @@ export function BookingWizard({
       return;
     }
 
-    setStep("confirm");
+    startTransition(async () => {
+      try {
+        const lock = await acquireLock(draft);
+        setActiveLock(lock);
+        setRemainingSeconds(Math.max(0, Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000)));
+        setSubmitError(null);
+        setStep("confirm");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitError(getApiErrorMessage(message));
+      }
+    });
+  }
+
+  function handleBack() {
+    startTransition(async () => {
+      if (activeLock?.lockToken) {
+        await releaseLock(activeLock.lockToken).catch(() => undefined);
+      }
+
+      setActiveLock(null);
+      setRemainingSeconds(0);
+      setSubmitError(null);
+      setStep("details");
+    });
   }
 
   function handleConfirm() {
@@ -100,16 +171,23 @@ export function BookingWizard({
       return;
     }
 
+    if (!activeLock?.lockToken) {
+      setSubmitError(getApiErrorMessage("LOCK_EXPIRED_OR_INVALID"));
+      setStep("details");
+      return;
+    }
+
     startTransition(async () => {
       setSubmitError(null);
 
       try {
-        const result = await submitBooking(draft);
+        const result = await submitBooking(draft, activeLock.lockToken);
+        setActiveLock(null);
+        setRemainingSeconds(0);
         setSuccess(result);
         setStep("success");
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
         setSubmitError(getApiErrorMessage(message));
       }
     });
@@ -137,24 +215,24 @@ export function BookingWizard({
                 draft={draft}
                 errorMessage={submitError}
                 isPending={isPending}
-                onBack={() => {
-                  setSubmitError(null);
-                  setStep("details");
-                }}
+                remainingSeconds={remainingSeconds}
+                onBack={handleBack}
                 onConfirm={handleConfirm}
               />
             ) : null}
 
             {step === "success" && success ? (
-              <BookingSuccessStep
-                draft={draft}
-                onWhatsAppRedirect={onWhatsAppRedirect}
-                success={success}
-              />
+              <BookingSuccessStep draft={draft} onWhatsAppRedirect={onWhatsAppRedirect} success={success} />
             ) : null}
           </div>
         </div>
       </section>
+
+      {submitError && step === "details" ? (
+        <p className="mx-auto mt-4 w-full max-w-[24rem] rounded-2xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)] md:max-w-[26rem]">
+          {submitError}
+        </p>
+      ) : null}
 
       <CalendarModal
         days={days}
@@ -165,9 +243,7 @@ export function BookingWizard({
           const nextDay = days.find((day) => day.date === date) ?? null;
           updateDraft({
             date,
-            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "")
-              ? draft.timeSlot
-              : (nextDay?.slots[0] ?? null),
+            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "") ? draft.timeSlot : (nextDay?.slots[0] ?? null),
           });
         }}
         selectedDate={draft.date}
@@ -176,8 +252,8 @@ export function BookingWizard({
   );
 }
 
-async function submitBookingDraft(draft: BookingDraft) {
-  const response = await fetch("/api/reservar", {
+async function acquireReservationLock(draft: BookingDraft) {
+  const response = await fetch("/api/reservar/lock", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -187,6 +263,40 @@ async function submitBookingDraft(draft: BookingDraft) {
       phone: draft.phone,
       date: draft.date,
       timeSlot: draft.timeSlot,
+    }),
+  });
+
+  const payload = (await response.json()) as SlotLock & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "UNKNOWN_ERROR");
+  }
+
+  return payload;
+}
+
+async function releaseReservationLock(lockToken: string) {
+  await fetch("/api/reservar/lock", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ lockToken }),
+  });
+}
+
+async function submitBookingDraft(draft: BookingDraft, lockToken: string) {
+  const response = await fetch("/api/reservar/confirm", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: draft.name,
+      phone: draft.phone,
+      date: draft.date,
+      timeSlot: draft.timeSlot,
+      lockToken,
     }),
   });
 
@@ -232,6 +342,10 @@ function getApiErrorMessage(code: string) {
     return "Ese horario ya no esta disponible. Elige otro.";
   }
 
+  if (code === "SLOT_LOCKED") {
+    return "Ese horario acaba de ser bloqueado por otra persona. Elige otro.";
+  }
+
   if (code === "PHONE_ALREADY_BOOKED") {
     return "Ya tienes una cita futura activa con este telefono.";
   }
@@ -242,6 +356,10 @@ function getApiErrorMessage(code: string) {
 
   if (code === "LOCK_TIMEOUT") {
     return "Hubo un conflicto temporal al reservar. Intenta de nuevo.";
+  }
+
+  if (code === "LOCK_EXPIRED_OR_INVALID") {
+    return "El bloqueo temporal expiro. Selecciona de nuevo tu horario.";
   }
 
   if (code === "PAST_TIME_SLOT") {

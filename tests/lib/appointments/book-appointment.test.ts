@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const acquireBookingLocksMock = vi.fn(async () => undefined);
 const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
 const releaseBookingLocksMock = vi.fn(async () => undefined);
+const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
+const findReservationLockByTokenForUpdateMock = vi.fn(async () => null);
+const deleteReservationLockByTokenMock = vi.fn(async () => undefined);
 const syncAppointmentToCalendarMock = vi.fn(async () => ({ status: "CONFIRMED" as const }));
 const buildWhatsappUrlMock = vi.fn(() => "https://wa.me/test");
 const getAvailableStartSlotsMock = vi.fn(() => ["09:00", "13:00"]);
@@ -15,6 +18,9 @@ vi.mock("@/lib/db/appointments", () => ({
   acquireBookingLocks: acquireBookingLocksMock,
   lockConflictingAppointments: lockConflictingAppointmentsMock,
   releaseBookingLocks: releaseBookingLocksMock,
+  cleanupExpiredReservationLocks: cleanupExpiredReservationLocksMock,
+  findReservationLockByTokenForUpdate: findReservationLockByTokenForUpdateMock,
+  deleteReservationLockByToken: deleteReservationLockByTokenMock,
 }));
 
 vi.mock("@/lib/db/prisma", () => ({
@@ -136,6 +142,44 @@ describe("bookAppointment", () => {
       appointmentId: 77,
       status: "SYNC_FAILED",
       syncReason: "GOOGLE_UNAVAILABLE",
+      whatsappUrl: "https://wa.me/test",
+    });
+  });
+
+  it("confirms a booking only when a valid lock token exists", async () => {
+    findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
+      id: 99,
+      date: "2026-03-04",
+      timeSlot: "09:00",
+      phone: "5512345678",
+      lockToken: "lock-123",
+      expiresAt: "2026-03-03T12:10:00.000Z",
+    });
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+    createMock.mockResolvedValueOnce({ id: 13 });
+
+    const { confirmAppointmentWithLock } = await import(
+      "@/lib/appointments/book-appointment"
+    );
+    const result = await confirmAppointmentWithLock(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+        lockToken: "lock-123",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(deleteReservationLockByTokenMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      "lock-123",
+    );
+    expect(result).toMatchObject({
+      appointmentId: 13,
+      status: "CONFIRMED",
       whatsappUrl: "https://wa.me/test",
     });
   });

@@ -13,6 +13,7 @@ type BookingConfirmStepProps = {
   draft: BookingDraft;
   errorMessage: string | null;
   isPending: boolean;
+  remainingSeconds: number;
   onBack: () => void;
   onConfirm: () => void;
 };
@@ -21,6 +22,7 @@ export function BookingConfirmStep({
   draft,
   errorMessage,
   isPending,
+  remainingSeconds,
   onBack,
   onConfirm,
 }: BookingConfirmStepProps) {
@@ -78,6 +80,10 @@ export function BookingConfirmStep({
         </dl>
       </section>
 
+      <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
+        Este horario esta bloqueado para ti por {formatRemainingTime(remainingSeconds)}.
+      </p>
+
       {errorMessage ? (
         <p className="rounded-3xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)]">
           {errorMessage}
@@ -119,6 +125,14 @@ export function BookingConfirmStep({
       </div>
     </div>
   );
+}
+
+function formatRemainingTime(remainingSeconds: number) {
+  const safeSeconds = Math.max(0, remainingSeconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")} minutos`;
 }
 
 function formatPhoneForDisplay(phone: string) {

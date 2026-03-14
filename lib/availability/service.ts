@@ -1,6 +1,6 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentTimeKey, isCurrentMonth } from "@/lib/datetime/mexico-city";
-import { listMonthAppointments } from "@/lib/db/appointments";
+import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
 import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
 
 export type DayAvailability = {
@@ -33,7 +33,9 @@ export async function getMonthAvailability(month: string, now = new Date()) {
 
   const { monthStart, monthEnd } = getMonthBounds(month);
   const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);
+  const lockedSlots = await listMonthActiveReservationLocks(monthStart, monthEnd, now);
   const appointmentsByDate = new Map<string, string[]>();
+  const lockedSlotsByDate = new Map<string, string[]>();
   const currentDate = getCurrentDateKey(now);
   const currentTime = getCurrentTimeKey(now);
 
@@ -43,12 +45,21 @@ export async function getMonthAvailability(month: string, now = new Date()) {
     appointmentsByDate.set(appointment.date, dayAppointments);
   }
 
+  for (const lock of lockedSlots) {
+    const dayLocks = lockedSlotsByDate.get(lock.date) ?? [];
+    dayLocks.push(lock.timeSlot);
+    lockedSlotsByDate.set(lock.date, dayLocks);
+  }
+
   return getMonthDays(month)
     .filter((date) => date >= currentDate)
     .filter((date) => isWeekdayBookingDate(date))
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
-      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots).filter((slot) => {
+      const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
+      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots)
+        .filter((slot) => !activeLockSlots.includes(slot))
+        .filter((slot) => {
         if (date !== currentDate) {
           return true;
         }
