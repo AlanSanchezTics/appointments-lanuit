@@ -23,6 +23,7 @@ type BookingWizardStep1Props = {
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
   onContinue: () => void;
   onOpenCalendar: () => void;
+  errorMessage?: string | null;
 };
 
 export function BookingWizardStep1({
@@ -33,13 +34,14 @@ export function BookingWizardStep1({
   onDraftChange,
   onContinue,
   onOpenCalendar,
+  errorMessage,
 }: BookingWizardStep1Props) {
   const selectedDay = days.find((day) => day.date === draft.date) ?? null;
   const highlightedDays = getHighlightedDays(days, draft.date);
 
   return (
     <div className="space-y-8">
-      <header className="space-y-4">
+      <header className="space-y-4 mb-[1.5rem]">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
@@ -62,6 +64,12 @@ export function BookingWizardStep1({
           <div className="h-full w-1/2 rounded-full bg-[var(--accent)]" />
         </div>
       </header>
+
+      {errorMessage ? (
+        <p className="rounded-2xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)] mb-[1.5rem]">
+          {errorMessage}
+        </p>
+      ) : null}
 
       <section className="space-y-4 border-t border-[var(--border)] pt-6">
         <div className="flex items-center justify-between gap-4">

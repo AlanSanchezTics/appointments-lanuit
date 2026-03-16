@@ -41,9 +41,13 @@ type BookingWizardProps = {
   month: string;
   days: DayAvailability[];
   initialDraft?: Partial<BookingDraft>;
+  refreshDays?: (month: string) => Promise<DayAvailability[]>;
   acquireLock?: (draft: BookingDraft) => Promise<SlotLock>;
   releaseLock?: (lockToken: string) => Promise<void>;
-  submitBooking?: (draft: BookingDraft, lockToken: string) => Promise<BookingSuccess>;
+  submitBooking?: (
+    draft: BookingDraft,
+    lockToken: string,
+  ) => Promise<BookingSuccess>;
   onWhatsAppRedirect?: (url: string) => void;
 };
 
@@ -51,6 +55,7 @@ export function BookingWizard({
   month,
   days,
   initialDraft,
+  refreshDays = fetchMonthAvailability,
   acquireLock = acquireReservationLock,
   releaseLock = releaseReservationLock,
   submitBooking = submitBookingDraft,
@@ -62,14 +67,24 @@ export function BookingWizard({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
   const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
+  const [currentDays, setCurrentDays] = useState<DayAvailability[]>(days);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [draft, setDraft] = useState<BookingDraft>(() => ({
     date: getInitialField(initialDraft, "date", days[0]?.date ?? null),
-    timeSlot: getInitialField(initialDraft, "timeSlot", days[0]?.slots[0] ?? null),
+    timeSlot: getInitialField(
+      initialDraft,
+      "timeSlot",
+      days[0]?.slots[0] ?? null,
+    ),
     name: getInitialField(initialDraft, "name", ""),
     phone: getInitialField(initialDraft, "phone", ""),
   }));
+
+  useEffect(() => {
+    setCurrentDays(days);
+    setDraft((current) => normalizeDraftByAvailability(current, days));
+  }, [days]);
 
   useEffect(() => {
     return () => {
@@ -86,7 +101,9 @@ export function BookingWizard({
     }
 
     const updateRemaining = () => {
-      const nextSeconds = Math.floor((new Date(activeLock.expiresAt).getTime() - Date.now()) / 1000);
+      const nextSeconds = Math.floor(
+        (new Date(activeLock.expiresAt).getTime() - Date.now()) / 1000,
+      );
       setRemainingSeconds(Math.max(0, nextSeconds));
     };
 
@@ -110,6 +127,29 @@ export function BookingWizard({
       setStep("details");
     });
   }, [activeLock, remainingSeconds, releaseLock, startTransition, step]);
+
+  useEffect(() => {
+    if (!submitError) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    void refreshDays(month)
+      .then((nextDays) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setCurrentDays(nextDays);
+        setDraft((current) => normalizeDraftByAvailability(current, nextDays));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [month, refreshDays, submitError]);
 
   function updateDraft(nextDraft: Partial<BookingDraft>) {
     setDraft((current) => ({
@@ -139,11 +179,19 @@ export function BookingWizard({
       try {
         const lock = await acquireLock(draft);
         setActiveLock(lock);
-        setRemainingSeconds(Math.max(0, Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000)));
+        setRemainingSeconds(
+          Math.max(
+            0,
+            Math.floor(
+              (new Date(lock.expiresAt).getTime() - Date.now()) / 1000,
+            ),
+          ),
+        );
         setSubmitError(null);
         setStep("confirm");
       } catch (error) {
-        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        const message =
+          error instanceof Error ? error.message : "UNKNOWN_ERROR";
         setSubmitError(getApiErrorMessage(message));
       }
     });
@@ -187,7 +235,8 @@ export function BookingWizard({
         setSuccess(result);
         setStep("success");
       } catch (error) {
-        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        const message =
+          error instanceof Error ? error.message : "UNKNOWN_ERROR";
         setSubmitError(getApiErrorMessage(message));
       }
     });
@@ -200,7 +249,8 @@ export function BookingWizard({
           <div>
             {step === "details" ? (
               <BookingWizardStep1
-                days={days}
+                days={currentDays}
+                errorMessage={submitError}
                 draft={draft}
                 errors={errors}
                 month={month}
@@ -222,28 +272,28 @@ export function BookingWizard({
             ) : null}
 
             {step === "success" && success ? (
-              <BookingSuccessStep draft={draft} onWhatsAppRedirect={onWhatsAppRedirect} success={success} />
+              <BookingSuccessStep
+                draft={draft}
+                onWhatsAppRedirect={onWhatsAppRedirect}
+                success={success}
+              />
             ) : null}
           </div>
         </div>
       </section>
 
-      {submitError && step === "details" ? (
-        <p className="mx-auto mt-4 w-full max-w-[24rem] rounded-2xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)] md:max-w-[26rem]">
-          {submitError}
-        </p>
-      ) : null}
-
       <CalendarModal
-        days={days}
+        days={currentDays}
         isOpen={isCalendarOpen}
         month={month}
         onClose={() => setCalendarOpen(false)}
         onSelect={(date) => {
-          const nextDay = days.find((day) => day.date === date) ?? null;
+          const nextDay = currentDays.find((day) => day.date === date) ?? null;
           updateDraft({
             date,
-            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "") ? draft.timeSlot : (nextDay?.slots[0] ?? null),
+            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "")
+              ? draft.timeSlot
+              : (nextDay?.slots[0] ?? null),
           });
         }}
         selectedDate={draft.date}
@@ -309,6 +359,61 @@ async function submitBookingDraft(draft: BookingDraft, lockToken: string) {
   }
 
   return payload;
+}
+
+async function fetchMonthAvailability(month: string) {
+  const response = await fetch(`/api/availability/${month}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("AVAILABILITY_REFRESH_FAILED");
+  }
+
+  const payload = (await response.json()) as {
+    days?: DayAvailability[];
+  };
+
+  return payload.days ?? [];
+}
+
+function normalizeDraftByAvailability(
+  draft: BookingDraft,
+  days: DayAvailability[],
+) {
+  if (draft.date === null && draft.timeSlot === null) {
+    return draft;
+  }
+
+  if (days.length === 0) {
+    return {
+      ...draft,
+      date: null,
+      timeSlot: null,
+    };
+  }
+
+  const selectedDay =
+    days.find((day) => day.date === draft.date) ?? days[0] ?? null;
+
+  if (!selectedDay) {
+    return {
+      ...draft,
+      date: null,
+      timeSlot: null,
+    };
+  }
+
+  const nextTimeSlot = selectedDay.slots.includes(draft.timeSlot ?? "")
+    ? draft.timeSlot
+    : (selectedDay.slots[0] ?? null);
+
+  return {
+    ...draft,
+    date: selectedDay.date,
+    timeSlot: nextTimeSlot,
+  };
 }
 
 function validateDraft(draft: BookingDraft): BookingValidationErrors {

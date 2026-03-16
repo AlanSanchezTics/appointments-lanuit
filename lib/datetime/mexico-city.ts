@@ -23,6 +23,11 @@ const longDateFormatter = new Intl.DateTimeFormat("es-MX", {
   dateStyle: "long",
 });
 
+const longWeekdayFormatter = new Intl.DateTimeFormat("es-MX", {
+  timeZone: REQUIRED_TIMEZONE,
+  weekday: "long",
+});
+
 const monthLabelFormatter = new Intl.DateTimeFormat("es-MX", {
   timeZone: REQUIRED_TIMEZONE,
   month: "long",
@@ -86,7 +91,11 @@ export function isWeekdayInMexicoCity(date: string) {
 }
 
 export function formatLongDate(date: string) {
-  return longDateFormatter.format(parseDateOnly(date));
+  const parsedDate = parseDateOnly(date);
+  const weekday = capitalize(longWeekdayFormatter.format(parsedDate));
+  const longDate = longDateFormatter.format(parsedDate);
+
+  return `${weekday}, ${longDate}`;
 }
 
 export function formatMonthLabel(month: string) {
