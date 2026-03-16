@@ -1,0 +1,29 @@
+{
+  "api": {
+    "SLOT_NOT_AVAILABLE": "Ese horario ya no esta disponible. Elige otro.",
+    "SLOT_LOCKED": "Ese horario acaba de ser bloqueado por otra persona. Elige otro.",
+    "PHONE_ALREADY_BOOKED": "Ya tienes una cita futura activa con este telefono.",
+    "MONTH_NOT_ALLOWED": "Solo se puede agendar en meses habilitados.",
+    "LOCK_TIMEOUT": "Hubo un conflicto temporal al reservar. Intenta de nuevo.",
+    "LOCK_EXPIRED_OR_INVALID": "El bloqueo temporal expiro. Selecciona de nuevo tu horario.",
+    "PAST_TIME_SLOT": "Ese horario ya paso. Elige uno disponible.",
+    "NAME_REQUIRED_FOR_NEW_CLIENT": "Ingresa tu nombre para completar la reserva.",
+    "CLIENT_NAME_MISMATCH": "Este telefono ya esta registrado con otro nombre.",
+    "APPOINTMENT_NOT_FOUND": "No encontramos una cita confirmada futura en meses habilitados.",
+    "APPOINTMENT_IS_COMMING_SOON": "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.",
+    "VALIDATION_ERROR": "Revisa los datos ingresados e intenta nuevamente.",
+    "UNKNOWN_ERROR": "No se pudo completar la operación. Intenta de nuevo."
+  },
+  "validation": {
+    "DATE_REQUIRED": "Selecciona un dia disponible.",
+    "TIME_SLOT_REQUIRED": "Selecciona un horario antes de continuar.",
+    "PHONE_INVALID": "Ingresa un telefono de 10 digitos.",
+    "NAME_REQUIRED": "Ingresa tu nombre completo.",
+    "FORM_INCOMPLETE": "Completa la fecha y el horario antes de continuar."
+  },
+  "cancel": {
+    "LOOKUP_FAILED": "No se pudo buscar tu cita. Intenta de nuevo.",
+    "CANCEL_FAILED": "No se pudo cancelar la cita. Intenta de nuevo.",
+    "NOT_CANCELLABLE": "La cita ya no esta disponible para cancelar."
+  }
+}

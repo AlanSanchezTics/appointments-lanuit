@@ -1,0 +1,96 @@
+{
+  "language": {
+    "label": "Idioma",
+    "current": "Idioma actual: {{language}}",
+    "useSpanish": "Español",
+    "useEnglish": "Inglés",
+    "switchTo": "Cambiar a {{language}}"
+  },
+  "metadata": {
+    "title": "La Nuit | Citas",
+    "description": "Reserva y cancela citas dentro de meses habilitados."
+  },
+  "home": {
+    "title": "Agenda tu cita del mes de {{month}}.",
+    "subtitle": "No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde.",
+    "bookNow": "Agendar ahora",
+    "cancel": "Cancelar cita",
+    "languageHint": "Puedes cambiar el idioma en cualquier momento."
+  },
+  "notFound": {
+    "invalidRoute": "Ruta invalida",
+    "allowedMonthsOnly": "Solo se permite operar con meses habilitados.",
+    "backHome": "Volver al inicio"
+  },
+  "bookingPage": {
+    "noSlotsTitle": "Sin horarios disponibles",
+    "noSlotsDescription": "No quedan espacios para el mes activo."
+  },
+  "booking": {
+    "step1Of2": "Paso 1 de 2",
+    "step2Of2": "Paso 2 de 2",
+    "title": "Agendar cita",
+    "openCalendar": "Abrir calendario",
+    "availableDays": "Días disponibles",
+    "selectDay": "Seleccionar día {{weekday}} {{day}}",
+    "selectTime": "Selecciona tu horario",
+    "selectTimeSlot": "Seleccionar horario {{slot}}",
+    "yourDetails": "Tus datos",
+    "phone": "Teléfono",
+    "fullName": "Nombre completo",
+    "phonePlaceholder": "322 123 4567",
+    "namePlaceholder": "Ej. Ana Garcia",
+    "slotLockedForYou": "Este horario esta bloqueado para ti por {{time}}.",
+    "next": "Siguiente",
+    "wait": "Un momento...",
+    "back": "Regresar",
+    "confirmTitle": "Confirmar Detalles",
+    "welcomeBack": "Hola {{name}}, que gusto tenerte de vuelta ✨",
+    "name": "Nombre",
+    "date": "Fecha",
+    "time": "Hora",
+    "confirmAppointment": "Confirmar cita",
+    "editInformation": "Editar información",
+    "whatsappReminder": "Recibirás un recordatorio por WhatsApp un día antes de tu cita.",
+    "successTitle": "Tu cita ha sido agendada exitosamente",
+    "thanks": "Muchas gracias",
+    "syncFailedInfo": "La reserva quedo registrada. La sincronizacion con calendario se completara despues.",
+    "sendWhatsapp": "Enviar confirmación por WhatsApp",
+    "backHome": "Volver al inicio",
+    "calendarClose": "Cerrar calendario",
+    "calendarSelected": "Seleccionado",
+    "calendarAvailable": "Disponible",
+    "calendarDone": "Listo",
+    "calendarHint": "Toca un dia para ver horarios disponibles",
+    "calendarAriaSelected": "Dia seleccionado",
+    "calendarAriaSelect": "Seleccionar dia"
+  },
+  "cancel": {
+    "step1Of3": "Paso 1 de 3",
+    "step2Of3": "Paso 2 de 3",
+    "step3Of3": "Paso 3 de 3",
+    "title": "Cancelar cita",
+    "intro": "Para comenzar, por favor ingresa tu número de teléfono.",
+    "search": "Buscar cita",
+    "searching": "Buscando...",
+    "back": "Regresar",
+    "confirmTitle": "Confirmar Cancelación",
+    "confirmIntro": "Hemos encontrado la siguiente cita vinculada a tu número de teléfono.",
+    "important": "Importante",
+    "importantBody": "Toma en cuenta que al cancelar esta cita, el horario quedará disponible para que alguien más la tome.",
+    "cancelButton": "Cancelar cita",
+    "cancelling": "Cancelando...",
+    "backLink": "Volver",
+    "successTitle": "Tu cita ha sido cancelada con éxito",
+    "successBody": "Que pena que no puedas venir :(",
+    "successInfo": "Gracias por avisar. Si lo necesitas, puedes volver a reservar en meses habilitados.",
+    "backHome": "Volver al inicio",
+    "name": "Nombre",
+    "date": "Fecha",
+    "time": "Hora",
+    "phone": "Teléfono"
+  },
+  "whatsapp": {
+    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}}.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a {{cancelUrl}})"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "api": {
+    "SLOT_NOT_AVAILABLE": "That time is no longer available. Choose another one.",
+    "SLOT_LOCKED": "That time was just locked by someone else. Choose another one.",
+    "PHONE_ALREADY_BOOKED": "You already have an active future appointment with this phone.",
+    "MONTH_NOT_ALLOWED": "Booking is only allowed in enabled months.",
+    "LOCK_TIMEOUT": "A temporary conflict occurred while booking. Please try again.",
+    "LOCK_EXPIRED_OR_INVALID": "The temporary lock expired. Please select your slot again.",
+    "PAST_TIME_SLOT": "That time has already passed. Choose an available one.",
+    "NAME_REQUIRED_FOR_NEW_CLIENT": "Enter your name to complete the booking.",
+    "CLIENT_NAME_MISMATCH": "This phone is already registered with another name.",
+    "APPOINTMENT_NOT_FOUND": "We couldn't find a future confirmed appointment in enabled months.",
+    "APPOINTMENT_IS_COMMING_SOON": "It is no longer possible to cancel your appointment through this channel. Contact us directly for more information.",
+    "VALIDATION_ERROR": "Please review your input and try again.",
+    "UNKNOWN_ERROR": "The operation could not be completed. Please try again."
+  },
+  "validation": {
+    "DATE_REQUIRED": "Select an available day.",
+    "TIME_SLOT_REQUIRED": "Select a time before continuing.",
+    "PHONE_INVALID": "Enter a 10-digit phone number.",
+    "NAME_REQUIRED": "Enter your full name.",
+    "FORM_INCOMPLETE": "Complete date and time before continuing."
+  },
+  "cancel": {
+    "LOOKUP_FAILED": "Could not find your appointment. Please try again.",
+    "CANCEL_FAILED": "Could not cancel the appointment. Please try again.",
+    "NOT_CANCELLABLE": "The appointment is no longer available for cancellation."
+  }
+}
