@@ -15,7 +15,12 @@ describe("POST /api/reservar/confirm", () => {
     confirmAppointmentWithLockMock.mockResolvedValueOnce({
       appointmentId: 1,
       status: "CONFIRMED",
-      whatsappUrl: "https://wa.me/test",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-14",
+        timeSlot: "09:00",
+      },
     });
 
     const { POST } = await import("@/app/api/reservar/confirm/route");
@@ -36,7 +41,12 @@ describe("POST /api/reservar/confirm", () => {
     await expect(response.json()).resolves.toEqual({
       appointmentId: 1,
       status: "CONFIRMED",
-      whatsappUrl: "https://wa.me/test",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-14",
+        timeSlot: "09:00",
+      },
     });
   });
 
@@ -60,6 +70,9 @@ describe("POST /api/reservar/confirm", () => {
     );
 
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ error: "LOCK_EXPIRED_OR_INVALID" });
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "LOCK_EXPIRED_OR_INVALID",
+      error: "LOCK_EXPIRED_OR_INVALID",
+    });
   });
 });

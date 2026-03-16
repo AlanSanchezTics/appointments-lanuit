@@ -46,6 +46,7 @@ describe("GET /api/availability/[month]", () => {
 
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toEqual({
+      errorCode: "MONTH_NOT_ALLOWED",
       error: "MONTH_NOT_ALLOWED",
     });
   });

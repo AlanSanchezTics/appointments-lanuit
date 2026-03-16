@@ -10,6 +10,7 @@ export default defineConfig({
   use: {
     baseURL: playwrightBaseUrl,
     trace: "on-first-retry",
+    locale: "es-MX",
   },
   webServer: {
     command: `npm run dev -- --hostname 127.0.0.1 --port ${playwrightPort}`,

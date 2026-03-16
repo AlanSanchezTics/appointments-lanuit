@@ -57,6 +57,7 @@ describe("POST /api/cancelar/buscar", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
+      errorCode: "APPOINTMENT_NOT_FOUND",
       error: "APPOINTMENT_NOT_FOUND",
     });
   });

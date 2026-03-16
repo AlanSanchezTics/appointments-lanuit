@@ -77,6 +77,7 @@ describe("POST /api/cancelar", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
+      errorCode: "APPOINTMENT_NOT_FOUND",
       error: "APPOINTMENT_NOT_FOUND",
     });
   });
@@ -97,6 +98,7 @@ describe("POST /api/cancelar", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      errorCode: "INVALID_PAYLOAD",
       error: "INVALID_PAYLOAD",
     });
   });

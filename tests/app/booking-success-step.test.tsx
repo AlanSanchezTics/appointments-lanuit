@@ -36,7 +36,12 @@ describe("booking success step", () => {
           appointmentId: 1,
           status: "SYNC_FAILED",
           syncReason: "CALENDAR_SYNC_FAILED",
-          whatsappUrl: "https://wa.me/5215512345678?text=ok",
+          whatsappPhone: "5215512345678",
+          whatsappData: {
+            name: "Ana Garcia",
+            date: "2026-03-18",
+            timeSlot: "09:00",
+          },
         })}
       />,
     );

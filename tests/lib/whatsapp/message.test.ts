@@ -1,37 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp/message";
+import { buildWhatsappUrlFromMessage, getAppUrl, getWhatsappPhone } from "@/lib/whatsapp/message";
 
-describe("whatsapp message", () => {
-  it("builds the base message using the specification format", () => {
-    process.env.APP_URL = "https://miapp.com";
+describe("whatsapp message helpers", () => {
+  it("returns configured app URL without trailing slash", () => {
+    process.env.APP_URL = "https://miapp.com/";
 
-    const result = buildWhatsappMessage({
-      name: "Ana",
-      date: "2026-03-04",
-      timeSlot: "09:00",
-    });
-
-    expect(result).toBe(
-      "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día Miércoles, 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
-    );
+    expect(getAppUrl()).toBe("https://miapp.com");
   });
 
-  it("encodes the outgoing message", () => {
-    process.env.APP_URL = "https://miapp.com/";
+  it("returns configured whatsapp phone", () => {
     process.env.WHATSAPP_PHONE = "5215512345678";
 
-    const result = buildWhatsappUrl({
-      name: "Ana",
-      date: "2026-03-04",
-      timeSlot: "09:00",
+    expect(getWhatsappPhone()).toBe("5215512345678");
+  });
+
+  it("encodes message into wa.me URL", () => {
+    const result = buildWhatsappUrlFromMessage({
+      phone: "5215512345678",
+      message: "Hola Pau ✨",
     });
 
-    expect(result).toContain("https://wa.me/5215512345678?text=");
-    expect(result).toContain(
-      encodeURIComponent(
-        "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día Miércoles, 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
-      ),
-    );
+    expect(result).toBe("https://wa.me/5215512345678?text=Hola%20Pau%20%E2%9C%A8");
   });
 });

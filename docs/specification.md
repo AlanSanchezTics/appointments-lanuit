@@ -115,6 +115,10 @@ No existe estado PENDING persistente.
 
 ## 7. Flujo de Reserva
 
+0. Usuario ingresa al inicio (`/`) y puede seleccionar idioma (`es`/`en`).
+   - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
+   - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
+
 1. Usuario accede a un mes habilitado (`/citas/YYYY-MM`).
 2. Selecciona día disponible.
 3. Selecciona horario disponible.
@@ -135,6 +139,8 @@ No existe estado PENDING persistente.
    - Commit.
 9. Crea evento en Google Calendar.
 10. Redirige a WhatsApp con mensaje codificado.
+    - El frontend compone el texto final localizado.
+    - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
@@ -149,6 +155,7 @@ Mensaje base:
     (Para cancelar tu cita accede a https://dominio.com/cancelar)
 
 El mensaje debe codificarse usando encodeURIComponent.
+La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
 
 ---
 
@@ -170,6 +177,12 @@ El mensaje debe codificarse usando encodeURIComponent.
 6. UI muestra el mensaje final:
    - `Tu cita ha sido cancelada con exito`.
 7. El horario vuelve a estar disponible automáticamente.
+
+Notas de contrato:
+
+- Los errores backend deben devolverse como códigos estables (`errorCode`).
+- El frontend traduce `errorCode` al idioma activo.
+- El backend no retorna mensajes localizados de UX final.
 
 No se pueden cancelar citas pasadas.
 
@@ -277,7 +290,7 @@ Tabla: active_months
 1. Acceso a mes no activo o mes pasado → Rechazar.
 2. Doble confirmación simultánea → Solo una gana.
 3. Fallo Google → Estado SYNC_FAILED.
-4. Reserva mismo día → Rechazar.
+4. Reserva mismo día → Permitida solo para horarios futuros en `America/Mexico_City`.
 5. Usuario con cita activa intenta reservar → Bloquear.
 6. Día con 3 citas activas válidas (una por par) → Día no visible.
 7. Manipulación frontend → Backend recalcula.
@@ -310,3 +323,26 @@ Tabla: active_months
 - Tailwind css
 - Prisma ORM
 - Docker para generar ambiente
+- i18next
+- react-i18next
+
+## 14. Internacionalización y Contrato de Mensajes
+
+Reglas obligatorias:
+
+1. Idiomas soportados actuales:
+   - `es`
+   - `en`
+2. Fallback obligatorio: `es`.
+3. El selector de idioma está disponible en pantalla inicial y de forma global.
+4. Persistencia de idioma:
+   - `cookie` (`app_lang`) para SSR y navegación.
+   - `localStorage` para continuidad del cliente.
+5. Si el idioma del dispositivo no está soportado, usar `es`.
+6. Si una clave de traducción falta en idioma activo, usar fallback `es`.
+7. Propiedad de textos UX:
+   - Frontend = dueño único de mensajes visibles al usuario.
+   - Backend = solo códigos estables + payload de interpolación.
+8. Contrato de error API:
+   - `errorCode`: identificador estable para traducción en frontend.
+   - `error`: alias legacy transitorio durante migración.

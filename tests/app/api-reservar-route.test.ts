@@ -17,6 +17,7 @@ describe("POST /api/reservar", () => {
 
     expect(response.status).toBe(410);
     await expect(response.json()).resolves.toEqual({
+      errorCode: "ENDPOINT_DEPRECATED_USE_CHECK_LOCK_CONFIRM",
       error: "ENDPOINT_DEPRECATED_USE_CHECK_LOCK_CONFIRM",
     });
   });

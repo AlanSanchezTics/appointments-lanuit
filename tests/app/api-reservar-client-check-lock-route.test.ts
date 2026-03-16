@@ -56,6 +56,6 @@ describe("/api/reservar/client-check-lock", () => {
     );
 
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ error: "SLOT_LOCKED" });
+    await expect(response.json()).resolves.toEqual({ errorCode: "SLOT_LOCKED", error: "SLOT_LOCKED" });
   });
 });

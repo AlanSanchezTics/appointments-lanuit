@@ -7,7 +7,7 @@ const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
 const findReservationLockByTokenForUpdateMock = vi.fn(async () => null);
 const deleteReservationLockByTokenMock = vi.fn(async () => undefined);
 const syncAppointmentToCalendarMock = vi.fn(async () => ({ status: "CONFIRMED" as const }));
-const buildWhatsappUrlMock = vi.fn(() => "https://wa.me/test");
+const getWhatsappPhoneMock = vi.fn(() => "5215512345678");
 const getAvailableStartSlotsMock = vi.fn(() => ["09:00", "13:00"]);
 const assertMonthIsBookableMock = vi.fn(async () => undefined);
 const transactionMock = vi.fn();
@@ -37,7 +37,7 @@ vi.mock("@/lib/calendar/sync-appointment", () => ({
 }));
 
 vi.mock("@/lib/whatsapp/message", () => ({
-  buildWhatsappUrl: buildWhatsappUrlMock,
+  getWhatsappPhone: getWhatsappPhoneMock,
 }));
 
 vi.mock("@/lib/availability/rules", () => ({
@@ -107,7 +107,12 @@ describe("bookAppointment", () => {
       appointmentId: 42,
       status: "CONFIRMED",
       syncReason: undefined,
-      whatsappUrl: "https://wa.me/test",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Bety Ruiz",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
     });
   });
 
@@ -133,7 +138,7 @@ describe("bookAppointment", () => {
     expect(createMock).not.toHaveBeenCalled();
   });
 
-  it("keeps successful booking flow with calendar sync and whatsapp url", async () => {
+  it("keeps successful booking flow with calendar sync and whatsapp payload", async () => {
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
     clientUpsertMock.mockResolvedValueOnce({
@@ -169,7 +174,12 @@ describe("bookAppointment", () => {
       appointmentId: 77,
       status: "SYNC_FAILED",
       syncReason: "GOOGLE_UNAVAILABLE",
-      whatsappUrl: "https://wa.me/test",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
     });
   });
 
@@ -212,7 +222,12 @@ describe("bookAppointment", () => {
     expect(result).toMatchObject({
       appointmentId: 13,
       status: "CONFIRMED",
-      whatsappUrl: "https://wa.me/test",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
     });
   });
 
