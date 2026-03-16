@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { translateApiError } from "@/lib/i18n/translate";
 
 type BookingFormProps = {
   selectedDate: string | null;
@@ -10,21 +12,22 @@ type BookingFormProps = {
 };
 
 export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
+  const { t } = useTranslation(["common", "errors"]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [messageCode, setMessageCode] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedDate || !selectedSlot) {
-      setMessage("Selecciona un dia y horario antes de continuar.");
+      setMessageCode("FORM_INCOMPLETE");
       return;
     }
 
     startTransition(async () => {
-      setMessage(null);
+      setMessageCode(null);
 
       const response = await fetch("/api/reservar", {
         method: "POST",
@@ -41,20 +44,15 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
 
       const payload = (await response.json()) as {
         error?: string;
-        whatsappUrl?: string;
+        errorCode?: string;
       };
 
       if (!response.ok) {
-        setMessage(payload.error ?? "No se pudo reservar la cita.");
+        setMessageCode(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
         return;
       }
 
-      if (payload.whatsappUrl) {
-        window.location.assign(payload.whatsappUrl);
-        return;
-      }
-
-      setMessage("Cita reservada.");
+      setMessageCode("SUCCESS");
     });
   }
 
@@ -65,14 +63,14 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
           className="block text-sm font-medium text-[var(--muted)]"
           htmlFor="booking-name"
         >
-          Nombre
+          {t("booking.name")}
         </label>
         <input
           id="booking-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           className="w-full rounded-3xl border border-[var(--border)] bg-white px-4 py-3 outline-none ring-0"
-          placeholder="Tu nombre"
+          placeholder={t("booking.namePlaceholder")}
           required
         />
       </div>
@@ -81,7 +79,7 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
           className="block text-sm font-medium text-[var(--muted)]"
           htmlFor="booking-phone"
         >
-          Teléfono
+          {t("booking.phone")}
         </label>
         <input
           id="booking-phone"
@@ -94,10 +92,12 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
         />
       </div>
       <Button className="w-full" type="submit" disabled={isPending}>
-        {isPending ? "Reservando..." : "Confirmar cita"}
+        {isPending ? t("booking.wait") : t("booking.confirmAppointment")}
       </Button>
-      {message ? (
-        <p className="text-sm text-[var(--accent-dark)]">{message}</p>
+      {messageCode ? (
+        <p className="text-sm text-[var(--accent-dark)]">
+          {messageCode === "SUCCESS" ? t("booking.successTitle") : translateApiError(t, messageCode)}
+        </p>
       ) : null}
     </form>
   );

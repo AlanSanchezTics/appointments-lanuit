@@ -1,12 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   formatDayOfMonthLabel,
   formatMonthLabel,
   formatShortWeekdayLabel,
   isWeekdayInMexicoCity,
 } from "@/lib/datetime/mexico-city";
+import type { AppLanguage } from "@/lib/i18n/config";
 import type { DayAvailability } from "@/lib/availability/service";
 
 type CalendarModalProps = {
@@ -18,7 +20,10 @@ type CalendarModalProps = {
   onSelect: (date: string) => void;
 };
 
-const WEEKDAY_HEADERS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+const WEEKDAY_HEADERS = {
+  es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"],
+  en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+} as const;
 
 export function CalendarModal({
   month,
@@ -28,6 +33,9 @@ export function CalendarModal({
   onClose,
   onSelect,
 }: CalendarModalProps) {
+  const { i18n, t } = useTranslation("common");
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+
   if (!isOpen) {
     return null;
   }
@@ -49,10 +57,10 @@ export function CalendarModal({
       >
         <div className="relative flex items-center justify-center">
           <h2 className="font-[family-name:var(--font-display)] text-[2rem] leading-none font-semibold text-[var(--foreground)]">
-            {formatMonthLabel(month)}
+            {formatMonthLabel(month, language)}
           </h2>
           <button
-            aria-label="Cerrar calendario"
+            aria-label={t("booking.calendarClose")}
             className="absolute right-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[var(--muted)] transition hover:bg-white hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             onClick={onClose}
             type="button"
@@ -62,7 +70,7 @@ export function CalendarModal({
         </div>
 
         <div className="mt-8 grid grid-cols-7 gap-y-4 text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-          {WEEKDAY_HEADERS.map((label) => (
+          {WEEKDAY_HEADERS[language].map((label) => (
             <span key={label}>{label}</span>
           ))}
         </div>
@@ -83,7 +91,7 @@ export function CalendarModal({
             return (
               <button
                 key={date}
-                aria-label={`${isSelected ? "Dia seleccionado" : "Seleccionar dia"} ${formatShortWeekdayLabel(date)} ${formatDayOfMonthLabel(date)}`}
+                aria-label={`${isSelected ? t("booking.calendarAriaSelected") : t("booking.calendarAriaSelect")} ${formatShortWeekdayLabel(date, language)} ${formatDayOfMonthLabel(date)}`}
                 className={`mx-auto flex h-11 w-11 items-center justify-center rounded-full text-base font-medium transition ${
                   isSelected
                     ? "bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
@@ -104,11 +112,11 @@ export function CalendarModal({
         <div className="mt-8 flex items-center justify-center gap-6 text-[0.72rem] uppercase tracking-[0.18em] text-[var(--muted)]">
           <span className="inline-flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-            Seleccionado
+            {t("booking.calendarSelected")}
           </span>
           <span className="inline-flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full border border-[var(--border-strong)] bg-transparent" />
-            Disponible
+            {t("booking.calendarAvailable")}
           </span>
         </div>
 
@@ -117,10 +125,10 @@ export function CalendarModal({
           onClick={onClose}
           type="button"
         >
-          Listo
+          {t("booking.calendarDone")}
         </Button>
         <p className="mt-4 text-center text-sm text-[var(--muted)]">
-          Toca un dia para ver horarios disponibles
+          {t("booking.calendarHint")}
         </p>
       </div>
     </div>

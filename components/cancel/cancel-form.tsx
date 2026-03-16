@@ -7,9 +7,12 @@ import {
   formatLongDate,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
+import { translateApiError, translateValidationError } from "@/lib/i18n/translate";
+import type { AppLanguage } from "@/lib/i18n/config";
 import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/assets/images/logo.png";
+import { useTranslation } from "react-i18next";
 
 type CancellationStep = "lookup" | "review" | "success";
 
@@ -23,25 +26,28 @@ type CancelableAppointment = {
 };
 
 export function CancelForm() {
+  const { i18n, t } = useTranslation(["common", "errors"]);
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+
   const [step, setStep] = useState<CancellationStep>("lookup");
   const [phone, setPhone] = useState("");
   const [appointment, setAppointment] = useState<CancelableAppointment | null>(
     null,
   );
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [lookupErrorCode, setLookupErrorCode] = useState<string | null>(null);
+  const [cancelErrorCode, setCancelErrorCode] = useState<string | null>(null);
   const [isSearching, startSearchTransition] = useTransition();
   const [isCancelling, startCancelTransition] = useTransition();
 
   async function handleLookup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLookupError(null);
-    setCancelError(null);
+    setLookupErrorCode(null);
+    setCancelErrorCode(null);
 
     const normalizedPhone = phone.replace(/\D/g, "");
 
     if (!/^[0-9]{10}$/.test(normalizedPhone)) {
-      setLookupError("Ingresa un telefono de 10 digitos.");
+      setLookupErrorCode("PHONE_INVALID");
       return;
     }
 
@@ -56,10 +62,11 @@ export function CancelForm() {
 
       const payload = (await response.json()) as CancelableAppointment & {
         error?: string;
+        errorCode?: string;
       };
 
       if (!response.ok) {
-        setLookupError(getLookupErrorMessage(payload.error ?? "UNKNOWN_ERROR"));
+        setLookupErrorCode(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
         return;
       }
 
@@ -74,7 +81,7 @@ export function CancelForm() {
     }
 
     startCancelTransition(async () => {
-      setCancelError(null);
+      setCancelErrorCode(null);
 
       const response = await fetch("/api/cancelar", {
         method: "POST",
@@ -89,10 +96,11 @@ export function CancelForm() {
 
       const payload = (await response.json()) as {
         error?: string;
+        errorCode?: string;
       };
 
       if (!response.ok) {
-        setCancelError(getCancelErrorMessage(payload.error ?? "UNKNOWN_ERROR"));
+        setCancelErrorCode(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
         return;
       }
 
@@ -103,10 +111,18 @@ export function CancelForm() {
   function handleReset() {
     setStep("lookup");
     setAppointment(null);
-    setLookupError(null);
-    setCancelError(null);
+    setLookupErrorCode(null);
+    setCancelErrorCode(null);
     setPhone("");
   }
+
+  const lookupError = lookupErrorCode
+    ? lookupErrorCode === "PHONE_INVALID"
+      ? translateValidationError(t, lookupErrorCode)
+      : translateApiError(t, lookupErrorCode)
+    : null;
+
+  const cancelError = cancelErrorCode ? translateApiError(t, cancelErrorCode) : null;
 
   return (
     <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
@@ -122,13 +138,13 @@ export function CancelForm() {
                 className="mx-auto h-48 w-auto"
               />
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
-                Paso 1 de 3
+                {t("cancel.step1Of3")}
               </p>
               <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
-                Cancelar cita
+                {t("cancel.title")}
               </h1>
               <p className="text-[var(--muted)]">
-                Para comenzar, por favor ingresa tu número de teléfono.
+                {t("cancel.intro")}
               </p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-1/3 rounded-full bg-[var(--accent)]" />
@@ -138,7 +154,7 @@ export function CancelForm() {
             <div className="space-y-2 mb-[1.5rem]">
               <label className="relative block" htmlFor="cancel-phone">
                 <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
-                  Teléfono
+                  {t("cancel.phone")}
                 </span>
                 <input
                   id="cancel-phone"
@@ -165,11 +181,11 @@ export function CancelForm() {
               disabled={isSearching}
             >
               {isSearching ? (
-                "Buscando..."
+                t("cancel.searching")
               ) : (
                 <>
                   <SearchIcon />
-                  <span className="ml-2">Buscar cita</span>
+                  <span className="ml-2">{t("cancel.search")}</span>
                 </>
               )}
             </Button>
@@ -178,7 +194,7 @@ export function CancelForm() {
                 className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
                 href="/"
               >
-                Regresar
+                {t("cancel.back")}
               </Link>
             </div>
           </form>
@@ -188,14 +204,13 @@ export function CancelForm() {
           <div className="space-y-8">
             <header className="space-y-4">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
-                Paso 2 de 3
+                {t("cancel.step2Of3")}
               </p>
               <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
-                Confirmar Cancelación
+                {t("cancel.confirmTitle")}
               </h2>
               <p className="text-[var(--muted)]">
-                Hemos encontrado la siguiente cita vinculada a tu número de
-                teléfono.
+                {t("cancel.confirmIntro")}
               </p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
@@ -206,7 +221,7 @@ export function CancelForm() {
               <dl className="space-y-5">
                 <div>
                   <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                    Nombre
+                    {t("cancel.name")}
                   </dt>
                   <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
                     {appointment.name}
@@ -214,24 +229,24 @@ export function CancelForm() {
                 </div>
                 <div className="border-t border-[var(--border)] pt-5">
                   <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                    Fecha
+                    {t("cancel.date")}
                   </dt>
                   <dd className="mt-1 text-[1.2rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
-                    {formatLongDate(appointment.date)}
+                    {formatLongDate(appointment.date, language)}
                   </dd>
                 </div>
                 <div className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-5">
                   <div>
                     <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                      Hora
+                      {t("cancel.time")}
                     </dt>
                     <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
-                      {formatTimeSlotLabel(appointment.timeSlot)}
+                      {formatTimeSlotLabel(appointment.timeSlot, language)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                      Telefono
+                      {t("cancel.phone")}
                     </dt>
                     <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
                       {formatPhoneForDisplay(appointment.phone)}
@@ -248,10 +263,9 @@ export function CancelForm() {
             ) : null}
 
             <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[2rem]">
-              <b>Importante</b>
+              <b>{t("cancel.important")}</b>
               <br />
-              Toma en cuenta que al cancelar esta cita, el horario quedará
-              disponible para que alguien más la tome.
+              {t("cancel.importantBody")}
             </p>
 
             <div className="space-y-4 flex flex-col items-center">
@@ -260,14 +274,14 @@ export function CancelForm() {
                 onClick={handleCancel}
                 disabled={isCancelling}
               >
-                {isCancelling ? "Cancelando..." : "Cancelar cita"}
+                {isCancelling ? t("cancel.cancelling") : t("cancel.cancelButton")}
               </Button>
               <Link
                 className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
                 onClick={handleReset}
                 href="#"
               >
-                Volver
+                {t("cancel.backLink")}
               </Link>
             </div>
           </div>
@@ -288,21 +302,20 @@ export function CancelForm() {
             </div>
             <header className="space-y-4">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
-                Paso 3 de 3
+                {t("cancel.step3Of3")}
               </p>
               <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
-                Tu cita ha sido cancelada con éxito
+                {t("cancel.successTitle")}
               </h2>
               <p className="text-[var(--muted)]">
-                Que pena que no puedas venir :(
+                {t("cancel.successBody")}
               </p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-full rounded-full bg-[var(--accent)]" />
               </div>
             </header>
             <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[1.5rem]">
-              Gracias por avisar. Si lo necesitas, puedes volver a reservar
-              en meses habilitados.
+              {t("cancel.successInfo")}
             </p>
 
             <div className="flex justify-center">
@@ -310,7 +323,7 @@ export function CancelForm() {
                 className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
                 href="/"
               >
-                Volver al inicio
+                {t("cancel.backHome")}
               </Link>
             </div>
           </div>
@@ -318,26 +331,6 @@ export function CancelForm() {
       </div>
     </section>
   );
-}
-
-function getLookupErrorMessage(code: string) {
-  if (code === "APPOINTMENT_NOT_FOUND") {
-    return "No encontramos una cita confirmada futura en meses habilitados.";
-  }
-
-  if (code === "APPOINTMENT_IS_COMMING_SOON") {
-    return "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.";
-  }
-
-  return "No se pudo buscar tu cita. Intenta de nuevo.";
-}
-
-function getCancelErrorMessage(code: string) {
-  if (code === "APPOINTMENT_NOT_FOUND") {
-    return "La cita ya no esta disponible para cancelar.";
-  }
-
-  return "No se pudo cancelar la cita. Intenta de nuevo.";
 }
 
 function formatPhoneForDisplay(phone: string) {

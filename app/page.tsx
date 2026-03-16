@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import {
   formatMonthLabel,
   getCurrentMonthKey,
 } from "@/lib/datetime/mexico-city";
+import { resolveServerLanguage } from "@/lib/i18n/language";
+import { getServerT } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Logo from "@/assets/images/logo.png";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const language = resolveServerLanguage((await cookies()).toString());
+  const t = await getServerT(language);
   const month = getCurrentMonthKey();
 
   return (
@@ -21,19 +26,19 @@ export default function HomePage() {
             className="mx-auto h-48 w-auto"
           />
           <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none md:text-7xl">
-            Agenda tu cita del mes de {formatMonthLabel(month)}.
+            {t("home.title", { month: formatMonthLabel(month, language) })}
           </h1>
           <p className="max-w-xl text-base text-[var(--muted)]">
-            No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado
-            tarde.
+            {t("home.subtitle")}
           </p>
+          <p className="text-sm text-[var(--muted)]">{t("home.languageHint")}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               className="py-4 text-[1.02rem] font-semibold"
               variant="primary"
             >
               <Link href={`/citas/${month}`} className="w-full">
-                Agendar ahora
+                {t("home.bookNow")}
               </Link>
             </Button>
             <Button
@@ -41,7 +46,7 @@ export default function HomePage() {
               variant="secondary"
             >
               <Link href="/cancelar" className="w-full">
-                Cancelar cita
+                {t("home.cancel")}
               </Link>
             </Button>
           </div>

@@ -1,12 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   formatDayOfMonthLabel,
   formatMonthLabel,
   formatShortWeekdayLabel,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
+import type { AppLanguage } from "@/lib/i18n/config";
+import { translateValidationError } from "@/lib/i18n/translate";
 import type { DayAvailability } from "@/lib/availability/service";
 
 import type {
@@ -44,6 +47,8 @@ export function BookingWizardStep1({
   remainingSeconds,
   errorMessage,
 }: BookingWizardStep1Props) {
+  const { i18n, t } = useTranslation(["common", "errors"]);
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
   const selectedDay = days.find((day) => day.date === draft.date) ?? null;
   const highlightedDays = getHighlightedDays(days, draft.date);
 
@@ -53,14 +58,14 @@ export function BookingWizardStep1({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
-              Paso 1 de 2
+              {t("booking.step1Of2")}
             </p>
             <h1 className="font-[family-name:var(--font-display)] text-[2.35rem] font-semibold leading-[1.02] tracking-[-0.04em] text-[var(--foreground)]">
-              Agendar cita
+              {t("booking.title")}
             </h1>
           </div>
           <button
-            aria-label="Abrir calendario"
+            aria-label={t("booking.openCalendar")}
             className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--accent-dark)] shadow-[var(--shadow-soft)] transition hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             onClick={onOpenCalendar}
             type="button"
@@ -82,14 +87,14 @@ export function BookingWizardStep1({
       <section className="space-y-4 border-t border-[var(--border)] pt-6">
         <div className="flex items-center justify-between gap-4">
           <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-            Días disponibles
+            {t("booking.availableDays")}
           </p>
           <button
             className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)] transition hover:text-[var(--accent-dark)]"
             onClick={onOpenCalendar}
             type="button"
           >
-            {formatMonthLabel(month)}
+            {formatMonthLabel(month, language)}
           </button>
         </div>
 
@@ -100,7 +105,10 @@ export function BookingWizardStep1({
             return (
               <button
                 key={day.date}
-                aria-label={`Seleccionar día ${formatShortWeekdayLabel(day.date)} ${formatDayOfMonthLabel(day.date)}`}
+                aria-label={t("booking.selectDay", {
+                  weekday: formatShortWeekdayLabel(day.date, language),
+                  day: formatDayOfMonthLabel(day.date),
+                })}
                 className={`min-h-24 w-[100%] rounded-[1.7rem] border px-2 py-3 text-center transition ${
                   isSelected
                     ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
@@ -119,7 +127,7 @@ export function BookingWizardStep1({
                 <span
                   className={`block text-[0.68rem] font-bold uppercase tracking-[0.12em] ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}
                 >
-                  {formatShortWeekdayLabel(day.date)}
+                  {formatShortWeekdayLabel(day.date, language)}
                 </span>
                 <span className="mt-2 block text-[1.8rem] font-semibold leading-none tracking-[-0.04em]">
                   {formatDayOfMonthLabel(day.date)}
@@ -129,13 +137,13 @@ export function BookingWizardStep1({
           })}
         </div>
         {errors.date ? (
-          <p className="text-sm text-[var(--error)]">{errors.date}</p>
+          <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.date)}</p>
         ) : null}
       </section>
 
       <section className="space-y-4">
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-          Selecciona tu horario
+          {t("booking.selectTime")}
         </p>
         <div className="grid grid-cols-2 gap-3">
           {(selectedDay?.slots ?? []).map((slot) => {
@@ -144,7 +152,7 @@ export function BookingWizardStep1({
             return (
               <button
                 key={slot}
-                aria-label={`Seleccionar horario ${formatTimeSlotLabel(slot)}`}
+                aria-label={t("booking.selectTimeSlot", { slot: formatTimeSlotLabel(slot, language) })}
                 className={`min-h-15 rounded-full border px-4 text-[0.98rem] font-semibold tracking-[-0.02em] transition ${
                   isSelected
                     ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
@@ -153,54 +161,54 @@ export function BookingWizardStep1({
                 onClick={() => onDraftChange({ timeSlot: slot })}
                 type="button"
               >
-                {formatTimeSlotLabel(slot)}
+                {formatTimeSlotLabel(slot, language)}
               </button>
             );
           })}
         </div>
         {errors.timeSlot ? (
-          <p className="text-sm text-[var(--error)]">{errors.timeSlot}</p>
+          <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.timeSlot)}</p>
         ) : null}
       </section>
 
       <section className="space-y-4">
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
-          Tus datos
+          {t("booking.yourDetails")}
         </p>
         <div className="space-y-4">
           <label className="relative block" htmlFor="booking-phone">
             <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
-              Teléfono
+              {t("booking.phone")}
             </span>
             <input
               id="booking-phone"
               className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
               inputMode="numeric"
               onChange={(event) => onDraftChange({ phone: event.target.value })}
-              placeholder="322 123 4567"
+              placeholder={t("booking.phonePlaceholder")}
               value={draft.phone}
             />
           </label>
           {errors.phone ? (
-            <p className="text-sm text-[var(--error)]">{errors.phone}</p>
+            <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.phone)}</p>
           ) : null}
 
           {showNameField ? (
             <>
               <label className="relative block" htmlFor="booking-name">
                 <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
-                  Nombre completo
+                  {t("booking.fullName")}
                 </span>
                 <input
                   id="booking-name"
                   className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
                   onChange={(event) => onDraftChange({ name: event.target.value })}
-                  placeholder="Ej. Ana Garcia"
+                  placeholder={t("booking.namePlaceholder")}
                   value={draft.name}
                 />
               </label>
               {errors.name ? (
-                <p className="text-sm text-[var(--error)]">{errors.name}</p>
+                <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.name)}</p>
               ) : null}
             </>
           ) : null}
@@ -209,12 +217,12 @@ export function BookingWizardStep1({
 
       {hasActiveLock ? (
         <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
-          Este horario esta bloqueado para ti por {formatRemainingTime(remainingSeconds)}.
+          {t("booking.slotLockedForYou", { time: formatRemainingTime(remainingSeconds) })}
         </p>
       ) : null}
 
       {errors.form ? (
-        <p className="text-sm text-[var(--error)]">{errors.form}</p>
+        <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.form)}</p>
       ) : null}
 
       <div className="space-y-4 pt-2">
@@ -225,10 +233,10 @@ export function BookingWizardStep1({
           type="button"
         >
           {isPending ? (
-            "Un momento..."
+            t("booking.wait")
           ) : (
             <>
-              Siguiente
+              {t("booking.next")}
               <span aria-hidden="true" className="ml-2">
                 →
               </span>
@@ -240,7 +248,7 @@ export function BookingWizardStep1({
             className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
             href="/"
           >
-            Regresar
+            {t("booking.back")}
           </Link>
         </div>
       </div>
@@ -253,7 +261,7 @@ function formatRemainingTime(remainingSeconds: number) {
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
 
-  return `${minutes}:${String(seconds).padStart(2, "0")} minutos`;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function getHighlightedDays(

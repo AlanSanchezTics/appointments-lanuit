@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 
 import { BookingConfirmStep } from "@/components/booking/booking-confirm-step";
 import { BookingSuccessStep } from "@/components/booking/booking-success-step";
 import { BookingWizardStep1 } from "@/components/booking/booking-wizard-step1";
 import { CalendarModal } from "@/components/booking/calendar-modal";
 import type { DayAvailability } from "@/lib/availability/service";
+import { translateApiError } from "@/lib/i18n/translate";
 
 export type BookingStep = "details" | "confirm" | "success";
 
@@ -23,7 +25,12 @@ export type BookingSuccess = {
   appointmentId: number;
   status: "CONFIRMED" | "SYNC_FAILED";
   syncReason?: string;
-  whatsappUrl: string;
+  whatsappPhone: string;
+  whatsappData: {
+    name: string;
+    date: string;
+    timeSlot: string;
+  };
 };
 
 export type SlotLock = {
@@ -65,11 +72,12 @@ export function BookingWizard({
   submitBooking = submitBookingDraft,
   onWhatsAppRedirect = (url) => window.location.assign(url),
 }: BookingWizardProps) {
+  const { t } = useTranslation(["common", "errors"]);
   const [step, setStep] = useState<BookingStep>("details");
   const [clientState, setClientState] = useState<ClientState>("unknown");
   const [isCalendarOpen, setCalendarOpen] = useState(false);
   const [errors, setErrors] = useState<BookingValidationErrors>({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
   const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
   const [currentDays, setCurrentDays] = useState<DayAvailability[]>(days);
@@ -123,13 +131,13 @@ export function BookingWizard({
       await releaseLock(activeLock.lockToken).catch(() => undefined);
       setActiveLock(null);
       setClientState("unknown");
-      setSubmitError(getApiErrorMessage("LOCK_EXPIRED_OR_INVALID"));
+      setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
       setStep("details");
     });
   }, [activeLock, remainingSeconds, releaseLock, startTransition]);
 
   useEffect(() => {
-    if (!submitError) {
+    if (!submitErrorCode) {
       return;
     }
 
@@ -149,7 +157,7 @@ export function BookingWizard({
     return () => {
       isCancelled = true;
     };
-  }, [month, refreshDays, submitError]);
+  }, [month, refreshDays, submitErrorCode]);
 
   function updateDraft(nextDraft: Partial<BookingDraft>) {
     const shouldInvalidateActiveLock =
@@ -193,7 +201,7 @@ export function BookingWizard({
       ...(typeof nextDraft.phone === "string" ? { phone: undefined } : {}),
       form: undefined,
     }));
-    setSubmitError(null);
+    setSubmitErrorCode(null);
   }
 
   function handleContinue() {
@@ -206,7 +214,7 @@ export function BookingWizard({
 
     if (clientState === "new") {
       if (!activeLock?.lockToken) {
-        setSubmitError(getApiErrorMessage("LOCK_EXPIRED_OR_INVALID"));
+        setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
         return;
       }
 
@@ -224,7 +232,7 @@ export function BookingWizard({
 
         setActiveLock(lock);
         setRemainingSeconds(Math.max(0, Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000)));
-        setSubmitError(null);
+        setSubmitErrorCode(null);
 
         if (response.clientExists) {
           setClientState("existing");
@@ -238,8 +246,8 @@ export function BookingWizard({
 
         setClientState("new");
       } catch (error) {
-        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-        setSubmitError(getApiErrorMessage(message));
+        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitErrorCode(code);
       }
     });
   }
@@ -252,7 +260,7 @@ export function BookingWizard({
 
       setActiveLock(null);
       setRemainingSeconds(0);
-      setSubmitError(null);
+      setSubmitErrorCode(null);
       setClientState("unknown");
       setStep("details");
     });
@@ -268,13 +276,13 @@ export function BookingWizard({
     }
 
     if (!activeLock?.lockToken) {
-      setSubmitError(getApiErrorMessage("LOCK_EXPIRED_OR_INVALID"));
+      setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
       setStep("details");
       return;
     }
 
     startTransition(async () => {
-      setSubmitError(null);
+      setSubmitErrorCode(null);
 
       try {
         const result = await submitBooking(draft, activeLock.lockToken);
@@ -284,11 +292,13 @@ export function BookingWizard({
         setSuccess(result);
         setStep("success");
       } catch (error) {
-        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-        setSubmitError(getApiErrorMessage(message));
+        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitErrorCode(code);
       }
     });
   }
+
+  const translatedSubmitError = submitErrorCode ? translateApiError(t, submitErrorCode) : null;
 
   return (
     <>
@@ -298,7 +308,7 @@ export function BookingWizard({
             {step === "details" ? (
               <BookingWizardStep1
                 days={currentDays}
-                errorMessage={submitError}
+                errorMessage={translatedSubmitError}
                 draft={draft}
                 errors={errors}
                 month={month}
@@ -315,7 +325,7 @@ export function BookingWizard({
             {step === "confirm" ? (
               <BookingConfirmStep
                 draft={draft}
-                errorMessage={submitError}
+                errorMessage={translatedSubmitError}
                 isPending={isPending}
                 remainingSeconds={remainingSeconds}
                 onBack={handleBack}
@@ -361,10 +371,10 @@ async function checkClientAndAcquireReservationLock(draft: BookingDraft) {
     }),
   });
 
-  const payload = (await response.json()) as ClientCheckLockResult & { error?: string };
+  const payload = (await response.json()) as ClientCheckLockResult & { error?: string; errorCode?: string };
 
   if (!response.ok) {
-    throw new Error(payload.error ?? "UNKNOWN_ERROR");
+    throw new Error(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
   }
 
   return payload;
@@ -397,10 +407,11 @@ async function submitBookingDraft(draft: BookingDraft, lockToken: string) {
 
   const payload = (await response.json()) as BookingSuccess & {
     error?: string;
+    errorCode?: string;
   };
 
   if (!response.ok) {
-    throw new Error(payload.error ?? "UNKNOWN_ERROR");
+    throw new Error(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
   }
 
   return payload;
@@ -463,66 +474,26 @@ function validateDraft(draft: BookingDraft, requiresName: boolean): BookingValid
   const nextErrors: BookingValidationErrors = {};
 
   if (!draft.date) {
-    nextErrors.date = "Selecciona un dia disponible.";
+    nextErrors.date = "DATE_REQUIRED";
   }
 
   if (!draft.timeSlot) {
-    nextErrors.timeSlot = "Selecciona un horario antes de continuar.";
+    nextErrors.timeSlot = "TIME_SLOT_REQUIRED";
   }
 
   if (!/^[0-9]{10}$/.test(normalizePhone(draft.phone))) {
-    nextErrors.phone = "Ingresa un telefono de 10 digitos.";
+    nextErrors.phone = "PHONE_INVALID";
   }
 
   if (requiresName && draft.name.trim().length < 3) {
-    nextErrors.name = "Ingresa tu nombre completo.";
+    nextErrors.name = "NAME_REQUIRED";
   }
 
   if (nextErrors.date || nextErrors.timeSlot) {
-    nextErrors.form = "Completa la fecha y el horario antes de continuar.";
+    nextErrors.form = "FORM_INCOMPLETE";
   }
 
   return nextErrors;
-}
-
-function getApiErrorMessage(code: string) {
-  if (code === "SLOT_NOT_AVAILABLE") {
-    return "Ese horario ya no esta disponible. Elige otro.";
-  }
-
-  if (code === "SLOT_LOCKED") {
-    return "Ese horario acaba de ser bloqueado por otra persona. Elige otro.";
-  }
-
-  if (code === "PHONE_ALREADY_BOOKED") {
-    return "Ya tienes una cita futura activa con este telefono.";
-  }
-
-  if (code === "MONTH_NOT_ALLOWED") {
-    return "Solo se puede agendar en meses habilitados.";
-  }
-
-  if (code === "LOCK_TIMEOUT") {
-    return "Hubo un conflicto temporal al reservar. Intenta de nuevo.";
-  }
-
-  if (code === "LOCK_EXPIRED_OR_INVALID") {
-    return "El bloqueo temporal expiro. Selecciona de nuevo tu horario.";
-  }
-
-  if (code === "PAST_TIME_SLOT") {
-    return "Ese horario ya paso. Elige uno disponible.";
-  }
-
-  if (code === "NAME_REQUIRED_FOR_NEW_CLIENT") {
-    return "Ingresa tu nombre para completar la reserva.";
-  }
-
-  if (code === "CLIENT_NAME_MISMATCH") {
-    return "Este telefono ya esta registrado con otro nombre.";
-  }
-
-  return "No se pudo reservar la cita. Intenta de nuevo.";
 }
 
 function getInitialField<K extends keyof BookingDraft>(

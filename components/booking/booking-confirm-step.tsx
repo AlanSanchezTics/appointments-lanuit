@@ -1,10 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   formatLongDate,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
+import type { AppLanguage } from "@/lib/i18n/config";
 
 import type { BookingDraft } from "@/components/booking/booking-wizard";
 import Link from "next/link";
@@ -26,19 +28,22 @@ export function BookingConfirmStep({
   onBack,
   onConfirm,
 }: BookingConfirmStepProps) {
+  const { i18n, t } = useTranslation("common");
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+
   return (
     <div className="space-y-8">
       <header className="space-y-4 mb-[1.5rem]">
         <div className="flex items-start gap-4">
           <div className="space-y-2">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
-              Paso 2 de 2
+              {t("booking.step2Of2")}
             </p>
             <h1 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em]">
-              Confirmar Detalles
+              {t("booking.confirmTitle")}
             </h1>
             <p className="mb-0 text-(--muted)">
-              Hola {draft.name.split(" ")[0]}, que gusto tenerte de vuelta ✨
+              {t("booking.welcomeBack", { name: draft.name.split(" ")[0] })}
             </p>
           </div>
         </div>
@@ -47,34 +52,34 @@ export function BookingConfirmStep({
       <section className="rounded-[2rem] border border-[var(--border)] bg-white/80 p-6 shadow-[var(--shadow-soft)]">
         <dl className="space-y-5">
           <div>
-            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-              Nombre
-            </dt>
+              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                {t("booking.name")}
+              </dt>
             <dd className="mt-1 text-[1.35rem] font-semibold tracking-[-0.02em]">
               {draft.name}
             </dd>
           </div>
           <div className="border-t border-[var(--border)] pt-5">
-            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-              Fecha
-            </dt>
-            <dd className="mt-1 text-[1.05rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
-              {formatLongDate(draft.date ?? "")}
-            </dd>
+              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                {t("booking.date")}
+              </dt>
+              <dd className="mt-1 text-[1.05rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+                {formatLongDate(draft.date ?? "", language)}
+              </dd>
           </div>
           <div className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-5">
             <div>
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                Hora
-              </dt>
-              <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
-                {formatTimeSlotLabel(draft.timeSlot ?? "09:00")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                Teléfono
-              </dt>
+                <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                  {t("booking.time")}
+                </dt>
+                <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
+                  {formatTimeSlotLabel(draft.timeSlot ?? "09:00", language)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                  {t("booking.phone")}
+                </dt>
               <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
                 {formatPhoneForDisplay(draft.phone)}
               </dd>
@@ -84,8 +89,7 @@ export function BookingConfirmStep({
       </section>
 
       <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
-        Este horario esta bloqueado para ti por{" "}
-        {formatRemainingTime(remainingSeconds)}.
+        {t("booking.slotLockedForYou", { time: formatRemainingTime(remainingSeconds) })}
       </p>
 
       {errorMessage ? (
@@ -102,10 +106,10 @@ export function BookingConfirmStep({
           type="button"
         >
           {isPending ? (
-            "Un momento..."
+            t("booking.wait")
           ) : (
             <>
-              Confirmar cita <CheckCircleIcon />
+              {t("booking.confirmAppointment")} <CheckCircleIcon />
             </>
           )}
         </Button>
@@ -115,7 +119,7 @@ export function BookingConfirmStep({
             onClick={onBack}
             href="#"
           >
-            <PencilIcon /> Editar información
+            <PencilIcon /> {t("booking.editInformation")}
           </Link>
         </div>
         <div className="flex gap-3 rounded-[1.25rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-4 text-left">
@@ -123,7 +127,7 @@ export function BookingConfirmStep({
             i
           </span>
           <p className="text-[0.76rem] font-medium leading-relaxed tracking-[-0.01em] text-[var(--muted)]">
-            Recibirás un recordatorio por WhatsApp un día antes de tu cita.
+            {t("booking.whatsappReminder")}
           </p>
         </div>
       </div>
@@ -136,7 +140,7 @@ function formatRemainingTime(remainingSeconds: number) {
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
 
-  return `${minutes}:${String(seconds).padStart(2, "0")} minutos`;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatPhoneForDisplay(phone: string) {

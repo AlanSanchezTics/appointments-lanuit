@@ -1,5 +1,7 @@
 import { REQUIRED_TIMEZONE } from "@/lib/constants/slots";
 
+import type { AppLanguage } from "@/lib/i18n/config";
+
 const dateFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: REQUIRED_TIMEZONE,
   year: "numeric",
@@ -18,27 +20,6 @@ const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
 });
 
-const longDateFormatter = new Intl.DateTimeFormat("es-MX", {
-  timeZone: REQUIRED_TIMEZONE,
-  dateStyle: "long",
-});
-
-const longWeekdayFormatter = new Intl.DateTimeFormat("es-MX", {
-  timeZone: REQUIRED_TIMEZONE,
-  weekday: "long",
-});
-
-const monthLabelFormatter = new Intl.DateTimeFormat("es-MX", {
-  timeZone: REQUIRED_TIMEZONE,
-  month: "long",
-  year: "numeric",
-});
-
-const shortWeekdayLabelFormatter = new Intl.DateTimeFormat("es-MX", {
-  timeZone: REQUIRED_TIMEZONE,
-  weekday: "short",
-});
-
 const dayLabelFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: REQUIRED_TIMEZONE,
   day: "2-digit",
@@ -50,6 +31,15 @@ const timeFormatter = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
   hour12: false,
 });
+
+const localeByLanguage: Record<AppLanguage, string> = {
+  es: "es-MX",
+  en: "en-US",
+};
+
+function resolveLocale(language: AppLanguage) {
+  return localeByLanguage[language] ?? localeByLanguage.es;
+}
 
 export function getCurrentMonthKey(now = new Date()) {
   return monthFormatter.format(now);
@@ -90,20 +80,40 @@ export function isWeekdayInMexicoCity(date: string) {
   return weekday !== "Sat" && weekday !== "Sun";
 }
 
-export function formatLongDate(date: string) {
+export function formatLongDate(date: string, language: AppLanguage = "es") {
+  const locale = resolveLocale(language);
   const parsedDate = parseDateOnly(date);
-  const weekday = capitalize(longWeekdayFormatter.format(parsedDate));
-  const longDate = longDateFormatter.format(parsedDate);
+  const weekday = new Intl.DateTimeFormat(locale, {
+    timeZone: REQUIRED_TIMEZONE,
+    weekday: "long",
+  }).format(parsedDate);
+  const longDate = new Intl.DateTimeFormat(locale, {
+    timeZone: REQUIRED_TIMEZONE,
+    dateStyle: "long",
+  }).format(parsedDate);
 
-  return `${weekday}, ${longDate}`;
+  return `${capitalize(weekday)}, ${longDate}`;
 }
 
-export function formatMonthLabel(month: string) {
-  return capitalize(monthLabelFormatter.format(parseDateOnly(`${month}-01`)));
+export function formatMonthLabel(month: string, language: AppLanguage = "es") {
+  const locale = resolveLocale(language);
+
+  return capitalize(
+    new Intl.DateTimeFormat(locale, {
+      timeZone: REQUIRED_TIMEZONE,
+      month: "long",
+      year: "numeric",
+    }).format(parseDateOnly(`${month}-01`)),
+  );
 }
 
-export function formatShortWeekdayLabel(date: string) {
-  return shortWeekdayLabelFormatter
+export function formatShortWeekdayLabel(date: string, language: AppLanguage = "es") {
+  const locale = resolveLocale(language);
+
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: REQUIRED_TIMEZONE,
+    weekday: "short",
+  })
     .format(parseDateOnly(date))
     .replace(".", "")
     .slice(0, 3)
@@ -114,11 +124,16 @@ export function formatDayOfMonthLabel(date: string) {
   return dayLabelFormatter.format(parseDateOnly(date));
 }
 
-export function formatTimeSlotLabel(timeSlot: string) {
+export function formatTimeSlotLabel(timeSlot: string, language: AppLanguage = "es") {
   const { hour, minute } = parseTimeSlot(timeSlot);
-  const suffix = hour >= 12 ? "PM" : "AM";
   const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
 
+  if (language === "en") {
+    const suffix = hour >= 12 ? "PM" : "AM";
+    return `${normalizedHour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")} ${suffix}`;
+  }
+
+  const suffix = hour >= 12 ? "PM" : "AM";
   return `${normalizedHour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")} ${suffix}`;
 }
 
