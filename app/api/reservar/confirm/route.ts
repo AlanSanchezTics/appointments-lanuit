@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
 import { confirmAppointmentWithLock } from "@/lib/appointments/book-appointment";
 
 export const dynamic = "force-dynamic";
@@ -17,16 +18,16 @@ export async function POST(request: Request) {
     const response = await confirmAppointmentWithLock(payload);
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    const errorCode = normalizeErrorCode(error);
     const status =
-      message === "SLOT_NOT_AVAILABLE" ||
-      message === "PHONE_ALREADY_BOOKED" ||
-      message === "LOCK_TIMEOUT" ||
-      message === "LOCK_EXPIRED_OR_INVALID" ||
-      message === "CLIENT_NAME_MISMATCH"
+      errorCode === "SLOT_NOT_AVAILABLE" ||
+      errorCode === "PHONE_ALREADY_BOOKED" ||
+      errorCode === "LOCK_TIMEOUT" ||
+      errorCode === "LOCK_EXPIRED_OR_INVALID" ||
+      errorCode === "CLIENT_NAME_MISMATCH"
         ? 409
         : 400;
 
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json(buildErrorPayload(errorCode), { status });
   }
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 const phoneSchema = z
   .string()
   .transform((value) => value.replace(/\D/g, ""))
-  .refine((value) => /^[0-9]{10}$/.test(value), "El telefono debe tener 10 digitos");
+  .refine((value) => /^[0-9]{10}$/.test(value), "VALIDATION_PHONE_INVALID");
 
 export const cancelLookupSchema = z.object({
   phone: phoneSchema,

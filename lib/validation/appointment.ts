@@ -6,24 +6,24 @@ import { getCurrentMonthKey, isFutureDateTime, isWeekdayInMexicoCity } from "@/l
 const phoneSchema = z
   .string()
   .transform((value) => value.replace(/\D/g, ""))
-  .refine((value) => /^[0-9]{10}$/.test(value), "El telefono debe tener 10 digitos");
+  .refine((value) => /^[0-9]{10}$/.test(value), "VALIDATION_PHONE_INVALID");
 
 const requiredNameSchema = z
   .string()
   .trim()
-  .min(3, "El nombre debe tener al menos 3 caracteres")
-  .max(100, "El nombre no puede exceder 100 caracteres");
+  .min(3, "VALIDATION_NAME_TOO_SHORT")
+  .max(100, "VALIDATION_NAME_TOO_LONG");
 
 const optionalNameSchema = z
   .string()
   .trim()
-  .min(3, "El nombre debe tener al menos 3 caracteres")
-  .max(100, "El nombre no puede exceder 100 caracteres")
+  .min(3, "VALIDATION_NAME_TOO_SHORT")
+  .max(100, "VALIDATION_NAME_TOO_LONG")
   .optional();
 
 const bookingCoreSchema = z.object({
   phone: phoneSchema,
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha debe usar YYYY-MM-DD"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "VALIDATION_DATE_FORMAT"),
   timeSlot: z.enum(BASE_TIME_SLOTS),
 });
 

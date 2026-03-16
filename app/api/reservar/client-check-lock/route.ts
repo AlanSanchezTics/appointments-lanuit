@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
 import { checkClientAndAcquireReservationSlotLock } from "@/lib/appointments/lock-reservation-slot";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,15 @@ export async function POST(request: Request) {
     const response = await checkClientAndAcquireReservationSlotLock(payload);
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    const errorCode = normalizeErrorCode(error);
     const status =
-      message === "SLOT_NOT_AVAILABLE" ||
-      message === "PHONE_ALREADY_BOOKED" ||
-      message === "LOCK_TIMEOUT" ||
-      message === "SLOT_LOCKED"
+      errorCode === "SLOT_NOT_AVAILABLE" ||
+      errorCode === "PHONE_ALREADY_BOOKED" ||
+      errorCode === "LOCK_TIMEOUT" ||
+      errorCode === "SLOT_LOCKED"
         ? 409
         : 400;
 
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json(buildErrorPayload(errorCode), { status });
   }
 }

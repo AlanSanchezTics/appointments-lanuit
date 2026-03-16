@@ -18,7 +18,7 @@ import {
   confirmBookingWithLockSchema,
   validateBookingRules,
 } from "@/lib/validation/appointment";
-import { buildWhatsappUrl } from "@/lib/whatsapp/message";
+import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
@@ -138,11 +138,12 @@ async function finalizeAppointment(input: { appointmentId: number; date: string;
     appointmentId: input.appointmentId,
     status: syncResult.status,
     syncReason: "reason" in syncResult ? syncResult.reason : undefined,
-    whatsappUrl: buildWhatsappUrl({
+    whatsappPhone: getWhatsappPhone(),
+    whatsappData: {
       name: input.name,
       date: input.date,
       timeSlot: input.timeSlot,
-    }),
+    },
   };
 }
 

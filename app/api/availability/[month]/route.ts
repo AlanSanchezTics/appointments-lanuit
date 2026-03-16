@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
 import { getMonthAvailability } from "@/lib/availability/service";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +23,9 @@ export async function GET(_request: Request, { params }: AvailabilityRouteProps)
       days,
     });
   } catch (error) {
+    const errorCode = normalizeErrorCode(error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
-      },
+      buildErrorPayload(errorCode),
       { status: 422 },
     );
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
 import { cancelAppointment } from "@/lib/appointments/cancel-appointment";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,9 @@ export async function POST(request: Request) {
     const response = await cancelAppointment(payload);
     return NextResponse.json(response);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = message === "APPOINTMENT_NOT_FOUND" ? 404 : 400;
+    const errorCode = normalizeErrorCode(error);
+    const status = errorCode === "APPOINTMENT_NOT_FOUND" ? 404 : 400;
 
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json(buildErrorPayload(errorCode), { status });
   }
 }
