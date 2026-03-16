@@ -23,6 +23,7 @@ describe("availability service", () => {
         timeSlot: "17:00",
         status: "CONFIRMED",
         googleEventId: null,
+        clientId: 1,
       },
     ]);
 
@@ -43,6 +44,7 @@ describe("availability service", () => {
         timeSlot: "17:00",
         status: "CONFIRMED",
         googleEventId: null,
+        clientId: 1,
       },
     ]);
 
@@ -63,6 +65,7 @@ describe("availability service", () => {
         timeSlot: "09:00",
         status: "CONFIRMED",
         googleEventId: null,
+        clientId: 1,
       },
       {
         id: 2,
@@ -72,6 +75,7 @@ describe("availability service", () => {
         timeSlot: "14:00",
         status: "CONFIRMED",
         googleEventId: null,
+        clientId: 1,
       },
       {
         id: 3,
@@ -81,6 +85,7 @@ describe("availability service", () => {
         timeSlot: "17:00",
         status: "CONFIRMED",
         googleEventId: null,
+        clientId: 1,
       },
     ]);
 

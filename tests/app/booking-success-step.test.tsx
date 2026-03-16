@@ -13,9 +13,11 @@ const days = [
 describe("booking success step", () => {
   it("renders the success screen and redirects through the WhatsApp CTA", async () => {
     const onWhatsAppRedirect = vi.fn();
-    const acquireLock = vi.fn().mockResolvedValue({
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
       lockToken: "lock-1",
       expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
     });
 
     render(
@@ -29,7 +31,7 @@ describe("booking success step", () => {
         }}
         month="2026-03"
         onWhatsAppRedirect={onWhatsAppRedirect}
-        acquireLock={acquireLock}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
         submitBooking={async () => ({
           appointmentId: 1,
           status: "SYNC_FAILED",

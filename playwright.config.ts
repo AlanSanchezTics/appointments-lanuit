@@ -13,7 +13,10 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --hostname 127.0.0.1 --port ${playwrightPort}`,
     url: playwrightBaseUrl,
+    timeout: 180 * 1000,
     reuseExistingServer: !process.env.CI,
+    stdout: "pipe",
+    stderr: "pipe",
   },
   projects: [
     {

@@ -23,6 +23,10 @@ type BookingWizardStep1Props = {
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
   onContinue: () => void;
   onOpenCalendar: () => void;
+  isPending: boolean;
+  showNameField: boolean;
+  hasActiveLock: boolean;
+  remainingSeconds: number;
   errorMessage?: string | null;
 };
 
@@ -34,6 +38,10 @@ export function BookingWizardStep1({
   onDraftChange,
   onContinue,
   onOpenCalendar,
+  isPending,
+  showNameField,
+  hasActiveLock,
+  remainingSeconds,
   errorMessage,
 }: BookingWizardStep1Props) {
   const selectedDay = days.find((day) => day.date === draft.date) ?? null;
@@ -160,22 +168,6 @@ export function BookingWizardStep1({
           Tus datos
         </p>
         <div className="space-y-4">
-          <label className="relative block" htmlFor="booking-name">
-            <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
-              Nombre completo
-            </span>
-            <input
-              id="booking-name"
-              className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
-              onChange={(event) => onDraftChange({ name: event.target.value })}
-              placeholder="Ej. Ana Garcia"
-              value={draft.name}
-            />
-          </label>
-          {errors.name ? (
-            <p className="text-sm text-[var(--error)]">{errors.name}</p>
-          ) : null}
-
           <label className="relative block" htmlFor="booking-phone">
             <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
               Teléfono
@@ -192,8 +184,34 @@ export function BookingWizardStep1({
           {errors.phone ? (
             <p className="text-sm text-[var(--error)]">{errors.phone}</p>
           ) : null}
+
+          {showNameField ? (
+            <>
+              <label className="relative block" htmlFor="booking-name">
+                <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
+                  Nombre completo
+                </span>
+                <input
+                  id="booking-name"
+                  className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                  onChange={(event) => onDraftChange({ name: event.target.value })}
+                  placeholder="Ej. Ana Garcia"
+                  value={draft.name}
+                />
+              </label>
+              {errors.name ? (
+                <p className="text-sm text-[var(--error)]">{errors.name}</p>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </section>
+
+      {hasActiveLock ? (
+        <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
+          Este horario esta bloqueado para ti por {formatRemainingTime(remainingSeconds)}.
+        </p>
+      ) : null}
 
       {errors.form ? (
         <p className="text-sm text-[var(--error)]">{errors.form}</p>
@@ -202,13 +220,20 @@ export function BookingWizardStep1({
       <div className="space-y-4 pt-2">
         <Button
           className="w-full py-4 text-[1.02rem] font-semibold"
+          disabled={isPending}
           onClick={onContinue}
           type="button"
         >
-          Siguiente
-          <span aria-hidden="true" className="ml-2">
-            →
-          </span>
+          {isPending ? (
+            "Un momento..."
+          ) : (
+            <>
+              Siguiente
+              <span aria-hidden="true" className="ml-2">
+                →
+              </span>
+            </>
+          )}
         </Button>
         <div className="flex justify-center">
           <Link
@@ -221,6 +246,14 @@ export function BookingWizardStep1({
       </div>
     </div>
   );
+}
+
+function formatRemainingTime(remainingSeconds: number) {
+  const safeSeconds = Math.max(0, remainingSeconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")} minutos`;
 }
 
 function getHighlightedDays(

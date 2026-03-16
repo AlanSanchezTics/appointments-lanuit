@@ -10,6 +10,7 @@ export type PersistedAppointment = {
   timeSlot: string;
   status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
   googleEventId: string | null;
+  clientId: number;
 };
 
 export type PersistedReservationLock = {
@@ -35,21 +36,25 @@ function timeSlotToDate(timeSlot: string) {
 
 function mapAppointment(row: {
   id: number;
-  name: string;
-  phone: string;
   date: Date;
   timeSlot: Date;
   status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
   googleEventId: string | null;
+  clientId: number;
+  client: {
+    name: string;
+    phone: string;
+  };
 }) {
   return {
     id: row.id,
-    name: row.name,
-    phone: row.phone,
+    name: row.client.name,
+    phone: row.client.phone,
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     status: row.status,
     googleEventId: row.googleEventId,
+    clientId: row.clientId,
   } satisfies PersistedAppointment;
 }
 
@@ -74,7 +79,9 @@ function mapReservationLock(row: {
 export async function hasActiveFutureAppointment(phone: string, dateFloor: string) {
   const record = await prisma.appointment.findFirst({
     where: {
-      phone,
+      client: {
+        phone,
+      },
       status: {
         in: ["CONFIRMED", "SYNC_FAILED"],
       },
@@ -93,7 +100,9 @@ export async function hasActiveFutureAppointment(phone: string, dateFloor: strin
 export async function findActiveAppointmentByPhone(phone: string, dateFloor: string) {
   const record = await prisma.appointment.findFirst({
     where: {
-      phone,
+      client: {
+        phone,
+      },
       status: {
         in: ["CONFIRMED", "SYNC_FAILED"],
       },
@@ -102,6 +111,14 @@ export async function findActiveAppointmentByPhone(phone: string, dateFloor: str
       },
     },
     orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+    include: {
+      client: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+    },
   });
 
   return record ? mapAppointment(record) : null;
@@ -115,7 +132,9 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
 ) {
   const record = await prisma.appointment.findFirst({
     where: {
-      phone,
+      client: {
+        phone,
+      },
       status: "CONFIRMED",
       date: {
         gt: new Date(`${dateFloor}T00:00:00.000Z`),
@@ -124,6 +143,14 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
       },
     },
     orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+    include: {
+      client: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+    },
   });
 
   return record ? mapAppointment(record) : null;
@@ -137,6 +164,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
   const records = await tx.$queryRaw<
     Array<{
       id: number;
+      client_id: number;
       name: string;
       phone: string;
       date: Date;
@@ -145,12 +173,14 @@ export async function findActiveAppointmentByPhoneForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT id, name, phone, date, time_slot, status, google_event_id
-    FROM appointments
-    WHERE phone = ${phone}
-      AND status IN ('CONFIRMED', 'SYNC_FAILED')
-      AND date > ${dateFloor}
-    ORDER BY date ASC, time_slot ASC
+    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    FROM appointments a
+    INNER JOIN clients c
+      ON c.id = a.client_id
+    WHERE c.phone = ${phone}
+      AND a.status IN ('CONFIRMED', 'SYNC_FAILED')
+      AND a.date > ${dateFloor}
+    ORDER BY a.date ASC, a.time_slot ASC
     LIMIT 1
     FOR UPDATE
   `;
@@ -161,15 +191,16 @@ export async function findActiveAppointmentByPhoneForUpdate(
     return null;
   }
 
-  return mapAppointment({
+  return {
     id: record.id,
     name: record.name,
     phone: record.phone,
-    date: record.date,
-    timeSlot: record.time_slot,
+    date: dateToDateKey(record.date),
+    timeSlot: timeToTimeSlotKey(record.time_slot),
     status: record.status,
     googleEventId: record.google_event_id,
-  });
+    clientId: record.client_id,
+  } satisfies PersistedAppointment;
 }
 
 export async function findConfirmedFutureAppointmentByIdForUpdate(
@@ -183,6 +214,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
   const records = await tx.$queryRaw<
     Array<{
       id: number;
+      client_id: number;
       name: string;
       phone: string;
       date: Date;
@@ -191,14 +223,16 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT id, name, phone, date, time_slot, status, google_event_id
-    FROM appointments
-    WHERE id = ${appointmentId}
-      AND phone = ${phone}
-      AND status = 'CONFIRMED'
-      AND date > ${dateFloor}
-      AND date >= ${monthStart}
-      AND date < ${monthEndExclusive}
+    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    FROM appointments a
+    INNER JOIN clients c
+      ON c.id = a.client_id
+    WHERE a.id = ${appointmentId}
+      AND c.phone = ${phone}
+      AND a.status = 'CONFIRMED'
+      AND a.date > ${dateFloor}
+      AND a.date >= ${monthStart}
+      AND a.date < ${monthEndExclusive}
     LIMIT 1
     FOR UPDATE
   `;
@@ -209,15 +243,16 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
     return null;
   }
 
-  return mapAppointment({
+  return {
     id: record.id,
     name: record.name,
     phone: record.phone,
-    date: record.date,
-    timeSlot: record.time_slot,
+    date: dateToDateKey(record.date),
+    timeSlot: timeToTimeSlotKey(record.time_slot),
     status: record.status,
     googleEventId: record.google_event_id,
-  });
+    clientId: record.client_id,
+  } satisfies PersistedAppointment;
 }
 
 export async function listMonthAppointments(monthStart: string, monthEndExclusive: string) {
@@ -232,6 +267,14 @@ export async function listMonthAppointments(monthStart: string, monthEndExclusiv
       },
     },
     orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+    include: {
+      client: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+    },
   });
 
   return records.map(mapAppointment);
@@ -274,10 +317,12 @@ export async function listActiveReservationLocksForDate(
 
 export async function lockConflictingAppointments(tx: Prisma.TransactionClient, date: string, phone: string) {
   await tx.$queryRaw`
-    SELECT id
-    FROM appointments
-    WHERE (date = ${date} OR phone = ${phone})
-      AND status IN ('CONFIRMED', 'SYNC_FAILED')
+    SELECT a.id
+    FROM appointments a
+    INNER JOIN clients c
+      ON c.id = a.client_id
+    WHERE (a.date = ${date} OR c.phone = ${phone})
+      AND a.status IN ('CONFIRMED', 'SYNC_FAILED')
     FOR UPDATE
   `;
 }

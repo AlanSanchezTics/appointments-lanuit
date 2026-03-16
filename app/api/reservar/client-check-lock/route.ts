@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { confirmAppointmentWithLock } from "@/lib/appointments/book-appointment";
+import { checkClientAndAcquireReservationSlotLock } from "@/lib/appointments/lock-reservation-slot";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
-      name?: string;
       phone: string;
       date: string;
       timeSlot: string;
-      lockToken: string;
     };
 
-    const response = await confirmAppointmentWithLock(payload);
+    const response = await checkClientAndAcquireReservationSlotLock(payload);
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -22,8 +20,7 @@ export async function POST(request: Request) {
       message === "SLOT_NOT_AVAILABLE" ||
       message === "PHONE_ALREADY_BOOKED" ||
       message === "LOCK_TIMEOUT" ||
-      message === "LOCK_EXPIRED_OR_INVALID" ||
-      message === "CLIENT_NAME_MISMATCH"
+      message === "SLOT_LOCKED"
         ? 409
         : 400;
 

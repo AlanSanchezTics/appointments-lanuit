@@ -18,6 +18,7 @@ const createReservationLockMock = vi.fn(async () => ({
 const transactionMock = vi.fn();
 const findFirstMock = vi.fn();
 const findManyMock = vi.fn();
+const findUniqueClientMock = vi.fn();
 const releaseDeleteManyMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
@@ -49,11 +50,15 @@ describe("reservation slot locks", () => {
           findFirst: findFirstMock,
           findMany: findManyMock,
         },
+        client: {
+          findUnique: findUniqueClientMock,
+        },
       }),
     );
   });
 
   it("acquires a lock for an available slot", async () => {
+    findUniqueClientMock.mockResolvedValueOnce(null);
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
 
@@ -74,6 +79,7 @@ describe("reservation slot locks", () => {
   });
 
   it("rejects lock acquisition when slot is already locked", async () => {
+    findUniqueClientMock.mockResolvedValueOnce(null);
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
     listActiveReservationLocksForDateMock.mockResolvedValueOnce([
@@ -103,6 +109,7 @@ describe("reservation slot locks", () => {
   });
 
   it("rejects incompatible lock by directional rule even when exact slot differs", async () => {
+    findUniqueClientMock.mockResolvedValueOnce(null);
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
     listActiveReservationLocksForDateMock.mockResolvedValueOnce([
@@ -138,5 +145,31 @@ describe("reservation slot locks", () => {
     const result = await releaseReservationSlotLock({ lockToken: "lock-123" });
 
     expect(result).toEqual({ released: true });
+  });
+
+  it("returns client existence metadata in check+lock flow", async () => {
+    findUniqueClientMock.mockResolvedValueOnce({
+      id: 9,
+      name: "Ana Lopez",
+    });
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+
+    const { checkClientAndAcquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+    const result = await checkClientAndAcquireReservationSlotLock(
+      {
+        phone: "5512345678",
+        date: "2026-03-16",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-13T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      lockToken: "lock-123",
+      expiresAt: "2026-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Lopez",
+    });
   });
 });

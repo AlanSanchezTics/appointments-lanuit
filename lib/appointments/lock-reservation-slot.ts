@@ -13,7 +13,7 @@ import {
   releaseBookingLocks,
 } from "@/lib/db/appointments";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
-import { bookingSchema, validateBookingRules } from "@/lib/validation/appointment";
+import { lockReservationSchema, validateBookingRules } from "@/lib/validation/appointment";
 
 const RESERVATION_LOCK_WINDOW_MINUTES = 10;
 
@@ -21,21 +21,33 @@ function computeLockExpiration(now: Date) {
   return new Date(now.getTime() + RESERVATION_LOCK_WINDOW_MINUTES * 60 * 1000);
 }
 
-export async function acquireReservationSlotLock(rawInput: unknown, now = new Date()) {
-  const input = validateBookingRules(bookingSchema.parse(rawInput), now);
+async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
+  const input = validateBookingRules(lockReservationSchema.parse(rawInput), now);
   const currentDate = getCurrentDateKey(now);
   const expiresAt = computeLockExpiration(now);
 
-  const lock = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await acquireBookingLocks(tx, input.date, input.phone);
 
     try {
       await cleanupExpiredReservationLocks(tx, now);
       await lockConflictingAppointments(tx, input.date, input.phone);
 
-      const activeAppointment = await tx.appointment.findFirst({
+      const existingClient = await tx.client.findUnique({
         where: {
           phone: input.phone,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      const activeAppointment = await tx.appointment.findFirst({
+        where: {
+          client: {
+            phone: input.phone,
+          },
           status: {
             in: ["CONFIRMED", "SYNC_FAILED"],
           },
@@ -79,22 +91,43 @@ export async function acquireReservationSlotLock(rawInput: unknown, now = new Da
         throw new Error("SLOT_NOT_AVAILABLE");
       }
 
-      return createReservationLock(tx, {
+      const lock = await createReservationLock(tx, {
         date: input.date,
         timeSlot: input.timeSlot,
         phone: input.phone,
         lockToken: randomUUID(),
         expiresAt,
       });
+
+      return {
+        lock,
+        clientExists: Boolean(existingClient),
+        clientName: existingClient?.name,
+      };
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
   });
 
   return {
-    lockToken: lock.lockToken,
-    expiresAt: lock.expiresAt,
+    lockToken: result.lock.lockToken,
+    expiresAt: result.lock.expiresAt,
+    clientExists: result.clientExists,
+    clientName: result.clientName,
   };
+}
+
+export async function acquireReservationSlotLock(rawInput: unknown, now = new Date()) {
+  const result = await acquireReservationSlotLockCore(rawInput, now);
+
+  return {
+    lockToken: result.lockToken,
+    expiresAt: result.expiresAt,
+  };
+}
+
+export async function checkClientAndAcquireReservationSlotLock(rawInput: unknown, now = new Date()) {
+  return acquireReservationSlotLockCore(rawInput, now);
 }
 
 export async function releaseReservationSlotLock(rawInput: unknown) {

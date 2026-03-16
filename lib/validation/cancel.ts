@@ -1,11 +1,16 @@
 import { z } from "zod";
 
+const phoneSchema = z
+  .string()
+  .transform((value) => value.replace(/\D/g, ""))
+  .refine((value) => /^[0-9]{10}$/.test(value), "El telefono debe tener 10 digitos");
+
 export const cancelLookupSchema = z.object({
-  phone: z.string().regex(/^[0-9]{10}$/, "El telefono debe tener 10 digitos"),
+  phone: phoneSchema,
 });
 
 export const cancelSchema = z.object({
-  phone: z.string().regex(/^[0-9]{10}$/, "El telefono debe tener 10 digitos"),
+  phone: phoneSchema,
   appointmentId: z.number().int().positive(),
 });
 

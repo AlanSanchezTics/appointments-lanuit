@@ -28,10 +28,16 @@ integrationSuite("cancelAppointment integration", () => {
   });
 
   it("cancels a future appointment and clears the google event id", async () => {
-    const appointment = await prisma.appointment.create({
+    const client = await prisma.client.create({
       data: {
         name: "Ana Lopez",
         phone: "5512345678",
+      },
+    });
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        clientId: client.id,
         date: new Date("2026-03-04T00:00:00.000Z"),
         timeSlot: new Date("1970-01-01T09:00:00.000Z"),
         status: "CONFIRMED",
@@ -65,10 +71,16 @@ integrationSuite("cancelAppointment integration", () => {
   it("keeps google_event_id for retry when Google deletion fails", async () => {
     deleteCalendarEventMock.mockRejectedValueOnce(new Error("boom"));
 
-    const appointment = await prisma.appointment.create({
+    const client = await prisma.client.create({
       data: {
         name: "Ana Lopez",
         phone: "5512345678",
+      },
+    });
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        clientId: client.id,
         date: new Date("2026-03-04T00:00:00.000Z"),
         timeSlot: new Date("1970-01-01T09:00:00.000Z"),
         status: "CONFIRMED",
@@ -101,10 +113,16 @@ integrationSuite("cancelAppointment integration", () => {
   });
 
   it("rejects cancellation when the appointment is not CONFIRMED", async () => {
-    const appointment = await prisma.appointment.create({
+    const client = await prisma.client.create({
       data: {
         name: "Ana Lopez",
         phone: "5512345678",
+      },
+    });
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        clientId: client.id,
         date: new Date("2026-03-04T00:00:00.000Z"),
         timeSlot: new Date("1970-01-01T09:00:00.000Z"),
         status: "SYNC_FAILED",

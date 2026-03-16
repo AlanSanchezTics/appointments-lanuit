@@ -12,23 +12,67 @@ import {
 } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
-import { bookingSchema, validateBookingRules } from "@/lib/validation/appointment";
+import {
+  bookingSchema,
+  confirmBookingWithLockSchema,
+  validateBookingRules,
+} from "@/lib/validation/appointment";
 import { buildWhatsappUrl } from "@/lib/whatsapp/message";
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
 }
 
+async function resolveClientInTransaction(
+  tx: Prisma.TransactionClient,
+  input: { phone: string; name?: string | undefined },
+) {
+  const normalizedName = input.name?.trim();
+
+  if (normalizedName) {
+    const client = await tx.client.upsert({
+      where: {
+        phone: input.phone,
+      },
+      create: {
+        phone: input.phone,
+        name: normalizedName,
+      },
+      update: {},
+    });
+
+    if (client.name !== normalizedName) {
+      throw new Error("CLIENT_NAME_MISMATCH");
+    }
+
+    return client;
+  }
+
+  const client = await tx.client.findUnique({
+    where: {
+      phone: input.phone,
+    },
+  });
+
+  if (!client) {
+    throw new Error("NAME_REQUIRED_FOR_NEW_CLIENT");
+  }
+
+  return client;
+}
+
 async function createAppointmentInTransaction(
   tx: Prisma.TransactionClient,
-  input: { name: string; phone: string; date: string; timeSlot: string },
+  input: { phone: string; date: string; timeSlot: string; name?: string },
   currentDate: string,
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
 
   const activeAppointment = await tx.appointment.findFirst({
     where: {
-      phone: input.phone,
+      client: {
+        phone: input.phone,
+      },
       status: {
         in: ["CONFIRMED", "SYNC_FAILED"],
       },
@@ -64,13 +108,24 @@ async function createAppointmentInTransaction(
     throw new Error("SLOT_NOT_AVAILABLE");
   }
 
+  const client = await resolveClientInTransaction(tx, {
+    phone: input.phone,
+    name: input.name,
+  });
+
   return tx.appointment.create({
     data: {
-      name: input.name,
-      phone: input.phone,
+      clientId: client.id,
       date: new Date(`${input.date}T00:00:00.000Z`),
       timeSlot: timeSlotToDate(input.timeSlot),
       status: "CONFIRMED",
+    },
+    include: {
+      client: {
+        select: {
+          name: true,
+        },
+      },
     },
   });
 }
@@ -107,7 +162,7 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
   return finalizeAppointment({
     appointmentId: appointment.id,
     date: input.date,
-    name: input.name,
+    name: appointment.client.name,
     timeSlot: input.timeSlot,
   });
 }
@@ -124,7 +179,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
     throw new Error("LOCK_TOKEN_REQUIRED");
   }
 
-  const input = validateBookingRules(bookingSchema.parse(rawInput), now);
+  const input = validateBookingRules(confirmBookingWithLockSchema.parse(rawInput), now);
   const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
@@ -159,7 +214,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
   return finalizeAppointment({
     appointmentId: appointment.id,
     date: input.date,
-    name: input.name,
+    name: appointment.client.name,
     timeSlot: input.timeSlot,
   });
 }

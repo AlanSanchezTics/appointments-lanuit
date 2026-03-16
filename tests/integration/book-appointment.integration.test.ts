@@ -14,6 +14,8 @@ const integrationSuite = hasDatabase ? describe : describe.skip;
 
 type SlotRow = {
   id: number;
+  client_id: number;
+  name: string;
   phone: string;
   status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
 };
@@ -43,7 +45,9 @@ integrationSuite("bookAppointment integration", () => {
 
     const appointment = await prisma.appointment.findFirstOrThrow({
       where: {
-        phone: "5512345678",
+        client: {
+          phone: "5512345678",
+        },
       },
     });
 
@@ -109,11 +113,13 @@ integrationSuite("bookAppointment integration", () => {
     expect(rebooked.status).toBe("CONFIRMED");
 
     const appointments = await prisma.$queryRaw<Array<SlotRow>>`
-      SELECT id, phone, status
-      FROM appointments
+      SELECT a.id, a.client_id, c.name, c.phone, a.status
+      FROM appointments a
+      INNER JOIN clients c
+        ON c.id = a.client_id
       WHERE date = '2026-03-04'
         AND time_slot = '09:00:00'
-      ORDER BY id ASC
+      ORDER BY a.id ASC
     `;
 
     expect(appointments).toHaveLength(2);
@@ -158,11 +164,13 @@ integrationSuite("bookAppointment integration", () => {
     expect((rejectionReason as Error).message).toBe("SLOT_NOT_AVAILABLE");
 
     const activeInSlot = await prisma.$queryRaw<Array<SlotRow>>`
-      SELECT id, phone, status
-      FROM appointments
+      SELECT a.id, a.client_id, c.name, c.phone, a.status
+      FROM appointments a
+      INNER JOIN clients c
+        ON c.id = a.client_id
       WHERE date = '2026-03-04'
         AND time_slot = '09:00:00'
-        AND status IN ('CONFIRMED', 'SYNC_FAILED')
+        AND a.status IN ('CONFIRMED', 'SYNC_FAILED')
     `;
 
     expect(activeInSlot).toHaveLength(1);

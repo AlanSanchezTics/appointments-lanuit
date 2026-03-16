@@ -28,7 +28,7 @@ export function BookingConfirmStep({
 }: BookingConfirmStepProps) {
   return (
     <div className="space-y-8">
-      <header className="space-y-4">
+      <header className="space-y-4 mb-[1.5rem]">
         <div className="flex items-start gap-4">
           <div className="space-y-2">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
@@ -37,6 +37,9 @@ export function BookingConfirmStep({
             <h1 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em]">
               Confirmar Detalles
             </h1>
+            <p className="mb-0 text-(--muted)">
+              Hola {draft.name.split(" ")[0]}, que gusto tenerte de vuelta ✨
+            </p>
           </div>
         </div>
       </header>
@@ -45,9 +48,17 @@ export function BookingConfirmStep({
         <dl className="space-y-5">
           <div>
             <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+              Nombre
+            </dt>
+            <dd className="mt-1 text-[1.35rem] font-semibold tracking-[-0.02em]">
+              {draft.name}
+            </dd>
+          </div>
+          <div className="border-t border-[var(--border)] pt-5">
+            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
               Fecha
             </dt>
-            <dd className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+            <dd className="mt-1 text-[1.05rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
               {formatLongDate(draft.date ?? "")}
             </dd>
           </div>
@@ -56,7 +67,7 @@ export function BookingConfirmStep({
               <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
                 Hora
               </dt>
-              <dd className="mt-1 text-[1.08rem] font-semibold tracking-[-0.02em]">
+              <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
                 {formatTimeSlotLabel(draft.timeSlot ?? "09:00")}
               </dd>
             </div>
@@ -64,24 +75,17 @@ export function BookingConfirmStep({
               <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
                 Teléfono
               </dt>
-              <dd className="mt-1 text-[1rem] font-semibold tracking-[-0.02em]">
+              <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
                 {formatPhoneForDisplay(draft.phone)}
               </dd>
             </div>
-          </div>
-          <div className="border-t border-[var(--border)] pt-5">
-            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-              Nombre
-            </dt>
-            <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
-              {draft.name}
-            </dd>
           </div>
         </dl>
       </section>
 
       <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
-        Este horario esta bloqueado para ti por {formatRemainingTime(remainingSeconds)}.
+        Este horario esta bloqueado para ti por{" "}
+        {formatRemainingTime(remainingSeconds)}.
       </p>
 
       {errorMessage ? (

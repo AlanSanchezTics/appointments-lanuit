@@ -13,6 +13,8 @@ const transactionMock = vi.fn();
 const findFirstMock = vi.fn();
 const findManyMock = vi.fn();
 const createMock = vi.fn();
+const clientUpsertMock = vi.fn();
+const clientFindUniqueMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
   acquireBookingLocks: acquireBookingLocksMock,
@@ -52,6 +54,10 @@ describe("bookAppointment", () => {
           findMany: findManyMock,
           create: createMock,
         },
+        client: {
+          upsert: clientUpsertMock,
+          findUnique: clientFindUniqueMock,
+        },
       }),
     );
   });
@@ -59,7 +65,12 @@ describe("bookAppointment", () => {
   it("creates a new appointment even when there is historical cancellation on the same slot", async () => {
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
-    createMock.mockResolvedValueOnce({ id: 42 });
+    clientUpsertMock.mockResolvedValueOnce({
+      id: 21,
+      name: "Bety Ruiz",
+      phone: "5512345679",
+    });
+    createMock.mockResolvedValueOnce({ id: 42, client: { name: "Bety Ruiz" } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
     const result = await bookAppointment(
@@ -74,11 +85,17 @@ describe("bookAppointment", () => {
 
     expect(createMock).toHaveBeenCalledWith({
       data: {
-        name: "Bety Ruiz",
-        phone: "5512345679",
+        clientId: 21,
         date: new Date("2026-03-04T00:00:00.000Z"),
         timeSlot: new Date("1970-01-01T09:00:00.000Z"),
         status: "CONFIRMED",
+      },
+      include: {
+        client: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
     expect(result).toEqual({
@@ -114,7 +131,12 @@ describe("bookAppointment", () => {
   it("keeps successful booking flow with calendar sync and whatsapp url", async () => {
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
-    createMock.mockResolvedValueOnce({ id: 77 });
+    clientUpsertMock.mockResolvedValueOnce({
+      id: 33,
+      name: "Ana Lopez",
+      phone: "5512345678",
+    });
+    createMock.mockResolvedValueOnce({ id: 77, client: { name: "Ana Lopez" } });
     syncAppointmentToCalendarMock.mockResolvedValueOnce({
       status: "SYNC_FAILED",
       reason: "GOOGLE_UNAVAILABLE",
@@ -157,7 +179,12 @@ describe("bookAppointment", () => {
     });
     findFirstMock.mockResolvedValueOnce(null);
     findManyMock.mockResolvedValueOnce([]);
-    createMock.mockResolvedValueOnce({ id: 13 });
+    clientUpsertMock.mockResolvedValueOnce({
+      id: 12,
+      name: "Ana Lopez",
+      phone: "5512345678",
+    });
+    createMock.mockResolvedValueOnce({ id: 13, client: { name: "Ana Lopez" } });
 
     const { confirmAppointmentWithLock } = await import(
       "@/lib/appointments/book-appointment"
@@ -182,5 +209,33 @@ describe("bookAppointment", () => {
       status: "CONFIRMED",
       whatsappUrl: "https://wa.me/test",
     });
+  });
+
+  it("rejects confirmation for a new client when name is missing", async () => {
+    findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
+      id: 99,
+      date: "2026-03-04",
+      timeSlot: "09:00",
+      phone: "5512345678",
+      lockToken: "lock-123",
+      expiresAt: "2026-03-03T12:10:00.000Z",
+    });
+    findFirstMock.mockResolvedValueOnce(null);
+    findManyMock.mockResolvedValueOnce([]);
+    clientFindUniqueMock.mockResolvedValueOnce(null);
+
+    const { confirmAppointmentWithLock } = await import("@/lib/appointments/book-appointment");
+
+    await expect(
+      confirmAppointmentWithLock(
+        {
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          lockToken: "lock-123",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("NAME_REQUIRED_FOR_NEW_CLIENT");
   });
 });

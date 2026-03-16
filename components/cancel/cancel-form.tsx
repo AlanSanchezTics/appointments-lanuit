@@ -38,7 +38,9 @@ export function CancelForm() {
     setLookupError(null);
     setCancelError(null);
 
-    if (!/^[0-9]{10}$/.test(phone.trim())) {
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    if (!/^[0-9]{10}$/.test(normalizedPhone)) {
       setLookupError("Ingresa un telefono de 10 digitos.");
       return;
     }
@@ -49,7 +51,7 @@ export function CancelForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phone: phone.trim() }),
+        body: JSON.stringify({ phone: normalizedPhone }),
       });
 
       const payload = (await response.json()) as CancelableAppointment & {

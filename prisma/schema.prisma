@@ -15,19 +15,30 @@ enum AppointmentStatus {
 
 model Appointment {
   id            Int               @id @default(autoincrement())
-  name          String            @db.VarChar(100)
-  phone         String            @db.VarChar(10)
+  clientId      Int               @map("client_id")
   date          DateTime          @db.Date
   timeSlot      DateTime          @map("time_slot") @db.Time(0)
   status        AppointmentStatus @default(CONFIRMED)
   googleEventId String?           @map("google_event_id") @db.VarChar(255)
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
+  client        Client            @relation(fields: [clientId], references: [id])
 
   @@index([date, timeSlot])
-  @@index([phone, status])
+  @@index([clientId, status])
   @@index([date])
   @@map("appointments")
+}
+
+model Client {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(100)
+  phone        String        @unique @db.VarChar(10)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  appointments Appointment[]
+
+  @@map("clients")
 }
 
 model ReservationLock {

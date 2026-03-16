@@ -31,7 +31,7 @@ describe("booking wizard", () => {
     expect(screen.getByRole("heading", { name: "Agendar cita" })).toBeInTheDocument();
   });
 
-  it("shows local validation errors for invalid contact data", () => {
+  it("shows local validation errors for invalid phone", () => {
     render(
       <BookingWizard
         days={days}
@@ -42,8 +42,26 @@ describe("booking wizard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(screen.getByText("Ingresa tu nombre completo.")).toBeInTheDocument();
     expect(screen.getByText("Ingresa un telefono de 10 digitos.")).toBeInTheDocument();
+  });
+
+  it("reveals name field when check+lock identifies a new client", async () => {
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", phone: "5512345678" }}
+        month="2026-03"
+        checkClientAndAcquireLock={async () => ({
+          lockToken: "lock-123",
+          expiresAt: "2099-01-01T00:10:00.000Z",
+          clientExists: false,
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+
+    expect(await screen.findByLabelText("Nombre completo")).toBeInTheDocument();
   });
 
   it("renders the back to home button below continue", () => {

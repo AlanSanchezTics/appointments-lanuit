@@ -7,7 +7,6 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
-      name: string;
       phone: string;
       date: string;
       timeSlot: string;

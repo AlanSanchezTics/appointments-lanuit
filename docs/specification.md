@@ -93,8 +93,11 @@ Regla direccional formal:
 
 - Un número telefónico solo puede tener una cita activa futura.
 - Debe cancelar antes de crear otra.
-- Formato obligatorio: 10 dígitos numéricos sin espacios.
+- Formato persistido obligatorio: 10 dígitos numéricos.
+- En UI se permite captura con separadores (espacios/guiones/paréntesis), pero backend normaliza a 10 dígitos antes de validar y persistir.
 - Nombre mínimo: 3 caracteres.
+- El cliente se identifica por teléfono.
+- Un teléfono no puede estar asociado a más de un nombre.
 
 ---
 
@@ -113,8 +116,10 @@ No existe estado PENDING persistente.
 1. Usuario accede al mes actual.
 2. Selecciona día disponible.
 3. Selecciona horario disponible.
-4. Ingresa nombre y teléfono.
-5. Al avanzar al paso de confirmación, backend crea lock temporal de slot (`TTL = 10 minutos`).
+4. Ingresa teléfono.
+5. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
+   - Si el cliente existe por teléfono, se avanza directo a confirmación.
+   - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
 6. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
 7. Usuario confirma cita.
 8. Backend:
@@ -122,11 +127,13 @@ No existe estado PENDING persistente.
    - Limpia locks expirados.
    - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
    - Valida disponibilidad.
-   - Inserta cita CONFIRMED.
+   - Resuelve cliente por teléfono (reutiliza si existe, crea si no existe).
+   - Inserta cita CONFIRMED ligada a `client_id`.
    - Elimina lock temporal consumido.
    - Commit.
 9. Crea evento en Google Calendar.
 10. Redirige a WhatsApp con mensaje codificado.
+11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
 
@@ -207,11 +214,18 @@ Histórico de cancelaciones:
 
 ## 10. Modelo de Datos
 
-Tabla: appointments
+Tabla: clients
 
 - id (PK)
 - name VARCHAR(100)
-- phone VARCHAR(10)
+- phone VARCHAR(10) UNIQUE
+- created_at DATETIME
+- updated_at DATETIME
+
+Tabla: appointments
+
+- id (PK)
+- client_id (FK -> clients.id)
 - date DATE
 - time_slot TIME
 - status ENUM('CONFIRMED','CANCELLED','SYNC_FAILED')
@@ -222,7 +236,7 @@ Tabla: appointments
 Índices:
 
 - INDEX(date, time_slot)
-- INDEX(phone, status)
+- INDEX(client_id, status)
 - INDEX(date)
 
 Tabla: reservation_locks

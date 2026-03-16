@@ -12,9 +12,11 @@ const days = [
 
 describe("booking confirm step", () => {
   it("shows selected details and preserves the draft when returning to step 1", async () => {
-    const acquireLock = vi.fn().mockResolvedValue({
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
       lockToken: "lock-1",
       expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
     });
     const releaseLock = vi.fn().mockResolvedValue(undefined);
 
@@ -28,7 +30,7 @@ describe("booking confirm step", () => {
           phone: "5512345678",
         }}
         month="2026-03"
-        acquireLock={acquireLock}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
         releaseLock={releaseLock}
       />,
     );
@@ -42,8 +44,8 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("link", { name: /Editar información/i }));
 
-    expect(await screen.findByDisplayValue("Ana Garcia")).toBeInTheDocument();
     expect(await screen.findByDisplayValue("5512345678")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Ana Garcia")).not.toBeInTheDocument();
     expect(releaseLock).toHaveBeenCalledWith("lock-1");
   });
 
@@ -51,9 +53,11 @@ describe("booking confirm step", () => {
     const submitBooking = vi
       .fn()
       .mockRejectedValue(new Error("SLOT_NOT_AVAILABLE"));
-    const acquireLock = vi.fn().mockResolvedValue({
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
       lockToken: "lock-1",
       expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
     });
 
     render(
@@ -67,7 +71,7 @@ describe("booking confirm step", () => {
         }}
         month="2026-03"
         submitBooking={submitBooking}
-        acquireLock={acquireLock}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
       />,
     );
 
@@ -81,9 +85,11 @@ describe("booking confirm step", () => {
   });
 
   it("returns to step 1 when the temporary lock expires", async () => {
-    const acquireLock = vi.fn().mockResolvedValue({
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
       lockToken: "lock-1",
       expiresAt: "2020-03-13T12:00:02.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
     });
     const releaseLock = vi.fn().mockResolvedValue(undefined);
 
@@ -97,7 +103,7 @@ describe("booking confirm step", () => {
           phone: "5512345678",
         }}
         month="2026-03"
-        acquireLock={acquireLock}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
         releaseLock={releaseLock}
       />,
     );
