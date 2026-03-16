@@ -13,7 +13,7 @@ describe("whatsapp message", () => {
     });
 
     expect(result).toBe(
-      "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
+      "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día Miércoles, 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
     );
   });
 
@@ -30,7 +30,7 @@ describe("whatsapp message", () => {
     expect(result).toContain("https://wa.me/5215512345678?text=");
     expect(result).toContain(
       encodeURIComponent(
-        "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
+        "Hola Pau ✨\nsoy Ana ✌️.\nYa te agendé para el día Miércoles, 4 de marzo de 2026 a las 09:00 AM.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a https://miapp.com/cancelar)",
       ),
     );
   });

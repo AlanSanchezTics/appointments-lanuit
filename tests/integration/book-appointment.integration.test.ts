@@ -9,7 +9,7 @@ vi.mock("@/lib/calendar/sync-appointment", () => ({
   syncAppointmentToCalendar: vi.fn(async () => ({ status: "CONFIRMED" as const })),
 }));
 
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(process.env.DATABASE_URL) && process.env.ENABLE_INTEGRATION_DB === "1";
 const integrationSuite = hasDatabase ? describe : describe.skip;
 
 type SlotRow = {

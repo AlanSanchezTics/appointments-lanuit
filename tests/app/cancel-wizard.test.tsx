@@ -11,7 +11,7 @@ describe("cancel wizard", () => {
   it("validates phone format before search", () => {
     render(<CancelForm />);
 
-    fireEvent.change(screen.getByLabelText("Telefono"), {
+    fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "123" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
@@ -35,16 +35,16 @@ describe("cancel wizard", () => {
 
     render(<CancelForm />);
 
-    fireEvent.change(screen.getByLabelText("Telefono"), {
+    fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
-    expect(await screen.findByRole("heading", { name: "Revisa tu cita" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Confirmar Cancelación" })).toBeInTheDocument();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar cita" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Regresar al inicio" }));
+    fireEvent.click(screen.getByRole("link", { name: "Volver" }));
 
     expect(screen.getByRole("heading", { name: "Cancelar cita" })).toBeInTheDocument();
   });
@@ -74,17 +74,17 @@ describe("cancel wizard", () => {
 
     render(<CancelForm />);
 
-    fireEvent.change(screen.getByLabelText("Telefono"), {
+    fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
-    await screen.findByRole("heading", { name: "Revisa tu cita" });
+    await screen.findByRole("heading", { name: "Confirmar Cancelación" });
 
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: "Tu cita ha sido cancelada con exito",
+        name: "Tu cita ha sido cancelada con éxito",
       }),
     ).toBeInTheDocument();
   });

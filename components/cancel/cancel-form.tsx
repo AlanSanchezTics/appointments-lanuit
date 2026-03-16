@@ -115,6 +115,8 @@ export function CancelForm() {
               <Image
                 src={Logo}
                 alt="La Nuit Nail Studio"
+                width={192}
+                height={192}
                 className="mx-auto h-48 w-auto"
               />
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
@@ -131,7 +133,7 @@ export function CancelForm() {
               </div>
             </header>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-[1.5rem]">
               <label className="relative block" htmlFor="cancel-phone">
                 <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
                   Teléfono
@@ -150,7 +152,7 @@ export function CancelForm() {
             </div>
 
             {lookupError ? (
-              <p className="rounded-3xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)]">
+              <p className="rounded-3xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)] mb-[1.5rem]">
                 {lookupError}
               </p>
             ) : null}
