@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "La Nuit | Citas",
-  description: "Reserva y cancela citas dentro del mes actual.",
+  description: "Reserva y cancela citas dentro de meses habilitados.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

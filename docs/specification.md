@@ -35,9 +35,9 @@ Este documento está diseñado para servir como especificación fuente para impl
 
 ## 3. Alcance Temporal
 
-### 3.1 Regla de Mes Activo
+### 3.1 Regla de Meses Activos
 
-El sistema solo permite reservar dentro del mes calendario en curso.
+El sistema permite reservar únicamente dentro de los meses marcados como `ACTIVE` en `active_months`.
 
 Formato de ruta:
 
@@ -46,9 +46,11 @@ Formato de ruta:
 Restricciones:
 
 - No se permiten meses pasados.
-- No se permiten meses futuros.
-- El backend valida que el mes solicitado coincida con el mes actual.
-- Todas las reglas de disponibilidad aplican únicamente dentro del mes activo.
+- Los meses futuros solo se permiten si están marcados como `ACTIVE`.
+- El backend valida que el mes solicitado esté en `active_months` con estado `ACTIVE`.
+- Todas las reglas de disponibilidad aplican únicamente dentro de meses activos.
+- Ventana operativa por defecto: mes actual + siguiente mes (`ACTIVE_MONTH_WINDOW_SIZE=2`), extensible a N meses.
+- Los meses pasados deben quedar `INACTIVE` por reconciliación automática.
 
 ---
 
@@ -113,7 +115,7 @@ No existe estado PENDING persistente.
 
 ## 7. Flujo de Reserva
 
-1. Usuario accede al mes actual.
+1. Usuario accede a un mes habilitado (`/citas/YYYY-MM`).
 2. Selecciona día disponible.
 3. Selecciona horario disponible.
 4. Ingresa teléfono.
@@ -156,7 +158,7 @@ El mensaje debe codificarse usando encodeURIComponent.
 2. Sistema busca cita cancelable con estas condiciones simultáneas:
    - Estatus `CONFIRMED`.
    - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
-   - Dentro del mes activo.
+   - Dentro de un mes `ACTIVE` en `active_months`.
    - La cita debe estar al menos a 24 horas de distancia; si faltan menos de 24 horas, no se permite cancelación por este medio.
 3. Si existe coincidencia, se muestran detalles de la cita y acciones:
    - `Cancelar cita`.
@@ -255,11 +257,24 @@ Tabla: reservation_locks
 - INDEX(date, time_slot, expires_at)
 - INDEX(phone, expires_at)
 
+Tabla: active_months
+
+- id (PK)
+- month CHAR(7) UNIQUE (`YYYY-MM`)
+- status ENUM('ACTIVE','INACTIVE')
+- created_at DATETIME
+- updated_at DATETIME
+
+Índices:
+
+- UNIQUE(month)
+- INDEX(status, month)
+
 ---
 
 ## 11. Casos Edge
 
-1. Acceso a mes distinto al actual → Rechazar.
+1. Acceso a mes no activo o mes pasado → Rechazar.
 2. Doble confirmación simultánea → Solo una gana.
 3. Fallo Google → Estado SYNC_FAILED.
 4. Reserva mismo día → Rechazar.
@@ -271,6 +286,7 @@ Tabla: reservation_locks
 10. Intento de cancelar una cita con menos de 24 horas de anticipación → Rechazar en flujo web de cancelación.
 11. Lock temporal expirado durante confirmación → Rechazar (`LOCK_EXPIRED_OR_INVALID`) y pedir reselección.
 12. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
+13. Cambio de mes (00:00 America/Mexico_City) con `active_months` desactualizada → el job de reconciliación debe reactivar ventana vigente y desactivar meses pasados.
 
 ---
 
@@ -283,7 +299,7 @@ Tabla: reservation_locks
 5. Solo una cita activa por teléfono.
 6. Solo lunes a viernes.
 7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
-8. Solo mes en curso.
+8. Solo meses `ACTIVE` y nunca meses pasados.
 9. Confirmación atómica.
 10. Cancelación libera horario.
 11. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.

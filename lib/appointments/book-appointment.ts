@@ -1,5 +1,6 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { Prisma } from "@prisma/client";
+import { assertMonthIsBookable } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import {
@@ -147,6 +148,7 @@ async function finalizeAppointment(input: { appointmentId: number; date: string;
 
 export async function bookAppointment(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(bookingSchema.parse(rawInput), now);
+  await assertMonthIsBookable(input.date.slice(0, 7), now);
   const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
@@ -180,6 +182,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
   }
 
   const input = validateBookingRules(confirmBookingWithLockSchema.parse(rawInput), now);
+  await assertMonthIsBookable(input.date.slice(0, 7), now);
   const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {

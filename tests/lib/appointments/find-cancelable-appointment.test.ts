@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const findConfirmedFutureAppointmentByPhoneInMonthMock = vi.fn();
+const listBookableMonthsMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
   findConfirmedFutureAppointmentByPhoneInMonth: findConfirmedFutureAppointmentByPhoneInMonthMock,
+}));
+
+vi.mock("@/lib/active-months/service", () => ({
+  listBookableMonths: listBookableMonthsMock,
 }));
 
 describe("findCancelableAppointment", () => {
@@ -12,6 +17,7 @@ describe("findCancelableAppointment", () => {
   });
 
   it("returns the next confirmed appointment in active month", async () => {
+    listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
     findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce({
       id: 12,
       name: "Ana Garcia",
@@ -47,6 +53,7 @@ describe("findCancelableAppointment", () => {
   });
 
   it("throws APPOINTMENT_NOT_FOUND when there is no confirmed appointment", async () => {
+    listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
     findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce(null);
 
     const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");

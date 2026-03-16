@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 function getActiveMonth() {
-  return new Date().toISOString().slice(0, 7);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date());
 }
 
 function getUniquePhone() {

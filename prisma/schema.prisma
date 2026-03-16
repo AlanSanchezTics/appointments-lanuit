@@ -13,6 +13,11 @@ enum AppointmentStatus {
   SYNC_FAILED
 }
 
+enum ActiveMonthStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Appointment {
   id            Int               @id @default(autoincrement())
   clientId      Int               @map("client_id")
@@ -54,4 +59,15 @@ model ReservationLock {
   @@index([date, timeSlot, expiresAt])
   @@index([phone, expiresAt])
   @@map("reservation_locks")
+}
+
+model ActiveMonth {
+  id        Int               @id @default(autoincrement())
+  month     String            @unique @db.Char(7)
+  status    ActiveMonthStatus @default(ACTIVE)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  @@index([status, month])
+  @@map("active_months")
 }

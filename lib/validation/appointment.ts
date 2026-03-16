@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { isCurrentMonth, isFutureDateTime, isWeekdayInMexicoCity } from "@/lib/datetime/mexico-city";
+import { getCurrentMonthKey, isFutureDateTime, isWeekdayInMexicoCity } from "@/lib/datetime/mexico-city";
 
 const phoneSchema = z
   .string()
@@ -40,7 +40,8 @@ export const confirmBookingWithLockSchema = bookingCoreSchema.extend({
 });
 
 export function isBookingMonthAllowed(month: string, now = new Date()) {
-  return isCurrentMonth(month, now);
+  const currentMonth = getCurrentMonthKey(now);
+  return month >= currentMonth;
 }
 
 export function validateBookingRules<

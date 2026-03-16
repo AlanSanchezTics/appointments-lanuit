@@ -302,7 +302,7 @@ export function CancelForm() {
             </header>
             <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[1.5rem]">
               Gracias por avisar. Si lo necesitas, puedes volver a reservar
-              dentro del mes activo.
+              en meses habilitados.
             </p>
 
             <div className="flex justify-center">
@@ -322,7 +322,7 @@ export function CancelForm() {
 
 function getLookupErrorMessage(code: string) {
   if (code === "APPOINTMENT_NOT_FOUND") {
-    return "No encontramos una cita confirmada futura en el mes activo.";
+    return "No encontramos una cita confirmada futura en meses habilitados.";
   }
 
   if (code === "APPOINTMENT_IS_COMMING_SOON") {

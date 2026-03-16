@@ -1,5 +1,6 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { getCurrentDateKey, getCurrentTimeKey, isCurrentMonth } from "@/lib/datetime/mexico-city";
+import { assertMonthIsBookable } from "@/lib/active-months/service";
+import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
 import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
 
@@ -27,9 +28,7 @@ function getMonthDays(month: string) {
 }
 
 export async function getMonthAvailability(month: string, now = new Date()) {
-  if (!isCurrentMonth(month, now)) {
-    throw new Error("MONTH_NOT_ALLOWED");
-  }
+  await assertMonthIsBookable(month, now);
 
   const { monthStart, monthEnd } = getMonthBounds(month);
   const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);

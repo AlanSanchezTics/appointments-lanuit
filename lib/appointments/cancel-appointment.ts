@@ -1,4 +1,5 @@
-import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
+import { listBookableMonths } from "@/lib/active-months/service";
+import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import { findConfirmedFutureAppointmentByIdForUpdate } from "@/lib/db/appointments";
 import { deleteCalendarEvent } from "@/lib/calendar/google";
 import { prisma } from "@/lib/db/prisma";
@@ -7,17 +8,26 @@ import { cancelSchema } from "@/lib/validation/cancel";
 export async function cancelAppointment(rawInput: unknown, now = new Date()) {
   const input = cancelSchema.parse(rawInput);
   const currentDate = getCurrentDateKey(now);
-  const activeMonth = getCurrentMonthKey(now);
-  const { monthStart, monthEndExclusive } = getMonthRange(activeMonth);
+  const activeMonths = await listBookableMonths(now);
   const appointment = await prisma.$transaction(async (tx) => {
-    const lockedAppointment = await findConfirmedFutureAppointmentByIdForUpdate(
-      tx,
-      input.appointmentId,
-      input.phone,
-      currentDate,
-      monthStart,
-      monthEndExclusive,
-    );
+    let lockedAppointment = null;
+
+    for (const month of activeMonths) {
+      const { monthStart, monthEndExclusive } = getMonthRange(month);
+
+      lockedAppointment = await findConfirmedFutureAppointmentByIdForUpdate(
+        tx,
+        input.appointmentId,
+        input.phone,
+        currentDate,
+        monthStart,
+        monthEndExclusive,
+      );
+
+      if (lockedAppointment) {
+        break;
+      }
+    }
 
     if (!lockedAppointment) {
       throw new Error("APPOINTMENT_NOT_FOUND");

@@ -1,17 +1,27 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getMonthAvailability } from "@/lib/availability/service";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
+import { assertMonthIsBookable } from "@/lib/active-months/service";
 
 vi.mock("@/lib/db/appointments", () => ({
   listMonthAppointments: vi.fn(),
   listMonthActiveReservationLocks: vi.fn(),
 }));
 
+vi.mock("@/lib/active-months/service", () => ({
+  assertMonthIsBookable: vi.fn(),
+}));
+
 const listMonthAppointmentsMock = vi.mocked(listMonthAppointments);
 const listMonthActiveReservationLocksMock = vi.mocked(listMonthActiveReservationLocks);
+const assertMonthIsBookableMock = vi.mocked(assertMonthIsBookable);
 
 describe("availability service", () => {
+  beforeEach(() => {
+    assertMonthIsBookableMock.mockResolvedValue(undefined);
+  });
+
   it("removes occupied slots with directional pair logic", async () => {
     listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);
     listMonthAppointmentsMock.mockResolvedValueOnce([

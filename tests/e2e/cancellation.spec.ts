@@ -1,12 +1,20 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
+function getActiveMonth() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date());
+}
+
 function getUniquePhone() {
   const suffix = String(Date.now()).slice(-8);
   return `55${suffix}`;
 }
 
 async function getActiveSlot(request: APIRequestContext) {
-  const activeMonth = new Date().toISOString().slice(0, 7);
+  const activeMonth = getActiveMonth();
   const availabilityResponse = await request.get(`/api/availability/${activeMonth}`);
   expect(availabilityResponse.ok()).toBeTruthy();
 

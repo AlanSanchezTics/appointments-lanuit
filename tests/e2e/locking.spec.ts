@@ -6,7 +6,11 @@ const hasDatabase = Boolean(process.env.DATABASE_URL) && process.env.ENABLE_E2E_
 const e2eSuite = hasDatabase ? test.describe : test.describe.skip;
 
 function getActiveMonth() {
-  return new Date().toISOString().slice(0, 7);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+  }).format(new Date());
 }
 
 async function getActiveSlot(request: APIRequestContext) {

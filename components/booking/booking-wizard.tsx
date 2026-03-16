@@ -499,7 +499,7 @@ function getApiErrorMessage(code: string) {
   }
 
   if (code === "MONTH_NOT_ALLOWED") {
-    return "Solo se puede agendar en el mes actual.";
+    return "Solo se puede agendar en meses habilitados.";
   }
 
   if (code === "LOCK_TIMEOUT") {

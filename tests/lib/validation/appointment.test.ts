@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 import { isBookingMonthAllowed, validateBookingRules } from "@/lib/validation/appointment";
 
 describe("appointment validation", () => {
-  it("accepts only the current month", () => {
+  it("accepts current and future months, rejects past months", () => {
     expect(isBookingMonthAllowed("2026-03", new Date("2026-03-03T12:00:00.000Z"))).toBe(true);
-    expect(isBookingMonthAllowed("2026-04", new Date("2026-03-03T12:00:00.000Z"))).toBe(false);
+    expect(isBookingMonthAllowed("2026-04", new Date("2026-03-03T12:00:00.000Z"))).toBe(true);
+    expect(isBookingMonthAllowed("2026-02", new Date("2026-03-03T12:00:00.000Z"))).toBe(false);
   });
 
   it("allows same-day bookings when slot has not passed", () => {

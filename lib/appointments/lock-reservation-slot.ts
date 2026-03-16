@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { assertMonthIsBookable } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -23,6 +24,7 @@ function computeLockExpiration(now: Date) {
 
 async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(lockReservationSchema.parse(rawInput), now);
+  await assertMonthIsBookable(input.date.slice(0, 7), now);
   const currentDate = getCurrentDateKey(now);
   const expiresAt = computeLockExpiration(now);
 

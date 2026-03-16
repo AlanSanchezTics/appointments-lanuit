@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const findConfirmedFutureAppointmentByIdForUpdateMock = vi.fn();
 const deleteCalendarEventMock = vi.fn(async () => undefined);
+const listBookableMonthsMock = vi.fn();
 const transactionMock = vi.fn();
 const appointmentUpdateMock = vi.fn(async () => undefined);
 const txAppointmentUpdateMock = vi.fn(async () => undefined);
@@ -12,6 +13,10 @@ vi.mock("@/lib/db/appointments", () => ({
 
 vi.mock("@/lib/calendar/google", () => ({
   deleteCalendarEvent: deleteCalendarEventMock,
+}));
+
+vi.mock("@/lib/active-months/service", () => ({
+  listBookableMonths: listBookableMonthsMock,
 }));
 
 vi.mock("@/lib/db/prisma", () => ({
@@ -26,6 +31,7 @@ vi.mock("@/lib/db/prisma", () => ({
 describe("cancelAppointment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listBookableMonthsMock.mockResolvedValue(["2026-03"]);
 
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({

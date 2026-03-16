@@ -6,6 +6,7 @@ const playwrightBaseUrl =
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   use: {
     baseURL: playwrightBaseUrl,
     trace: "on-first-retry",

@@ -1,19 +1,28 @@
-import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
+import { listBookableMonths } from "@/lib/active-months/service";
+import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import { findConfirmedFutureAppointmentByPhoneInMonth } from "@/lib/db/appointments";
 import { cancelLookupSchema } from "@/lib/validation/cancel";
 
 export async function findCancelableAppointment(rawInput: unknown, now = new Date()) {
   const input = cancelLookupSchema.parse(rawInput);
   const currentDate = getCurrentDateKey(now);
-  const activeMonth = getCurrentMonthKey(now);
-  const { monthStart, monthEndExclusive } = getMonthRange(activeMonth);
+  const activeMonths = await listBookableMonths(now);
+  let appointment = null;
 
-  const appointment = await findConfirmedFutureAppointmentByPhoneInMonth(
-    input.phone,
-    currentDate,
-    monthStart,
-    monthEndExclusive,
-  );
+  for (const month of activeMonths) {
+    const { monthStart, monthEndExclusive } = getMonthRange(month);
+
+    appointment = await findConfirmedFutureAppointmentByPhoneInMonth(
+      input.phone,
+      currentDate,
+      monthStart,
+      monthEndExclusive,
+    );
+
+    if (appointment) {
+      break;
+    }
+  }
 
   if (!appointment) {
     throw new Error("APPOINTMENT_NOT_FOUND");

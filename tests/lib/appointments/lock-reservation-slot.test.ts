@@ -14,6 +14,7 @@ const createReservationLockMock = vi.fn(async () => ({
   lockToken: "lock-123",
   expiresAt: "2026-03-13T12:10:00.000Z",
 }));
+const assertMonthIsBookableMock = vi.fn(async () => undefined);
 
 const transactionMock = vi.fn();
 const findFirstMock = vi.fn();
@@ -38,6 +39,10 @@ vi.mock("@/lib/db/prisma", () => ({
       deleteMany: releaseDeleteManyMock,
     },
   },
+}));
+
+vi.mock("@/lib/active-months/service", () => ({
+  assertMonthIsBookable: assertMonthIsBookableMock,
 }));
 
 describe("reservation slot locks", () => {

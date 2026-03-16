@@ -31,7 +31,7 @@ El smoke test crea un evento temporal en la fecha y hora indicadas por `GOOGLE_C
 
 ## Reglas criticas
 
-- Solo se puede reservar dentro del mes actual.
+- Solo se puede reservar dentro de meses habilitados.
 - No se permiten citas el mismo dia.
 - Solo lunes a viernes.
 - Separacion minima de 4 horas entre inicios.

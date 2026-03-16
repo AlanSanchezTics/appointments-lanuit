@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "locks:cleanup": "node --env-file=.env scripts/cleanup-reservation-locks.mjs",
+    "months:reconcile": "node --env-file=.env scripts/reconcile-active-months.mjs",
     "calendar:smoke": "node --env-file=.env scripts/google-calendar-smoke.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
