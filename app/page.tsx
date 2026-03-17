@@ -7,7 +7,7 @@ import {
 } from "@/lib/datetime/mexico-city";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import Image from "next/image";
 import Logo from "@/assets/images/logo.png";
 
@@ -31,7 +31,9 @@ export default async function HomePage() {
           <p className="max-w-xl text-base text-[var(--muted)]">
             {t("home.subtitle")}
           </p>
-          <p className="text-sm text-[var(--muted)]">{t("home.languageHint")}</p>
+          <p className="text-sm text-[var(--muted)]">
+            {t("home.languageHint")}
+          </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               className="py-4 text-[1.02rem] font-semibold"

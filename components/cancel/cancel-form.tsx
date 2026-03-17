@@ -2,12 +2,15 @@
 
 import { useState, useTransition } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import {
   formatLongDate,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
-import { translateApiError, translateValidationError } from "@/lib/i18n/translate";
+import {
+  translateApiError,
+  translateValidationError,
+} from "@/lib/i18n/translate";
 import type { AppLanguage } from "@/lib/i18n/config";
 import Link from "next/link";
 import Image from "next/image";
@@ -66,7 +69,9 @@ export function CancelForm() {
       };
 
       if (!response.ok) {
-        setLookupErrorCode(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
+        setLookupErrorCode(
+          payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR",
+        );
         return;
       }
 
@@ -100,7 +105,9 @@ export function CancelForm() {
       };
 
       if (!response.ok) {
-        setCancelErrorCode(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
+        setCancelErrorCode(
+          payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR",
+        );
         return;
       }
 
@@ -122,7 +129,9 @@ export function CancelForm() {
       : translateApiError(t, lookupErrorCode)
     : null;
 
-  const cancelError = cancelErrorCode ? translateApiError(t, cancelErrorCode) : null;
+  const cancelError = cancelErrorCode
+    ? translateApiError(t, cancelErrorCode)
+    : null;
 
   return (
     <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
@@ -143,9 +152,7 @@ export function CancelForm() {
               <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
                 {t("cancel.title")}
               </h1>
-              <p className="text-[var(--muted)]">
-                {t("cancel.intro")}
-              </p>
+              <p className="text-[var(--muted)]">{t("cancel.intro")}</p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-1/3 rounded-full bg-[var(--accent)]" />
               </div>
@@ -209,9 +216,7 @@ export function CancelForm() {
               <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
                 {t("cancel.confirmTitle")}
               </h2>
-              <p className="text-[var(--muted)]">
-                {t("cancel.confirmIntro")}
-              </p>
+              <p className="text-[var(--muted)]">{t("cancel.confirmIntro")}</p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
               </div>
@@ -274,7 +279,9 @@ export function CancelForm() {
                 onClick={handleCancel}
                 disabled={isCancelling}
               >
-                {isCancelling ? t("cancel.cancelling") : t("cancel.cancelButton")}
+                {isCancelling
+                  ? t("cancel.cancelling")
+                  : t("cancel.cancelButton")}
               </Button>
               <Link
                 className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
@@ -307,9 +314,7 @@ export function CancelForm() {
               <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
                 {t("cancel.successTitle")}
               </h2>
-              <p className="text-[var(--muted)]">
-                {t("cancel.successBody")}
-              </p>
+              <p className="text-[var(--muted)]">{t("cancel.successBody")}</p>
               <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
                 <div className="h-full w-full rounded-full bg-[var(--accent)]" />
               </div>

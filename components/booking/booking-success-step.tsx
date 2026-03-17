@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import {
   formatLongDate,
   formatTimeSlotLabel,
@@ -31,7 +31,10 @@ export function BookingSuccessStep({
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
 
   function handleWhatsAppClick() {
-    const cancelUrl = typeof window === "undefined" ? "/cancelar" : `${window.location.origin}/cancelar`;
+    const cancelUrl =
+      typeof window === "undefined"
+        ? "/cancelar"
+        : `${window.location.origin}/cancelar`;
     const message = t("whatsapp.messageTemplate", {
       name: success.whatsappData.name,
       date: formatLongDate(success.whatsappData.date, language),

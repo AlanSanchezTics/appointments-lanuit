@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import type { DayAvailability } from "@/lib/availability/service";
 
 type DaySelectorProps = {
@@ -7,7 +7,11 @@ type DaySelectorProps = {
   onSelect: (date: string) => void;
 };
 
-export function DaySelector({ days, selectedDate, onSelect }: DaySelectorProps) {
+export function DaySelector({
+  days,
+  selectedDate,
+  onSelect,
+}: DaySelectorProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {days.map((day) => (

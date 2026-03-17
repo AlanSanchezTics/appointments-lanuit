@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import { useTranslation } from "react-i18next";
 import {
   formatDayOfMonthLabel,

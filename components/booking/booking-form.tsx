@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import { translateApiError } from "@/lib/i18n/translate";
 
 type BookingFormProps = {
@@ -96,7 +96,9 @@ export function BookingForm({ selectedDate, selectedSlot }: BookingFormProps) {
       </Button>
       {messageCode ? (
         <p className="text-sm text-[var(--accent-dark)]">
-          {messageCode === "SUCCESS" ? t("booking.successTitle") : translateApiError(t, messageCode)}
+          {messageCode === "SUCCESS"
+            ? t("booking.successTitle")
+            : translateApiError(t, messageCode)}
         </p>
       ) : null}
     </form>

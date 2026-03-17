@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 
 type TimeSlotSelectorProps = {
   slots: string[];
@@ -6,7 +6,11 @@ type TimeSlotSelectorProps = {
   onSelect: (slot: string) => void;
 };
 
-export function TimeSlotSelector({ slots, selectedSlot, onSelect }: TimeSlotSelectorProps) {
+export function TimeSlotSelector({
+  slots,
+  selectedSlot,
+  onSelect,
+}: TimeSlotSelectorProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
       {slots.map((slot) => (

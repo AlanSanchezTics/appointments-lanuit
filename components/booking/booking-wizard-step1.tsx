@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import { useTranslation } from "react-i18next";
 import {
   formatDayOfMonthLabel,
@@ -137,7 +137,9 @@ export function BookingWizardStep1({
           })}
         </div>
         {errors.date ? (
-          <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.date)}</p>
+          <p className="text-sm text-[var(--error)]">
+            {translateValidationError(t, errors.date)}
+          </p>
         ) : null}
       </section>
 
@@ -152,7 +154,9 @@ export function BookingWizardStep1({
             return (
               <button
                 key={slot}
-                aria-label={t("booking.selectTimeSlot", { slot: formatTimeSlotLabel(slot, language) })}
+                aria-label={t("booking.selectTimeSlot", {
+                  slot: formatTimeSlotLabel(slot, language),
+                })}
                 className={`min-h-15 rounded-full border px-4 text-[0.98rem] font-semibold tracking-[-0.02em] transition ${
                   isSelected
                     ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
@@ -167,7 +171,9 @@ export function BookingWizardStep1({
           })}
         </div>
         {errors.timeSlot ? (
-          <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.timeSlot)}</p>
+          <p className="text-sm text-[var(--error)]">
+            {translateValidationError(t, errors.timeSlot)}
+          </p>
         ) : null}
       </section>
 
@@ -190,7 +196,9 @@ export function BookingWizardStep1({
             />
           </label>
           {errors.phone ? (
-            <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.phone)}</p>
+            <p className="text-sm text-[var(--error)]">
+              {translateValidationError(t, errors.phone)}
+            </p>
           ) : null}
 
           {showNameField ? (
@@ -202,13 +210,17 @@ export function BookingWizardStep1({
                 <input
                   id="booking-name"
                   className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
-                  onChange={(event) => onDraftChange({ name: event.target.value })}
+                  onChange={(event) =>
+                    onDraftChange({ name: event.target.value })
+                  }
                   placeholder={t("booking.namePlaceholder")}
                   value={draft.name}
                 />
               </label>
               {errors.name ? (
-                <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.name)}</p>
+                <p className="text-sm text-[var(--error)]">
+                  {translateValidationError(t, errors.name)}
+                </p>
               ) : null}
             </>
           ) : null}
@@ -217,12 +229,16 @@ export function BookingWizardStep1({
 
       {hasActiveLock ? (
         <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
-          {t("booking.slotLockedForYou", { time: formatRemainingTime(remainingSeconds) })}
+          {t("booking.slotLockedForYou", {
+            time: formatRemainingTime(remainingSeconds),
+          })}
         </p>
       ) : null}
 
       {errors.form ? (
-        <p className="text-sm text-[var(--error)]">{translateValidationError(t, errors.form)}</p>
+        <p className="text-sm text-[var(--error)]">
+          {translateValidationError(t, errors.form)}
+        </p>
       ) : null}
 
       <div className="space-y-4 pt-2">

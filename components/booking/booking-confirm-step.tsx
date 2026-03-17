@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/public/button";
 import { useTranslation } from "react-i18next";
 import {
   formatLongDate,
@@ -52,34 +52,34 @@ export function BookingConfirmStep({
       <section className="rounded-[2rem] border border-[var(--border)] bg-white/80 p-6 shadow-[var(--shadow-soft)]">
         <dl className="space-y-5">
           <div>
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                {t("booking.name")}
-              </dt>
+            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+              {t("booking.name")}
+            </dt>
             <dd className="mt-1 text-[1.35rem] font-semibold tracking-[-0.02em]">
               {draft.name}
             </dd>
           </div>
           <div className="border-t border-[var(--border)] pt-5">
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                {t("booking.date")}
-              </dt>
-              <dd className="mt-1 text-[1.05rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
-                {formatLongDate(draft.date ?? "", language)}
-              </dd>
+            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+              {t("booking.date")}
+            </dt>
+            <dd className="mt-1 text-[1.05rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+              {formatLongDate(draft.date ?? "", language)}
+            </dd>
           </div>
           <div className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-5">
             <div>
-                <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                  {t("booking.time")}
-                </dt>
-                <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
-                  {formatTimeSlotLabel(draft.timeSlot ?? "09:00", language)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                  {t("booking.phone")}
-                </dt>
+              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                {t("booking.time")}
+              </dt>
+              <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
+                {formatTimeSlotLabel(draft.timeSlot ?? "09:00", language)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
+                {t("booking.phone")}
+              </dt>
               <dd className="mt-1 text-[1.05rem] font-semibold tracking-[-0.02em]">
                 {formatPhoneForDisplay(draft.phone)}
               </dd>
@@ -89,7 +89,9 @@ export function BookingConfirmStep({
       </section>
 
       <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
-        {t("booking.slotLockedForYou", { time: formatRemainingTime(remainingSeconds) })}
+        {t("booking.slotLockedForYou", {
+          time: formatRemainingTime(remainingSeconds),
+        })}
       </p>
 
       {errorMessage ? (
