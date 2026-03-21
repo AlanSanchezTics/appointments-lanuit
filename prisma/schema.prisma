@@ -18,6 +18,11 @@ enum ActiveMonthStatus {
   INACTIVE
 }
 
+enum AdminUserStatus {
+  active
+  inactive
+}
+
 model Appointment {
   id            Int               @id @default(autoincrement())
   clientId      Int               @map("client_id")
@@ -70,4 +75,19 @@ model ActiveMonth {
 
   @@index([status, month])
   @@map("active_months")
+}
+
+model AdminUser {
+  id           Int             @id @default(autoincrement())
+  username     String          @unique @db.VarChar(191)
+  name         String          @db.VarChar(100)
+  passwordHash String          @map("password_hash") @db.Char(64)
+  passwordSalt String          @map("password_salt") @db.VarChar(191)
+  status       AdminUserStatus @default(active)
+  lastLoginAt  DateTime?       @map("last_login_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("admin_users")
 }

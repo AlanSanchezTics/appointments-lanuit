@@ -30,8 +30,8 @@ export function Select({
         onChange={(e) => onChange(e.target.value)}
         className={`
           w-full h-11 px-3 rounded-xl
-          border border-[#E5E7EB]
-          bg-white text-[#1C1917]
+          border border-[var(--admin-border)]
+          bg-[var(--admin-surface)] text-[var(--admin-text-primary)]
           appearance-none outline-none
           ${className}
         `}
@@ -46,7 +46,7 @@ export function Select({
         ))}
       </select>
 
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--admin-text-secondary)]">
         ▼
       </span>
     </div>

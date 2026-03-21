@@ -18,13 +18,13 @@ export function MetricCard({
     <Card
       className={`flex flex-col items-center justify-center gap-2 text-center ${className}`}
     >
-      <div className="text-[#875207] text-xl">{icon}</div>
+      <div className="text-xl text-[var(--admin-accent)]">{icon}</div>
 
-      <span className="text-[10px] font-bold uppercase text-gray-500">
+      <span className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
         {label}
       </span>
 
-      <span className="text-[16px] font-extrabold text-[#1C1917]">{value}</span>
+      <span className="text-[16px] font-extrabold text-[var(--admin-text-primary)]">{value}</span>
     </Card>
   );
 }

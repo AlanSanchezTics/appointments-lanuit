@@ -308,6 +308,23 @@ Tabla: active_months
 - UNIQUE(month)
 - INDEX(status, month)
 
+Tabla: admin_users
+
+- id (PK)
+- username VARCHAR(191) UNIQUE
+- name VARCHAR(100)
+- password_hash CHAR(64)
+- password_salt VARCHAR(191)
+- status ENUM('active','inactive')
+- last_login_at DATETIME NULL
+- created_at DATETIME
+- updated_at DATETIME
+
+Índices:
+
+- UNIQUE(username)
+- INDEX(status)
+
 ---
 
 ## 11. Casos Edge
@@ -325,6 +342,7 @@ Tabla: active_months
 11. Lock temporal expirado durante confirmación → Rechazar (`LOCK_EXPIRED_OR_INVALID`) y pedir reselección.
 12. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
 13. Cambio de mes (00:00 America/Mexico_City) con `active_months` desactualizada → el job de reconciliación debe reactivar ventana vigente y desactivar meses pasados.
+14. Intento de acceso a `/admin/*` sin sesión válida → redirección obligatoria a `/admin/login`.
 
 ---
 
@@ -341,6 +359,7 @@ Tabla: active_months
 9. Confirmación atómica.
 10. Cancelación libera horario.
 11. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
+12. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
 
 ## 13. Stack de tecnologías
 
@@ -350,6 +369,8 @@ Tabla: active_months
 - Docker para generar ambiente
 - i18next
 - react-i18next
+- next-auth (credentials provider)
+- Node crypto (hash de contraseña admin con salt + pepper)
 
 ## 14. Internacionalización y Contrato de Mensajes
 
@@ -371,3 +392,55 @@ Reglas obligatorias:
 8. Contrato de error API:
    - `errorCode`: identificador estable para traducción en frontend.
    - `error`: alias legacy transitorio durante migración.
+
+## 15. Admin Panel
+
+### 15.1 Alcance y aislamiento
+
+- El admin panel es una superficie independiente del flujo público.
+- Rutas UI base:
+  - `/admin/login`
+  - `/admin/`
+- El sistema visual del admin usa exclusivamente `docs/ui/admin/*` y `components/admin/ui`.
+- No debe reutilizar ni alterar el sistema visual del flujo público.
+
+### 15.2 Flujo de autenticación admin
+
+1. Usuario abre `/admin/login`.
+2. Captura `username` y contraseña.
+3. Frontend ejecuta `signIn("credentials")` de NextAuth.
+4. Backend valida payload y credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
+   - algoritmo: `SHA-256(salt + password + pepper)`.
+5. Si credenciales son válidas y la cuenta está activa:
+   - genera sesión NextAuth firmada por `NEXTAUTH_SECRET`,
+   - actualiza `last_login_at`,
+   - redirige a `/admin/`.
+6. Si formulario está incompleto:
+   - responde `FORM_INCOMPLETE`.
+7. Si credenciales inválidas:
+   - responde `INVALID_CREDENTIALS`.
+8. Si cuenta inactiva:
+   - responde `ADMIN_USER_INACTIVE`.
+
+### 15.3 Protección de rutas y redirecciones
+
+- Cualquier acceso a `/admin/*` (excepto `/admin/login`) requiere sesión admin válida.
+- Si no existe sesión válida:
+  - redirección obligatoria a `/admin/login`.
+- Si usuario ya autenticado abre `/admin/login`:
+  - redirección obligatoria a `/admin/`.
+- Logout:
+  - `signOut` de NextAuth limpia cookie/sesión.
+
+### 15.4 Contrato API admin auth
+
+- NextAuth credentials callback:
+  - `POST /api/auth/callback/credentials`
+  - request: `{ username, password }`
+  - errores funcionales: `FORM_INCOMPLETE`, `INVALID_CREDENTIALS`, `ADMIN_USER_INACTIVE`
+- Bootstrap/admin user management:
+  - script: `scripts/create-admin-user.ts` (flags + modo interactivo)
+- NextAuth session endpoint:
+  - `GET /api/auth/session`
+- NextAuth logout endpoint:
+  - `POST /api/auth/signout`

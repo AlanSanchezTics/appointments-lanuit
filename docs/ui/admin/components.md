@@ -346,6 +346,60 @@ Construido a partir de:
 
 ---
 
+## Component: AdminLayout
+
+### Purpose
+
+Proveer el shell principal del panel administrativo para vistas protegidas.
+
+### Composition
+
+- `Header`
+- `ContentWrapper`
+
+### Usage
+
+Uso:
+
+- `/admin/`
+- futuras pantallas protegidas del admin
+
+---
+
+## Component: Header
+
+### Purpose
+
+Mostrar identidad del panel y acción global de cierre de sesión.
+
+### Composition
+
+- branding del panel
+- acción `Cerrar sesión` usando `Button`
+
+### Usage
+
+Uso:
+
+- barra superior persistente de vistas administrativas autenticadas
+
+---
+
+## Component: ContentWrapper
+
+### Purpose
+
+Mantener ancho, padding y ritmo de espaciado consistente en el contenido del admin.
+
+### Usage
+
+Uso:
+
+- contenedor de secciones de dashboard
+- base para vistas operativas futuras
+
+---
+
 ## Reuse Rules
 
 El agente debe:

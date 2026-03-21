@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID } from "crypto";
 
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { assertMonthIsBookable } from "@/lib/active-months/service";

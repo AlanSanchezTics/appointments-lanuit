@@ -116,6 +116,26 @@ Business behavior is defined by:
   - Cancelling past appointments.
   - Cancelling appointments with less than 24 hours remaining via the web cancellation flow.
 
+## Admin Access Rules
+
+- Admin panel routes are isolated under `/admin`.
+- Only authenticated admin users can access protected admin routes.
+- Admin authentication is based on:
+  - `next-auth` credentials provider,
+  - `username + password` credentials stored in `admin_users`,
+  - active account status (`status = active`),
+  - signed NextAuth session with expiration.
+- Admin login flow:
+  - Credentials are validated against `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
+  - On success, the system issues a signed session cookie.
+  - On failure, the system returns a stable error code.
+- Route protection behavior:
+  - unauthenticated access to `/admin/*` (except `/admin/login`) must redirect to `/admin/login`,
+  - authenticated access to `/admin/login` must redirect to `/admin/`.
+- Admin logout flow:
+  - clears session cookie,
+  - invalidates further access to protected admin routes.
+
 ## Availability Rules
 
 - Valid base time slots are fixed:
@@ -194,6 +214,7 @@ Business behavior is defined by:
 - Same-day booking is only valid for future slots in local business time.
 - Cancellation releases availability.
 - Temporary reservation locks stop blocking once expired.
+- Admin protected routes are never accessible without a valid, non-expired admin session.
 
 ## Edge Cases
 

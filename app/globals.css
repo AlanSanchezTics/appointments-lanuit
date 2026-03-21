@@ -22,6 +22,16 @@
   --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.26);
   --font-display: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   --font-body: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --admin-canvas: #fbf9f5;
+  --admin-surface: #ffffff;
+  --admin-primary: #e49f53;
+  --admin-accent: #875207;
+  --admin-inactive-bg: #f5f3ef;
+  --admin-success-bg: #d1fae5;
+  --admin-success-text: #065f46;
+  --admin-text-primary: #1c1917;
+  --admin-text-secondary: #6b7280;
+  --admin-border: #e5e7eb;
 }
 
 * {

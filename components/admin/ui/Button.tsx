@@ -16,10 +16,11 @@ export function Button({
   className = "",
   ...props
 }: ButtonProps) {
-  const base = "h-12 px-4 rounded-xl font-semibold transition-all duration-200";
+  const base =
+    "h-12 px-4 rounded-xl font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-primary)]";
   const variants: Record<ButtonVariant, string> = {
-    primary: "bg-[#875207] text-white hover:opacity-90",
-    secondary: "bg-[#F5F3EF] text-[#1C1917]",
+    primary: "bg-[var(--admin-accent)] text-white hover:opacity-90",
+    secondary: "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-primary)]",
   };
   const disabledStyle = "opacity-50 cursor-not-allowed";
 

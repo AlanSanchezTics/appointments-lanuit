@@ -12,6 +12,7 @@
     "test:integration:file": "vitest run --maxWorkers=1",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "admin:create": "tsx scripts/create-admin-user.ts",
     "locks:cleanup": "node --env-file=.env scripts/cleanup-reservation-locks.mjs",
     "months:reconcile": "node --env-file=.env scripts/reconcile-active-months.mjs",
     "calendar:smoke": "node --env-file=.env scripts/google-calendar-smoke.mjs",
@@ -29,9 +30,11 @@
     "googleapis": "^144.0.0",
     "i18next": "^25.8.18",
     "next": "^15.2.0",
+    "next-auth": "^5.0.0-beta.30",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^16.5.8",
+    "tsx": "^4.21.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
