@@ -1,0 +1,395 @@
+# Admin UI Components – La Nuit (Admin Core)
+
+## Purpose
+
+Este documento define los componentes base del admin panel, su intención, uso y reglas de reutilización.
+
+Su objetivo es estandarizar la construcción de interfaces administrativas y evitar variaciones visuales o estructurales innecesarias.
+
+Estos componentes aplican exclusivamente al admin panel.
+
+No aplican al flujo público del sistema.
+
+---
+
+## Scope
+
+Estos componentes deben usarse en:
+
+- dashboards
+- vistas operativas
+- listados administrativos
+- tablas internas
+- formularios del admin
+- filtros y acciones globales
+
+No deben usarse en:
+
+- booking público
+- cancelación pública
+- interfaces de usuario final
+
+---
+
+## Base Components Location
+
+Todos los componentes base del admin deben vivir en:
+
+```txt
+components/admin/ui/
+```
+
+El agente debe reutilizar estos componentes antes de crear nuevos.
+
+---
+
+## Component: Button
+
+### Purpose
+
+Representar acciones del usuario dentro del admin panel.
+
+### Variants
+
+**Primary**
+
+- fondo: `accent`
+- texto: blanco
+- altura: `48px`
+- radius: `12px`
+
+Uso:
+
+- acción principal de la vista
+- CTA dominante
+
+**Secondary**
+
+- fondo: `inactive-bg`
+- texto: `text-primary`
+
+Uso:
+
+- acciones secundarias
+- acciones no dominantes
+
+**Disabled**
+
+- opacidad reducida
+- cursor no interactivo
+
+Uso:
+
+- acciones temporalmente no disponibles
+
+### Rules
+
+El agente debe:
+
+- usar `Button` para acciones explícitas
+- respetar variantes existentes
+
+El agente no debe:
+
+crear botones nuevos con estilos inline
+introducir variantes no documentadas sin actualizar este archivo
+
+---
+
+## Component: Card
+
+### Purpose
+
+Contenedor base para agrupar contenido del admin.
+
+Style
+
+- fondo: `surface`
+- radius: `12px`
+- shadow: ligera
+- padding: `16px–20px`
+
+### Usage
+
+Uso:
+
+- tarjetas informativas
+- paneles de filtros
+- contenedores de tablas o listas
+- bloques de configuración
+
+---
+
+## Component: MetricCard
+
+### Purpose
+
+Mostrar métricas de dashboard de forma compacta y consistente.
+
+### Structure
+
+- icono
+- label
+- valor
+
+### Style
+
+- fondo: `surface`
+- radius: `12px`
+- padding: `16px`
+- alineación: centrada
+- tipografía:
+  - label: `metric-label`
+  - value: `metric-value`
+
+### Usage
+
+Uso:
+
+- KPIs
+- indicadores rápidos
+- panel superior de métricas
+
+---
+
+## Component: ListItem
+
+### Purpose
+
+Representar un elemento navegable o accionable dentro de un listado operativo.
+
+### Structure
+
+- icono a la izquierda
+- título principal
+- indicador o contenido secundario a la derecha
+
+### Style
+
+- fondo: `surface`
+- min-height: `64px`
+- radius: `12px`
+- padding: `16px`
+
+### Usage
+
+Uso:
+
+- listas de meses
+- navegación hacia detalle
+- registros resumidos
+
+---
+
+## Component: Select
+
+### Purpose
+
+Permitir selección de opciones en filtros o formularios internos.
+
+### Style
+
+- fondo: `surface`
+- borde: `1px solid border`
+- radius: `12px`
+- altura: `44px`
+
+### Usage
+
+Uso:
+
+- filtros por año
+- filtros por estado
+- selección administrativa
+
+---
+
+## Component: Input
+
+### Purpose
+
+Capturar información en formularios internos o filtros.
+
+### Style
+
+- fondo: `surface`
+- borde: `1px solid border`
+- radius: `12px`
+- altura mínima: `44px`
+
+### Usage
+
+Uso:
+
+- búsquedas
+- filtros
+- formularios internos del admin
+
+---
+
+## Component: StatusTag
+
+### Purpose
+
+Mostrar el estado resumido de una entidad o registro.
+
+### Style
+
+- radius: pill
+- padding horizontal: 12px
+- font: tag
+
+### Suggested Variants
+
+**Active**
+
+- fondo: success-bg
+- texto: success-text
+
+**Inactive**
+
+- fondo: inactive-bg
+- texto: text-secondary
+
+### Usage
+
+Uso:
+
+- estados de mes
+- estados operativos
+- badges contextuales
+
+---
+
+## Component: Table
+
+### Purpose
+
+Mostrar datos tabulares o listados de alta densidad dentro del admin.
+
+### Structure
+
+- header
+- body
+- row actions
+- empty state
+
+### Style
+
+**Header**
+
+- fondo neutro
+- texto con mayor peso visual
+
+**Row**
+
+- fondo: `surface`
+
+**Hover**
+
+- cambio sutil de fondo
+
+**Actions**
+
+- alineadas a la derecha
+
+### Usage
+
+Uso:
+
+listados con múltiples columnas
+gestión operativa
+vistas densas de información
+
+---
+
+## Component: FiltersPanel
+
+### Purpose
+
+Agrupar controles de filtro y acciones globales del admin.
+
+### Composition
+
+Construido a partir de:
+
+- `Card`
+- `Input`
+- `Select`
+- `Button`
+- `Usage`
+
+### Uso:
+
+- bloques de filtros superiores
+- paneles de consulta rápida
+
+---
+
+## Component: MetricsGrid
+
+### Purpose
+
+Distribuir métricas en formato responsivo y consistente.
+
+### Layout Rules
+
+- desktop: 3 columnas
+- mobile: 2 columnas
+- gap: `16px`
+
+### Composition
+
+Construido a partir de:
+
+- `MetricCard`
+
+---
+
+## Reuse Rules
+
+El agente debe:
+
+- reutilizar componentes existentes antes de crear uno nuevo
+- extender componentes solo si la nueva variante es recurrente
+- documentar nuevas variantes en este archivo
+
+El agente no debe:
+
+- duplicar componentes con pequeñas diferencias visuales
+- crear componentes equivalentes fuera de `components/admin/ui/`
+- mover estos componentes al flujo público
+
+---
+
+## Promotion Rule
+
+Si un patrón visual aparece más de una vez en el admin:
+
+debe promoverse a componente reusable
+debe documentarse aquí
+debe alinearse con `design-system.md` y `tokens.md`
+
+---
+
+## Relationship with Documentation
+
+Todo componente del admin debe alinearse con:
+
+- `docs/ui/admin/design-system.md`
+- `docs/ui/admin/tokens.md`
+
+Si existe conflicto:
+
+1. tokens definen valores base
+2. design-system define reglas visuales
+3. components.md define uso y composición
+
+---
+
+## Final Rule
+
+Si una nueva pantalla del admin requiere un patrón no documentado:
+
+- primero debe decidirse si es una variante o un componente nuevo
+- después debe documentarse aquí antes de proliferar en múltiples pantallas

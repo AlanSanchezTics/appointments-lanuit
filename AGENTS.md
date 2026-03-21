@@ -379,3 +379,145 @@ Esto ayuda a mantener consistencia y trazabilidad.
 ## Regla de cierre
 
 Si el agente modifica cualquier flujo del producto y no actualiza `docs/specification.md` ni explica por qué no era necesario hacerlo, la tarea debe considerarse incompleta.
+
+## Sistema de UI del Admin Panel
+
+El sistema visual del admin panel está definido en:
+
+- `docs/ui/admin/design-system.md`
+- `docs/ui/admin/tokens.md`
+- `docs/ui/admin/components.md`
+
+Estos documentos constituyen el contrato oficial de UI para todas las vistas administrativas.
+
+---
+
+## Alcance del sistema de UI
+
+Este sistema aplica exclusivamente a:
+
+- panel administrativo
+- dashboards internos
+- herramientas de gestión
+
+No aplica a:
+
+- flujo público (booking, cancelación)
+- interfaces de usuario final
+
+El agente debe mantener separación estricta entre ambos sistemas de UI.
+
+---
+
+## Uso obligatorio de componentes UI del admin
+
+Todos los elementos visuales del admin deben construirse usando:
+
+components/admin/ui/
+
+El agente debe:
+
+- reutilizar componentes existentes antes de crear nuevos
+- componer vistas a partir de estos componentes
+- mantener consistencia con el design system
+
+El agente no debe:
+
+- crear UI directamente en páginas o features sin usar estos componentes
+- duplicar componentes con pequeñas variaciones
+- crear componentes visuales fuera de esta carpeta sin justificación
+
+---
+
+## Uso obligatorio de tokens
+
+El agente debe:
+
+- respetar los valores definidos en `tokens.md`
+- usar colores, spacing, radius y tipografía definidos
+- mantener consistencia visual entre pantallas
+
+El agente no debe:
+
+- usar colores hardcodeados arbitrarios
+- introducir nuevos valores sin documentarlos
+- mezclar tokens del admin con el flujo público
+
+---
+
+## Regla de construcción de UI
+
+Antes de implementar cualquier vista del admin, el agente debe:
+
+1. Identificar qué componentes del design system aplican
+2. Verificar si ya existe un componente reusable
+3. Componer la vista usando `components/admin/ui/`
+4. Evitar lógica visual duplicada
+
+---
+
+## Regla de promoción a componente reusable
+
+Si un patrón visual aparece más de una vez:
+
+- debe convertirse en componente reusable
+- debe ubicarse en `components/admin/ui/`
+- debe documentarse en `docs/ui/admin/components.md`
+
+---
+
+## Regla de evolución del sistema de UI
+
+Si un requerimiento visual no puede resolverse con el sistema actual:
+
+1. el agente debe proponer la evolución del sistema
+2. actualizar:
+   - `design-system.md`
+   - `tokens.md` (si aplica)
+   - `components.md`
+3. después implementar el cambio
+
+El agente no debe:
+
+- resolver inconsistencias creando estilos ad hoc
+- introducir variantes no documentadas
+
+---
+
+## Regla de aislamiento con el flujo público
+
+El agente no debe:
+
+- aplicar el design system del admin al flujo público
+- migrar componentes del flujo público a `components/admin/ui/`
+- asumir que ambos sistemas deben unificarse
+
+Ambos sistemas deben evolucionar de forma independiente.
+
+---
+
+## Validación obligatoria en entregables
+
+Cuando el agente modifique UI del admin, debe incluir:
+
+Admin UI Check:
+
+- Uses components/admin/ui: Yes/No
+- Reused existing components: Yes/No
+- New reusable components created: Yes/No
+- Tokens respected: Yes/No
+- design-system.md aligned: Yes/No
+- Public flow untouched: Yes/No
+
+---
+
+## Regla de incumplimiento
+
+Si una implementación del admin:
+
+- no usa componentes reutilizables
+- introduce estilos no definidos
+- rompe consistencia visual
+- mezcla sistemas (admin vs público)
+
+la tarea debe considerarse incompleta.
