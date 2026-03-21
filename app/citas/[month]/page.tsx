@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
+import Link from "next/link";
 
-import { MonthView } from "@/components/booking/month-view";
 import { getMonthAvailability } from "@/lib/availability/service";
+import { formatMonthLabel } from "@/lib/datetime/mexico-city";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
+import Image from "next/image";
+import Logo from "@/assets/images/logo.png";
+import { Button } from "@/components/ui/public/button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,21 +26,48 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
   try {
     const days = await getMonthAvailability(month);
-
-    if (days.length === 0) {
-      return (
-        <main className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10 sm:px-6">
-          <section className="w-full max-w-md rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-8 text-center shadow-[0_30px_80px_rgba(52,37,31,0.15)]">
-            <h1 className="font-[family-name:var(--font-display)] text-4xl">{t("bookingPage.noSlotsTitle")}</h1>
-            <p className="mt-3 text-sm text-[var(--muted)]">{t("bookingPage.noSlotsDescription")}</p>
-          </section>
-        </main>
-      );
-    }
+    const hasSlots = days.length > 0;
 
     return (
-      <main className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
-        <MonthView month={month} days={days} />
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center">
+        <section className="booking-mobile-shell p-8 md:p-6 min-h-screen flex items-center justify-center">
+          <div className="space-y-6 w-full">
+            <Image
+              src={Logo}
+              alt="La Nuit Nail Studio"
+              className="mx-auto h-48 w-auto"
+            />
+            <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none md:text-7xl">
+              {t("home.title", { month: formatMonthLabel(month, language) })}
+            </h1>
+            <p className="max-w-xl text-base text-[var(--muted)]">
+              {t("home.subtitle")}
+            </p>
+            {!hasSlots ? (
+              <p className="mt-9 w-full rounded-[1rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
+                {t("bookingPage.noSlotsDescription")}
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                className="py-4 text-[1.02rem] font-semibold"
+                variant="primary"
+              >
+                <Link href={`/citas/${month}/booking`} className="w-full">
+                  {t("home.bookNow")}
+                </Link>
+              </Button>
+              <Button
+                className="py-4 text-[1.02rem] font-semibold"
+                variant="secondary"
+              >
+                <Link href="/cancelar" className="w-full">
+                  {t("home.cancel")}
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
     );
   } catch {

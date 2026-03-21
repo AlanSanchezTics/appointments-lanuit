@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed": "#e5e2df",
+              "surface-container-highest": "#e4e2de",
+              "secondary": "#635d5a",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#f2f0ed",
+              "surface-bright": "#fbf9f5",
+              "inverse-surface": "#30312e",
+              "on-primary-fixed-variant": "#683c00",
+              "outline-variant": "#d6c3b3",
+              "surface": "#fbf9f5",
+              "tertiary-container": "#b0adaa",
+              "surface-tint": "#885208",
+              "error-container": "#ffdad6",
+              "primary-container": "#e49f53",
+              "on-error": "#ffffff",
+              "surface-dim": "#dbdad6",
+              "primary-fixed": "#ffdcbc",
+              "on-secondary-container": "#67625e",
+              "inverse-primary": "#ffb86c",
+              "on-surface": "#1b1c1a",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed": "#1c1b1a",
+              "on-secondary-fixed-variant": "#4b4642",
+              "background": "#fbf9f5",
+              "secondary-fixed": "#e9e1dc",
+              "tertiary-fixed-dim": "#c9c6c3",
+              "on-tertiary-fixed-variant": "#484745",
+              "secondary-fixed-dim": "#cdc5c0",
+              "surface-container-low": "#f5f3ef",
+              "on-primary-fixed": "#2c1600",
+              "tertiary": "#605e5c",
+              "on-background": "#1b1c1a",
+              "error": "#ba1a1a",
+              "outline": "#847466",
+              "on-tertiary": "#ffffff",
+              "on-error-container": "#93000a",
+              "secondary-container": "#e6ded9",
+              "on-tertiary-container": "#42413f",
+              "primary-fixed-dim": "#ffb86c",
+              "surface-variant": "#e4e2de",
+              "on-primary-container": "#603700",
+              "surface-container": "#efeeea",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed": "#1e1b18",
+              "on-surface-variant": "#524438",
+              "primary": "#885208",
+              "surface-container-high": "#eae8e4"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FDFBF7;
+        }
+    </style>
+<style>
+        body {
+          min-height: 100dvh;
+        }
+    </style>
+</head>
+<body class="font-body text-on-surface antialiased overflow-x-hidden">
+<main class="min-h-screen flex flex-col items-center justify-center px-6 py-12 space-y-16">
+<!-- Logo Section -->
+<div class="flex flex-col items-center space-y-4">
+<div class="text-center">
+<h1 class="text-3xl font-light tracking-[0.3em] text-primary uppercase">L'AURA IVORY</h1>
+<div class="h-0.5 w-16 bg-primary mx-auto mt-4 opacity-30"></div>
+</div>
+</div>
+<!-- Welcome Message -->
+<div class="text-center space-y-6 max-w-sm">
+<h2 class="text-3xl font-light text-on-surface leading-tight">
+            Bienvenida a <span class="text-primary italic font-medium">L'Aura Ivory</span>.
+        </h2>
+<p class="text-secondary text-base leading-relaxed font-light">
+            Tu momento de belleza comienza aquí. Reserva una experiencia personalizada diseñada para tu bienestar.
+        </p>
+</div>
+<!-- Actions -->
+<div class="w-full max-w-xs flex flex-col space-y-4">
+<button class="w-full bg-[#e49f53] text-white font-bold py-5 rounded-full shadow-xl shadow-primary-container/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"><span>Agendar cita</span>
+<span class="material-symbols-outlined text-lg">arrow_forward</span></button>
+<button class="w-full bg-transparent border border-outline/30 py-5 px-6 rounded-full font-medium text-secondary flex items-center justify-center active:bg-surface-container transition-colors">
+<span>Cancelar cita</span>
+</button>
+</div>
+</main>
+</body></html>

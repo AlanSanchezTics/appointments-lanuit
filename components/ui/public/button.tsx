@@ -9,11 +9,11 @@ type ButtonVariantsOptions = {
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-[var(--accent)] text-white shadow-[var(--shadow-button)] hover:bg-[var(--accent-dark)] focus-visible:outline-[var(--accent-dark)]",
+    "border border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-button)] hover:brightness-95 focus-visible:outline-[var(--accent-dark)]",
   secondary:
     "border border-[var(--border)] bg-[var(--surface-strong)] text-[var(--foreground)] hover:border-[var(--accent)] focus-visible:outline-[var(--accent)]",
   ghost:
-    "bg-transparent text-[var(--muted)] hover:text-[var(--foreground)] focus-visible:outline-[var(--accent)]",
+    "border border-transparent bg-transparent text-[var(--muted)] hover:text-[var(--foreground)] focus-visible:outline-[var(--accent)]",
 };
 
 const baseButtonClasses =

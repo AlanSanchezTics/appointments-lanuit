@@ -119,16 +119,15 @@ No existe estado PENDING persistente.
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
    - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
 
-1. Usuario accede a un mes habilitado (`/citas/YYYY-MM`).
-2. Selecciona día disponible.
-3. Selecciona horario disponible.
-4. Ingresa teléfono.
-5. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
+1. Usuario accede a un mes habilitado (`/citas/YYYY-MM`) y visualiza pantalla de entrada del flujo.
+2. Desde esa pantalla selecciona `Agendar cita` y avanza a `/citas/YYYY-MM/booking`.
+3. En el paso 1 del wizard selecciona día y horario, e ingresa teléfono.
+4. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
    - Si el cliente existe por teléfono, se avanza directo a confirmación.
    - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
-6. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
-7. Usuario confirma cita.
-8. Backend:
+5. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
+6. Usuario confirma cita (paso 2 del wizard).
+7. Backend:
    - Inicia transacción.
    - Limpia locks expirados.
    - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
@@ -137,13 +136,37 @@ No existe estado PENDING persistente.
    - Inserta cita CONFIRMED ligada a `client_id`.
    - Elimina lock temporal consumido.
    - Commit.
-9. Crea evento en Google Calendar.
-10. Redirige a WhatsApp con mensaje codificado.
+8. Crea evento en Google Calendar.
+9. UI muestra pantalla local de éxito (paso 3 del wizard).
+10. Usuario ejecuta acción explícita `Enviar confirmación por WhatsApp` para abrir `wa.me` con mensaje codificado.
     - El frontend compone el texto final localizado.
     - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
+
+### 7.1 Contrato de UI/UX del Wizard
+
+- Enfoque mobile-first obligatorio (desktop muestra un contenedor tipo móvil).
+- El flujo visual de reserva queda compuesto por 4 vistas:
+  - Entrada del mes (`/citas/YYYY-MM`): branding + CTA principal `Agendar cita` + CTA secundaria `Cancelar cita`.
+  - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
+  - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
+  - Paso 3 (`/citas/YYYY-MM/booking`): éxito local con CTA explícito para abrir WhatsApp.
+- El flujo de `/booking` usa transición horizontal entre pasos:
+  - avance: slide hacia la izquierda,
+  - retroceso: slide hacia la derecha.
+- Las animaciones deben respetar `prefers-reduced-motion` (sin transición cuando aplique).
+- La capa visual debe mantener un lenguaje consistente en las 4 vistas:
+  - tema `light`,
+  - paleta base con acento principal `#e49f53`,
+  - tipografía `Montserrat`,
+  - controles redondeados tipo pill,
+  - prioridad a targets táctiles y jerarquía por espaciado.
+- Requisitos mínimos de interacción:
+  - touch targets >= 44px,
+  - estados de foco visibles,
+  - errores inline por campo/contexto.
 
 Mensaje base:
 

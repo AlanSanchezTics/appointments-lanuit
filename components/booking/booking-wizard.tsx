@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BookingConfirmStep } from "@/components/booking/booking-confirm-step";
@@ -11,8 +11,15 @@ import type { DayAvailability } from "@/lib/availability/service";
 import { translateApiError } from "@/lib/i18n/translate";
 
 export type BookingStep = "details" | "confirm" | "success";
+type StepTransitionDirection = "forward" | "backward";
 
 type ClientState = "unknown" | "existing" | "new";
+const STEP_ORDER: Record<BookingStep, number> = {
+  details: 0,
+  confirm: 1,
+  success: 2,
+};
+const STEP_TRANSITION_MS = 260;
 
 export type BookingDraft = {
   date: string | null;
@@ -56,9 +63,14 @@ type BookingWizardProps = {
   days: DayAvailability[];
   initialDraft?: Partial<BookingDraft>;
   refreshDays?: (month: string) => Promise<DayAvailability[]>;
-  checkClientAndAcquireLock?: (draft: BookingDraft) => Promise<ClientCheckLockResult>;
+  checkClientAndAcquireLock?: (
+    draft: BookingDraft,
+  ) => Promise<ClientCheckLockResult>;
   releaseLock?: (lockToken: string) => Promise<void>;
-  submitBooking?: (draft: BookingDraft, lockToken: string) => Promise<BookingSuccess>;
+  submitBooking?: (
+    draft: BookingDraft,
+    lockToken: string,
+  ) => Promise<BookingSuccess>;
   onWhatsAppRedirect?: (url: string) => void;
 };
 
@@ -73,6 +85,7 @@ export function BookingWizard({
   onWhatsAppRedirect = (url) => window.location.assign(url),
 }: BookingWizardProps) {
   const { t } = useTranslation(["common", "errors"]);
+  const animationsEnabled = process.env.NODE_ENV !== "test";
   const [step, setStep] = useState<BookingStep>("details");
   const [clientState, setClientState] = useState<ClientState>("unknown");
   const [isCalendarOpen, setCalendarOpen] = useState(false);
@@ -82,10 +95,20 @@ export function BookingWizard({
   const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
   const [currentDays, setCurrentDays] = useState<DayAvailability[]>(days);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [visibleStep, setVisibleStep] = useState<BookingStep>("details");
+  const [leavingStep, setLeavingStep] = useState<BookingStep | null>(null);
+  const [isStepTransitioning, setIsStepTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] =
+    useState<StepTransitionDirection>("forward");
   const [isPending, startTransition] = useTransition();
+  const visibleStepRef = useRef<BookingStep>("details");
   const [draft, setDraft] = useState<BookingDraft>(() => ({
     date: getInitialField(initialDraft, "date", days[0]?.date ?? null),
-    timeSlot: getInitialField(initialDraft, "timeSlot", days[0]?.slots[0] ?? null),
+    timeSlot: getInitialField(
+      initialDraft,
+      "timeSlot",
+      days[0]?.slots[0] ?? null,
+    ),
     name: getInitialField(initialDraft, "name", ""),
     phone: getInitialField(initialDraft, "phone", ""),
   }));
@@ -94,6 +117,41 @@ export function BookingWizard({
     setCurrentDays(days);
     setDraft((current) => normalizeDraftByAvailability(current, days));
   }, [days]);
+
+  useEffect(() => {
+    visibleStepRef.current = visibleStep;
+  }, [visibleStep]);
+
+  useEffect(() => {
+    const currentVisibleStep = visibleStepRef.current;
+
+    if (step === currentVisibleStep) {
+      return;
+    }
+
+    const direction = getTransitionDirection(currentVisibleStep, step);
+    setTransitionDirection(direction);
+
+    if (!animationsEnabled) {
+      setLeavingStep(null);
+      setVisibleStep(step);
+      setIsStepTransitioning(false);
+      return;
+    }
+
+    setLeavingStep(currentVisibleStep);
+    setVisibleStep(step);
+    setIsStepTransitioning(true);
+
+    const timer = window.setTimeout(() => {
+      setLeavingStep(null);
+      setIsStepTransitioning(false);
+    }, STEP_TRANSITION_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [animationsEnabled, step]);
 
   useEffect(() => {
     return () => {
@@ -110,7 +168,9 @@ export function BookingWizard({
     }
 
     const updateRemaining = () => {
-      const nextSeconds = Math.floor((new Date(activeLock.expiresAt).getTime() - Date.now()) / 1000);
+      const nextSeconds = Math.floor(
+        (new Date(activeLock.expiresAt).getTime() - Date.now()) / 1000,
+      );
       setRemainingSeconds(Math.max(0, nextSeconds));
     };
 
@@ -164,8 +224,10 @@ export function BookingWizard({
       activeLock &&
       step === "details" &&
       ((typeof nextDraft.date === "string" && nextDraft.date !== draft.date) ||
-        (typeof nextDraft.timeSlot === "string" && nextDraft.timeSlot !== draft.timeSlot) ||
-        (typeof nextDraft.phone === "string" && normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
+        (typeof nextDraft.timeSlot === "string" &&
+          nextDraft.timeSlot !== draft.timeSlot) ||
+        (typeof nextDraft.phone === "string" &&
+          normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
 
     if (shouldInvalidateActiveLock && activeLock) {
       void releaseLock(activeLock.lockToken).catch(() => undefined);
@@ -231,7 +293,14 @@ export function BookingWizard({
         };
 
         setActiveLock(lock);
-        setRemainingSeconds(Math.max(0, Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000)));
+        setRemainingSeconds(
+          Math.max(
+            0,
+            Math.floor(
+              (new Date(lock.expiresAt).getTime() - Date.now()) / 1000,
+            ),
+          ),
+        );
         setSubmitErrorCode(null);
 
         if (response.clientExists) {
@@ -298,44 +367,87 @@ export function BookingWizard({
     });
   }
 
-  const translatedSubmitError = submitErrorCode ? translateApiError(t, submitErrorCode) : null;
+  const translatedSubmitError = submitErrorCode
+    ? translateApiError(t, submitErrorCode)
+    : null;
+  const currentStepPane = renderStep({
+    step: visibleStep,
+    draft,
+    currentDays,
+    errors,
+    month,
+    translatedSubmitError,
+    isPending,
+    clientState,
+    activeLock,
+    remainingSeconds,
+    success,
+    onContinue: handleContinue,
+    onDraftChange: updateDraft,
+    onOpenCalendar: () => setCalendarOpen(true),
+    onBack: handleBack,
+    onConfirm: handleConfirm,
+    onWhatsAppRedirect,
+  });
+  const leavingStepPane = leavingStep
+    ? renderStep({
+        step: leavingStep,
+        draft,
+        currentDays,
+        errors,
+        month,
+        translatedSubmitError,
+        isPending,
+        clientState,
+        activeLock,
+        remainingSeconds,
+        success,
+        onContinue: handleContinue,
+        onDraftChange: updateDraft,
+        onOpenCalendar: () => setCalendarOpen(true),
+        onBack: handleBack,
+        onConfirm: handleConfirm,
+        onWhatsAppRedirect,
+      })
+    : null;
 
   return (
     <>
-      <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
-        <div className="rounded-[2.15rem] border border-[rgba(255,255,255,0.72)] bg-white px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] md:px-6 md:py-7">
-          <div>
-            {step === "details" ? (
-              <BookingWizardStep1
-                days={currentDays}
-                errorMessage={translatedSubmitError}
-                draft={draft}
-                errors={errors}
-                month={month}
-                onContinue={handleContinue}
-                onDraftChange={updateDraft}
-                onOpenCalendar={() => setCalendarOpen(true)}
-                isPending={isPending}
-                showNameField={clientState === "new"}
-                hasActiveLock={clientState === "new" && Boolean(activeLock)}
-                remainingSeconds={remainingSeconds}
-              />
+      <section className="booking-mobile-shell p-6 md:p-6 min-h-screen flex items-center justify-center">
+        <div className="w-full">
+          <div
+            data-current-step={step}
+            data-testid="booking-step-container"
+            data-transition-direction={transitionDirection}
+            data-transitioning={isStepTransitioning ? "true" : "false"}
+            data-visible-step={visibleStep}
+            className="relative min-h-[40rem] overflow-hidden md:min-h-[42rem]"
+          >
+            {leavingStepPane ? (
+              <div
+                aria-hidden="true"
+                className={`booking-step-panel absolute inset-0 motion-reduce:animate-none ${
+                  transitionDirection === "forward"
+                    ? "booking-step-leave-forward"
+                    : "booking-step-leave-backward"
+                }`}
+              >
+                {leavingStepPane}
+              </div>
             ) : null}
-
-            {step === "confirm" ? (
-              <BookingConfirmStep
-                draft={draft}
-                errorMessage={translatedSubmitError}
-                isPending={isPending}
-                remainingSeconds={remainingSeconds}
-                onBack={handleBack}
-                onConfirm={handleConfirm}
-              />
-            ) : null}
-
-            {step === "success" && success ? (
-              <BookingSuccessStep draft={draft} onWhatsAppRedirect={onWhatsAppRedirect} success={success} />
-            ) : null}
+            <div
+              className={`booking-step-panel motion-reduce:animate-none ${
+                leavingStepPane ? "absolute inset-0" : "relative"
+              } ${
+                isStepTransitioning
+                  ? transitionDirection === "forward"
+                    ? "booking-step-enter-forward"
+                    : "booking-step-enter-backward"
+                  : ""
+              }`}
+            >
+              {currentStepPane}
+            </div>
           </div>
         </div>
       </section>
@@ -349,7 +461,9 @@ export function BookingWizard({
           const nextDay = currentDays.find((day) => day.date === date) ?? null;
           updateDraft({
             date,
-            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "") ? draft.timeSlot : (nextDay?.slots[0] ?? null),
+            timeSlot: nextDay?.slots.includes(draft.timeSlot ?? "")
+              ? draft.timeSlot
+              : (nextDay?.slots[0] ?? null),
           });
         }}
         selectedDate={draft.date}
@@ -371,7 +485,10 @@ async function checkClientAndAcquireReservationLock(draft: BookingDraft) {
     }),
   });
 
-  const payload = (await response.json()) as ClientCheckLockResult & { error?: string; errorCode?: string };
+  const payload = (await response.json()) as ClientCheckLockResult & {
+    error?: string;
+    errorCode?: string;
+  };
 
   if (!response.ok) {
     throw new Error(payload.errorCode ?? payload.error ?? "UNKNOWN_ERROR");
@@ -434,7 +551,10 @@ async function fetchMonthAvailability(month: string) {
   return payload.days ?? [];
 }
 
-function normalizeDraftByAvailability(draft: BookingDraft, days: DayAvailability[]) {
+function normalizeDraftByAvailability(
+  draft: BookingDraft,
+  days: DayAvailability[],
+) {
   if (draft.date === null && draft.timeSlot === null) {
     return draft;
   }
@@ -447,7 +567,8 @@ function normalizeDraftByAvailability(draft: BookingDraft, days: DayAvailability
     };
   }
 
-  const selectedDay = days.find((day) => day.date === draft.date) ?? days[0] ?? null;
+  const selectedDay =
+    days.find((day) => day.date === draft.date) ?? days[0] ?? null;
 
   if (!selectedDay) {
     return {
@@ -457,7 +578,9 @@ function normalizeDraftByAvailability(draft: BookingDraft, days: DayAvailability
     };
   }
 
-  const nextTimeSlot = selectedDay.slots.includes(draft.timeSlot ?? "") ? draft.timeSlot : (selectedDay.slots[0] ?? null);
+  const nextTimeSlot = selectedDay.slots.includes(draft.timeSlot ?? "")
+    ? draft.timeSlot
+    : (selectedDay.slots[0] ?? null);
 
   return {
     ...draft,
@@ -470,7 +593,10 @@ function normalizePhone(phone: string) {
   return phone.replace(/\D/g, "");
 }
 
-function validateDraft(draft: BookingDraft, requiresName: boolean): BookingValidationErrors {
+function validateDraft(
+  draft: BookingDraft,
+  requiresName: boolean,
+): BookingValidationErrors {
   const nextErrors: BookingValidationErrors = {};
 
   if (!draft.date) {
@@ -506,4 +632,102 @@ function getInitialField<K extends keyof BookingDraft>(
   }
 
   return fallback;
+}
+
+function getTransitionDirection(
+  fromStep: BookingStep,
+  toStep: BookingStep,
+): StepTransitionDirection {
+  if (STEP_ORDER[toStep] > STEP_ORDER[fromStep]) {
+    return "forward";
+  }
+
+  return "backward";
+}
+
+type RenderStepParams = {
+  step: BookingStep;
+  draft: BookingDraft;
+  currentDays: DayAvailability[];
+  errors: BookingValidationErrors;
+  month: string;
+  translatedSubmitError: string | null;
+  isPending: boolean;
+  clientState: ClientState;
+  activeLock: SlotLock | null;
+  remainingSeconds: number;
+  success: BookingSuccess | null;
+  onContinue: () => void;
+  onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
+  onOpenCalendar: () => void;
+  onBack: () => void;
+  onConfirm: () => void;
+  onWhatsAppRedirect: (url: string) => void;
+};
+
+function renderStep({
+  step,
+  draft,
+  currentDays,
+  errors,
+  month,
+  translatedSubmitError,
+  isPending,
+  clientState,
+  activeLock,
+  remainingSeconds,
+  success,
+  onContinue,
+  onDraftChange,
+  onOpenCalendar,
+  onBack,
+  onConfirm,
+  onWhatsAppRedirect,
+}: RenderStepParams) {
+  if (step === "details") {
+    return (
+      <BookingWizardStep1
+        days={currentDays}
+        errorMessage={translatedSubmitError}
+        draft={draft}
+        errors={errors}
+        month={month}
+        onContinue={onContinue}
+        onDraftChange={onDraftChange}
+        onOpenCalendar={onOpenCalendar}
+        isPending={isPending}
+        showNameField={clientState === "new"}
+        hasActiveLock={clientState === "new" && Boolean(activeLock)}
+        remainingSeconds={remainingSeconds}
+      />
+    );
+  }
+
+  if (step === "confirm") {
+    return (
+      <BookingConfirmStep
+        draft={draft}
+        errorMessage={translatedSubmitError}
+        isPending={isPending}
+        remainingSeconds={remainingSeconds}
+        onBack={onBack}
+        onConfirm={onConfirm}
+      />
+    );
+  }
+
+  if (!success) {
+    return null;
+  }
+
+  return (
+    <BookingSuccessStep
+      draft={draft}
+      onWhatsAppRedirect={onWhatsAppRedirect}
+      success={success}
+      onBack={() => {
+        window.location.assign(`/citas/${month}`);
+      }}
+    />
+  );
 }

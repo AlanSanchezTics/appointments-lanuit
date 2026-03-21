@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f4f1;
+  --background: #fdfbf7;
   --foreground: #2d2926;
   --accent: #e49f53;
-  --accent-dark: #c9853d;
-  --surface: rgba(248, 244, 241, 0.94);
-  --surface-strong: #f8f4f1;
-  --surface-alt: #e0d4cd;
-  --card: rgba(255, 255, 255, 0.78);
-  --border: rgba(224, 212, 205, 0.85);
-  --border-strong: rgba(45, 41, 38, 0.12);
-  --muted: #7c736d;
-  --muted-light: #b8aba3;
-  --error: #9f4c3a;
-  --error-soft: rgba(159, 76, 58, 0.14);
-  --error-surface: rgba(159, 76, 58, 0.05);
-  --warning-soft: rgba(228, 159, 83, 0.24);
-  --warning-surface: rgba(228, 159, 83, 0.08);
-  --shadow-soft: 0 20px 40px rgba(45, 41, 38, 0.1);
-  --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.28);
-  --font-display: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-body: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --accent-dark: #885208;
+  --surface: #fbf9f5;
+  --surface-strong: #ffffff;
+  --surface-alt: #f5f3ef;
+  --card: #f5f3ef;
+  --border: rgba(214, 195, 179, 0.52);
+  --border-strong: rgba(132, 116, 102, 0.42);
+  --muted: #635d5a;
+  --muted-light: #b8aca2;
+  --error: #ba1a1a;
+  --error-soft: rgba(186, 26, 26, 0.22);
+  --error-surface: rgba(255, 218, 214, 0.6);
+  --warning-soft: rgba(228, 159, 83, 0.28);
+  --warning-surface: rgba(255, 220, 188, 0.45);
+  --shadow-soft: 0 14px 36px rgba(136, 82, 8, 0.14);
+  --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.26);
+  --font-display: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-body: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
 * {
@@ -29,10 +29,7 @@
 }
 
 html {
-  background:
-    radial-gradient(circle at top left, rgba(228, 159, 83, 0.14), transparent 22%),
-    radial-gradient(circle at 82% 12%, rgba(224, 212, 205, 0.42), transparent 12%),
-    linear-gradient(180deg, #fbf8f5 0%, #f1e7e1 100%);
+  background: var(--background);
 }
 
 body {
@@ -71,6 +68,82 @@ input {
 }
 
 ::selection {
-  background: rgba(228, 159, 83, 0.22);
+  background: rgba(228, 159, 83, 0.28);
   color: var(--foreground);
+}
+
+.booking-mobile-shell {
+  width: 100%;
+  max-width: 412px;
+  box-shadow: 0 30px 80px rgba(74, 49, 25, 0.16);
+}
+
+.booking-mobile-screen {}
+
+.booking-step-panel {
+  will-change: transform, opacity;
+}
+
+.booking-step-enter-forward {
+  animation: booking-step-enter-forward 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.booking-step-leave-forward {
+  animation: booking-step-leave-forward 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.booking-step-enter-backward {
+  animation: booking-step-enter-backward 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.booking-step-leave-backward {
+  animation: booking-step-leave-backward 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes booking-step-enter-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(100%, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes booking-step-leave-forward {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(-26%, 0, 0);
+  }
+}
+
+@keyframes booking-step-enter-backward {
+  from {
+    opacity: 0;
+    transform: translate3d(-100%, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes booking-step-leave-backward {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(26%, 0, 0);
+  }
 }

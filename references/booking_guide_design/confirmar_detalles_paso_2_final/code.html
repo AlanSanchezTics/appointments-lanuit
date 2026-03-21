@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Confirmar Detalles - L'Aura Ivory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed": "#e5e2df",
+              "tertiary-container": "#b0adaa",
+              "inverse-primary": "#ffb86c",
+              "tertiary-fixed-dim": "#c9c6c3",
+              "outline-variant": "#d6c3b3",
+              "on-tertiary-fixed-variant": "#484745",
+              "on-secondary": "#ffffff",
+              "error-container": "#ffdad6",
+              "surface-variant": "#e4e2de",
+              "surface-dim": "#dbdad6",
+              "surface-container-high": "#eae8e4",
+              "surface-bright": "#fbf9f5",
+              "surface": "#fbf9f5",
+              "on-primary-fixed-variant": "#683c00",
+              "outline": "#847466",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#524438",
+              "on-primary-container": "#603700",
+              "on-background": "#1b1c1a",
+              "error": "#ba1a1a",
+              "background": "#fbf9f5",
+              "on-secondary-container": "#67625e",
+              "surface-container-highest": "#e4e2de",
+              "primary-fixed": "#ffdcbc",
+              "primary-container": "#e49f53",
+              "secondary-container": "#e6ded9",
+              "on-secondary-fixed": "#1e1b18",
+              "primary": "#885208",
+              "tertiary": "#605e5c",
+              "secondary": "#635d5a",
+              "inverse-surface": "#30312e",
+              "primary-fixed-dim": "#ffb86c",
+              "on-surface": "#1b1c1a",
+              "surface-container": "#efeeea",
+              "on-error": "#ffffff",
+              "secondary-fixed-dim": "#cdc5c0",
+              "on-tertiary-container": "#42413f",
+              "surface-container-lowest": "#ffffff",
+              "surface-tint": "#885208",
+              "on-primary-fixed": "#2c1600",
+              "on-secondary-fixed-variant": "#4b4642",
+              "on-primary": "#ffffff",
+              "inverse-on-surface": "#f2f0ed",
+              "surface-container-low": "#f5f3ef",
+              "on-tertiary-fixed": "#1c1b1a",
+              "on-error-container": "#93000a",
+              "secondary-fixed": "#e9e1dc"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="w-full flex items-center justify-between px-6 pt-10 pb-6">
+<button class="active:scale-95 duration-150 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary">close</span>
+</button>
+<div class="flex-grow text-center">
+<h1 class="font-bold text-xl text-[#2d2926]">Confirmar Detalles</h1>
+</div>
+<div class="w-10"></div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow px-6 max-w-lg mx-auto w-full pb-12 pt-0">
+<!-- Header Text -->
+<div class="mb-8">
+<p class="text-primary-container font-medium text-sm tracking-wide mb-1 uppercase">Paso 2 de 2</p>
+<h2 class="text-2xl font-bold text-on-surface">Hola Ana, que gusto tenerte de vuelta ✨</h2>
+</div>
+<!-- Summary Card -->
+<div class="bg-surface-container-low rounded-xl p-6 shadow-sm border border-outline-variant/30 mb-6">
+<div class="space-y-6">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest mb-1">NOMBRE</span>
+<span class="text-on-surface font-semibold text-lg">Ana Garcia</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest mb-1">FECHA</span>
+<span class="text-on-surface font-semibold">Lunes, 3 de agosto de 2026</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest mb-1">HORA</span>
+<span class="text-on-surface font-semibold">09:00 AM</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest mb-1">TELÉFONO</span>
+<span class="text-on-surface font-semibold">322 216 6571</span>
+</div>
+</div>
+</div>
+<!-- Warning Message -->
+<div class="bg-primary-fixed/30 border border-primary-container/20 rounded-lg p-4 mb-8 flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="schedule">schedule</span>
+<p class="text-on-primary-fixed-variant text-sm font-medium">
+                Este horario esta bloqueado para ti por <span class="font-bold">9:47.</span>
+</p>
+</div>
+<!-- Action Buttons -->
+<div class="space-y-4">
+<button class="w-full bg-[#e49f53] text-white font-bold py-5 rounded-full shadow-xl shadow-primary-container/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"><span>Confirmar cita</span><span class="material-symbols-outlined text-lg">check_circle</span></button>
+<button class="w-full py-4 text-on-surface font-medium text-sm hover:underline flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+                Editar información
+            </button>
+</div>
+<!-- Footer Note -->
+<div class="mt-8 flex items-start gap-2 px-2">
+<span class="material-symbols-outlined text-outline text-sm mt-0.5" data-icon="info">info</span>
+<p class="text-on-surface-variant text-xs leading-relaxed">
+                Recibirás un recordatorio por WhatsApp un día antes de tu cita.
+            </p>
+</div>
+</main>
+<!-- BottomNavBar -->
+</body></html>

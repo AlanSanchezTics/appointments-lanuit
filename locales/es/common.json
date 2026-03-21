@@ -26,6 +26,12 @@
     "noSlotsTitle": "Sin horarios disponibles",
     "noSlotsDescription": "No quedan espacios para el mes activo."
   },
+  "bookingEntry": {
+    "title": "Agenda tu cita de {{month}}",
+    "description": "Tu momento de belleza comienza aquí. Reserva una experiencia personalizada diseñada para tu bienestar.",
+    "book": "Agendar cita",
+    "cancel": "Cancelar cita"
+  },
   "booking": {
     "step1Of2": "Paso 1 de 2",
     "step2Of2": "Paso 2 de 2",
@@ -53,6 +59,8 @@
     "editInformation": "Editar información",
     "whatsappReminder": "Recibirás un recordatorio por WhatsApp un día antes de tu cita.",
     "successTitle": "Tu cita ha sido agendada exitosamente",
+    "confirmSuccessTitle": "¡Todo listo, {{name}}!",
+    "confirmSuccessBody": "Tu cita ha sido agendada con éxito.",
     "thanks": "Muchas gracias",
     "syncFailedInfo": "La reserva quedo registrada. La sincronizacion con calendario se completara despues.",
     "sendWhatsapp": "Enviar confirmación por WhatsApp",
@@ -63,7 +71,8 @@
     "calendarDone": "Listo",
     "calendarHint": "Toca un dia para ver horarios disponibles",
     "calendarAriaSelected": "Dia seleccionado",
-    "calendarAriaSelect": "Seleccionar dia"
+    "calendarAriaSelect": "Seleccionar dia",
+    "close": "Cerrar"
   },
   "cancel": {
     "step1Of3": "Paso 1 de 3",

@@ -26,6 +26,12 @@
     "noSlotsTitle": "No available slots",
     "noSlotsDescription": "No spots left for the active month."
   },
+  "bookingEntry": {
+    "title": "Book your {{month}} appointment",
+    "description": "Your beauty moment starts here. Reserve a personalized experience designed for your wellbeing.",
+    "book": "Book appointment",
+    "cancel": "Cancel appointment"
+  },
   "booking": {
     "step1Of2": "Step 1 of 2",
     "step2Of2": "Step 2 of 2",
@@ -53,6 +59,8 @@
     "editInformation": "Edit information",
     "whatsappReminder": "You'll receive a WhatsApp reminder one day before your appointment.",
     "successTitle": "Your appointment was successfully booked",
+    "confirmSuccessTitle": "All set, {{name}}!",
+    "confirmSuccessBody": "Your appointment has been successfully scheduled.",
     "thanks": "Thank you",
     "syncFailedInfo": "Your booking was saved. Calendar sync will complete later.",
     "sendWhatsapp": "Send WhatsApp confirmation",
@@ -63,7 +71,8 @@
     "calendarDone": "Done",
     "calendarHint": "Tap a day to see available times",
     "calendarAriaSelected": "Selected day",
-    "calendarAriaSelect": "Select day"
+    "calendarAriaSelect": "Select day",
+    "close": "Close"
   },
   "cancel": {
     "step1Of3": "Step 1 of 3",

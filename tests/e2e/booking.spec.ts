@@ -65,11 +65,14 @@ test("booking flow renders a local success step before WhatsApp", async ({ page,
   });
 
   await page.goto(`/citas/${month}`);
+  await expect(page.getByRole("link", { name: "Agendar cita" })).toBeVisible();
+  await page.getByRole("link", { name: "Agendar cita" }).click();
+  await expect(page).toHaveURL(new RegExp(`/citas/${month}/booking$`));
   await expect(page.getByRole("heading", { name: /Agendar cita/i })).toBeVisible();
   await page.locator("#booking-phone").fill(getUniquePhone());
   await page.getByRole("button", { name: /Siguiente/i }).click();
 
-  const confirmHeading = page.getByRole("heading", { name: /Confirmar detalles/i });
+  const confirmHeading = page.getByText(/Confirmar Detalles/i);
   if (!(await confirmHeading.isVisible())) {
     await expect(page.locator("#booking-name")).toBeVisible();
     await page.locator("#booking-name").fill("UI Wizard");
@@ -79,7 +82,7 @@ test("booking flow renders a local success step before WhatsApp", async ({ page,
   await expect(confirmHeading).toBeVisible();
   await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
-  await expect(page.getByRole("heading", { name: "Tu cita ha sido agendada exitosamente" })).toBeVisible();
+  await expect(page.getByText(/Tu cita ha sido agendada con éxito/i)).toBeVisible();
   await page.getByRole("button", { name: /Enviar confirmaci.n por WhatsApp/i }).click();
   await expect(page).toHaveURL(/https:\/\/wa\.me\//);
 });

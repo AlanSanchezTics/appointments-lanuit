@@ -47,16 +47,18 @@ describe("booking success step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByRole("heading", { name: "Confirmar Detalles" });
+    await screen.findByText("Confirmar Detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: "Tu cita ha sido agendada exitosamente",
+        name: /¡Todo listo, Ana!/i,
       }),
     ).toBeInTheDocument();
 
-    expect(screen.getByText("Muchas gracias")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Tu cita ha sido agendada con éxito/i),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", { name: "Enviar confirmación por WhatsApp" }),

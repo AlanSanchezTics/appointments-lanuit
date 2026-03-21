@@ -54,26 +54,26 @@ export function BookingWizardStep1({
 
   return (
     <div className="space-y-8">
-      <header className="space-y-4 mb-[1.5rem]">
+      <header className="mb-8 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.24em] text-[var(--accent-dark)]">
+            <p className="text-[0.64rem] font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
               {t("booking.step1Of2")}
             </p>
-            <h1 className="font-[family-name:var(--font-display)] text-[2.35rem] font-semibold leading-[1.02] tracking-[-0.04em] text-[var(--foreground)]">
+            <h1 className="font-[family-name:var(--font-display)] text-[2.25rem] font-bold leading-[1.02] tracking-[-0.035em] text-[var(--foreground)]">
               {t("booking.title")}
             </h1>
           </div>
           <button
             aria-label={t("booking.openCalendar")}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--accent-dark)] shadow-[var(--shadow-soft)] transition hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--accent)] transition hover:border-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             onClick={onOpenCalendar}
             type="button"
           >
             <CalendarIcon />
           </button>
         </div>
-        <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
+        <div className="h-0.5 w-full rounded-full bg-[rgba(43,36,33,0.08)]">
           <div className="h-full w-1/2 rounded-full bg-[var(--accent)]" />
         </div>
       </header>
@@ -84,13 +84,13 @@ export function BookingWizardStep1({
         </p>
       ) : null}
 
-      <section className="space-y-4 border-t border-[var(--border)] pt-6">
+      <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
             {t("booking.availableDays")}
           </p>
           <button
-            className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)] transition hover:text-[var(--accent-dark)]"
+            className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)] transition hover:text-[var(--accent)]"
             onClick={onOpenCalendar}
             type="button"
           >
@@ -109,9 +109,9 @@ export function BookingWizardStep1({
                   weekday: formatShortWeekdayLabel(day.date, language),
                   day: formatDayOfMonthLabel(day.date),
                 })}
-                className={`min-h-24 w-[100%] rounded-[1.7rem] border px-2 py-3 text-center transition ${
+                className={`min-h-24 w-[100%] rounded-[2rem] border px-2 py-3 text-center transition ${
                   isSelected
-                    ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
+                    ? "border-transparent bg-[var(--accent)] text-white"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
                 }`}
                 onClick={() =>
@@ -129,7 +129,7 @@ export function BookingWizardStep1({
                 >
                   {formatShortWeekdayLabel(day.date, language)}
                 </span>
-                <span className="mt-2 block text-[1.8rem] font-semibold leading-none tracking-[-0.04em]">
+                <span className="mt-2 block text-[1.8rem] font-bold leading-none tracking-[-0.04em]">
                   {formatDayOfMonthLabel(day.date)}
                 </span>
               </button>
@@ -147,7 +147,7 @@ export function BookingWizardStep1({
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
           {t("booking.selectTime")}
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {(selectedDay?.slots ?? []).map((slot) => {
             const isSelected = draft.timeSlot === slot;
 
@@ -157,9 +157,9 @@ export function BookingWizardStep1({
                 aria-label={t("booking.selectTimeSlot", {
                   slot: formatTimeSlotLabel(slot, language),
                 })}
-                className={`min-h-15 rounded-full border px-4 text-[0.98rem] font-semibold tracking-[-0.02em] transition ${
+                className={`min-h-14 rounded-full border px-4 text-[0.96rem] font-bold tracking-[-0.01em] transition ${
                   isSelected
-                    ? "border-transparent bg-[var(--accent)] text-white shadow-[var(--shadow-soft)]"
+                    ? "border-transparent bg-[var(--accent)] text-white"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
                 }`}
                 onClick={() => onDraftChange({ timeSlot: slot })}
@@ -181,14 +181,14 @@ export function BookingWizardStep1({
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
           {t("booking.yourDetails")}
         </p>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <label className="relative block" htmlFor="booking-phone">
-            <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
+            <span className="absolute left-5 top-0 -translate-y-1/2 bg-[var(--surface)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
               {t("booking.phone")}
             </span>
             <input
               id="booking-phone"
-              className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-full border border-[var(--border)] bg-white px-6 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
               inputMode="numeric"
               onChange={(event) => onDraftChange({ phone: event.target.value })}
               placeholder={t("booking.phonePlaceholder")}
@@ -204,12 +204,12 @@ export function BookingWizardStep1({
           {showNameField ? (
             <>
               <label className="relative block" htmlFor="booking-name">
-                <span className="absolute left-4 top-0 -translate-y-1/2 bg-[var(--surface-strong)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent-dark)]">
+                <span className="absolute left-5 top-0 -translate-y-1/2 bg-[var(--surface)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
                   {t("booking.fullName")}
                 </span>
                 <input
                   id="booking-name"
-                  className="w-full rounded-full border border-[var(--border)] bg-white px-5 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+                  className="w-full rounded-full border border-[var(--border)] bg-white px-6 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
                   onChange={(event) =>
                     onDraftChange({ name: event.target.value })
                   }
@@ -241,9 +241,9 @@ export function BookingWizardStep1({
         </p>
       ) : null}
 
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4 pt-1">
         <Button
-          className="w-full py-4 text-[1.02rem] font-semibold"
+          className="w-full min-h-14 py-4 text-[1rem] font-bold"
           disabled={isPending}
           onClick={onContinue}
           type="button"
@@ -262,7 +262,7 @@ export function BookingWizardStep1({
         <div className="flex justify-center">
           <Link
             className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
-            href="/"
+            href={`/citas/${month}`}
           >
             {t("booking.back")}
           </Link>

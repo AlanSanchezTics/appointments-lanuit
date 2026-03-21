@@ -1,7 +1,7 @@
 {
   "api": {
     "SLOT_NOT_AVAILABLE": "Ese horario ya no esta disponible. Elige otro.",
-    "SLOT_LOCKED": "Ese horario acaba de ser bloqueado por otra persona. Elige otro.",
+    "SLOT_LOCKED": "Ese horario ya no esta disponible. Elige otro.",
     "PHONE_ALREADY_BOOKED": "Ya tienes una cita futura activa con este telefono.",
     "MONTH_NOT_ALLOWED": "Solo se puede agendar en meses habilitados.",
     "LOCK_TIMEOUT": "Hubo un conflicto temporal al reservar. Intenta de nuevo.",

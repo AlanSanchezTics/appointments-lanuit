@@ -37,7 +37,7 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(await screen.findByRole("heading", { name: "Confirmar Detalles" })).toBeInTheDocument();
+    expect(await screen.findByText("Confirmar Detalles")).toBeInTheDocument();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByText("551 234 5678")).toBeInTheDocument();
     expect(screen.getByText("09:00 AM")).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("booking confirm step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByRole("heading", { name: "Confirmar Detalles" });
+    await screen.findByText("Confirmar Detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
