@@ -6,9 +6,35 @@ Este archivo define las reglas operativas que todo agente debe seguir al trabaja
 
 Su objetivo principal es asegurar que los cambios en código, arquitectura, comportamiento funcional y especialmente en los **flujos de usuario o de negocio** queden reflejados en la documentación oficial del proyecto.
 
-La documentación fuente de verdad para funcionalidad, reglas, flujos y contexto del producto es:
+## Regla principal de documentación
+
+---
+
+## Fuentes de verdad del sistema
+
+El sistema se rige por múltiples niveles de documentación, cada uno con una responsabilidad específica:
 
 - `docs/specification.md`
+  - Fuente de verdad funcional completa del sistema.
+  - Define comportamiento, reglas, flujos y restricciones.
+
+- `docs/architecture/*.md`
+  - Define la arquitectura del sistema.
+  - Incluye convenciones de routing, API, organización de código y reglas estructurales.
+
+- `docs/architecture/business-rules.md`
+  - Define las reglas de negocio del dominio de forma estructurada y sin detalles de implementación.
+
+- `docs/features/*.md`
+  - Describe la ejecución paso a paso de los flujos del sistema (ej. booking, cancel).
+  - Debe ser consistente con `specification.md`.
+
+- `docs/decisions/*.md`
+  - Documenta decisiones arquitectónicas clave y su justificación.
+
+El agente debe considerar todos estos documentos como parte del contrato del sistema.
+
+---
 
 ## Regla principal de documentación
 
@@ -19,6 +45,105 @@ Cada vez que un agente modifique o proponga modificar el flujo de una funcionali
 3. Actualizar `docs/specification.md` para reflejar el nuevo comportamiento esperado.
 4. Asegurar que la documentación quede alineada con la implementación final.
 5. Incluir en su plan o entrega una nota explícita indicando qué sección de `docs/specification.md` fue actualizada o debe actualizarse.
+
+---
+
+## Reglas de arquitectura
+
+El agente debe respetar la arquitectura definida en `docs/architecture/`.
+
+No debe:
+
+- ignorar las convenciones de routing, API o estructura de carpetas
+- inventar nuevas estructuras sin documentarlas
+- mezclar responsabilidades entre capas
+
+Cualquier cambio arquitectónico debe:
+
+1. justificarse
+2. documentarse en `docs/architecture/`
+3. registrarse en `docs/decisions/` si es relevante
+
+---
+
+## Reglas de ubicación de código
+
+Antes de crear cualquier archivo, el agente debe clasificar su propósito:
+
+- Rutas → `app/<feature>/`
+- Endpoints → `app/api/`
+- Componentes UI reutilizables → `components/ui/`
+- Componentes de feature → `components/<feature>/`
+- Hooks → `hooks/<feature>/` o `hooks/shared/`
+- Lógica de negocio → `lib/<feature>/`
+- Utilidades compartidas → `lib/shared/`
+
+El agente no debe:
+
+- colocar lógica de negocio en `app/api`
+- colocar lógica compleja en componentes
+- usar `lib/` como contenedor genérico sin estructura
+
+---
+
+## Regla obligatoria de hooks
+
+Toda lógica de estado, efectos o interacción debe abstraerse en hooks.
+
+El agente no debe:
+
+- escribir lógica compleja dentro de componentes
+- usar múltiples `useState` o `useEffect` sin encapsulación
+- duplicar lógica entre componentes
+
+Debe:
+
+- crear hooks en `hooks/<feature>/`
+- reutilizar hooks cuando sea posible
+
+---
+
+## Reglas de negocio
+
+Las reglas de negocio deben definirse en:
+
+- `docs/architecture/business-rules.md`
+
+El agente debe:
+
+- usar este documento como referencia principal para lógica de dominio
+- no duplicar reglas en múltiples capas
+- no implementar lógica sin estar alineada con estas reglas
+
+Si una regla cambia:
+
+- debe actualizar `docs/specification.md`
+- debe actualizar `business-rules.md`
+
+---
+
+## Reglas para documentación de flujos (features)
+
+Cada flujo funcional debe documentarse en:
+
+- `docs/features/<feature>-flow.md`
+
+Ejemplos:
+
+- booking-flow.md
+- cancel-flow.md
+
+El agente debe:
+
+- usar estos documentos como referencia operativa del flujo
+- mantenerlos alineados con `specification.md`
+- actualizar estos documentos si cambia el flujo
+
+No debe:
+
+- depender únicamente de `specification.md` si existe un feature doc más estructurado
+
+---
 
 ## Qué se considera un cambio de flujo
 
@@ -38,38 +163,50 @@ Se considera cambio de flujo cualquier modificación que afecte uno o más de lo
 - locks, expiraciones, reintentos o restricciones temporales
 - comportamiento de UI/UX relacionado con el proceso
 
+---
+
 ## Obligación del agente antes de implementar
 
 Antes de escribir código, el agente debe hacer lo siguiente:
 
 1. Leer `docs/specification.md`.
-2. Comparar la solicitud actual contra la documentación existente.
-3. Detectar si la documentación ya cubre el cambio solicitado.
-4. Si la documentación está desactualizada, incompleta o contradice el nuevo requerimiento:
+2. Leer `docs/architecture/business-rules.md`.
+3. Leer el documento correspondiente en `docs/features/` si existe.
+4. Comparar la solicitud actual contra la documentación existente.
+5. Detectar si la documentación ya cubre el cambio solicitado.
+6. Si la documentación está desactualizada, incompleta o contradice el nuevo requerimiento:
    - señalarlo explícitamente
    - proponer la actualización correspondiente
    - incluir la actualización de documentación como parte del plan de trabajo
+
+---
 
 ## Obligación del agente después de implementar
 
 Después de implementar un cambio, el agente debe verificar que:
 
 - `docs/specification.md` describa el flujo real actualizado
-- las reglas de negocio nuevas estén documentadas
+- `docs/architecture/business-rules.md` refleje las reglas actualizadas
+- `docs/features/*.md` reflejen el flujo actualizado
 - las validaciones nuevas estén documentadas
 - los cambios relevantes en UI/UX estén documentados
 - las integraciones o efectos secundarios modificados estén documentados
 - no existan desalineaciones entre implementación y documentación
 
+---
+
 ## Prioridad entre código y documentación
 
-Cuando exista una discrepancia entre la solicitud actual, el código existente y `docs/specification.md`, el agente debe:
+Cuando exista una discrepancia entre la solicitud actual, el código existente y la documentación, el agente debe:
 
 1. Tratar `docs/specification.md` como la fuente principal de verdad histórica del sistema.
-2. Detectar si el cambio solicitado implica una evolución del producto.
-3. Si el producto debe evolucionar, actualizar la documentación para representar el nuevo comportamiento deseado.
-4. No asumir que el código actual es automáticamente correcto si contradice la especificación.
-5. No asumir que la especificación está automáticamente vigente si la solicitud actual redefine el flujo; debe documentar el cambio.
+2. Validar consistencia con `business-rules.md` y `features/*.md`.
+3. Detectar si el cambio solicitado implica una evolución del producto.
+4. Si el producto debe evolucionar, actualizar la documentación para representar el nuevo comportamiento deseado.
+5. No asumir que el código actual es automáticamente correcto si contradice la documentación.
+6. No asumir que la documentación está automáticamente vigente si la solicitud redefine el flujo; debe documentar el cambio.
+
+---
 
 ## Regla para cambios en flujos funcionales
 
