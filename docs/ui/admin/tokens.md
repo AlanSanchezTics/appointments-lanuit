@@ -170,10 +170,19 @@ El sistema visual del admin prioriza ligereza y claridad sobre profundidad exces
 
 - outline
 - grosor visual aproximado: `2px`
+- implementación base: Font Awesome vía `components/admin/ui/AdminIcon.tsx`
 
 ### Default Color
 
 - `accent`: `#875207`
+
+### Secondary Color (support)
+
+- `text-secondary`: `#6B7280`
+
+### Default Size
+
+- `sm` (equivalente Font Awesome en `AdminIcon`)
 
 ---
 

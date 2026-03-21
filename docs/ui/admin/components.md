@@ -128,7 +128,7 @@ Mostrar métricas de dashboard de forma compacta y consistente.
 
 ### Structure
 
-- icono
+- icono (vía `AdminIcon`)
 - label
 - valor
 
@@ -160,7 +160,7 @@ Representar un elemento navegable o accionable dentro de un listado operativo.
 
 ### Structure
 
-- icono a la izquierda
+- icono a la izquierda (vía `AdminIcon`)
 - título principal
 - indicador o contenido secundario a la derecha
 
@@ -224,6 +224,30 @@ Uso:
 - búsquedas
 - filtros
 - formularios internos del admin
+- login admin (username/password con iconografía consistente)
+
+Nota:
+
+- cuando un `Input` incluya icono, debe usar `AdminIcon`.
+
+---
+
+## Component: AdminIcon
+
+### Purpose
+
+Normalizar iconografía del admin sobre Font Awesome, centralizando color, tamaño y accesibilidad.
+
+### Source
+
+- `components/admin/ui/AdminIcon.tsx`
+
+### Rules
+
+- tono por defecto: `accent`
+- tamaño por defecto: `sm`
+- decorativo por defecto (`aria-hidden`)
+- permite override controlado de tono/tamaño/clase cuando el componente lo requiera
 
 ---
 

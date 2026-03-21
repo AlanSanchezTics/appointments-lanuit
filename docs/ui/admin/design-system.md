@@ -281,6 +281,8 @@ Uso:
 
 ## Iconography
 
+- Librería oficial: Font Awesome (free-solid + free-regular)
+- Wrapper obligatorio: `components/admin/ui/AdminIcon.tsx`
 - Estilo: outline
 - Grosor: 2px
 - Color base: accent
@@ -291,6 +293,12 @@ Ejemplos:
 - archive → inactivos
 - arrow → navegación
 - check → confirmado
+
+Reglas de uso:
+
+- las vistas admin no deben importar `FontAwesomeIcon` directamente
+- los íconos deben pasar por `AdminIcon` para mantener tono/tamaño consistentes
+- los componentes base (`Input`, `MetricCard`, `ListItem`) deben recibir iconos ya normalizados por `AdminIcon`
 
 ---
 

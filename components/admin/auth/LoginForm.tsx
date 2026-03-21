@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 
 import Logo from "@/assets/images/logo.png";
+import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { Button } from "@/components/admin/ui/Button";
 import { Input } from "@/components/admin/ui/Input";
+import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useLoginForm } from "@/hooks/admin/useLoginForm";
 
 export function LoginForm() {
@@ -47,7 +49,7 @@ export function LoginForm() {
             label="Usuario"
             value={state.username}
             onChange={(event) => updateField("username", event.target.value)}
-            icon={<span aria-hidden="true">@</span>}
+            icon={<AdminIcon icon={adminIcons.username} tone="secondary" />}
           />
 
           <Input
@@ -58,7 +60,7 @@ export function LoginForm() {
             label="Contraseña"
             value={state.password}
             onChange={(event) => updateField("password", event.target.value)}
-            icon={<span aria-hidden="true">*</span>}
+            icon={<AdminIcon icon={adminIcons.password} tone="secondary" />}
           />
 
           {errorMessage ? (

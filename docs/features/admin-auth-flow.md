@@ -18,7 +18,7 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
 
 ## High-Level Flow
 1. Usuario abre `/admin/login`.
-2. Captura `username` y contraseña.
+2. Captura `username` y contraseña (campos con iconografía consistente del design system admin: usuario/candado).
 3. Frontend ejecuta `signIn("credentials")` de NextAuth.
 4. Backend valida credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
 5. Si son válidas y el usuario está `active`, NextAuth crea sesión y redirige al dashboard.
