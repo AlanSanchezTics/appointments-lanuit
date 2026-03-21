@@ -6,6 +6,10 @@ import {
   formatLongDate,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
+import {
+  formatPhoneForDisplay,
+  formatRemainingTime,
+} from "@/lib/booking/formatters";
 import type { AppLanguage } from "@/lib/i18n/config";
 
 import type { BookingDraft } from "@/components/booking/booking-wizard";
@@ -137,24 +141,6 @@ export function BookingConfirmStep({
       </div>
     </div>
   );
-}
-
-function formatRemainingTime(remainingSeconds: number) {
-  const safeSeconds = Math.max(0, remainingSeconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
-function formatPhoneForDisplay(phone: string) {
-  const trimmed = phone.replace(/\D/g, "");
-
-  if (trimmed.length !== 10) {
-    return phone;
-  }
-
-  return `${trimmed.slice(0, 3)} ${trimmed.slice(3, 6)} ${trimmed.slice(6)}`;
 }
 
 function CheckCircleIcon() {

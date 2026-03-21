@@ -8,6 +8,10 @@ import {
   formatShortWeekdayLabel,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
+import {
+  formatRemainingTime,
+  getHighlightedDays,
+} from "@/lib/booking/formatters";
 import type { AppLanguage } from "@/lib/i18n/config";
 import { translateValidationError } from "@/lib/i18n/translate";
 import type { DayAvailability } from "@/lib/availability/service";
@@ -270,34 +274,6 @@ export function BookingWizardStep1({
       </div>
     </div>
   );
-}
-
-function formatRemainingTime(remainingSeconds: number) {
-  const safeSeconds = Math.max(0, remainingSeconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
-function getHighlightedDays(
-  days: DayAvailability[],
-  selectedDate: string | null,
-) {
-  if (days.length <= 4) {
-    return days;
-  }
-
-  const selectedIndex = Math.max(
-    0,
-    selectedDate ? days.findIndex((day) => day.date === selectedDate) : 0,
-  );
-  const start = Math.min(
-    Math.max(selectedIndex - 1, 0),
-    Math.max(days.length - 4, 0),
-  );
-
-  return days.slice(start, start + 4);
 }
 
 function CalendarIcon() {

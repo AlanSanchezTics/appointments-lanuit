@@ -1,0 +1,310 @@
+import { useCallback, useEffect, useState, useTransition } from "react";
+
+import type { DayAvailability } from "@/lib/availability/service";
+import {
+  checkClientAndAcquireReservationLock,
+  fetchMonthAvailability,
+  releaseReservationLock,
+  submitBookingDraft,
+} from "@/lib/booking/api-client";
+import {
+  getInitialDraftField,
+  normalizeDraftByAvailability,
+  normalizePhone,
+  validateDraft,
+} from "@/lib/booking/draft-rules";
+import type {
+  BookingDraft,
+  BookingSuccess,
+  BookingValidationErrors,
+  BookingStep,
+  ClientCheckLockResult,
+  ClientState,
+  SlotLock,
+} from "@/lib/booking/types";
+import { useBookingLockTimer } from "@/hooks/booking/use-booking-lock-timer";
+import { useBookingStepTransition } from "@/hooks/booking/use-booking-step-transition";
+
+type UseBookingWizardParams = {
+  month: string;
+  days: DayAvailability[];
+  initialDraft?: Partial<BookingDraft>;
+  refreshDays?: (month: string) => Promise<DayAvailability[]>;
+  checkClientAndAcquireLock?: (
+    draft: BookingDraft,
+  ) => Promise<ClientCheckLockResult>;
+  releaseLock?: (lockToken: string) => Promise<void>;
+  submitBooking?: (
+    draft: BookingDraft,
+    lockToken: string,
+  ) => Promise<BookingSuccess>;
+};
+
+function getInitialDraft(
+  initialDraft: Partial<BookingDraft> | undefined,
+  days: DayAvailability[],
+): BookingDraft {
+  return {
+    date: getInitialDraftField(initialDraft, "date", days[0]?.date ?? null),
+    timeSlot: getInitialDraftField(
+      initialDraft,
+      "timeSlot",
+      days[0]?.slots[0] ?? null,
+    ),
+    name: getInitialDraftField(initialDraft, "name", ""),
+    phone: getInitialDraftField(initialDraft, "phone", ""),
+  };
+}
+
+export function useBookingWizard({
+  month,
+  days,
+  initialDraft,
+  refreshDays = fetchMonthAvailability,
+  checkClientAndAcquireLock = checkClientAndAcquireReservationLock,
+  releaseLock = releaseReservationLock,
+  submitBooking = submitBookingDraft,
+}: UseBookingWizardParams) {
+  const animationsEnabled = process.env.NODE_ENV !== "test";
+  const [step, setStep] = useState<BookingStep>("details");
+  const [clientState, setClientState] = useState<ClientState>("unknown");
+  const [isCalendarOpen, setCalendarOpen] = useState(false);
+  const [errors, setErrors] = useState<BookingValidationErrors>({});
+  const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
+  const [success, setSuccess] = useState<BookingSuccess | null>(null);
+  const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
+  const [currentDays, setCurrentDays] = useState<DayAvailability[]>(days);
+  const [draft, setDraft] = useState<BookingDraft>(() =>
+    getInitialDraft(initialDraft, days),
+  );
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setCurrentDays(days);
+    setDraft((current) => normalizeDraftByAvailability(current, days));
+  }, [days]);
+
+  useEffect(() => {
+    return () => {
+      if (activeLock?.lockToken) {
+        void releaseLock(activeLock.lockToken).catch(() => undefined);
+      }
+    };
+  }, [activeLock?.lockToken, releaseLock]);
+
+  const { remainingSeconds, setRemainingSeconds } = useBookingLockTimer({
+    activeLock,
+    isActive: Boolean(activeLock) && (step === "confirm" || clientState === "new"),
+    releaseLock,
+    onExpired: () => {
+      startTransition(() => {
+        setActiveLock(null);
+        setClientState("unknown");
+        setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
+        setStep("details");
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (!submitErrorCode) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    void refreshDays(month)
+      .then((nextDays) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setCurrentDays(nextDays);
+        setDraft((current) => normalizeDraftByAvailability(current, nextDays));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [month, refreshDays, submitErrorCode]);
+
+  const updateDraft = useCallback(
+    (nextDraft: Partial<BookingDraft>) => {
+      const shouldInvalidateActiveLock =
+        activeLock &&
+        step === "details" &&
+        ((typeof nextDraft.date === "string" && nextDraft.date !== draft.date) ||
+          (typeof nextDraft.timeSlot === "string" &&
+            nextDraft.timeSlot !== draft.timeSlot) ||
+          (typeof nextDraft.phone === "string" &&
+            normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
+
+      if (shouldInvalidateActiveLock && activeLock) {
+        void releaseLock(activeLock.lockToken).catch(() => undefined);
+        setActiveLock(null);
+        setRemainingSeconds(0);
+        setClientState("unknown");
+        setDraft((current) => ({
+          ...current,
+          ...nextDraft,
+          ...(typeof nextDraft.phone === "string" ? { name: "" } : {}),
+        }));
+      } else {
+        setDraft((current) => ({
+          ...current,
+          ...nextDraft,
+        }));
+      }
+
+      if (typeof nextDraft.phone === "string" && clientState !== "unknown") {
+        setClientState("unknown");
+        setDraft((current) => ({
+          ...current,
+          ...nextDraft,
+          name: "",
+        }));
+      }
+
+      setErrors((current) => ({
+        ...current,
+        ...(nextDraft.date ? { date: undefined } : {}),
+        ...(nextDraft.timeSlot ? { timeSlot: undefined } : {}),
+        ...(typeof nextDraft.name === "string" ? { name: undefined } : {}),
+        ...(typeof nextDraft.phone === "string" ? { phone: undefined } : {}),
+        form: undefined,
+      }));
+      setSubmitErrorCode(null);
+    },
+    [activeLock, clientState, draft.date, draft.phone, draft.timeSlot, releaseLock, setRemainingSeconds, step],
+  );
+
+  const handleContinue = useCallback(() => {
+    const nextErrors = validateDraft(draft, clientState === "new");
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    if (clientState === "new") {
+      if (!activeLock?.lockToken) {
+        setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
+        return;
+      }
+
+      setStep("confirm");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const response = await checkClientAndAcquireLock(draft);
+        const lock = {
+          lockToken: response.lockToken,
+          expiresAt: response.expiresAt,
+        };
+
+        setActiveLock(lock);
+        setRemainingSeconds(
+          Math.max(
+            0,
+            Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000),
+          ),
+        );
+        setSubmitErrorCode(null);
+
+        if (response.clientExists) {
+          setClientState("existing");
+          setDraft((current) => ({
+            ...current,
+            name: response.clientName ?? current.name,
+          }));
+          setStep("confirm");
+          return;
+        }
+
+        setClientState("new");
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitErrorCode(code);
+      }
+    });
+  }, [activeLock?.lockToken, checkClientAndAcquireLock, clientState, draft, setRemainingSeconds]);
+
+  const handleBack = useCallback(() => {
+    startTransition(async () => {
+      if (activeLock?.lockToken) {
+        await releaseLock(activeLock.lockToken).catch(() => undefined);
+      }
+
+      setActiveLock(null);
+      setRemainingSeconds(0);
+      setSubmitErrorCode(null);
+      setClientState("unknown");
+      setStep("details");
+    });
+  }, [activeLock?.lockToken, releaseLock, setRemainingSeconds]);
+
+  const handleConfirm = useCallback(() => {
+    const nextErrors = validateDraft(draft, clientState === "new");
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setStep("details");
+      return;
+    }
+
+    if (!activeLock?.lockToken) {
+      setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
+      setStep("details");
+      return;
+    }
+
+    startTransition(async () => {
+      setSubmitErrorCode(null);
+
+      try {
+        const result = await submitBooking(draft, activeLock.lockToken);
+        setActiveLock(null);
+        setRemainingSeconds(0);
+        setClientState("unknown");
+        setSuccess(result);
+        setStep("success");
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitErrorCode(code);
+      }
+    });
+  }, [activeLock?.lockToken, clientState, draft, setRemainingSeconds, submitBooking]);
+
+  const stepTransition = useBookingStepTransition({
+    step,
+    animationsEnabled,
+  });
+
+  return {
+    state: {
+      activeLock,
+      clientState,
+      currentDays,
+      draft,
+      errors,
+      isCalendarOpen,
+      isPending,
+      remainingSeconds,
+      step,
+      submitErrorCode,
+      success,
+    },
+    transitions: stepTransition,
+    actions: {
+      handleBack,
+      handleConfirm,
+      handleContinue,
+      setCalendarOpen,
+      setStep,
+      updateDraft,
+    },
+  };
+}

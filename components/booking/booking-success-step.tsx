@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/public/button";
+import { useBookingSuccess } from "@/hooks/booking/use-booking-success";
+import { formatPhoneForDisplay } from "@/lib/booking/formatters";
 import {
   formatLongDate,
   formatTimeSlotLabel,
 } from "@/lib/datetime/mexico-city";
 import type { AppLanguage } from "@/lib/i18n/config";
-import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 
 import type {
   BookingDraft,
@@ -31,26 +32,12 @@ export function BookingSuccessStep({
 }: BookingSuccessStepProps) {
   const { i18n, t } = useTranslation("common");
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
-
-  function handleWhatsAppClick() {
-    const cancelUrl =
-      typeof window === "undefined"
-        ? "/cancelar"
-        : `${window.location.origin}/cancelar`;
-    const message = t("whatsapp.messageTemplate", {
-      name: success.whatsappData.name,
-      date: formatLongDate(success.whatsappData.date, language),
-      time: formatTimeSlotLabel(success.whatsappData.timeSlot, language),
-      cancelUrl,
-    });
-
-    onWhatsAppRedirect(
-      buildWhatsappUrlFromMessage({
-        phone: success.whatsappPhone,
-        message,
-      }),
-    );
-  }
+  const { handleWhatsAppClick } = useBookingSuccess({
+    language,
+    success,
+    translate: (key, options) => t(key, options) as string,
+    onWhatsAppRedirect,
+  });
 
   return (
     <div className="flex h-full flex-col space-y-7">
@@ -144,16 +131,6 @@ export function BookingSuccessStep({
       </div>
     </div>
   );
-}
-
-function formatPhoneForDisplay(phone: string) {
-  const trimmed = phone.replace(/\D/g, "");
-
-  if (trimmed.length !== 10) {
-    return phone;
-  }
-
-  return `${trimmed.slice(0, 3)} ${trimmed.slice(3, 6)} ${trimmed.slice(6)}`;
 }
 
 function CheckIcon() {
