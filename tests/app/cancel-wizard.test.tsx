@@ -44,7 +44,7 @@ describe("cancel wizard", () => {
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar cita" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("link", { name: "Volver" }));
+    fireEvent.click(screen.getByRole("button", { name: "Volver" }));
 
     expect(screen.getByRole("heading", { name: "Cancelar cita" })).toBeInTheDocument();
   });

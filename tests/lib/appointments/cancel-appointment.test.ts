@@ -108,4 +108,30 @@ describe("cancelAppointment", () => {
       ),
     ).rejects.toThrow("APPOINTMENT_NOT_FOUND");
   });
+
+  it("throws APPOINTMENT_IS_COMING_SOON when cancellation is inside 24-hour window", async () => {
+    findConfirmedFutureAppointmentByIdForUpdateMock.mockResolvedValueOnce({
+      id: 44,
+      name: "Ana Garcia",
+      phone: "5512345678",
+      date: "2026-03-12",
+      timeSlot: "13:00",
+      status: "CONFIRMED",
+      googleEventId: "google-44",
+    });
+
+    const { cancelAppointment } = await import("@/lib/appointments/cancel-appointment");
+
+    await expect(
+      cancelAppointment(
+        {
+          phone: "5512345678",
+          appointmentId: 44,
+        },
+        new Date("2026-03-12T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("APPOINTMENT_IS_COMING_SOON");
+
+    expect(txAppointmentUpdateMock).not.toHaveBeenCalled();
+  });
 });

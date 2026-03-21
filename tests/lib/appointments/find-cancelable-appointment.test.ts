@@ -67,4 +67,28 @@ describe("findCancelableAppointment", () => {
       ),
     ).rejects.toThrow("APPOINTMENT_NOT_FOUND");
   });
+
+  it("throws APPOINTMENT_IS_COMING_SOON when appointment is inside 24-hour window", async () => {
+    listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
+    findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce({
+      id: 12,
+      name: "Ana Garcia",
+      phone: "5512345678",
+      date: "2026-03-12",
+      timeSlot: "13:00",
+      status: "CONFIRMED",
+      googleEventId: "google-id",
+    });
+
+    const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
+
+    await expect(
+      findCancelableAppointment(
+        {
+          phone: "5512345678",
+        },
+        new Date("2026-03-12T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("APPOINTMENT_IS_COMING_SOON");
+  });
 });

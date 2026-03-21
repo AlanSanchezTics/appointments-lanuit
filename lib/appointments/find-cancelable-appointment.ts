@@ -1,4 +1,6 @@
 import { listBookableMonths } from "@/lib/active-months/service";
+import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
+import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import { findConfirmedFutureAppointmentByPhoneInMonth } from "@/lib/db/appointments";
 import { cancelLookupSchema } from "@/lib/validation/cancel";
@@ -28,11 +30,8 @@ export async function findCancelableAppointment(rawInput: unknown, now = new Dat
     throw new Error("APPOINTMENT_NOT_FOUND");
   }
 
-  // SI la cita es dentro de las próximas 24 horas, no se puede cancelar por este medio
-  const appointmentDateTime = new Date(`${appointment.date}T${appointment.timeSlot}:00.000Z`);
-  const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-  if (hoursUntilAppointment < 24) {
-    throw new Error("APPOINTMENT_IS_COMMING_SOON");
+  if (!isWebCancellationWindowAllowed(appointment, now)) {
+    throw new Error(APPOINTMENT_IS_COMING_SOON);
   }
 
   return {

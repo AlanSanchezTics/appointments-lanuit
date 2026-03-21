@@ -113,6 +113,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Observations
 - La especificación exige que la cancelación web solo proceda con al menos 24 horas de anticipación.
-- En el flujo actual, esta regla se valida explícitamente durante la búsqueda (`/api/cancelar/buscar`).
-- En la ejecución de cancelación (`/api/cancelar`), no se observa una revalidación explícita de la regla de 24 horas; la elegibilidad se apoya en que el `appointmentId` provenga de una búsqueda válida previa.
-- El código de error para la regla de 24 horas aparece como `APPOINTMENT_IS_COMMING_SOON` (con ortografía actual), lo cual puede ser relevante para contratos de errores y traducciones.
+- En el flujo actual, esta regla se valida en dos puntos:
+  - Durante la búsqueda (`/api/cancelar/buscar`) para decidir si la UI puede avanzar al paso de confirmación.
+  - Durante la ejecución (`/api/cancelar`) para evitar que una cita pase a no elegible por cambio de tiempo entre búsqueda y confirmación.
+- El código de error para la regla de 24 horas es `APPOINTMENT_IS_COMING_SOON`.

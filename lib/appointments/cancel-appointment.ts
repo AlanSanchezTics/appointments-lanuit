@@ -1,4 +1,6 @@
 import { listBookableMonths } from "@/lib/active-months/service";
+import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
+import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import { findConfirmedFutureAppointmentByIdForUpdate } from "@/lib/db/appointments";
 import { deleteCalendarEvent } from "@/lib/calendar/google";
@@ -31,6 +33,10 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
 
     if (!lockedAppointment) {
       throw new Error("APPOINTMENT_NOT_FOUND");
+    }
+
+    if (!isWebCancellationWindowAllowed(lockedAppointment, now)) {
+      throw new Error(APPOINTMENT_IS_COMING_SOON);
     }
 
     await tx.appointment.update({

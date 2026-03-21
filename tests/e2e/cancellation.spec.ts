@@ -8,62 +8,135 @@ function getActiveMonth() {
   }).format(new Date());
 }
 
+function nextMonth(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const next = new Date(Date.UTC(year, monthNumber, 1));
+  return next.toISOString().slice(0, 7);
+}
+
+function getMonthCandidates(size: number) {
+  const months: string[] = [];
+  let cursor = getActiveMonth();
+
+  for (let index = 0; index < size; index += 1) {
+    months.push(cursor);
+    cursor = nextMonth(cursor);
+  }
+
+  return months;
+}
+
+function getMexicoCityDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 function getUniquePhone() {
-  const suffix = String(Date.now()).slice(-8);
+  const suffix = String(Math.floor(10_000_000 + Math.random() * 90_000_000));
   return `55${suffix}`;
 }
 
-async function getActiveSlot(request: APIRequestContext) {
-  const activeMonth = getActiveMonth();
-  const availabilityResponse = await request.get(`/api/availability/${activeMonth}`);
-  expect(availabilityResponse.ok()).toBeTruthy();
+type AvailabilityPayload = {
+  days: Array<{ date: string; slots: string[] }>;
+};
 
-  const availability = (await availabilityResponse.json()) as {
-    days: Array<{ date: string; slots: string[] }>;
-  };
-
-  expect(availability.days.length).toBeGreaterThan(0);
-
-  const now = new Date();
-  const minDate = new Date(now);
+async function getBookableSlot(request: APIRequestContext) {
+  const today = new Date();
+  const minDate = new Date(today);
   minDate.setUTCDate(minDate.getUTCDate() + 2);
-  const minDateKey = minDate.toISOString().slice(0, 10);
+  const minDateKey = getMexicoCityDateKey(minDate);
 
-  const day = availability.days.find((entry) => entry.date >= minDateKey) ?? availability.days[0];
-  expect(day?.slots.length).toBeGreaterThan(0);
+  for (const month of getMonthCandidates(3)) {
+    const availabilityResponse = await request.get(`/api/availability/${month}`);
+    if (!availabilityResponse.ok()) {
+      continue;
+    }
 
-  return {
-    date: day?.date ?? "",
-    timeSlot: day?.slots[0] ?? "",
-  };
+    const availability = (await availabilityResponse.json()) as AvailabilityPayload;
+    if (!availability.days.length) {
+      continue;
+    }
+
+    const day =
+      availability.days.find((entry) => entry.date >= minDateKey && entry.slots.length > 0) ??
+      availability.days.find((entry) => entry.slots.length > 0);
+    if (!day) {
+      continue;
+    }
+
+    return {
+      date: day.date,
+      timeSlot: day.slots[0],
+    };
+  }
+
+  throw new Error("No available slot found in active month candidates");
 }
 
 async function createConfirmedAppointment(
   request: APIRequestContext,
-  input: { name: string; phone: string; date: string; timeSlot: string },
+  input: { name: string },
 ) {
-  const lockResponse = await request.post("/api/reservar/client-check-lock", {
-    data: {
-      phone: input.phone,
-      date: input.date,
-      timeSlot: input.timeSlot,
-    },
-  });
+  let lastError = "UNKNOWN_ERROR";
 
-  expect(lockResponse.status()).toBe(201);
-  const lockPayload = (await lockResponse.json()) as { lockToken: string };
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const slot = await getBookableSlot(request);
+    const phone = getUniquePhone();
+    const lockResponse = await request.post("/api/reservar/client-check-lock", {
+      data: {
+        phone,
+        date: slot.date,
+        timeSlot: slot.timeSlot,
+      },
+    });
 
-  const confirmResponse = await request.post("/api/reservar/confirm", {
-    data: {
-      name: input.name,
-      phone: input.phone,
-      date: input.date,
-      timeSlot: input.timeSlot,
-      lockToken: lockPayload.lockToken,
-    },
-  });
+    if (lockResponse.status() !== 201) {
+      const lockPayload = (await lockResponse.json()) as {
+        errorCode?: string;
+        error?: string;
+      };
+      lastError = lockPayload.errorCode ?? lockPayload.error ?? `LOCK_STATUS_${lockResponse.status()}`;
+      continue;
+    }
 
-  expect(confirmResponse.status()).toBe(201);
+    const lockPayload = (await lockResponse.json()) as { lockToken: string };
+    const confirmResponse = await request.post("/api/reservar/confirm", {
+      data: {
+        name: input.name,
+        phone,
+        date: slot.date,
+        timeSlot: slot.timeSlot,
+        lockToken: lockPayload.lockToken,
+      },
+    });
+
+    if (confirmResponse.status() === 201) {
+      return {
+        phone,
+        date: slot.date,
+        timeSlot: slot.timeSlot,
+      };
+    }
+
+    const confirmPayload = (await confirmResponse.json()) as {
+      errorCode?: string;
+      error?: string;
+    };
+    lastError =
+      confirmPayload.errorCode ??
+      confirmPayload.error ??
+      `CONFIRM_STATUS_${confirmResponse.status()}`;
+
+    await request.delete("/api/reservar/lock", {
+      data: { lockToken: lockPayload.lockToken },
+    });
+  }
+
+  throw new Error(`Unable to create confirmed appointment after retries: ${lastError}`);
 }
 
 test("home exposes cancellation entrypoint", async ({ page }) => {
@@ -73,19 +146,13 @@ test("home exposes cancellation entrypoint", async ({ page }) => {
 });
 
 test("booking can be cancelled through the public endpoints", async ({ request }) => {
-  const slot = await getActiveSlot(request);
-  const phone = getUniquePhone();
-
-  await createConfirmedAppointment(request, {
+  const appointment = await createConfirmedAppointment(request, {
     name: "E2E Cancel",
-    phone,
-    date: slot.date,
-    timeSlot: slot.timeSlot,
   });
 
   const lookupResponse = await request.post("/api/cancelar/buscar", {
     data: {
-      phone,
+      phone: appointment.phone,
     },
   });
 
@@ -96,7 +163,7 @@ test("booking can be cancelled through the public endpoints", async ({ request }
 
   const cancellationResponse = await request.post("/api/cancelar", {
     data: {
-      phone,
+      phone: appointment.phone,
       appointmentId: lookupPayload.appointmentId,
     },
   });
@@ -112,22 +179,16 @@ test("user completes cancellation wizard in three steps", async ({
   page,
   request,
 }) => {
-  const slot = await getActiveSlot(request);
-  const phone = getUniquePhone();
-
-  await createConfirmedAppointment(request, {
+  const appointment = await createConfirmedAppointment(request, {
     name: "E2E Wizard Cancel",
-    phone,
-    date: slot.date,
-    timeSlot: slot.timeSlot,
   });
 
   await page.goto("/cancelar");
-  await page.locator("#cancel-phone").fill(phone);
+  await page.locator("#cancel-phone").fill(appointment.phone);
   await page.getByRole("button", { name: "Buscar cita" }).click();
 
   await expect(page.getByRole("heading", { name: /Confirmar Cancelaci.n/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Volver" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Volver" })).toBeVisible();
 
   await page.getByRole("button", { name: "Cancelar cita" }).click();
   await expect(

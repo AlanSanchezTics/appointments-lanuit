@@ -10,7 +10,7 @@
     "NAME_REQUIRED_FOR_NEW_CLIENT": "Enter your name to complete the booking.",
     "CLIENT_NAME_MISMATCH": "This phone is already registered with another name.",
     "APPOINTMENT_NOT_FOUND": "We couldn't find a future confirmed appointment in enabled months.",
-    "APPOINTMENT_IS_COMMING_SOON": "It is no longer possible to cancel your appointment through this channel. Contact us directly for more information.",
+    "APPOINTMENT_IS_COMING_SOON": "It is no longer possible to cancel your appointment through this channel. Contact us directly for more information.",
     "VALIDATION_ERROR": "Please review your input and try again.",
     "UNKNOWN_ERROR": "The operation could not be completed. Please try again."
   },

@@ -61,4 +61,26 @@ describe("POST /api/cancelar/buscar", () => {
       error: "APPOINTMENT_NOT_FOUND",
     });
   });
+
+  it("returns error code for appointment inside 24-hour window", async () => {
+    findCancelableAppointmentMock.mockRejectedValueOnce(
+      new Error("APPOINTMENT_IS_COMING_SOON"),
+    );
+
+    const { POST } = await import("@/app/api/cancelar/buscar/route");
+    const response = await POST(
+      new Request("http://localhost/api/cancelar/buscar", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: "5512345678",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "APPOINTMENT_IS_COMING_SOON",
+      error: "APPOINTMENT_IS_COMING_SOON",
+    });
+  });
 });

@@ -10,7 +10,7 @@
     "NAME_REQUIRED_FOR_NEW_CLIENT": "Ingresa tu nombre para completar la reserva.",
     "CLIENT_NAME_MISMATCH": "Este telefono ya esta registrado con otro nombre.",
     "APPOINTMENT_NOT_FOUND": "No encontramos una cita confirmada futura en meses habilitados.",
-    "APPOINTMENT_IS_COMMING_SOON": "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.",
+    "APPOINTMENT_IS_COMING_SOON": "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.",
     "VALIDATION_ERROR": "Revisa los datos ingresados e intenta nuevamente.",
     "UNKNOWN_ERROR": "No se pudo completar la operación. Intenta de nuevo."
   },
