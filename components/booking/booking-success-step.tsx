@@ -54,7 +54,9 @@ export function BookingSuccessStep({
 
   return (
     <div className="flex h-full flex-col space-y-7">
-      <div className="flex flex-col items-center pt-1 text-center">
+      <div className="flex flex-col items-center pt-1 text-center relative">
+        <span className="absolute right-4 top-0 h-3.5 w-3.5 rounded-full bg-[rgba(222,195,121,0.9)]" />
+        <span className="absolute left-10 top-18 h-5 w-5 rounded-full bg-[rgba(228,159,83,0.12)]" />
         <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[rgba(228,159,83,0.12)]">
           <div className="flex h-14 w-14 items-center justify-center rounded-full text-white bg-[var(--accent)]">
             <CheckIcon />

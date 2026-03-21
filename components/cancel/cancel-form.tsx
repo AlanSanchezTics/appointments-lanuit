@@ -134,8 +134,8 @@ export function CancelForm() {
     : null;
 
   return (
-    <section className="mx-auto w-full max-w-[24rem] rounded-[2.5rem] border border-white/70 bg-[var(--surface)] p-0 shadow-[0_34px_90px_rgba(52,37,31,0.16)] backdrop-blur md:max-w-[26rem] md:p-7">
-      <div className="rounded-[2.15rem] border border-[rgba(255,255,255,0.72)] bg-white px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] md:px-6 md:py-7">
+    <section className="booking-mobile-shell p-6 md:p-6 min-h-screen flex items-center justify-center">
+      <div className="w-full">
         {step === "lookup" ? (
           <form className="space-y-8" onSubmit={handleLookup}>
             <header className="space-y-4">
@@ -267,11 +267,13 @@ export function CancelForm() {
               </p>
             ) : null}
 
-            <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[2rem]">
-              <b>{t("cancel.important")}</b>
-              <br />
-              {t("cancel.importantBody")}
-            </p>
+            <div className="flex items-start gap-3 rounded-[0.9rem] bg-[rgba(229,226,223,0.45)] px-4 py-3 text-left">
+              <p className="text-[0.78rem] font-medium leading-relaxed text-[var(--muted)]">
+                <b>{t("cancel.important")}</b>
+                <br />
+                {t("cancel.importantBody")}
+              </p>
+            </div>
 
             <div className="space-y-4 flex flex-col items-center">
               <Button
@@ -297,8 +299,6 @@ export function CancelForm() {
         {step === "success" ? (
           <div className="space-y-8">
             <div className="relative pt-2">
-              <span className="absolute right-4 top-0 h-3.5 w-3.5 rounded-full bg-[rgba(222,195,121,0.9)]" />
-              <span className="absolute left-10 top-18 h-5 w-5 rounded-full bg-[rgba(228,159,83,0.12)]" />
               <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-full bg-[rgba(228,159,83,0.08)]">
                 <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[rgba(228,159,83,0.1)]">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-[var(--accent)] text-[var(--accent)]">
@@ -319,9 +319,11 @@ export function CancelForm() {
                 <div className="h-full w-full rounded-full bg-[var(--accent)]" />
               </div>
             </header>
-            <p className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)] mb-[1.5rem]">
-              {t("cancel.successInfo")}
-            </p>
+            <div className="flex items-start gap-3 rounded-[0.9rem] bg-[rgba(229,226,223,0.45)] px-4 py-3 text-left">
+              <p className="text-[0.78rem] font-medium leading-relaxed text-[var(--muted)]">
+                {t("cancel.successInfo")}
+              </p>
+            </div>
 
             <div className="flex justify-center">
               <Link

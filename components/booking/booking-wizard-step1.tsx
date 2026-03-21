@@ -243,7 +243,7 @@ export function BookingWizardStep1({
 
       <div className="space-y-4 pt-1">
         <Button
-          className="w-full min-h-14 py-4 text-[1rem] font-bold"
+          className="w-full py-4 text-[1.02rem] font-semibold mb-[1rem]"
           disabled={isPending}
           onClick={onContinue}
           type="button"
