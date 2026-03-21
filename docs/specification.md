@@ -115,7 +115,9 @@ No existe estado PENDING persistente.
 
 ## 7. Flujo de Reserva
 
-0. Usuario ingresa al inicio (`/`) y puede seleccionar idioma (`es`/`en`).
+0. Usuario ingresa al inicio (`/`) y el sistema redirige automáticamente al mes actual (`/citas/YYYY-MM`).
+   - No existe pantalla de bienvenida en `/`.
+   - La selección de idioma (`es`/`en`) permanece disponible desde el selector global de UI.
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
    - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
 
