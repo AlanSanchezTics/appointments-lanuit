@@ -11,7 +11,8 @@ import { useLoginForm } from "@/hooks/admin/useLoginForm";
 
 export function LoginForm() {
   const router = useRouter();
-  const { state, isSubmitting, errorMessage, updateField, submit } = useLoginForm();
+  const { state, isSubmitting, errorMessage, updateField, submit } =
+    useLoginForm();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +62,10 @@ export function LoginForm() {
           />
 
           {errorMessage ? (
-            <p className="rounded-xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm font-medium text-[var(--error)]" role="alert">
+            <p
+              className="rounded-xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm font-medium text-[var(--error)]"
+              role="alert"
+            >
               {errorMessage}
             </p>
           ) : null}
@@ -71,7 +75,6 @@ export function LoginForm() {
             variant="primary"
             fullWidth
             disabled={isSubmitting}
-            className="rounded-[9999px] tracking-[0.22em] uppercase"
           >
             {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
           </Button>

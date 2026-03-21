@@ -15,17 +15,16 @@ export function Input({
   ...props
 }: InputProps) {
   return (
-    <div className="relative">
-      <label
-        htmlFor={id}
-        className="absolute -top-2 left-6 z-10 bg-[var(--admin-canvas)] px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--admin-primary)]"
-      >
-        {label}
-      </label>
-      <div className="relative">
+    <div className="relative block">
+      <label className="relative block" htmlFor={id}>
+        {label ? (
+          <span className="absolute left-5 top-0 -translate-y-1/2 bg-[var(--surface)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
+            {label}
+          </span>
+        ) : null}
         <input
           id={id}
-          className={`h-11 w-full rounded-[9999px] border border-[var(--admin-border)] bg-[var(--admin-surface)] px-5 pr-12 text-sm text-[var(--admin-text-primary)] outline-none transition-colors focus:border-[var(--admin-primary)] ${className}`}
+          className={`w-full rounded-full border border-[var(--admin-border)] bg-white px-6 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] ${className}`}
           {...props}
         />
         {icon ? (
@@ -33,9 +32,12 @@ export function Input({
             {icon}
           </div>
         ) : null}
-      </div>
+      </label>
       {error ? (
-        <p className="mt-2 text-xs font-medium text-[var(--error)]" role="alert">
+        <p
+          className="mt-2 text-xs font-medium text-[var(--error)]"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
