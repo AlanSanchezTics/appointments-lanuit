@@ -1,0 +1,8 @@
+{
+  "auth": {
+    "FORM_INCOMPLETE": "Completa usuario y contraseña.",
+    "INVALID_CREDENTIALS": "Usuario o contraseña inválidos.",
+    "ADMIN_USER_INACTIVE": "La cuenta administrativa está deshabilitada.",
+    "UNKNOWN_ERROR": "No fue posible iniciar sesión."
+  }
+}

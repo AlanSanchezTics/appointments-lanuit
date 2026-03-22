@@ -11,7 +11,7 @@ export async function getServerT(language: AppLanguage): Promise<TFunction> {
     lng: language,
     fallbackLng: DEFAULT_LANGUAGE,
     defaultNS: "common",
-    ns: ["common", "errors"],
+    ns: ["common", "errors", "admin", "adminErrors"],
     interpolation: {
       escapeValue: false,
     },

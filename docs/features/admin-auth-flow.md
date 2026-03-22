@@ -22,6 +22,7 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - `username`: ícono decorativo de usuario.
    - `password`: ícono decorativo de candado a la izquierda + acción mostrar/ocultar con botón de ojo a la derecha.
 3. Frontend ejecuta `signIn("credentials")` de NextAuth.
+   - Todos los textos del flujo (labels, placeholders, botones, alertas) se resuelven con `react-i18next` (`admin`, `adminErrors`).
 4. Backend valida credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
 5. Si son válidas y el usuario está `active`, NextAuth crea sesión y redirige al dashboard.
 6. Usuario autenticado accede a `/admin/`.
@@ -36,9 +37,10 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
 - Sesión JWT de NextAuth debe ser válida y no estar expirada.
 
 ## Error Scenarios
-- `FORM_INCOMPLETE`: formulario incompleto.
-- `INVALID_CREDENTIALS`: credenciales inválidas.
-- `ADMIN_USER_INACTIVE`: usuario inactivo.
+- `FORM_INCOMPLETE`: frontend muestra mensaje localizado vía `adminErrors.auth.FORM_INCOMPLETE`.
+- `INVALID_CREDENTIALS`: frontend muestra mensaje localizado vía `adminErrors.auth.INVALID_CREDENTIALS`.
+- `ADMIN_USER_INACTIVE`: frontend muestra mensaje localizado vía `adminErrors.auth.ADMIN_USER_INACTIVE`.
+- `UNKNOWN_ERROR`: fallback de frontend si el código no está reconocido.
 
 ## State Changes
 - Login exitoso: crea sesión NextAuth y actualiza `last_login_at`.

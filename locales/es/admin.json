@@ -1,0 +1,42 @@
+{
+  "common": {
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "selectPlaceholder": "Seleccionar"
+  },
+  "auth": {
+    "login": {
+      "logoAlt": "La Nuit",
+      "usernameLabel": "Usuario",
+      "usernamePlaceholder": "usuario_admin",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Iniciar sesión",
+      "submitting": "Ingresando..."
+    }
+  },
+  "header": {
+    "panelLabel": "Panel Administrativo",
+    "title": "La Nuit",
+    "logout": "Cerrar sesión"
+  },
+  "dashboard": {
+    "metrics": {
+      "appointmentsToday": "Citas hoy",
+      "pending": "Pendientes",
+      "syncFailed": "Sync fallidos"
+    },
+    "navigation": {
+      "title": "Navegación",
+      "monthsManagement": "Gestión de meses",
+      "dailyAppointments": "Citas del día",
+      "syncRetries": "Reintentos de sincronización"
+    },
+    "upcoming": {
+      "title": "Próximas secciones",
+      "reports": "Reportes operativos",
+      "audit": "Auditoría de cambios",
+      "settings": "Configuración del panel"
+    }
+  }
+}

@@ -41,6 +41,13 @@ components/admin/ui/
 
 El agente debe reutilizar estos componentes antes de crear nuevos.
 
+## Regla i18n obligatoria
+
+- Todo texto UX visible del admin debe provenir de `react-i18next`.
+- No se permiten literales inline de UX en componentes o páginas admin.
+- Si un cambio agrega nuevo copy, debe incluir clave en `locales/es/*` y `locales/en/*`.
+- Para errores funcionales de auth/admin, el componente debe consumir claves del namespace `adminErrors` a partir de códigos estables.
+
 ---
 
 ## Component: Button

@@ -2,9 +2,15 @@ import { useCallback, useMemo, useState } from "react";
 
 export interface UsePasswordVisibilityParams {
   enabled: boolean;
+  showLabel?: string;
+  hideLabel?: string;
 }
 
-export function usePasswordVisibility({ enabled }: UsePasswordVisibilityParams) {
+export function usePasswordVisibility({
+  enabled,
+  showLabel = "Show password",
+  hideLabel = "Hide password",
+}: UsePasswordVisibilityParams) {
   const [visible, setVisible] = useState(false);
 
   const toggleVisibility = useCallback(() => {
@@ -23,7 +29,7 @@ export function usePasswordVisibility({ enabled }: UsePasswordVisibilityParams) 
     return visible ? "text" : "password";
   }, [enabled, visible]);
 
-  const ariaLabel = visible ? "Ocultar contraseña" : "Mostrar contraseña";
+  const ariaLabel = visible ? hideLabel : showLabel;
 
   return {
     visible,

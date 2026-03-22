@@ -19,7 +19,7 @@ export function initializeClientI18n(initialLanguage?: AppLanguage) {
     lng: initialLanguage ?? resolveClientLanguage(),
     fallbackLng: DEFAULT_LANGUAGE,
     defaultNS: "common",
-    ns: ["common", "errors"],
+    ns: ["common", "errors", "admin", "adminErrors"],
     interpolation: {
       escapeValue: false,
     },

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export interface SelectOption {
   label: string;
@@ -19,10 +20,13 @@ export function Select({
   value,
   options,
   onChange,
-  placeholder = "Seleccionar",
+  placeholder,
   className = "",
   ...props
 }: SelectProps) {
+  const { t } = useTranslation("admin");
+  const selectPlaceholder = placeholder ?? t("common.selectPlaceholder");
+
   return (
     <div className="relative w-full">
       <select
@@ -37,7 +41,7 @@ export function Select({
         `}
         {...props}
       >
-        <option value="">{placeholder}</option>
+        <option value="">{selectPlaceholder}</option>
 
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

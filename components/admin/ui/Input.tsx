@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
@@ -20,10 +21,13 @@ export function Input({
   id,
   ...props
 }: InputProps) {
+  const { t } = useTranslation("admin");
   const isPasswordInput = props.type === "password";
   const { inputType, ariaLabel, toggleVisibility, visible } =
     usePasswordVisibility({
       enabled: isPasswordInput,
+      showLabel: t("common.showPassword"),
+      hideLabel: t("common.hidePassword"),
     });
 
   const inputPaddingClassName = isPasswordInput

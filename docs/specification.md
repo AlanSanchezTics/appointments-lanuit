@@ -392,6 +392,10 @@ Reglas obligatorias:
 8. Contrato de error API:
    - `errorCode`: identificador estable para traducción en frontend.
    - `error`: alias legacy transitorio durante migración.
+9. Regla obligatoria para Admin Panel:
+   - Todo texto visible en rutas/componentes admin debe resolverse con `react-i18next`.
+   - Quedan prohibidos literales de UX inline en `app/admin`, `components/admin` y `hooks/admin`.
+   - Nuevos textos requieren clave en `es` y `en` antes de merge.
 
 ## 15. Admin Panel
 
@@ -444,3 +448,14 @@ Reglas obligatorias:
   - `GET /api/auth/session`
 - NextAuth logout endpoint:
   - `POST /api/auth/signout`
+
+### 15.5 Contrato i18n admin
+
+- Namespaces del admin:
+  - `admin`: etiquetas, placeholders, títulos y copy de dashboard/auth.
+  - `adminErrors`: mensajes UX traducibles para códigos de error admin.
+- Regla de propiedad de mensajes:
+  - backend admin retorna códigos estables (`FORM_INCOMPLETE`, `INVALID_CREDENTIALS`, `ADMIN_USER_INACTIVE`),
+  - frontend admin mapea código -> clave de traducción y resuelve texto final por idioma activo.
+- Calidad obligatoria:
+  - lint bloqueante para evitar literales UX inline en superficies admin.

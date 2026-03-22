@@ -128,7 +128,11 @@ Business behavior is defined by:
 - Admin login flow:
   - Credentials are validated against `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
   - On success, the system issues a signed session cookie.
-  - On failure, the system returns a stable error code.
+  - On failure, the system returns a stable error code (not localized UX copy).
+- Admin i18n contract:
+  - Admin UI text is resolved in frontend through `react-i18next`.
+  - Frontend translates admin auth error codes to locale-specific messages.
+  - Backend does not return final localized UX messages.
 - Route protection behavior:
   - unauthenticated access to `/admin/*` (except `/admin/login`) must redirect to `/admin/login`,
   - authenticated access to `/admin/login` must redirect to `/admin/`.

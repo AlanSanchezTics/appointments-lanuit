@@ -1,0 +1,42 @@
+{
+  "common": {
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "selectPlaceholder": "Select"
+  },
+  "auth": {
+    "login": {
+      "logoAlt": "La Nuit",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "admin_user",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Sign in",
+      "submitting": "Signing in..."
+    }
+  },
+  "header": {
+    "panelLabel": "Admin Panel",
+    "title": "La Nuit",
+    "logout": "Sign out"
+  },
+  "dashboard": {
+    "metrics": {
+      "appointmentsToday": "Appointments today",
+      "pending": "Pending",
+      "syncFailed": "Sync failed"
+    },
+    "navigation": {
+      "title": "Navigation",
+      "monthsManagement": "Month management",
+      "dailyAppointments": "Daily appointments",
+      "syncRetries": "Sync retries"
+    },
+    "upcoming": {
+      "title": "Upcoming sections",
+      "reports": "Operational reports",
+      "audit": "Change audit",
+      "settings": "Panel settings"
+    }
+  }
+}

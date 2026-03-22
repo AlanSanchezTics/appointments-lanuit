@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "lint:admin-i18n": "eslint \"app/admin/**/*.{ts,tsx}\" \"components/admin/**/*.{ts,tsx}\" \"hooks/admin/**/*.{ts,tsx}\"",
     "test": "vitest run",
     "test:integration": "vitest run --maxWorkers=1 tests/integration",
     "test:integration:file": "vitest run --maxWorkers=1",

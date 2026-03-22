@@ -1,0 +1,8 @@
+{
+  "auth": {
+    "FORM_INCOMPLETE": "Complete username and password.",
+    "INVALID_CREDENTIALS": "Invalid username or password.",
+    "ADMIN_USER_INACTIVE": "The admin account is disabled.",
+    "UNKNOWN_ERROR": "Could not sign in."
+  }
+}

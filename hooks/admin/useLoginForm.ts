@@ -3,6 +3,10 @@
 import { useCallback, useState } from "react";
 
 import { useAdminAuth } from "@/hooks/admin/useAdminAuth";
+import {
+  resolveAdminAuthErrorKey,
+  type AdminAuthErrorTranslationKey,
+} from "@/lib/admin/auth/error-translation";
 
 type LoginFormState = {
   username: string;
@@ -14,33 +18,22 @@ const DEFAULT_STATE: LoginFormState = {
   password: "",
 };
 
-function translateErrorCode(code: string) {
-  switch (code) {
-    case "FORM_INCOMPLETE":
-      return "Completa usuario y contraseña.";
-    case "INVALID_CREDENTIALS":
-      return "Usuario o contraseña inválidos.";
-    case "ADMIN_USER_INACTIVE":
-      return "La cuenta administrativa está deshabilitada.";
-    default:
-      return "No fue posible iniciar sesión.";
-  }
-}
-
 export function useLoginForm() {
   const { login } = useAdminAuth();
   const [state, setState] = useState<LoginFormState>(DEFAULT_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<AdminAuthErrorTranslationKey | null>(
+    null
+  );
 
   const updateField = useCallback((field: keyof LoginFormState, value: string) => {
     setState((current) => ({ ...current, [field]: value }));
-    setErrorMessage(null);
+    setErrorKey(null);
   }, []);
 
   const submit = useCallback(async () => {
     setIsSubmitting(true);
-    setErrorMessage(null);
+    setErrorKey(null);
 
     try {
       if (!state.username.trim() || !state.password.trim()) {
@@ -51,7 +44,7 @@ export function useLoginForm() {
       return true;
     } catch (error) {
       const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-      setErrorMessage(translateErrorCode(code));
+      setErrorKey(resolveAdminAuthErrorKey(code));
       return false;
     } finally {
       setIsSubmitting(false);
@@ -61,7 +54,7 @@ export function useLoginForm() {
   return {
     state,
     isSubmitting,
-    errorMessage,
+    errorKey,
     updateField,
     submit,
   };
