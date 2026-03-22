@@ -508,6 +508,10 @@ Flujo UI:
      - nombre del cliente,
      - teléfono como subtítulo,
      - acciones (`Editar`, `Eliminar`), donde `Eliminar` requiere confirmación previa.
+   - En edición de cita del modal diario:
+     - al confirmar `Guardar`, el formulario de edición se cierra inmediatamente,
+     - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
+     - al terminar la operación, la agenda del día se refresca para reflejar el resultado persistido.
    - Semántica de color del calendario:
      - verde (`availableSpaces >= 2`),
      - amarillo (`availableSpaces = 1`),

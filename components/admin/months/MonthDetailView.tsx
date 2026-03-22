@@ -105,6 +105,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
+  const [processingAppointmentId, setProcessingAppointmentId] = useState<number | null>(null);
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
@@ -233,27 +234,32 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       return;
     }
 
-    await sileo.promise(
-      rescheduleAdminAppointmentById(appointmentId, {
-        month: data.month,
-        date: editDate,
-        timeSlot: normalizedTimeSlot,
-      }),
-      {
-        loading: {
-          title: t("monthsDetail.dayModal.notifications.rescheduleLoading"),
-        },
-        success: {
-          title: t("monthsDetail.dayModal.notifications.rescheduleSuccess"),
-        },
-        error: {
-          title: t("monthsDetail.dayModal.notifications.rescheduleError"),
-        },
-      },
-    );
-
     stopEditing();
-    await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    setProcessingAppointmentId(appointmentId);
+
+    try {
+      await sileo.promise(
+        rescheduleAdminAppointmentById(appointmentId, {
+          month: data.month,
+          date: editDate,
+          timeSlot: normalizedTimeSlot,
+        }),
+        {
+          loading: {
+            title: t("monthsDetail.dayModal.notifications.rescheduleLoading"),
+          },
+          success: {
+            title: t("monthsDetail.dayModal.notifications.rescheduleSuccess"),
+          },
+          error: {
+            title: t("monthsDetail.dayModal.notifications.rescheduleError"),
+          },
+        },
+      );
+    } finally {
+      setProcessingAppointmentId(null);
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    }
   }
 
   async function handleCancel(appointment: AdminDayAgendaItem) {
@@ -269,24 +275,29 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       return;
     }
 
-    await sileo.promise(
-      cancelAdminAppointmentById(appointment.appointmentId, {
-        month: data.month,
-      }),
-      {
-        loading: {
-          title: t("monthsDetail.dayModal.notifications.cancelLoading"),
-        },
-        success: {
-          title: t("monthsDetail.dayModal.notifications.cancelSuccess"),
-        },
-        error: {
-          title: t("monthsDetail.dayModal.notifications.cancelError"),
-        },
-      },
-    );
+    setProcessingAppointmentId(appointment.appointmentId);
 
-    await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    try {
+      await sileo.promise(
+        cancelAdminAppointmentById(appointment.appointmentId, {
+          month: data.month,
+        }),
+        {
+          loading: {
+            title: t("monthsDetail.dayModal.notifications.cancelLoading"),
+          },
+          success: {
+            title: t("monthsDetail.dayModal.notifications.cancelSuccess"),
+          },
+          error: {
+            title: t("monthsDetail.dayModal.notifications.cancelError"),
+          },
+        },
+      );
+    } finally {
+      setProcessingAppointmentId(null);
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    }
   }
 
   return (
@@ -517,24 +528,34 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                         {appointment.phone}
                       </p>
                     </div>
-                    <div className="flex items-center">
-                      <button
-                        type="button"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
-                        aria-label={t("monthsDetail.dayModal.actions.edit")}
-                        onClick={() => startEditing(appointment)}
+                    {processingAppointmentId === appointment.appointmentId ? (
+                      <div
+                        className="inline-flex h-11 w-11 items-center justify-center"
+                        role="status"
+                        aria-label={t("monthsDetail.dayModal.loading")}
                       >
-                        <AdminIcon icon={adminIcons.edit} tone="secondary" />
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
-                        aria-label={t("monthsDetail.dayModal.actions.delete")}
-                        onClick={() => void handleCancel(appointment)}
-                      >
-                        <AdminIcon icon={adminIcons.delete} tone="secondary" />
-                      </button>
-                    </div>
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
+                          aria-label={t("monthsDetail.dayModal.actions.edit")}
+                          onClick={() => startEditing(appointment)}
+                        >
+                          <AdminIcon icon={adminIcons.edit} tone="secondary" />
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
+                          aria-label={t("monthsDetail.dayModal.actions.delete")}
+                          onClick={() => void handleCancel(appointment)}
+                        >
+                          <AdminIcon icon={adminIcons.delete} tone="secondary" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {dayAgendaModal.editingAppointmentId ===
