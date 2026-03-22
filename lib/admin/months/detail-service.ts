@@ -1,5 +1,5 @@
-import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { isWeekdayBookingDate } from "@/lib/availability/rules";
+import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import { findRegisteredMonth, listAppointmentsByMonth } from "@/lib/db/admin-months";
 
@@ -75,7 +75,7 @@ export async function getAdminMonthDetail(
     const occupiedSlots = activeSlotsByDate.get(date) ?? [];
     const availableSpaces = isWeekend
       ? 0
-      : getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots).length;
+      : Math.max(0, MAX_APPOINTMENTS_PER_DAY - occupiedSlots.length);
 
     return {
       date,
@@ -86,9 +86,11 @@ export async function getAdminMonthDetail(
     } satisfies MonthDetailCalendarDay;
   });
 
-  const availableSpaces = calendarDays.reduce((acc, day) => acc + day.availableSpaces, 0);
+  const operationalDays = calendarDays.filter((day) => !day.isWeekend).length;
   const occupiedSpaces = confirmedAppointments;
   const blockedSpaces = 0;
+  const totalCapacity = operationalDays * MAX_APPOINTMENTS_PER_DAY;
+  const availableSpaces = Math.max(0, totalCapacity - (occupiedSpaces + blockedSpaces));
   const currentMonth = getCurrentMonthKey(now);
   const currentDate = getCurrentDateKey(now);
   const totalModeledSpaces = occupiedSpaces + availableSpaces;

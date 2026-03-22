@@ -503,6 +503,9 @@ Flujo UI:
      - grid de métricas 2x2 (`Confirmadas`, `Canceladas`, `Disponibles`, `Bloqueados`),
      - tarjeta de `Saturación proyectada` (porcentaje + barra),
      - calendario operativo mensual.
+   - Fórmula de `Disponibles` (métrica mensual):
+     - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
+     - Para MVP, `espacios bloqueados = 0`.
    - En modal de agenda diaria, cada fila muestra:
      - hora,
      - nombre del cliente,

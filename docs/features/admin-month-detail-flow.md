@@ -44,7 +44,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Canceladas:
   - estado `CANCELLED` dentro del mes.
 - Espacios disponibles:
-  - suma de slots disponibles por día hábil del mes.
+  - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
 - Espacios bloqueados:
   - `0` en MVP (bloqueo manual pendiente de implementación).
 - Saturación proyectada:

@@ -194,7 +194,7 @@ Business behavior is defined by:
   - `confirmedAppointments`: appointments in active states (`CONFIRMED`, `SYNC_FAILED`) within the selected month.
   - `cancelledAppointments`: appointments in `CANCELLED` within the selected month.
   - `occupiedSpaces`: same count as active appointments for the month.
-  - `availableSpaces`: sum of available start slots across weekday days in the month under base-slot, pair-direction, and max-daily rules.
+  - `availableSpaces`: `(operationalWeekdays * 3) - (occupiedSpaces + blockedSpaces)` where `3` is max daily capacity.
   - `blockedSpaces`: fixed to `0` in MVP until manual blocking model is introduced.
   - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
 

@@ -52,9 +52,7 @@ describe("admin month detail service", () => {
     expect(result.metrics.cancelledAppointments).toBe(1);
     expect(result.metrics.occupiedSpaces).toBe(4);
     expect(result.metrics.blockedSpaces).toBe(0);
-    expect(result.metrics.availableSpaces).toBe(
-      result.calendarDays.reduce((acc, day) => acc + day.availableSpaces, 0),
-    );
+    expect(result.metrics.availableSpaces).toBe(62);
 
     const weekendDay = result.calendarDays.find((day) => day.date === "2026-03-01");
     expect(weekendDay).toEqual({
@@ -66,7 +64,7 @@ describe("admin month detail service", () => {
     });
 
     const availableDay = result.calendarDays.find((day) => day.date === "2026-03-03");
-    expect(availableDay?.availableSpaces).toBe(6);
+    expect(availableDay?.availableSpaces).toBe(3);
     expect(availableDay?.tone).toBe("available");
 
     const fullDay = result.calendarDays.find((day) => day.date === "2026-03-20");
