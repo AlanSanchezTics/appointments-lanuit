@@ -38,5 +38,44 @@
       "audit": "Auditoría de cambios",
       "settings": "Configuración del panel"
     }
+  },
+  "monthsCatalog": {
+    "header": {
+      "title": "Meses",
+      "menu": "Abrir menú"
+    },
+    "metrics": {
+      "activeMonths": "Activos",
+      "inactiveMonths": "Inactivos",
+      "futureMonths": "Futuros",
+      "pastMonths": "Pasados",
+      "pastAppointments": "Citas pasadas",
+      "futureAppointments": "Citas futuras"
+    },
+    "filters": {
+      "year": "Año",
+      "status": "Estado",
+      "statusAll": "Todos",
+      "statusActive": "Activo",
+      "statusInactive": "Inactivo"
+    },
+    "cta": {
+      "new": "Nuevo",
+      "newDisabledHint": "Disponible en próxima fase"
+    },
+    "list": {
+      "title": "Listado de Meses",
+      "total_one": "{{count}} Reg.",
+      "total_other": "{{count}} Reg.",
+      "empty": "No hay meses para los filtros seleccionados."
+    },
+    "errors": {
+      "loadFailed": "No se pudo cargar el catálogo de meses.",
+      "retry": "Reintentar"
+    },
+    "placeholder": {
+      "description": "La gestión detallada de este mes se habilitará en una siguiente fase.",
+      "backToCatalog": "Volver al catálogo"
+    }
   }
 }

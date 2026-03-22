@@ -1,14 +1,26 @@
 import {
+  faArrowTrendUp,
+  faBars,
+  faBoxArchive,
+  faCalendarCheck,
   faCalendarDay,
+  faChevronRight,
+  faClockRotateLeft,
   faEye,
   faEyeSlash,
   faListCheck,
   faLock,
   faRotateRight,
   faTriangleExclamation,
-  faUser
+  faUsers,
+  faUser,
+  faCalendar
 } from "@fortawesome/free-solid-svg-icons";
-import { faCalendarDays, faClock } from "@fortawesome/free-regular-svg-icons";
+import {
+  faCalendarDays,
+  faCalendarXmark,
+  faClock,
+} from "@fortawesome/free-regular-svg-icons";
 
 export const adminIcons = {
   username: faUser,
@@ -21,4 +33,15 @@ export const adminIcons = {
   monthsManagement: faCalendarDays,
   dailyAppointments: faListCheck,
   syncRetries: faRotateRight,
+  monthActive: faCalendarDay,
+  monthInactive: faBoxArchive,
+  monthFuture: faArrowTrendUp,
+  monthPast: faClockRotateLeft,
+  pastAppointments: faUsers,
+  futureAppointments: faCalendarCheck,
+  chevronRight: faChevronRight,
+  menu: faBars,
+  monthListCurrent: faCalendar,
+  monthListPast: faCalendarXmark,
+  monthListFuture: faClockRotateLeft,
 } as const;

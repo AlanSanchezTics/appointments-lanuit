@@ -38,5 +38,44 @@
       "audit": "Change audit",
       "settings": "Panel settings"
     }
+  },
+  "monthsCatalog": {
+    "header": {
+      "title": "Months",
+      "menu": "Open menu"
+    },
+    "metrics": {
+      "activeMonths": "Active",
+      "inactiveMonths": "Inactive",
+      "futureMonths": "Future",
+      "pastMonths": "Past",
+      "pastAppointments": "Past appointments",
+      "futureAppointments": "Future appointments"
+    },
+    "filters": {
+      "year": "Year",
+      "status": "Status",
+      "statusAll": "All",
+      "statusActive": "Active",
+      "statusInactive": "Inactive"
+    },
+    "cta": {
+      "new": "New",
+      "newDisabledHint": "Available in next phase"
+    },
+    "list": {
+      "title": "Months List",
+      "total_one": "{{count}} Rec.",
+      "total_other": "{{count}} Rec.",
+      "empty": "No months match the selected filters."
+    },
+    "errors": {
+      "loadFailed": "Unable to load the months catalog.",
+      "retry": "Retry"
+    },
+    "placeholder": {
+      "description": "Detailed management for this month will be enabled in a later phase.",
+      "backToCatalog": "Back to catalog"
+    }
   }
 }

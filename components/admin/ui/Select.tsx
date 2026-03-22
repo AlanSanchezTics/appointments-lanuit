@@ -14,6 +14,7 @@ export interface SelectProps extends Omit<
   options: SelectOption[];
   onChange: (value: string) => void;
   placeholder?: string;
+  showPlaceholder?: boolean;
 }
 
 export function Select({
@@ -21,6 +22,7 @@ export function Select({
   options,
   onChange,
   placeholder,
+  showPlaceholder = true,
   className = "",
   ...props
 }: SelectProps) {
@@ -41,7 +43,9 @@ export function Select({
         `}
         {...props}
       >
-        <option value="">{selectPlaceholder}</option>
+        {showPlaceholder ? (
+          <option value="">{selectPlaceholder}</option>
+        ) : null}
 
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

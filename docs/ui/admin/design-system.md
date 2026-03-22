@@ -285,6 +285,11 @@ Uso:
 - Desktop: 3 columnas
 - Mobile: 2 columnas
 
+Excepción documentada:
+
+- Vista `/admin/months` (catálogo de meses) usa 3 columnas también en mobile para mantener densidad operativa del mockup validado.
+- En esta vista, cada `MetricCard` debe mantener legibilidad y targets táctiles adecuados.
+
 ---
 
 ### Filters Panel
@@ -300,6 +305,21 @@ Uso:
 - título + contador
 - lista de items
 - separación vertical constante
+
+Patrón para `/admin/months`:
+
+- filas compactas con `ListItem` en altura reducida (~56-60px),
+- icono dentro de contenedor cuadrado a la izquierda,
+- título de mes a la izquierda,
+- `chevron-right` a la derecha para indicar navegación,
+- estados inactivos con menor énfasis visual (opacidad/tono secundario).
+
+### Months Catalog Filters Panel
+
+- contenedor neutro (`inactive-bg`)
+- dos selects en grid de 2 columnas: `Año` y `Estado`
+- CTA `Nuevo` visible en ancho completo
+- En MVP lectura, `Nuevo` se mantiene deshabilitado
 
 ---
 

@@ -170,6 +170,7 @@ Representar un elemento navegable o accionable dentro de un listado operativo.
 - icono a la izquierda (vía `AdminIcon`)
 - título principal
 - indicador o contenido secundario a la derecha
+- soporta `href` para navegación declarativa y `onClick` para interacción controlada
 
 ### Style
 
@@ -208,6 +209,10 @@ Uso:
 - filtros por año
 - filtros por estado
 - selección administrativa
+
+Notas:
+
+- permite ocultar placeholder cuando el flujo exige un valor siempre seleccionado (`showPlaceholder=false`).
 
 ---
 
@@ -379,6 +384,27 @@ Distribuir métricas en formato responsivo y consistente.
 Construido a partir de:
 
 - `MetricCard`
+
+Nota:
+
+- en `/admin/months` puede usarse variante compacta de 3 columnas en mobile.
+
+---
+
+## Pattern: MonthsCatalogPage (MVP Lectura)
+
+### Composition
+
+- `MetricCard` x6 en grid 3x2
+- `Select` para `Año` y `Estado`
+- `Button` (`Nuevo`) deshabilitado
+- `ListItem` para filas de meses con `href` o `onClick`
+
+### Behavior
+
+- filtros refrescan métricas y listado
+- filas navegan a `/admin/months/[month]`
+- botón `Nuevo` visible pero no ejecuta mutaciones en MVP
 
 ---
 

@@ -469,3 +469,57 @@ Reglas obligatorias:
 - El punto de montaje del sistema de notificaciones debe existir en el layout raíz del admin (`app/admin/layout.tsx`) mediante `Toaster`.
 - No se permite mezclar librerías alternativas de `toast`/`notification` en casos cubiertos por este contrato, salvo excepción explícita documentada.
 - Todo texto mostrado por notificaciones del admin debe resolverse por `react-i18next` (mismo contrato de internacionalización del panel admin).
+
+### 15.7 Catálogo de meses admin (MVP lectura)
+
+Ruta UI:
+
+- `/admin/months`
+
+Ruta detalle placeholder:
+
+- `/admin/months/[month]` (`YYYY-MM`)
+
+Objetivo:
+
+- Exponer un catálogo operativo de meses para monitoreo admin con métricas, filtros y listado navegable sin mutaciones en MVP.
+
+Flujo UI:
+
+1. Admin autenticado abre `/admin/months`.
+2. Visualiza grid de 6 métricas (3 columnas x 2 filas):
+   - `Activos`: `active_months.status = ACTIVE` (por año seleccionado).
+   - `Inactivos`: `active_months.status = INACTIVE` (por año seleccionado).
+   - `Futuros`: `active_months.month > currentMonth` (por año seleccionado).
+   - `Pasados`: `active_months.month < currentMonth` (por año seleccionado).
+   - `Citas pasadas`: `appointments.date < currentDate` y status activo (`CONFIRMED`, `SYNC_FAILED`) en el año seleccionado.
+   - `Citas futuras`: `appointments.date > currentDate` y status activo (`CONFIRMED`, `SYNC_FAILED`) en el año seleccionado.
+3. Admin ajusta filtros:
+   - `Año`: rango permitido = año actual + 5 años posteriores.
+   - `Estado`: `ALL`, `ACTIVE`, `INACTIVE`.
+4. Sistema actualiza listado de meses filtrado por `Año + Estado`.
+5. Admin puede navegar a `/admin/months/[month]` (placeholder de detalle en MVP).
+
+Reglas de MVP:
+
+- El botón `Nuevo` debe mostrarse pero permanecer deshabilitado (sin persistencia ni mutación).
+- El módulo es mobile-first con contenedor centrado `max-width: 412px`.
+- Gaps visuales objetivo entre bloques/listas: `12px–16px`.
+- Todos los textos admin del módulo deben resolverse por `react-i18next`.
+
+Contrato API:
+
+- Endpoint:
+  - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
+- Auth:
+  - requiere sesión admin válida.
+  - sin sesión -> `401` con `ADMIN_UNAUTHORIZED`.
+- Validación:
+  - `year` debe estar dentro de `[currentYear..currentYear+5]`.
+  - `status` permitido: `ALL|ACTIVE|INACTIVE`.
+- Success `200`:
+  - `filters`: `{ year, status, availableYears[] }`
+  - `metrics`: `{ activeMonths, inactiveMonths, futureMonths, pastMonths, pastAppointments, futureAppointments }`
+  - `months`: `[{ month, status }]` ordenado ascendente por `month`
+  - `total`
+  - `currentMonth`, `currentDate` (referencia de evaluación de reglas temporales)

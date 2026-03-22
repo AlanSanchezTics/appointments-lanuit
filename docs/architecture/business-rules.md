@@ -140,6 +140,36 @@ Business behavior is defined by:
   - clears session cookie,
   - invalidates further access to protected admin routes.
 
+## Admin Months Catalog Rules (MVP Read-only)
+
+- Scope:
+  - Applies to `/admin/months` and `/api/admin/months/catalog`.
+  - Read-only in MVP (no month create/update/toggle).
+
+- Filter policy:
+  - `year` must be in `[currentYear..currentYear+5]`.
+  - `status` filter allows `ALL`, `ACTIVE`, `INACTIVE`.
+
+- Metrics policy (computed per selected year):
+  - `activeMonths`: count of `active_months` with `status = ACTIVE`.
+  - `inactiveMonths`: count of `active_months` with `status = INACTIVE`.
+  - `futureMonths`: count of `active_months.month > currentMonth`.
+  - `pastMonths`: count of `active_months.month < currentMonth`.
+  - `pastAppointments`: count of appointments with `date < currentDate` and active status (`CONFIRMED`, `SYNC_FAILED`).
+  - `futureAppointments`: count of appointments with `date > currentDate` and active status (`CONFIRMED`, `SYNC_FAILED`).
+
+- List policy:
+  - Month list is sourced from `active_months` filtered by selected `year` and `status`.
+  - Ordering is ascending by `month` (`YYYY-MM` lexical order).
+  - Each row is navigable to `/admin/months/[month]` placeholder in MVP.
+
+- Time policy:
+  - `currentMonth` and `currentDate` must be resolved in `America/Mexico_City`.
+
+- i18n policy:
+  - UI labels and statuses are frontend-resolved via `react-i18next`.
+  - API returns structural data and stable machine-readable errors only.
+
 ## Availability Rules
 
 - Valid base time slots are fixed:

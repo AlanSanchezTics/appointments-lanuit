@@ -52,6 +52,8 @@ export default async function AdminDashboardPage() {
               <ListItem
                 icon={<AdminIcon icon={adminIcons.monthsManagement} />}
                 title={t("dashboard.navigation.monthsManagement", { ns: "admin" })}
+                href="/admin/months"
+                rightContent={<AdminIcon icon={adminIcons.chevronRight} tone="secondary" />}
               />
               <ListItem
                 icon={<AdminIcon icon={adminIcons.dailyAppointments} />}
