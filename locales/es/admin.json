@@ -131,6 +131,34 @@
     "errors": {
       "loadFailed": "No se pudo actualizar el detalle del mes.",
       "retry": "Reintentar"
+    },
+    "dayModal": {
+      "title": "Detalles del {{date}}",
+      "close": "Cerrar detalle del día",
+      "sectionTitle": "Agenda del día",
+      "loading": "Cargando agenda...",
+      "empty": "No hay citas activas para este día.",
+      "actions": {
+        "edit": "Editar cita",
+        "delete": "Eliminar cita",
+        "save": "Guardar",
+        "cancel": "Cancelar"
+      },
+      "edit": {
+        "date": "Fecha",
+        "timeSlot": "Horario"
+      },
+      "confirmCancel": {
+        "question": "¿Confirmas cancelar la cita de {{name}} a las {{time}}?"
+      },
+      "notifications": {
+        "rescheduleLoading": "Reprogramando cita...",
+        "rescheduleSuccess": "Cita reprogramada",
+        "rescheduleError": "No se pudo reprogramar la cita.",
+        "cancelLoading": "Cancelando cita...",
+        "cancelSuccess": "Cita cancelada",
+        "cancelError": "No se pudo cancelar la cita."
+      }
     }
   }
 }

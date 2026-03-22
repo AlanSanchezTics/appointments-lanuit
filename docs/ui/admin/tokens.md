@@ -148,6 +148,7 @@ No deben usarse en:
 - `radius-sm`: `8px`
 - `radius-md`: `12px`
 - `radius-lg`: `16px`
+- `radius-xl`: `32px` (top corners para bottom-sheet modal)
 - `radius-pill`: `9999px`
 
 ---
@@ -170,6 +171,8 @@ El sistema visual del admin prioriza ligereza y claridad sobre profundidad exces
 - `button-height`: `48px`
 - `input-height`: `44px`
 - `list-item-min-height`: `64px`
+- `agenda-row-min-height`: `72px`
+- `icon-actions-gap`: `8px`
 
 ### Layout Patterns
 
@@ -224,6 +227,13 @@ Estos tokens deben reflejarse en:
 - `components/admin/ui/`
 - theme del proyecto si existe
 - configuración de Tailwind si se decide centralizar ahí
+
+## Motion
+
+- `sheet-enter-duration`: `260ms`
+- `sheet-exit-duration`: `260ms`
+- `sheet-easing`: `ease-out`
+- `reduced-motion`: sin transición en `prefers-reduced-motion`
 
 ---
 

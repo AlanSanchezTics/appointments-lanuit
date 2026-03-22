@@ -503,6 +503,11 @@ Flujo UI:
      - grid de métricas 2x2 (`Confirmadas`, `Canceladas`, `Disponibles`, `Bloqueados`),
      - tarjeta de `Saturación proyectada` (porcentaje + barra),
      - calendario operativo mensual.
+   - En modal de agenda diaria, cada fila muestra:
+     - hora,
+     - nombre del cliente,
+     - teléfono como subtítulo,
+     - acciones (`Editar`, `Eliminar`), donde `Eliminar` requiere confirmación previa.
    - Semántica de color del calendario:
      - verde (`availableSpaces >= 2`),
      - amarillo (`availableSpaces = 1`),
@@ -535,6 +540,9 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
+  - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
+  - `PATCH /api/admin/appointments/[appointmentId]/reschedule`
+  - `POST /api/admin/appointments/[appointmentId]/cancel`
 - Auth:
   - requiere sesión admin válida.
   - sin sesión -> `401` con `ADMIN_UNAUTHORIZED`.
@@ -545,6 +553,19 @@ Contrato API:
     - `month` debe cumplir formato `YYYY-MM`,
     - el mes debe existir en `active_months`,
     - si no existe, responde `404` con `MONTH_NOT_REGISTERED`.
+  - `GET /api/admin/months/[month]/days/[date]/agenda`:
+    - `date` debe cumplir formato `YYYY-MM-DD`,
+    - `date` debe pertenecer al `month` solicitado,
+    - agenda devuelve solo citas activas (`CONFIRMED`, `SYNC_FAILED`) ordenadas por horario.
+  - `PATCH /api/admin/appointments/[appointmentId]/reschedule`:
+    - payload `{ month, date, timeSlot }`,
+    - `appointmentId` válido (>0),
+    - cita activa debe existir dentro del `month`,
+    - destino debe cumplir reglas de disponibilidad (weekday, slot válido, no pasado, sin conflicto/lock).
+  - `POST /api/admin/appointments/[appointmentId]/cancel`:
+    - payload `{ month }`,
+    - cancelación admin aplica override (sin restricción web de 24h),
+    - transición lógica de estado a `CANCELLED` (sin borrado físico).
   - `POST /api/admin/months`:
     - payload `{ year: number, months: string[] }`,
     - `months` no vacío,
@@ -564,3 +585,10 @@ Contrato API:
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
   - `projectedSaturationPercent`
   - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`
+- Success `GET /api/admin/months/[month]/days/[date]/agenda` (`200`):
+  - `{ month, date, total, appointments[] }`
+  - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`
+- Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
+  - `{ appointmentId, date, timeSlot, status, syncReason? }`
+- Success `POST /api/admin/appointments/[appointmentId]/cancel` (`200`):
+  - `{ appointmentId, status: "CANCELLED", syncReason? }`

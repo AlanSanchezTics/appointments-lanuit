@@ -206,6 +206,21 @@ Business behavior is defined by:
     - `low`: `= 1`
     - `full`: `= 0`
 
+- Day agenda policy:
+  - Day-level agenda is requested with `month + date`.
+  - `date` must belong to the selected `month`.
+  - Agenda lists only active appointments (`CONFIRMED`, `SYNC_FAILED`) ordered by `timeSlot`.
+  - Agenda item includes customer identity fields `name` and `phone` for operational context in admin UI.
+
+- Admin edit policy:
+  - Edit action reprograms appointment `date + timeSlot` within the same selected month.
+  - Destination must satisfy booking availability invariants (weekday-only, valid slot, future slot, pair-direction constraints, daily max, and active lock checks).
+
+- Admin cancel policy:
+  - UI must request explicit confirmation before executing cancel action.
+  - Cancel action performs logical cancellation (`status = CANCELLED`) and preserves history.
+  - Admin cancellation does not apply the public 24-hour restriction.
+
 ## Availability Rules
 
 - Valid base time slots are fixed:

@@ -12,10 +12,12 @@ import {
   faListCheck,
   faLock,
   faRotateRight,
+  faTrash,
   faTriangleExclamation,
   faUsers,
   faUser,
   faXmark,
+  faPen,
   faCircleCheck as fasCircleCheck,
   faCircleXmark as fasCircleXmark,
 } from "@fortawesome/free-solid-svg-icons";
@@ -54,4 +56,6 @@ export const adminIcons = {
   monthDetailCancelled: fasCircleXmark,
   monthDetailAvailable: faCalendar,
   monthDetailBlocked: faLock,
+  edit: faPen,
+  delete: faTrash,
 } as const;

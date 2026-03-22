@@ -122,6 +122,7 @@ El agente no debe aplicar estas reglas fuera del contexto admin.
 - sm: 8px
 - md: 12px
 - lg: 16px
+- xl: 32px (uso específico para top corners de bottom-sheet modal)
 
 ---
 
@@ -253,6 +254,29 @@ Ejemplo:
   - mensajes breves, accionables y consistentes con el tono del admin
 - Restricción:
   - no introducir sistemas alternativos de toast/notification en panel admin sin excepción documentada.
+
+---
+
+### BottomSheet Modal (Day Agenda)
+
+- Uso: detalle diario desde calendario mensual (`/admin/months/[month]`).
+- Layout:
+  - anclado al fondo de la pantalla,
+  - backdrop con blur suave,
+  - superficie con `rounded-t-3xl` (32px top corners),
+  - handle superior visual para affordance táctil.
+- Header:
+  - título a la izquierda,
+  - acción cerrar (`X`) a la derecha,
+  - sin navegación secundaria interna.
+- Motion:
+  - entrada: `SlideFromBottom`,
+  - salida: `SlideToBottom`,
+  - respetar `prefers-reduced-motion`.
+- Interacción:
+  - cierre por botón `X`,
+  - cierre por click en overlay,
+  - cierre por tecla `Escape`.
 
 ---
 

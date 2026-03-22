@@ -1,15 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { sileo } from "sileo";
 
+import type { AdminDayAgendaItem } from "@/lib/admin/appointments/types";
+import {
+  cancelAdminAppointmentById,
+  fetchAdminDayAgenda,
+  rescheduleAdminAppointmentById,
+} from "@/lib/admin/appointments/api-client";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
+import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
 import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
+import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
+import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
-import { formatMonthLabel } from "@/lib/datetime/mexico-city";
+import {
+  formatMonthLabel,
+  formatTimeSlotLabel,
+  isFutureDateTime,
+  parseDateOnly,
+} from "@/lib/datetime/mexico-city";
+import { getAvailableStartSlots } from "@/lib/availability/rules";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type {
   MonthDetailCalendarDay,
@@ -27,6 +44,10 @@ function resolveAppLanguage(language: string): AppLanguage {
   return language === "en" ? "en" : "es";
 }
 
+function resolveLocale(language: AppLanguage) {
+  return language === "en" ? "en-US" : "es-MX";
+}
+
 function getToneClasses(tone: MonthDetailCalendarDay["tone"]) {
   switch (tone) {
     case "available":
@@ -40,6 +61,14 @@ function getToneClasses(tone: MonthDetailCalendarDay["tone"]) {
     default:
       return "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)]";
   }
+}
+
+function toBaseTimeSlot(
+  value: string,
+): (typeof BASE_TIME_SLOTS)[number] | null {
+  return BASE_TIME_SLOTS.includes(value as (typeof BASE_TIME_SLOTS)[number])
+    ? (value as (typeof BASE_TIME_SLOTS)[number])
+    : null;
 }
 
 function buildCalendarCells(
@@ -67,16 +96,198 @@ function buildCalendarCells(
 export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveAppLanguage(i18n.resolvedLanguage ?? "es");
+  const locale = resolveLocale(language);
   const { data, isLoading, errorCode, refresh } = useMonthDetail({
     month,
     initialData,
   });
+  const dayAgendaModal = useDayAgendaModal(data.month);
+  const [editDate, setEditDate] = useState<string>("");
+  const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
+  const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
     () => buildCalendarCells(data.month, data.calendarDays),
     [data.calendarDays, data.month],
   );
+  const editingAppointment = useMemo(
+    () =>
+      dayAgendaModal.agenda?.appointments.find(
+        (appointment) => appointment.appointmentId === dayAgendaModal.editingAppointmentId,
+      ) ?? null,
+    [dayAgendaModal.agenda, dayAgendaModal.editingAppointmentId],
+  );
+  const agendaDateOptions = useMemo<SelectOption[]>(
+    () =>
+      data.calendarDays
+        .filter((day) => {
+          if (day.isWeekend || day.date < data.currentDate) {
+            return false;
+          }
+
+          if (editingAppointment?.date === day.date) {
+            return true;
+          }
+
+          return day.availableSpaces > 0;
+        })
+        .map((day) => ({
+          value: day.date,
+          label: new Intl.DateTimeFormat(locale, {
+            timeZone: "America/Mexico_City",
+            day: "2-digit",
+            month: "short",
+          }).format(parseDateOnly(day.date)),
+        })),
+    [data.calendarDays, data.currentDate, editingAppointment?.date, locale],
+  );
+  const timeSlotOptions = useMemo<SelectOption[]>(
+    () =>
+      availableEditSlots.map((slot) => ({
+        value: slot,
+        label: formatTimeSlotLabel(slot, language),
+      })),
+    [availableEditSlots, language],
+  );
+  const dayLabelFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: "America/Mexico_City",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    [locale],
+  );
+  const selectedDateLabel = dayAgendaModal.selectedDate
+    ? dayLabelFormatter.format(parseDateOnly(dayAgendaModal.selectedDate))
+    : "";
+
+  function startEditing(appointment: AdminDayAgendaItem) {
+    dayAgendaModal.setEditingAppointmentId(appointment.appointmentId);
+    setEditDate(appointment.date);
+    setEditTimeSlot(appointment.timeSlot);
+  }
+
+  function stopEditing() {
+    dayAgendaModal.setEditingAppointmentId(null);
+    setAvailableEditSlots([]);
+  }
+
+  useEffect(() => {
+    if (!dayAgendaModal.editingAppointmentId || !editDate) {
+      setAvailableEditSlots([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadAvailableSlots() {
+      try {
+        const agendaForEditDate =
+          dayAgendaModal.agenda?.date === editDate
+            ? dayAgendaModal.agenda
+            : await fetchAdminDayAgenda(data.month, editDate, controller.signal);
+
+        const occupiedSlots = agendaForEditDate.appointments
+          .filter((appointment) => appointment.appointmentId !== dayAgendaModal.editingAppointmentId)
+          .map((appointment) => appointment.timeSlot.slice(0, 5));
+
+        const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots).filter((slot) =>
+          isFutureDateTime(editDate, slot),
+        );
+
+        setAvailableEditSlots(slots);
+      } catch {
+        setAvailableEditSlots([]);
+      }
+    }
+
+    void loadAvailableSlots();
+
+    return () => {
+      controller.abort();
+    };
+  }, [data.month, dayAgendaModal.agenda, dayAgendaModal.editingAppointmentId, editDate]);
+
+  useEffect(() => {
+    if (!dayAgendaModal.editingAppointmentId) {
+      return;
+    }
+
+    if (availableEditSlots.length === 0) {
+      setEditTimeSlot("");
+      return;
+    }
+
+    if (!availableEditSlots.includes(editTimeSlot)) {
+      setEditTimeSlot(availableEditSlots[0]);
+    }
+  }, [availableEditSlots, dayAgendaModal.editingAppointmentId, editTimeSlot]);
+
+  async function handleReschedule(appointmentId: number) {
+    const normalizedTimeSlot = toBaseTimeSlot(editTimeSlot);
+
+    if (!editDate || !normalizedTimeSlot) {
+      return;
+    }
+
+    await sileo.promise(
+      rescheduleAdminAppointmentById(appointmentId, {
+        month: data.month,
+        date: editDate,
+        timeSlot: normalizedTimeSlot,
+      }),
+      {
+        loading: {
+          title: t("monthsDetail.dayModal.notifications.rescheduleLoading"),
+        },
+        success: {
+          title: t("monthsDetail.dayModal.notifications.rescheduleSuccess"),
+        },
+        error: {
+          title: t("monthsDetail.dayModal.notifications.rescheduleError"),
+        },
+      },
+    );
+
+    stopEditing();
+    await Promise.all([dayAgendaModal.refresh(), refresh()]);
+  }
+
+  async function handleCancel(appointment: AdminDayAgendaItem) {
+    const confirmationMessage = t(
+      "monthsDetail.dayModal.confirmCancel.question",
+      {
+        name: appointment.name,
+        time: formatTimeSlotLabel(appointment.timeSlot, language),
+      },
+    );
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    await sileo.promise(
+      cancelAdminAppointmentById(appointment.appointmentId, {
+        month: data.month,
+      }),
+      {
+        loading: {
+          title: t("monthsDetail.dayModal.notifications.cancelLoading"),
+        },
+        success: {
+          title: t("monthsDetail.dayModal.notifications.cancelSuccess"),
+        },
+        error: {
+          title: t("monthsDetail.dayModal.notifications.cancelError"),
+        },
+      },
+    );
+
+    await Promise.all([dayAgendaModal.refresh(), refresh()]);
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
@@ -222,17 +433,160 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             }
 
             return (
-              <div
+              <button
+                type="button"
                 key={cell.key}
                 className={`flex h-11 items-center justify-center rounded-lg border border-transparent text-sm font-semibold ${getToneClasses(cell.day.tone)}`}
                 title={cell.day.date}
+                onClick={() => void dayAgendaModal.open(cell.day.date)}
+                aria-label={t("monthsDetail.dayModal.title", {
+                  date: dayLabelFormatter.format(parseDateOnly(cell.day.date)),
+                })}
               >
                 {cell.day.day}
-              </div>
+              </button>
             );
           })}
         </div>
       </Card>
+
+      <BottomSheetModal
+        isOpen={dayAgendaModal.isOpen}
+        onClose={dayAgendaModal.close}
+        title={t("monthsDetail.dayModal.title", { date: selectedDateLabel })}
+        closeLabel={t("monthsDetail.dayModal.close")}
+      >
+        <div className="space-y-4">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+            {t("monthsDetail.dayModal.sectionTitle")}
+          </h3>
+
+          {dayAgendaModal.isLoadingAgenda ? (
+            <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
+              {t("monthsDetail.dayModal.loading")}
+            </p>
+          ) : null}
+
+          {!dayAgendaModal.isLoadingAgenda && dayAgendaModal.agendaErrorCode ? (
+            <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
+              <p className="text-sm font-medium text-[var(--admin-text-primary)]">
+                {t("monthsDetail.errors.loadFailed")}
+              </p>
+              <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                {dayAgendaModal.agendaErrorCode}
+              </p>
+              <div className="mt-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={dayAgendaModal.refresh}
+                >
+                  {t("monthsDetail.errors.retry")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {!dayAgendaModal.isLoadingAgenda &&
+          !dayAgendaModal.agendaErrorCode &&
+          dayAgendaModal.agenda &&
+          dayAgendaModal.agenda.appointments.length === 0 ? (
+            <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
+              {t("monthsDetail.dayModal.empty")}
+            </p>
+          ) : null}
+
+          {!dayAgendaModal.isLoadingAgenda &&
+          !dayAgendaModal.agendaErrorCode &&
+          dayAgendaModal.agenda ? (
+            <div className="space-y-3">
+              {dayAgendaModal.agenda.appointments.map((appointment) => (
+                <article
+                  key={appointment.appointmentId}
+                  className="rounded-2xl bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
+                >
+                  <div className="flex min-h-[72px] items-center gap-3">
+                    <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
+                      {formatTimeSlotLabel(appointment.timeSlot, language)}
+                    </span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-[var(--admin-text-primary)]">
+                        {appointment.name}
+                      </p>
+                      <p className="text-sm text-[var(--admin-text-secondary)]">
+                        {appointment.phone}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
+                        aria-label={t("monthsDetail.dayModal.actions.edit")}
+                        onClick={() => startEditing(appointment)}
+                      >
+                        <AdminIcon icon={adminIcons.edit} tone="secondary" />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
+                        aria-label={t("monthsDetail.dayModal.actions.delete")}
+                        onClick={() => void handleCancel(appointment)}
+                      >
+                        <AdminIcon icon={adminIcons.delete} tone="secondary" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {dayAgendaModal.editingAppointmentId ===
+                  appointment.appointmentId ? (
+                    <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                          {t("monthsDetail.dayModal.edit.date")}
+                        </label>
+                        <Select
+                          value={editDate}
+                          options={agendaDateOptions}
+                          onChange={setEditDate}
+                          showPlaceholder={false}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                          {t("monthsDetail.dayModal.edit.timeSlot")}
+                        </label>
+                        <Select
+                          value={editTimeSlot}
+                          options={timeSlotOptions}
+                          onChange={setEditTimeSlot}
+                          showPlaceholder={timeSlotOptions.length === 0}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            void handleReschedule(appointment.appointmentId)
+                          }
+                        >
+                          {t("monthsDetail.dayModal.actions.save")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={stopEditing}
+                        >
+                          {t("monthsDetail.dayModal.actions.cancel")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </BottomSheetModal>
     </main>
   );
 }

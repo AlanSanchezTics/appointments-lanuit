@@ -216,6 +216,45 @@ Notas:
 
 ---
 
+## Component: BottomSheetModal
+
+### Purpose
+
+Presentar flujos contextuales móviles dentro del admin sin navegar a otra pantalla.
+
+### Structure
+
+- backdrop + contenedor anclado al fondo
+- handle visual superior
+- header (título + close)
+- body scrollable con altura máxima controlada
+
+### Style
+
+- `radius-top`: `32px` (`rounded-t-3xl`)
+- fondo: `canvas`
+- sombra: alta, sin borde duro
+
+### Motion
+
+- enter: `admin-sheet-enter` (SlideFromBottom)
+- leave: `admin-sheet-leave` (SlideToBottom)
+- fallback sin animación para `prefers-reduced-motion`
+
+### Usage
+
+Uso:
+
+- agenda diaria de `/admin/months/[month]`
+- acciones rápidas sobre citas (editar/cancelar)
+
+Reglas:
+
+- debe cerrar por `Escape`, overlay y botón `X`
+- no reemplaza modales centrados para formularios complejos
+
+---
+
 ## Component: Input
 
 ### Purpose

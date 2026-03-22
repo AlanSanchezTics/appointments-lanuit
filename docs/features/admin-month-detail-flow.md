@@ -27,6 +27,12 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - grid de métricas 2x2,
    - tarjeta de saturación proyectada,
    - calendario operativo mensual.
+7. Admin toca un día del calendario y se abre modal de detalle diario.
+8. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
+9. Modal muestra agenda cronológica del día con acciones por cita:
+   - Cada fila incluye hora + nombre + teléfono (subtítulo).
+   - `Editar`: reprogramar fecha+slot dentro del mismo mes.
+   - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`).
 
 ## Reglas de cálculo
 
@@ -54,3 +60,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - API responde `404 MONTH_NOT_REGISTERED`.
 3. Error de backend:
    - API responde `400` con `errorCode` estable.
+4. `date` fuera de `month`:
+   - API agenda responde `DATE_OUTSIDE_MONTH`.
+5. Reprogramación con conflicto:
+   - API responde `SLOT_NOT_AVAILABLE` o `SLOT_LOCKED`.

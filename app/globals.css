@@ -161,3 +161,42 @@ input {
     transform: translate3d(26%, 0, 0);
   }
 }
+
+.admin-sheet-enter {
+  animation: admin-sheet-enter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-sheet-leave {
+  animation: admin-sheet-leave 260ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes admin-sheet-enter {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0.92;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes admin-sheet-leave {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sheet-enter,
+  .admin-sheet-leave {
+    animation: none;
+  }
+}

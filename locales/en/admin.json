@@ -131,6 +131,34 @@
     "errors": {
       "loadFailed": "Unable to refresh month detail.",
       "retry": "Retry"
+    },
+    "dayModal": {
+      "title": "Details for {{date}}",
+      "close": "Close day detail",
+      "sectionTitle": "Day agenda",
+      "loading": "Loading agenda...",
+      "empty": "There are no active appointments for this day.",
+      "actions": {
+        "edit": "Edit appointment",
+        "delete": "Delete appointment",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "edit": {
+        "date": "Date",
+        "timeSlot": "Time slot"
+      },
+      "confirmCancel": {
+        "question": "Confirm cancellation for {{name}} at {{time}}?"
+      },
+      "notifications": {
+        "rescheduleLoading": "Rescheduling appointment...",
+        "rescheduleSuccess": "Appointment rescheduled",
+        "rescheduleError": "Unable to reschedule appointment.",
+        "cancelLoading": "Cancelling appointment...",
+        "cancelSuccess": "Appointment cancelled",
+        "cancelError": "Unable to cancel appointment."
+      }
     }
   }
 }
