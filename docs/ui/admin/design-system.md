@@ -240,6 +240,22 @@ Ejemplo:
 
 ---
 
+### Notifications (Admin Feedback)
+
+- Provider obligatorio: `sileo`.
+- Render global: `Toaster` en `app/admin/layout.tsx`.
+- Tipos cubiertos por contrato:
+  - `success`, `warning`, `error`, `info`
+  - notificaciones con acción
+  - notificaciones por promesa
+- Regla de contenido:
+  - textos de notificación resueltos vía `react-i18next`
+  - mensajes breves, accionables y consistentes con el tono del admin
+- Restricción:
+  - no introducir sistemas alternativos de toast/notification en panel admin sin excepción documentada.
+
+---
+
 ### Inputs / Selects
 
 - Background: white

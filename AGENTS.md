@@ -521,3 +521,83 @@ Si una implementación del admin:
 - mezcla sistemas (admin vs público)
 
 la tarea debe considerarse incompleta.
+
+## Reglas específicas para notificaciones UI
+
+### Objetivo
+
+Estandarizar las notificaciones de UI derivadas de acciones del usuario o del sistema.
+
+### Alcance
+
+Esta regla aplica únicamente al frontend del panel admin.
+
+### Regla obligatoria
+
+Para notificaciones de tipo `success`, `warning`, `error`, `info`, notificaciones con acción y notificaciones basadas en promesas, el agente debe usar exclusivamente la librería `sileo`.
+
+No se permite introducir librerías alternativas de `toast`/`notification` para esos casos, salvo que exista una excepción explícita y documentada en este archivo.
+
+### Implementaciones permitidas
+
+Ejemplos de implementación directa:
+
+```typescript
+sileo.success({ title: "Changes saved" });
+
+sileo.error({
+  title: "Something went wrong",
+  description: "Please try again later.",
+});
+
+sileo.warning({ title: "Storage almost full" });
+
+sileo.info({ title: "New update available" });
+```
+
+Ejemplo de implementación con acción:
+
+```typescript
+sileo.action({
+  title: "File uploaded",
+  description: "Share it with your team?",
+  button: {
+    title: "Share",
+    onClick: () => console.log("Shared!"),
+  },
+});
+```
+
+Ejemplo de implementación con promesas:
+
+```typescript
+sileo.promise(fetchData(), {
+  loading: { title: "Loading..." },
+  success: { title: "Done!" },
+  error: { title: "Failed" },
+});
+```
+
+### Reglas de contenido
+
+- En panel admin, los textos de notificaciones deben resolverse mediante `react-i18next`.
+- Los mensajes deben ser breves, claros y orientados a la acción esperada.
+- En errores, incluir descripción cuando ayude a recuperación del usuario.
+
+### Criterio de cumplimiento
+
+Una tarea del panel admin que incluya feedback de notificaciones se considera incompleta si:
+
+- no usa `sileo` en los casos cubiertos por esta regla
+- mezcla múltiples sistemas de notificación sin justificación documentada
+
+Además, el agente debe verificar y dejar explícito en su entrega:
+
+```text
+Notification Contract Check:
+- Sileo used for success/warning/error/info: Yes/No
+- Sileo action notifications used when applicable: Yes/No
+- Sileo promise notifications used when applicable: Yes/No
+- i18n applied in admin notifications: Yes/No
+- Alternative notification systems introduced: Yes/No
+```

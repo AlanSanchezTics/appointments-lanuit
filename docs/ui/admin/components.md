@@ -402,6 +402,31 @@ Uso:
 
 ---
 
+## Component: AdminRootLayout Notifications
+
+### Purpose
+
+Inicializar el sistema global de notificaciones del panel admin.
+
+### Composition
+
+- `Toaster` de `sileo`, montado en `app/admin/layout.tsx`.
+
+### Rules
+
+- Todas las notificaciones admin (`success`, `warning`, `error`, `info`, acción, promesa) deben dispararse con `sileo`.
+- No introducir librerías alternativas de notificaciones para esos casos.
+- El texto de notificaciones debe salir de `react-i18next` (namespace `admin`/`adminErrors` según corresponda).
+
+### Usage
+
+Uso:
+
+- shell global de `/admin/*`
+- feedback transversal del panel administrativo
+
+---
+
 ## Component: Header
 
 ### Purpose
@@ -449,6 +474,7 @@ El agente no debe:
 - duplicar componentes con pequeñas diferencias visuales
 - crear componentes equivalentes fuera de `components/admin/ui/`
 - mover estos componentes al flujo público
+- duplicar un sistema paralelo de notificaciones en features del admin
 
 ---
 

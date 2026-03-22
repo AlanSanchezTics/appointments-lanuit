@@ -459,3 +459,13 @@ Reglas obligatorias:
   - frontend admin mapea código -> clave de traducción y resuelve texto final por idioma activo.
 - Calidad obligatoria:
   - lint bloqueante para evitar literales UX inline en superficies admin.
+
+### 15.6 Contrato de notificaciones UI admin
+
+- El panel admin debe usar exclusivamente `sileo` para notificaciones de tipo:
+  - `success`, `warning`, `error`, `info`,
+  - notificaciones con acción,
+  - notificaciones basadas en promesas.
+- El punto de montaje del sistema de notificaciones debe existir en el layout raíz del admin (`app/admin/layout.tsx`) mediante `Toaster`.
+- No se permite mezclar librerías alternativas de `toast`/`notification` en casos cubiertos por este contrato, salvo excepción explícita documentada.
+- Todo texto mostrado por notificaciones del admin debe resolverse por `react-i18next` (mismo contrato de internacionalización del panel admin).
