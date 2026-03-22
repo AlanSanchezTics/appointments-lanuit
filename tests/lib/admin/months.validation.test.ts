@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseAdminMonthKey,
   parseCreateAdminMonthsPayload,
   parseMonthsCatalogQuery,
   parseMonthsCatalogQueryFromObject,
@@ -109,5 +110,14 @@ describe("admin months catalog validation", () => {
         now,
       ),
     ).toThrow("MONTHS_EMPTY_SELECTION");
+  });
+
+  it("accepts valid admin month route key", () => {
+    expect(parseAdminMonthKey("2026-03")).toBe("2026-03");
+  });
+
+  it("rejects invalid admin month route key", () => {
+    expect(() => parseAdminMonthKey("2026-13")).toThrow("MONTHS_INVALID_FORMAT");
+    expect(() => parseAdminMonthKey("2026-00")).toThrow("MONTHS_INVALID_FORMAT");
   });
 });

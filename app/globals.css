@@ -29,6 +29,10 @@
   --admin-inactive-bg: #f5f3ef;
   --admin-success-bg: #d1fae5;
   --admin-success-text: #065f46;
+  --admin-availability-high: rgb(195 236 215);
+  --admin-availability-low: rgb(251 233 162);
+  --admin-availability-full: rgb(254 226 226);
+  --admin-availability-weekend: rgb(228 226 222 / 0.5);
   --admin-text-primary: #1c1917;
   --admin-text-secondary: #6b7280;
   --admin-border: #e5e7eb;

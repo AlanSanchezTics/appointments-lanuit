@@ -100,5 +100,37 @@
       "description": "Detailed management for this month will be enabled in a later phase.",
       "backToCatalog": "Back to catalog"
     }
+  },
+  "monthsDetail": {
+    "header": {
+      "back": "Back to months catalog",
+      "historical": "Historical"
+    },
+    "metrics": {
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "available": "Available",
+      "blocked": "Blocked"
+    },
+    "saturation": {
+      "title": "Projected saturation",
+      "ariaLabel": "Projected monthly saturation"
+    },
+    "calendar": {
+      "title": "Monthly view",
+      "weekdays": {
+        "0": "Su",
+        "1": "Mo",
+        "2": "Tu",
+        "3": "We",
+        "4": "Th",
+        "5": "Fr",
+        "6": "Sa"
+      }
+    },
+    "errors": {
+      "loadFailed": "Unable to refresh month detail.",
+      "retry": "Retry"
+    }
   }
 }

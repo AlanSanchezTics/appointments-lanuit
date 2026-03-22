@@ -28,7 +28,7 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
    - frontend llama `GET /api/admin/months/catalog?year=YYYY&status=...`,
    - se refrescan métricas y lista.
 7. Al tocar una fila:
-   - navega a `/admin/months/[month]` (placeholder de detalle en MVP).
+   - navega a `/admin/months/[month]` para consultar el detalle operativo del mes.
 
 ## Subflujo: Registrar nuevo mes
 
@@ -65,3 +65,4 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
 
 - La creación solo registra meses y deja estado inicial `INACTIVE`.
 - Edición de estado/activación queda fuera de este flujo.
+- El detalle mensual consume `GET /api/admin/months/[month]`; si el mes no existe en catálogo responde `MONTH_NOT_REGISTERED` (404).

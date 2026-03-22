@@ -1,4 +1,5 @@
 import {
+  faArrowLeft,
   faArrowTrendUp,
   faBars,
   faBoxArchive,
@@ -15,6 +16,8 @@ import {
   faUsers,
   faUser,
   faXmark,
+  faCircleCheck as fasCircleCheck,
+  faCircleXmark as fasCircleXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar,
@@ -46,4 +49,9 @@ export const adminIcons = {
   monthListPast: faCalendarXmark,
   monthListFuture: faClockRotateLeft,
   close: faXmark,
+  back: faArrowLeft,
+  monthDetailConfirmed: fasCircleCheck,
+  monthDetailCancelled: fasCircleXmark,
+  monthDetailAvailable: faCalendar,
+  monthDetailBlocked: faLock,
 } as const;

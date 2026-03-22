@@ -40,3 +40,32 @@ export type CreateAdminMonthsResponse = {
   totalCreated: number;
   totalSkipped: number;
 };
+
+export type MonthDetailDayTone = "available" | "low" | "full" | "weekend";
+
+export type MonthDetailCalendarDay = {
+  date: string;
+  day: number;
+  isWeekend: boolean;
+  availableSpaces: number;
+  tone: MonthDetailDayTone;
+};
+
+export type MonthDetailMetrics = {
+  confirmedAppointments: number;
+  cancelledAppointments: number;
+  availableSpaces: number;
+  blockedSpaces: number;
+  occupiedSpaces: number;
+};
+
+export type MonthDetailResponse = {
+  month: string;
+  monthStatus: "ACTIVE" | "INACTIVE";
+  currentMonth: string;
+  currentDate: string;
+  isPastMonth: boolean;
+  projectedSaturationPercent: number;
+  metrics: MonthDetailMetrics;
+  calendarDays: MonthDetailCalendarDay[];
+};

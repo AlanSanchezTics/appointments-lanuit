@@ -100,5 +100,37 @@
       "description": "La gestión detallada de este mes se habilitará en una siguiente fase.",
       "backToCatalog": "Volver al catálogo"
     }
+  },
+  "monthsDetail": {
+    "header": {
+      "back": "Volver al catálogo de meses",
+      "historical": "Histórico"
+    },
+    "metrics": {
+      "confirmed": "Confirmadas",
+      "cancelled": "Canceladas",
+      "available": "Disponibles",
+      "blocked": "Bloqueados"
+    },
+    "saturation": {
+      "title": "Saturación proyectada",
+      "ariaLabel": "Saturación proyectada del mes"
+    },
+    "calendar": {
+      "title": "Vista mensual",
+      "weekdays": {
+        "0": "Do",
+        "1": "Lu",
+        "2": "Ma",
+        "3": "Mi",
+        "4": "Ju",
+        "5": "Vi",
+        "6": "Sa"
+      }
+    },
+    "errors": {
+      "loadFailed": "No se pudo actualizar el detalle del mes.",
+      "retry": "Reintentar"
+    }
   }
 }

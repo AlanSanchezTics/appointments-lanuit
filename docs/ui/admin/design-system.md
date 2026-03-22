@@ -290,6 +290,19 @@ Excepción documentada:
 - Vista `/admin/months` (catálogo de meses) usa 3 columnas también en mobile para mantener densidad operativa del mockup validado.
 - En esta vista, cada `MetricCard` debe mantener legibilidad y targets táctiles adecuados.
 
+### Month Detail Layout
+
+- Vista `/admin/months/[month]`:
+  - encabezado con navegación de regreso,
+  - grid de métricas `2x2`,
+  - tarjeta de saturación (porcentaje + barra),
+  - calendario mensual de 7 columnas.
+- Semántica de color para disponibilidad diaria:
+  - alta (`availableSpaces >= 2`) -> `availability-high`,
+  - baja (`availableSpaces = 1`) -> `availability-low`,
+  - sin espacios (`availableSpaces = 0`) -> `availability-full`,
+  - fin de semana no operativo -> `availability-weekend`.
+
 ---
 
 ### Filters Panel

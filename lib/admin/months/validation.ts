@@ -129,9 +129,7 @@ export function parseCreateAdminMonthsPayload(
   }
 
   for (const month of dedupedMonths) {
-    if (!MONTH_KEY_PATTERN.test(month)) {
-      throw new Error("MONTHS_INVALID_FORMAT");
-    }
+    parseAdminMonthKey(month);
 
     if (!month.startsWith(`${parsed.year}-`)) {
       throw new Error("MONTHS_INVALID_FORMAT");
@@ -150,4 +148,18 @@ export function parseCreateAdminMonthsPayload(
     year: parsed.year,
     months: dedupedMonths.sort(),
   };
+}
+
+export function parseAdminMonthKey(month: string) {
+  if (!MONTH_KEY_PATTERN.test(month)) {
+    throw new Error("MONTHS_INVALID_FORMAT");
+  }
+
+  const monthNumber = Number(month.slice(5, 7));
+
+  if (monthNumber < 1 || monthNumber > 12) {
+    throw new Error("MONTHS_INVALID_FORMAT");
+  }
+
+  return month;
 }

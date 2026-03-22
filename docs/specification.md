@@ -476,7 +476,7 @@ Ruta UI:
 
 - `/admin/months`
 
-Ruta detalle placeholder:
+Ruta detalle:
 
 - `/admin/months/[month]` (`YYYY-MM`)
 
@@ -498,7 +498,16 @@ Flujo UI:
    - `Año`: rango permitido = año actual + 5 años posteriores.
    - `Estado`: `ALL`, `ACTIVE`, `INACTIVE`.
 4. Sistema actualiza listado de meses filtrado por `Año + Estado`.
-5. Admin puede navegar a `/admin/months/[month]` (placeholder de detalle en MVP).
+5. Admin puede navegar a `/admin/months/[month]` para consultar detalle operativo del mes seleccionado.
+   - Vista de detalle:
+     - grid de métricas 2x2 (`Confirmadas`, `Canceladas`, `Disponibles`, `Bloqueados`),
+     - tarjeta de `Saturación proyectada` (porcentaje + barra),
+     - calendario operativo mensual.
+   - Semántica de color del calendario:
+     - verde (`availableSpaces >= 2`),
+     - amarillo (`availableSpaces = 1`),
+     - rojo (`availableSpaces = 0`),
+     - gris en fines de semana (no operativos).
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
    - Selector de año (`currentYear..currentYear+5`).
    - Grilla de meses del año seleccionado.
@@ -525,12 +534,17 @@ Contrato API:
 - Endpoint:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
+  - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
 - Auth:
   - requiere sesión admin válida.
   - sin sesión -> `401` con `ADMIN_UNAUTHORIZED`.
 - Validación:
   - `year` debe estar dentro de `[currentYear..currentYear+5]`.
   - `status` permitido: `ALL|ACTIVE|INACTIVE`.
+  - `GET /api/admin/months/[month]`:
+    - `month` debe cumplir formato `YYYY-MM`,
+    - el mes debe existir en `active_months`,
+    - si no existe, responde `404` con `MONTH_NOT_REGISTERED`.
   - `POST /api/admin/months`:
     - payload `{ year: number, months: string[] }`,
     - `months` no vacío,
@@ -545,3 +559,8 @@ Contrato API:
   - `currentMonth`, `currentDate` (referencia de evaluación de reglas temporales)
 - Success `POST /api/admin/months` (`200`):
   - `{ createdMonths, skippedMonths, totalCreated, totalSkipped }`
+- Success `GET /api/admin/months/[month]` (`200`):
+  - `month`, `monthStatus`, `currentMonth`, `currentDate`, `isPastMonth`
+  - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
+  - `projectedSaturationPercent`
+  - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`

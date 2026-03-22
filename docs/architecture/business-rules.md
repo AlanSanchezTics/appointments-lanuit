@@ -160,7 +160,7 @@ Business behavior is defined by:
 - List policy:
   - Month list is sourced from `active_months` filtered by selected `year` and `status`.
   - Ordering is ascending by `month` (`YYYY-MM` lexical order).
-  - Each row is navigable to `/admin/months/[month]` placeholder in MVP.
+  - Each row is navigable to `/admin/months/[month]` detail view.
 
 - Creation policy:
   - New month registration is only allowed for future months (`month > currentMonth`).
@@ -179,6 +179,32 @@ Business behavior is defined by:
 - i18n policy:
   - UI labels and statuses are frontend-resolved via `react-i18next`.
   - API returns structural data and stable machine-readable errors only.
+
+## Admin Month Detail Rules
+
+- Scope:
+  - Applies to `/admin/months/[month]` and `GET /api/admin/months/[month]`.
+
+- Access and identity:
+  - Admin authentication is mandatory for the endpoint.
+  - `month` must match `YYYY-MM`.
+  - If `month` does not exist in `active_months`, response must be `MONTH_NOT_REGISTERED` (`404`).
+
+- Metrics policy:
+  - `confirmedAppointments`: appointments in active states (`CONFIRMED`, `SYNC_FAILED`) within the selected month.
+  - `cancelledAppointments`: appointments in `CANCELLED` within the selected month.
+  - `occupiedSpaces`: same count as active appointments for the month.
+  - `availableSpaces`: sum of available start slots across weekday days in the month under base-slot, pair-direction, and max-daily rules.
+  - `blockedSpaces`: fixed to `0` in MVP until manual blocking model is introduced.
+  - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
+
+- Calendar policy:
+  - Calendar includes every day of the selected month.
+  - Weekend days are non-operational (`weekend` tone).
+  - Weekday tone is derived from `availableSpaces` per day:
+    - `available`: `>= 2`
+    - `low`: `= 1`
+    - `full`: `= 0`
 
 ## Availability Rules
 

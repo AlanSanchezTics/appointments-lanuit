@@ -408,6 +408,33 @@ Nota:
 
 ---
 
+## Pattern: MonthDetailPage (Operativo)
+
+### Composition
+
+- encabezado con navegación de regreso al catálogo
+- grid de métricas `2x2`
+- tarjeta de saturación proyectada (porcentaje + barra)
+- calendario mensual operativo de 7 columnas
+
+### Data Contract
+
+- fuente: `GET /api/admin/months/[month]`
+- métricas:
+  - `confirmedAppointments`
+  - `cancelledAppointments`
+  - `availableSpaces`
+  - `blockedSpaces` (MVP: `0`)
+- calendario:
+  - `calendarDays[]` con `tone` (`available`, `low`, `full`, `weekend`)
+
+### Behavior
+
+- mes inválido o no registrado -> estado not found del route.
+- mes pasado -> visualización histórica (solo lectura).
+
+---
+
 ## Component: Modal
 
 ### Purpose

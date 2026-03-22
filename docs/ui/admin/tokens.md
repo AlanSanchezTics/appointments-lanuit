@@ -60,6 +60,20 @@ No deben usarse en:
 - `inactive-bg`: `#F5F3EF`
   - fondos neutros o estados inactivos
 
+### Availability (Month Detail)
+
+- `availability-high`: `rgb(195 236 215)`
+  - día con disponibilidad alta (`availableSpaces >= 2`)
+
+- `availability-low`: `rgb(251 233 162)`
+  - día con disponibilidad baja (`availableSpaces = 1`)
+
+- `availability-full`: `rgb(254 226 226)`
+  - día sin disponibilidad (`availableSpaces = 0`)
+
+- `availability-weekend`: `rgb(228 226 222 / 0.5)`
+  - fin de semana no operativo
+
 ### Text
 
 - `text-primary`: `#1C1917`

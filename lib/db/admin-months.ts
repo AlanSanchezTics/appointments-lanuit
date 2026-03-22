@@ -17,6 +17,12 @@ type YearDateRange = {
   yearEndExclusive: Date;
 };
 
+export type PersistedMonthAppointment = {
+  date: string;
+  timeSlot: string;
+  status: AppointmentStatus;
+};
+
 function getMonthRange(year: number): MonthRange {
   const monthStart = `${year}-01`;
   const monthEndExclusive = `${year + 1}-01`;
@@ -32,6 +38,14 @@ function getYearDateRange(year: number): YearDateRange {
     yearStart: new Date(`${year}-01-01T00:00:00.000Z`),
     yearEndExclusive: new Date(`${year + 1}-01-01T00:00:00.000Z`),
   };
+}
+
+function dateToDateKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function timeToTimeSlotKey(value: Date) {
+  return value.toISOString().slice(11, 16);
 }
 
 export async function countActiveMonthsByYear(year: number) {
@@ -218,4 +232,42 @@ export async function createInactiveMonths(months: string[]) {
     })),
     skipDuplicates: true,
   });
+}
+
+export async function findRegisteredMonth(month: string) {
+  return prisma.activeMonth.findUnique({
+    where: {
+      month,
+    },
+    select: {
+      month: true,
+      status: true,
+    },
+  });
+}
+
+export async function listAppointmentsByMonth(monthStart: string, monthEndExclusive: string) {
+  const rows = await prisma.appointment.findMany({
+    where: {
+      status: {
+        in: ["CONFIRMED", "CANCELLED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    select: {
+      date: true,
+      timeSlot: true,
+      status: true,
+    },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+  });
+
+  return rows.map((row) => ({
+    date: dateToDateKey(row.date),
+    timeSlot: timeToTimeSlotKey(row.timeSlot),
+    status: row.status,
+  })) satisfies PersistedMonthAppointment[];
 }

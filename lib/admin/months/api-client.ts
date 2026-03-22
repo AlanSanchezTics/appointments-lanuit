@@ -3,6 +3,7 @@
 import type {
   CreateAdminMonthsPayload,
   CreateAdminMonthsResponse,
+  MonthDetailResponse,
   MonthsCatalogResponse,
   MonthsCatalogStatus,
 } from "@/lib/admin/months/types";
@@ -55,4 +56,24 @@ export async function createMonths(
   }
 
   return response.json() as Promise<CreateAdminMonthsResponse>;
+}
+
+export async function fetchAdminMonthDetail(
+  month: string,
+  signal?: AbortSignal,
+): Promise<MonthDetailResponse> {
+  const response = await fetch(`/api/admin/months/${month}`, {
+    method: "GET",
+    cache: "no-store",
+    signal,
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { errorCode?: string }
+      | null;
+    throw new Error(payload?.errorCode ?? "UNKNOWN_ERROR");
+  }
+
+  return response.json() as Promise<MonthDetailResponse>;
 }
