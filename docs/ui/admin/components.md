@@ -216,6 +216,10 @@ Capturar información en formularios internos o filtros.
 - borde: `1px solid border`
 - radius: `12px`
 - altura mínima: `44px`
+- cuando el input incluye icono, se alinea en el lado izquierdo
+- variante password:
+  - icono decorativo alineado a la izquierda
+  - botón de acción mostrar/ocultar alineado a la derecha (ícono ojo)
 
 ### Usage
 
@@ -229,6 +233,7 @@ Uso:
 Nota:
 
 - cuando un `Input` incluya icono, debe usar `AdminIcon`.
+- todo `Input` con `type="password"` debe incluir toggle de visibilidad por defecto.
 
 ---
 

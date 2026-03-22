@@ -32,5 +32,9 @@ describe("admin login page", () => {
     expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="user"]')).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="lock"]')).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Mostrar contraseña" })
+    ).toBeInTheDocument();
+    expect(document.querySelector('svg[data-icon="eye"]')).toBeInTheDocument();
   });
 });

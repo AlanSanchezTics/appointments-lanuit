@@ -246,11 +246,19 @@ Ejemplo:
 - Border: 1px solid `#E5E7EB`
 - Radius: 12px
 - Height: 44px
+- cuando el control usa icono, se posiciona al lado izquierdo del campo
+
+Variante password (admin):
+
+- icono decorativo del campo en el lado izquierdo
+- botón de acción mostrar/ocultar en el lado derecho con ícono de ojo
+- la acción mostrar/ocultar debe mantener el mismo estilo de color/tono del sistema (secondary/accent en interacción)
 
 Uso:
 
 - filtros
 - selección de estado/año
+- formularios de autenticación admin
 
 ---
 

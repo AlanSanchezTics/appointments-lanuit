@@ -18,7 +18,9 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
 
 ## High-Level Flow
 1. Usuario abre `/admin/login`.
-2. Captura `username` y contraseña (campos con iconografía consistente del design system admin: usuario/candado).
+2. Captura `username` y contraseña:
+   - `username`: ícono decorativo de usuario.
+   - `password`: ícono decorativo de candado a la izquierda + acción mostrar/ocultar con botón de ojo a la derecha.
 3. Frontend ejecuta `signIn("credentials")` de NextAuth.
 4. Backend valida credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
 5. Si son válidas y el usuario está `active`, NextAuth crea sesión y redirige al dashboard.
@@ -29,6 +31,7 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
 ## Validation Points
 - Username obligatorio.
 - Contraseña mínima de 8 caracteres.
+- El control mostrar/ocultar contraseña no cambia reglas de validación ni payload enviado a autenticación.
 - Usuario admin debe existir y estar activo.
 - Sesión JWT de NextAuth debe ser válida y no estar expirada.
 
