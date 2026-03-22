@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { sileo } from "sileo";
 
 import { Button } from "@/components/admin/ui/Button";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
+import { NewMonthModal } from "@/components/admin/months/NewMonthModal";
 import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useMonthsCatalog } from "@/hooks/admin/months/useMonthsCatalog";
+import { createMonths } from "@/lib/admin/months/api-client";
 import type {
+  CreateAdminMonthsResponse,
   MonthsCatalogResponse,
   MonthsCatalogStatus,
 } from "@/lib/admin/months/types";
@@ -45,9 +49,27 @@ function getMonthItemTone(month: string, currentMonth: string) {
   return "accent" as const;
 }
 
+function resolveCreationErrorMessageKey(errorCode: string) {
+  switch (errorCode) {
+    case "MONTHS_YEAR_OUT_OF_RANGE":
+      return "monthsCatalog.newModal.notifications.errors.yearOutOfRange";
+    case "MONTHS_MONTH_NOT_FUTURE":
+      return "monthsCatalog.newModal.notifications.errors.monthNotFuture";
+    case "MONTHS_INVALID_FORMAT":
+      return "monthsCatalog.newModal.notifications.errors.invalidFormat";
+    case "MONTHS_EMPTY_SELECTION":
+      return "monthsCatalog.newModal.notifications.errors.emptySelection";
+    case "VALIDATION_ERROR":
+      return "monthsCatalog.newModal.notifications.errors.validation";
+    default:
+      return "monthsCatalog.newModal.notifications.errors.unknown";
+  }
+}
+
 export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveAppLanguage(i18n.resolvedLanguage ?? "es");
+  const [isNewMonthModalOpen, setIsNewMonthModalOpen] = useState(false);
   const {
     data,
     isLoading,
@@ -58,6 +80,7 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
     updateYear,
     updateStatus,
     retry,
+    refreshCatalog,
     goToMonth,
   } = useMonthsCatalog({ initialData });
 
@@ -80,6 +103,41 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
   );
 
   const monthRows = data.months;
+
+  async function handleCreateMonths(input: { year: number; months: string[] }) {
+    const request = createMonths(input);
+    await sileo.promise(request, {
+      loading: {
+        title: t("monthsCatalog.newModal.notifications.loadingTitle"),
+        autopilot: false,
+      },
+      success: (result: CreateAdminMonthsResponse) => ({
+        title:
+          result.totalCreated > 0
+            ? t("monthsCatalog.newModal.notifications.successTitle")
+            : t("monthsCatalog.newModal.notifications.noChangesTitle"),
+        description: t(
+          "monthsCatalog.newModal.notifications.successDescription",
+          {
+            created: result.totalCreated,
+            skipped: result.totalSkipped,
+          },
+        ),
+        autopilot: result.totalSkipped + result.totalCreated > 0,
+      }),
+      error: (error: unknown) => {
+        const errorCode =
+          error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        return {
+          title: t("monthsCatalog.newModal.notifications.errorTitle"),
+          description: t(resolveCreationErrorMessageKey(errorCode)),
+        };
+      },
+    });
+
+    await refreshCatalog();
+    setIsNewMonthModalOpen(false);
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
@@ -163,8 +221,7 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
           <Button
             type="button"
             fullWidth
-            disabled
-            title={t("monthsCatalog.cta.newDisabledHint")}
+            onClick={() => setIsNewMonthModalOpen(true)}
           >
             {t("monthsCatalog.cta.new")}
           </Button>
@@ -225,6 +282,15 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
           ))}
         </div>
       </section>
+
+      <NewMonthModal
+        isOpen={isNewMonthModalOpen}
+        availableYears={availableYears}
+        currentMonth={data.currentMonth}
+        language={language}
+        onClose={() => setIsNewMonthModalOpen(false)}
+        onSave={handleCreateMonths}
+      />
     </main>
   );
 }

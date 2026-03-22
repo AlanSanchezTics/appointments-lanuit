@@ -63,6 +63,29 @@
       "new": "Nuevo",
       "newDisabledHint": "Disponible en próxima fase"
     },
+    "newModal": {
+      "title": "Registrar nuevo mes",
+      "close": "Cerrar modal",
+      "year": "Año",
+      "save": "Guardar",
+      "loadingMonths": "Cargando meses disponibles...",
+      "noFutureMonths": "No hay meses futuros disponibles para este año.",
+      "notifications": {
+        "loadingTitle": "Guardando meses...",
+        "successTitle": "Meses registrados",
+        "noChangesTitle": "Sin cambios",
+        "successDescription": "Creados: {{created}} · Omitidos: {{skipped}}",
+        "errorTitle": "No se pudieron registrar los meses",
+        "errors": {
+          "yearOutOfRange": "El año seleccionado está fuera de rango.",
+          "monthNotFuture": "Solo se permiten meses futuros.",
+          "invalidFormat": "Algunos meses tienen formato inválido.",
+          "emptySelection": "Selecciona al menos un mes para guardar.",
+          "validation": "La solicitud no es válida.",
+          "unknown": "Ocurrió un error inesperado."
+        }
+      }
+    },
     "list": {
       "title": "Listado de Meses",
       "total_one": "{{count}} Reg.",

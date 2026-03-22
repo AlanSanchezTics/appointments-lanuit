@@ -470,7 +470,7 @@ Reglas obligatorias:
 - No se permite mezclar librerías alternativas de `toast`/`notification` en casos cubiertos por este contrato, salvo excepción explícita documentada.
 - Todo texto mostrado por notificaciones del admin debe resolverse por `react-i18next` (mismo contrato de internacionalización del panel admin).
 
-### 15.7 Catálogo de meses admin (MVP lectura)
+### 15.7 Catálogo de meses admin
 
 Ruta UI:
 
@@ -482,7 +482,7 @@ Ruta detalle placeholder:
 
 Objetivo:
 
-- Exponer un catálogo operativo de meses para monitoreo admin con métricas, filtros y listado navegable sin mutaciones en MVP.
+- Exponer un catálogo operativo de meses para monitoreo admin con métricas, filtros, listado navegable y creación controlada de nuevos meses futuros.
 
 Flujo UI:
 
@@ -499,10 +499,23 @@ Flujo UI:
    - `Estado`: `ALL`, `ACTIVE`, `INACTIVE`.
 4. Sistema actualiza listado de meses filtrado por `Año + Estado`.
 5. Admin puede navegar a `/admin/months/[month]` (placeholder de detalle en MVP).
+6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
+   - Selector de año (`currentYear..currentYear+5`).
+   - Grilla de meses del año seleccionado.
+   - Solo permite selección de meses futuros (`month > currentMonth`) que aún no estén creados en `active_months`.
+   - Selección múltiple.
+7. Admin confirma `Guardar`.
+8. Frontend ejecuta `POST /api/admin/months`.
+9. Backend persiste nuevos meses con `status=INACTIVE`, omite existentes y retorna resumen `created/skipped`.
+10. UI cierra modal y refresca métricas/listado.
 
-Reglas de MVP:
+Reglas de módulo:
 
-- El botón `Nuevo` debe mostrarse pero permanecer deshabilitado (sin persistencia ni mutación).
+- Solo se pueden registrar meses futuros.
+- En el modal, los meses ya creados (`ACTIVE` o `INACTIVE`) no deben mostrarse como opción seleccionable.
+- El registro de meses es idempotente parcial:
+  - meses existentes se omiten,
+  - meses faltantes se crean con `INACTIVE`.
 - El módulo es mobile-first con contenedor centrado `max-width: 412px`.
 - Gaps visuales objetivo entre bloques/listas: `12px–16px`.
 - Todos los textos admin del módulo deben resolverse por `react-i18next`.
@@ -511,15 +524,24 @@ Contrato API:
 
 - Endpoint:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
+  - `POST /api/admin/months`
 - Auth:
   - requiere sesión admin válida.
   - sin sesión -> `401` con `ADMIN_UNAUTHORIZED`.
 - Validación:
   - `year` debe estar dentro de `[currentYear..currentYear+5]`.
   - `status` permitido: `ALL|ACTIVE|INACTIVE`.
+  - `POST /api/admin/months`:
+    - payload `{ year: number, months: string[] }`,
+    - `months` no vacío,
+    - formato de mes obligatorio `YYYY-MM`,
+    - todos los meses pertenecen al año enviado,
+    - todos los meses deben ser futuros (`month > currentMonth`).
 - Success `200`:
   - `filters`: `{ year, status, availableYears[] }`
   - `metrics`: `{ activeMonths, inactiveMonths, futureMonths, pastMonths, pastAppointments, futureAppointments }`
   - `months`: `[{ month, status }]` ordenado ascendente por `month`
   - `total`
   - `currentMonth`, `currentDate` (referencia de evaluación de reglas temporales)
+- Success `POST /api/admin/months` (`200`):
+  - `{ createdMonths, skippedMonths, totalCreated, totalSkipped }`

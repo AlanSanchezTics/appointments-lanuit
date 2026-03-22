@@ -63,6 +63,29 @@
       "new": "New",
       "newDisabledHint": "Available in next phase"
     },
+    "newModal": {
+      "title": "Register new month",
+      "close": "Close modal",
+      "year": "Year",
+      "save": "Save",
+      "loadingMonths": "Loading available months...",
+      "noFutureMonths": "No future months available for this year.",
+      "notifications": {
+        "loadingTitle": "Saving months...",
+        "successTitle": "Months registered",
+        "noChangesTitle": "No changes",
+        "successDescription": "Created: {{created}} · Skipped: {{skipped}}",
+        "errorTitle": "Unable to register months",
+        "errors": {
+          "yearOutOfRange": "Selected year is out of range.",
+          "monthNotFuture": "Only future months are allowed.",
+          "invalidFormat": "Some months have invalid format.",
+          "emptySelection": "Select at least one month to save.",
+          "validation": "Request is not valid.",
+          "unknown": "An unexpected error occurred."
+        }
+      }
+    },
     "list": {
       "title": "Months List",
       "total_one": "{{count}} Rec.",

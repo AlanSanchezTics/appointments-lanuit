@@ -391,20 +391,51 @@ Nota:
 
 ---
 
-## Pattern: MonthsCatalogPage (MVP Lectura)
+## Pattern: MonthsCatalogPage (MVP Operativo)
 
 ### Composition
 
 - `MetricCard` x6 en grid 3x2
 - `Select` para `Año` y `Estado`
-- `Button` (`Nuevo`) deshabilitado
+- `Button` (`Nuevo`) para abrir modal de alta
 - `ListItem` para filas de meses con `href` o `onClick`
 
 ### Behavior
 
 - filtros refrescan métricas y listado
 - filas navegan a `/admin/months/[month]`
-- botón `Nuevo` visible pero no ejecuta mutaciones en MVP
+- botón `Nuevo` abre modal de registro de meses futuros
+
+---
+
+## Component: Modal
+
+### Purpose
+
+Contenedor reusable para interacciones enfocadas en capa superior (overlay) dentro del admin.
+
+### Structure
+
+- overlay de fondo
+- panel centrado
+- título
+- botón de cierre
+- contenido libre
+
+### Behavior
+
+- cierre por `Esc`
+- cierre por botón `x`
+- cierre por click en overlay
+- `role="dialog"` y `aria-modal="true"`
+- focus trap básico entre elementos interactivos
+
+### Usage
+
+Uso:
+
+- modal de `Registrar nuevo mes`
+- futuras confirmaciones admin de acciones controladas
 
 ---
 

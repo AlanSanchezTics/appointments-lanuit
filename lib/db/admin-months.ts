@@ -186,3 +186,36 @@ export async function listMonthsByYear(
 
   return rows;
 }
+
+export async function listExistingMonths(months: string[]) {
+  if (months.length === 0) {
+    return [];
+  }
+
+  const rows = await prisma.activeMonth.findMany({
+    where: {
+      month: {
+        in: months,
+      },
+    },
+    select: {
+      month: true,
+    },
+  });
+
+  return rows.map((row) => row.month).sort();
+}
+
+export async function createInactiveMonths(months: string[]) {
+  if (months.length === 0) {
+    return;
+  }
+
+  await prisma.activeMonth.createMany({
+    data: months.map((month) => ({
+      month,
+      status: "INACTIVE",
+    })),
+    skipDuplicates: true,
+  });
+}

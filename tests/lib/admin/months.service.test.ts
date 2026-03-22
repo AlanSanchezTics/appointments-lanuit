@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getMonthsCatalog } from "@/lib/admin/months/service";
+import { createAdminMonths, getMonthsCatalog } from "@/lib/admin/months/service";
 import {
+  createInactiveMonths,
   countActiveMonthsByYear,
   countFutureAppointmentsByYear,
   countFutureMonthsByYear,
   countInactiveMonthsByYear,
   countPastAppointmentsByYear,
   countPastMonthsByYear,
+  listExistingMonths,
   listMonthsByYear,
 } from "@/lib/db/admin-months";
 
@@ -19,6 +21,8 @@ vi.mock("@/lib/db/admin-months", () => ({
   countPastAppointmentsByYear: vi.fn(),
   countFutureAppointmentsByYear: vi.fn(),
   listMonthsByYear: vi.fn(),
+  listExistingMonths: vi.fn(),
+  createInactiveMonths: vi.fn(),
 }));
 
 const countActiveMonthsByYearMock = vi.mocked(countActiveMonthsByYear);
@@ -28,6 +32,8 @@ const countPastMonthsByYearMock = vi.mocked(countPastMonthsByYear);
 const countPastAppointmentsByYearMock = vi.mocked(countPastAppointmentsByYear);
 const countFutureAppointmentsByYearMock = vi.mocked(countFutureAppointmentsByYear);
 const listMonthsByYearMock = vi.mocked(listMonthsByYear);
+const listExistingMonthsMock = vi.mocked(listExistingMonths);
+const createInactiveMonthsMock = vi.mocked(createInactiveMonths);
 
 describe("admin months catalog service", () => {
   beforeEach(() => {
@@ -102,5 +108,23 @@ describe("admin months catalog service", () => {
     );
 
     expect(listMonthsByYearMock).toHaveBeenCalledWith(2026, "ACTIVE");
+  });
+
+  it("creates only missing months and returns created/skipped summary", async () => {
+    listExistingMonthsMock.mockResolvedValueOnce(["2026-07"]);
+    createInactiveMonthsMock.mockResolvedValueOnce();
+
+    const result = await createAdminMonths({
+      year: 2026,
+      months: ["2026-06", "2026-07", "2026-08"],
+    });
+
+    expect(createInactiveMonthsMock).toHaveBeenCalledWith(["2026-06", "2026-08"]);
+    expect(result).toEqual({
+      createdMonths: ["2026-06", "2026-08"],
+      skippedMonths: ["2026-07"],
+      totalCreated: 2,
+      totalSkipped: 1,
+    });
   });
 });

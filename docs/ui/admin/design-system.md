@@ -319,7 +319,21 @@ Patrón para `/admin/months`:
 - contenedor neutro (`inactive-bg`)
 - dos selects en grid de 2 columnas: `Año` y `Estado`
 - CTA `Nuevo` visible en ancho completo
-- En MVP lectura, `Nuevo` se mantiene deshabilitado
+- `Nuevo` abre modal de registro de meses futuros
+
+### Months Register Modal
+
+- contenedor centrado sobre overlay
+- ancho móvil máximo de la app (`~412px`)
+- título + acción de cierre (`x`)
+- selector de año
+- grilla de meses en 3 columnas
+- la grilla excluye meses ya creados
+- selección múltiple por chip/botón
+- estado seleccionado:
+  - fondo `primary`
+  - texto blanco
+- CTA `Guardar` en ancho completo
 
 ---
 

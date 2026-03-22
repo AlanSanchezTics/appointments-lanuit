@@ -14,9 +14,10 @@ import {
   faTriangleExclamation,
   faUsers,
   faUser,
-  faCalendar
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import {
+  faCalendar,
   faCalendarDays,
   faCalendarXmark,
   faClock,
@@ -44,4 +45,5 @@ export const adminIcons = {
   monthListCurrent: faCalendar,
   monthListPast: faCalendarXmark,
   monthListFuture: faClockRotateLeft,
+  close: faXmark,
 } as const;

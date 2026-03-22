@@ -1,6 +1,11 @@
 "use client";
 
-import type { MonthsCatalogResponse, MonthsCatalogStatus } from "@/lib/admin/months/types";
+import type {
+  CreateAdminMonthsPayload,
+  CreateAdminMonthsResponse,
+  MonthsCatalogResponse,
+  MonthsCatalogStatus,
+} from "@/lib/admin/months/types";
 
 type FetchMonthsCatalogInput = {
   year: number;
@@ -29,4 +34,25 @@ export async function fetchMonthsCatalog(
   }
 
   return response.json() as Promise<MonthsCatalogResponse>;
+}
+
+export async function createMonths(
+  payload: CreateAdminMonthsPayload,
+): Promise<CreateAdminMonthsResponse> {
+  const response = await fetch("/api/admin/months", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorPayload = (await response.json().catch(() => null)) as
+      | { errorCode?: string }
+      | null;
+    throw new Error(errorPayload?.errorCode ?? "UNKNOWN_ERROR");
+  }
+
+  return response.json() as Promise<CreateAdminMonthsResponse>;
 }

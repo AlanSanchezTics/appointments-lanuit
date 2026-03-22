@@ -69,6 +69,10 @@ export function useMonthsCatalog({ initialData }: UseMonthsCatalogInput) {
     void loadCatalog(year, status);
   }, [loadCatalog, status, year]);
 
+  const refreshCatalog = useCallback(async () => {
+    await loadCatalog(year, status);
+  }, [loadCatalog, status, year]);
+
   const goToMonth = useCallback((month: string) => {
     router.push(`/admin/months/${month}`);
   }, [router]);
@@ -89,6 +93,7 @@ export function useMonthsCatalog({ initialData }: UseMonthsCatalogInput) {
     updateYear,
     updateStatus,
     retry,
+    refreshCatalog,
     goToMonth,
   };
 }

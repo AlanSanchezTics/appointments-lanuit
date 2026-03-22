@@ -28,3 +28,15 @@ export type MonthsCatalogResponse = {
   currentMonth: string;
   currentDate: string;
 };
+
+export type CreateAdminMonthsPayload = {
+  year: number;
+  months: string[];
+};
+
+export type CreateAdminMonthsResponse = {
+  createdMonths: string[];
+  skippedMonths: string[];
+  totalCreated: number;
+  totalSkipped: number;
+};

@@ -1,15 +1,22 @@
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import {
+  createInactiveMonths,
   countActiveMonthsByYear,
   countFutureAppointmentsByYear,
   countFutureMonthsByYear,
   countInactiveMonthsByYear,
   countPastAppointmentsByYear,
   countPastMonthsByYear,
+  listExistingMonths,
   listMonthsByYear,
 } from "@/lib/db/admin-months";
 
-import type { MonthsCatalogResponse, MonthsCatalogStatus } from "@/lib/admin/months/types";
+import type {
+  CreateAdminMonthsPayload,
+  CreateAdminMonthsResponse,
+  MonthsCatalogResponse,
+  MonthsCatalogStatus,
+} from "@/lib/admin/months/types";
 
 type GetMonthsCatalogInput = {
   year: number;
@@ -69,5 +76,22 @@ export async function getMonthsCatalog(
     total: months.length,
     currentMonth,
     currentDate,
+  };
+}
+
+export async function createAdminMonths(
+  input: CreateAdminMonthsPayload,
+): Promise<CreateAdminMonthsResponse> {
+  const existingMonths = await listExistingMonths(input.months);
+  const existingSet = new Set(existingMonths);
+  const monthsToCreate = input.months.filter((month) => !existingSet.has(month));
+
+  await createInactiveMonths(monthsToCreate);
+
+  return {
+    createdMonths: monthsToCreate,
+    skippedMonths: existingMonths,
+    totalCreated: monthsToCreate.length,
+    totalSkipped: existingMonths.length,
   };
 }

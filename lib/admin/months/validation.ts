@@ -1,7 +1,10 @@
 import { getCurrentMonthKey } from "@/lib/datetime/mexico-city";
+import { z } from "zod";
 
+import { MONTH_KEY_PATTERN } from "@/lib/admin/months/month-helpers";
 import {
   MONTHS_CATALOG_STATUS_VALUES,
+  type CreateAdminMonthsPayload,
   type MonthsCatalogStatus,
 } from "@/lib/admin/months/types";
 
@@ -101,4 +104,50 @@ export function parseMonthsCatalogQueryOrDefault(
   } catch {
     return parseMonthsCatalogQuery(new URLSearchParams(), now);
   }
+}
+
+const CREATE_MONTHS_SCHEMA = z.object({
+  year: z.number().int(),
+  months: z.array(z.string().trim()),
+});
+
+export function parseCreateAdminMonthsPayload(
+  payload: unknown,
+  now = new Date(),
+): CreateAdminMonthsPayload {
+  const parsed = CREATE_MONTHS_SCHEMA.parse(payload);
+  const availableYears = getAvailableYears(now);
+
+  if (!availableYears.includes(parsed.year)) {
+    throw new Error("MONTHS_YEAR_OUT_OF_RANGE");
+  }
+
+  const dedupedMonths = [...new Set(parsed.months)];
+
+  if (dedupedMonths.length === 0) {
+    throw new Error("MONTHS_EMPTY_SELECTION");
+  }
+
+  for (const month of dedupedMonths) {
+    if (!MONTH_KEY_PATTERN.test(month)) {
+      throw new Error("MONTHS_INVALID_FORMAT");
+    }
+
+    if (!month.startsWith(`${parsed.year}-`)) {
+      throw new Error("MONTHS_INVALID_FORMAT");
+    }
+  }
+
+  const currentMonth = getCurrentMonthKey(now);
+
+  for (const month of dedupedMonths) {
+    if (month <= currentMonth) {
+      throw new Error("MONTHS_MONTH_NOT_FUTURE");
+    }
+  }
+
+  return {
+    year: parsed.year,
+    months: dedupedMonths.sort(),
+  };
 }

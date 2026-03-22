@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseCreateAdminMonthsPayload,
   parseMonthsCatalogQuery,
   parseMonthsCatalogQueryFromObject,
   parseMonthsCatalogQueryOrDefault,
@@ -69,5 +70,44 @@ describe("admin months catalog validation", () => {
 
     expect(result.year).toBe(2026);
     expect(result.status).toBe("ALL");
+  });
+
+  it("parses create payload and deduplicates months", () => {
+    const result = parseCreateAdminMonthsPayload(
+      {
+        year: 2026,
+        months: ["2026-06", "2026-07", "2026-06"],
+      },
+      now,
+    );
+
+    expect(result).toEqual({
+      year: 2026,
+      months: ["2026-06", "2026-07"],
+    });
+  });
+
+  it("rejects months that are not in the future", () => {
+    expect(() =>
+      parseCreateAdminMonthsPayload(
+        {
+          year: 2026,
+          months: ["2026-03"],
+        },
+        now,
+      ),
+    ).toThrow("MONTHS_MONTH_NOT_FUTURE");
+  });
+
+  it("rejects empty month selection", () => {
+    expect(() =>
+      parseCreateAdminMonthsPayload(
+        {
+          year: 2026,
+          months: [],
+        },
+        now,
+      ),
+    ).toThrow("MONTHS_EMPTY_SELECTION");
   });
 });

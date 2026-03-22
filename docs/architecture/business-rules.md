@@ -140,11 +140,10 @@ Business behavior is defined by:
   - clears session cookie,
   - invalidates further access to protected admin routes.
 
-## Admin Months Catalog Rules (MVP Read-only)
+## Admin Months Catalog Rules
 
 - Scope:
-  - Applies to `/admin/months` and `/api/admin/months/catalog`.
-  - Read-only in MVP (no month create/update/toggle).
+  - Applies to `/admin/months`, `/api/admin/months/catalog`, and `POST /api/admin/months`.
 
 - Filter policy:
   - `year` must be in `[currentYear..currentYear+5]`.
@@ -162,6 +161,17 @@ Business behavior is defined by:
   - Month list is sourced from `active_months` filtered by selected `year` and `status`.
   - Ordering is ascending by `month` (`YYYY-MM` lexical order).
   - Each row is navigable to `/admin/months/[month]` placeholder in MVP.
+
+- Creation policy:
+  - New month registration is only allowed for future months (`month > currentMonth`).
+  - Month selection UI excludes months already created in `active_months` (`ACTIVE` or `INACTIVE`).
+  - Year selection for creation is constrained to `[currentYear..currentYear+5]`.
+  - Batch selection supports multiple months in one request.
+  - New records are created with `status = INACTIVE`.
+  - Persistence is idempotent-partial:
+    - existing months are skipped,
+    - missing months are created,
+    - response returns `createdMonths` and `skippedMonths`.
 
 - Time policy:
   - `currentMonth` and `currentDate` must be resolved in `America/Mexico_City`.
