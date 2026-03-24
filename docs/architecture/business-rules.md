@@ -243,8 +243,12 @@ Business behavior is defined by:
     - operation is atomic all-or-nothing for selected slots,
     - UI disables all modal interactions while submit is in progress.
   - Mass-action behavior:
-    - `Bloquear todo el día` selects all currently blockable slots for the selected day in one action.
+    - `Seleccionar todo` selects all currently blockable slots for the selected day in one action.
     - `Limpiar selección` removes every selected slot before submit.
+  - Slot visualization behavior:
+    - UI supports `Por hora` and `Por bloque` views over the same eligible slot set.
+    - Selecting a block toggles both slots of the directional pair in the current day.
+    - Persistence remains slot-based in `blocked_slots` (no additional block-level entity).
 
 ## Availability Rules
 

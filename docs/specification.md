@@ -539,8 +539,9 @@ Flujo UI:
    - Debajo del calendario se muestra CTA secundaria `Bloquear espacios`.
    - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
      - selección horizontal de días bloqueables,
-     - selección múltiple de slots bloqueables,
-     - acción masiva `Bloquear todo el día` para seleccionar todos los slots bloqueables del día activo,
+     - selector de visualización de espacios: `Por hora` y `Por bloque`,
+     - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta representa y selecciona el par direccional completo),
+     - acción masiva `Seleccionar todo` para seleccionar todos los slots bloqueables del día activo,
      - acción `Limpiar selección` para resetear selección del día activo,
      - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`),
      - botón `Confirmar bloqueo`.
@@ -559,6 +560,8 @@ Flujo UI:
    - Al confirmar bloqueo:
      - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),
      - backend crea registro en `blocked_slots` por cada slot seleccionado.
+   - Persistencia de vista por bloque:
+     - la selección en vista `Por bloque` solo afecta UX; en backend se registran los mismos slots unitarios de siempre.
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
    - Selector de año (`currentYear..currentYear+5`).
    - Grilla de meses del año seleccionado.

@@ -8,6 +8,7 @@ import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
 import { Button } from "@/components/admin/ui/Button";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
+import { DIRECTIONAL_SLOT_PAIRS } from "@/lib/constants/slots";
 import { formatTimeSlotLabel, parseDateOnly } from "@/lib/datetime/mexico-city";
 
 type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
@@ -25,13 +26,16 @@ type BlockSpacesModalProps = {
   selectedSlots: string[];
   areAllSelectedForDay: boolean;
   reason: BlockReason;
+  slotViewMode: "hour" | "block";
   onClose: () => void;
   onRetry: () => void;
   onSelectDate: (date: string) => void;
   onToggleSlot: (slot: string) => void;
+  onToggleBlockSlots: (slots: string[]) => void;
   onSelectAllSlots: () => void;
   onClearSelectedSlots: () => void;
   onReasonChange: (reason: BlockReason) => void;
+  onSlotViewModeChange: (mode: "hour" | "block") => void;
   onSubmit: () => void;
 };
 
@@ -60,13 +64,16 @@ export function BlockSpacesModal({
   selectedSlots,
   areAllSelectedForDay,
   reason,
+  slotViewMode,
   onClose,
   onRetry,
   onSelectDate,
   onToggleSlot,
+  onToggleBlockSlots,
   onSelectAllSlots,
   onClearSelectedSlots,
   onReasonChange,
+  onSlotViewModeChange,
   onSubmit,
 }: BlockSpacesModalProps) {
   const { t, i18n } = useTranslation("admin");
@@ -88,6 +95,19 @@ export function BlockSpacesModal({
         day: "2-digit",
       }),
     [locale],
+  );
+
+  const availableBlocks = useMemo(
+    () =>
+      DIRECTIONAL_SLOT_PAIRS.map(([start, end]) => ({
+        id: `${start}-${end}`,
+        slots: [start, end] as string[],
+        startSlot: start,
+        endSlot: end,
+      })).filter((block) =>
+        block.slots.every((slot) => selectedDaySlots.includes(slot)),
+      ),
+    [selectedDaySlots],
   );
 
   return (
@@ -173,6 +193,34 @@ export function BlockSpacesModal({
         </section>
 
         <section className="space-y-3">
+          <div className="inline-flex w-full rounded-full bg-[var(--admin-inactive-bg)] p-1">
+            <button
+              type="button"
+              onClick={() => onSlotViewModeChange("hour")}
+              disabled={isSubmitting}
+              aria-pressed={slotViewMode === "hour"}
+              className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                slotViewMode === "hour"
+                  ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
+                  : "text-[var(--admin-text-secondary)]"
+              }`}
+            >
+              {t("monthsDetail.blockModal.viewModes.hour")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onSlotViewModeChange("block")}
+              disabled={isSubmitting}
+              aria-pressed={slotViewMode === "block"}
+              className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                slotViewMode === "block"
+                  ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
+                  : "text-[var(--admin-text-secondary)]"
+              }`}
+            >
+              {t("monthsDetail.blockModal.viewModes.block")}
+            </button>
+          </div>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
               {t("monthsDetail.blockModal.slotSection")}
@@ -196,47 +244,102 @@ export function BlockSpacesModal({
             </button>
           </div>
           {selectedDate && selectedDaySlots.length > 0 ? (
-            <div className="space-y-3">
-              {selectedDaySlots.map((slot) => {
-                const isSelected = selectedSlots.includes(slot);
+            slotViewMode === "hour" ? (
+              <div className="space-y-3">
+                {selectedDaySlots.map((slot) => {
+                  const isSelected = selectedSlots.includes(slot);
 
-                return (
-                  <button
-                    type="button"
-                    key={slot}
-                    onClick={() => onToggleSlot(slot)}
-                    disabled={isSubmitting}
-                    className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
-                      isSelected
-                        ? "border-transparent bg-[var(--admin-primary)] text-white"
-                        : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+                  return (
+                    <button
+                      type="button"
+                      key={slot}
+                      onClick={() => onToggleSlot(slot)}
+                      disabled={isSubmitting}
+                      className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
                         isSelected
-                          ? "bg-white/20"
-                          : "bg-[var(--admin-inactive-bg)]"
+                          ? "border-transparent bg-[var(--admin-primary)] text-white"
+                          : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
                       }`}
                     >
-                      <AdminIcon
-                        icon={adminIcons.blockSchedule}
-                        tone={isSelected ? "primary" : "secondary"}
-                        className={isSelected ? "text-white" : null}
-                      />
-                    </span>
-                    <span
-                      className={`text-lg font-bold tracking-[-0.02em] ${isSelected ? "text-white" : "text-[var(--admin-text-primary)]"}`}
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+                          isSelected
+                            ? "bg-white/20"
+                            : "bg-[var(--admin-inactive-bg)]"
+                        }`}
+                      >
+                        <AdminIcon
+                          icon={adminIcons.blockSchedule}
+                          tone={isSelected ? "primary" : "secondary"}
+                          className={isSelected ? "text-white" : null}
+                        />
+                      </span>
+                      <span
+                        className={`text-lg font-bold tracking-[-0.02em] ${isSelected ? "text-white" : "text-[var(--admin-text-primary)]"}`}
+                      >
+                        {formatTimeSlotLabel(
+                          slot,
+                          i18n.resolvedLanguage === "en" ? "en" : "es",
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : availableBlocks.length > 0 ? (
+              <div className="space-y-3">
+                {availableBlocks.map((block) => {
+                  const isSelected = block.slots.every((slot) =>
+                    selectedSlots.includes(slot),
+                  );
+
+                  return (
+                    <button
+                      type="button"
+                      key={block.id}
+                      onClick={() => onToggleBlockSlots(block.slots)}
+                      disabled={isSubmitting}
+                      className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                        isSelected
+                          ? "border-transparent bg-[var(--admin-primary)] text-white"
+                          : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
+                      }`}
                     >
-                      {formatTimeSlotLabel(
-                        slot,
-                        i18n.resolvedLanguage === "en" ? "en" : "es",
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+                          isSelected
+                            ? "bg-white/20"
+                            : "bg-[var(--admin-inactive-bg)]"
+                        }`}
+                      >
+                        <AdminIcon
+                          icon={adminIcons.blockSchedule}
+                          tone={isSelected ? "primary" : "secondary"}
+                          className={isSelected ? "text-white" : null}
+                        />
+                      </span>
+                      <span
+                        className={`text-lg font-bold tracking-[-0.02em] ${isSelected ? "text-white" : "text-[var(--admin-text-primary)]"}`}
+                      >
+                        {formatTimeSlotLabel(
+                          block.startSlot,
+                          i18n.resolvedLanguage === "en" ? "en" : "es",
+                        )}{" "}
+                        -{" "}
+                        {formatTimeSlotLabel(
+                          block.endSlot,
+                          i18n.resolvedLanguage === "en" ? "en" : "es",
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
+                {t("monthsDetail.blockModal.emptyBlocks")}
+              </p>
+            )
           ) : (
             <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
               {t("monthsDetail.blockModal.emptySlots")}
@@ -249,7 +352,7 @@ export function BlockSpacesModal({
             {t("monthsDetail.blockModal.reasonSection")}
           </h3>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto scroll-smooth no-scrollbar">
             {BLOCK_REASON_VALUES.map((option) => {
               const isActive = reason === option;
               return (
@@ -264,12 +367,10 @@ export function BlockSpacesModal({
                       : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-primary)]"
                   }`}
                 >
-                  {isActive ? (
-                    <AdminIcon
-                      icon={resolveReasonIcon(option)}
-                      tone="secondary"
-                    />
-                  ) : null}
+                  <AdminIcon
+                    icon={resolveReasonIcon(option)}
+                    tone="secondary"
+                  />
                   {t(`monthsDetail.blockModal.reasons.${option}`)}
                 </button>
               );

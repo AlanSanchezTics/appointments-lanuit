@@ -171,8 +171,13 @@
       "loading": "Loading blockable spaces...",
       "emptyDays": "There are no days with spaces available to block.",
       "emptySlots": "There are no spaces available for this day.",
+      "emptyBlocks": "There are no full blocks available for this day.",
       "confirm": "Confirm block",
       "helper": "This action will block the selected spaces.",
+      "viewModes": {
+        "hour": "By hour",
+        "block": "By block"
+      },
       "actions": {
         "selectAll": "Select all",
         "clearSelection": "Clear selection"

@@ -655,13 +655,16 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         selectedSlots={blockSpacesModal.selectedSlots}
         areAllSelectedForDay={blockSpacesModal.areAllSelectedForDay}
         reason={blockSpacesModal.reason}
+        slotViewMode={blockSpacesModal.slotViewMode}
         onClose={blockSpacesModal.close}
         onRetry={() => void blockSpacesModal.open()}
         onSelectDate={blockSpacesModal.selectDate}
         onToggleSlot={blockSpacesModal.toggleSlot}
+        onToggleBlockSlots={blockSpacesModal.toggleBlockSlots}
         onSelectAllSlots={blockSpacesModal.selectAllSlotsForDay}
         onClearSelectedSlots={blockSpacesModal.clearSelectedSlots}
         onReasonChange={blockSpacesModal.setReason}
+        onSlotViewModeChange={blockSpacesModal.setSlotViewMode}
         onSubmit={() => void handleConfirmBlockedSlots()}
       />
     </main>

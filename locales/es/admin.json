@@ -171,8 +171,13 @@
       "loading": "Cargando espacios disponibles...",
       "emptyDays": "No hay días con espacios disponibles para bloquear.",
       "emptySlots": "No hay espacios disponibles en este día.",
+      "emptyBlocks": "No hay bloques completos disponibles en este día.",
       "confirm": "Confirmar bloqueo",
       "helper": "Esta acción bloqueará los espacios seleccionados.",
+      "viewModes": {
+        "hour": "Por hora",
+        "block": "Por bloque"
+      },
       "actions": {
         "selectAll": "Seleccionar todo",
         "clearSelection": "Limpiar selección"

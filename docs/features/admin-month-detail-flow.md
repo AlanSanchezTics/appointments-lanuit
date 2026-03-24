@@ -30,8 +30,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 7. Debajo del calendario, admin puede abrir `Bloquear espacios`.
 8. `Bloquear espacios` abre `BottomSheetModal` con:
    - selector horizontal de días bloqueables,
-   - selección múltiple de slots bloqueables,
-   - acción masiva `Bloquear todo el día` (selecciona todos los slots bloqueables del día activo),
+   - selector de visualización de espacios (`Por hora` / `Por bloque`),
+   - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta selecciona el par direccional completo),
+   - acción masiva `Seleccionar todo` (selecciona todos los slots bloqueables del día activo),
    - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
 9. Al confirmar:

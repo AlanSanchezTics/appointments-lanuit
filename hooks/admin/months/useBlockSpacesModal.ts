@@ -9,6 +9,7 @@ import {
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
 
 type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
+type SlotViewMode = "hour" | "block";
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 
@@ -21,6 +22,7 @@ export function useBlockSpacesModal(month: string) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [reason, setReason] = useState<BlockReason>("DESCANSO");
+  const [slotViewMode, setSlotViewMode] = useState<SlotViewMode>("hour");
   const abortRef = useRef<AbortController | null>(null);
 
   const selectedDaySlots = useMemo(() => {
@@ -51,6 +53,7 @@ export function useBlockSpacesModal(month: string) {
     setErrorCode(null);
     setSelectedSlots([]);
     setReason("DESCANSO");
+    setSlotViewMode("hour");
 
     try {
       const response = await fetchAdminBlockableSlots(month, null, controller.signal);
@@ -90,6 +93,7 @@ export function useBlockSpacesModal(month: string) {
     setSelectedDate(null);
     setSelectedSlots([]);
     setReason("DESCANSO");
+    setSlotViewMode("hour");
   }, [isSubmitting]);
 
   const selectDate = useCallback((date: string) => {
@@ -104,6 +108,19 @@ export function useBlockSpacesModal(month: string) {
       }
 
       return [...current, slot].sort();
+    });
+  }, []);
+
+  const toggleBlockSlots = useCallback((slots: string[]) => {
+    setSelectedSlots((current) => {
+      const hasAllSlots = slots.every((slot) => current.includes(slot));
+
+      if (hasAllSlots) {
+        return current.filter((slot) => !slots.includes(slot));
+      }
+
+      const merged = new Set([...current, ...slots]);
+      return Array.from(merged).sort();
     });
   }, []);
 
@@ -163,13 +180,16 @@ export function useBlockSpacesModal(month: string) {
     selectedSlots,
     areAllSelectedForDay,
     reason,
+    slotViewMode,
     open,
     close,
     selectDate,
     toggleSlot,
+    toggleBlockSlots,
     selectAllSlotsForDay,
     clearSelectedSlots,
     setReason,
+    setSlotViewMode,
     submit,
   };
 }
