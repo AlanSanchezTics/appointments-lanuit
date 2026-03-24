@@ -69,15 +69,18 @@ describe("admin month detail service", () => {
       day: 1,
       isWeekend: true,
       availableSpaces: 0,
+      appointmentsCount: 0,
       tone: "weekend",
     });
 
     const availableDay = result.calendarDays.find((day) => day.date === "2026-03-03");
     expect(availableDay?.availableSpaces).toBe(3);
+    expect(availableDay?.appointmentsCount).toBe(0);
     expect(availableDay?.tone).toBe("available");
 
     const fullDay = result.calendarDays.find((day) => day.date === "2026-03-20");
     expect(fullDay?.availableSpaces).toBe(0);
+    expect(fullDay?.appointmentsCount).toBe(3);
     expect(fullDay?.tone).toBe("full");
 
     expect(result.projectedSaturationPercent).toBe(
@@ -123,6 +126,7 @@ describe("admin month detail service", () => {
     expect(result.metrics.blockedSpaces).toBe(2);
     const day = result.calendarDays.find((entry) => entry.date === "2026-03-03");
     expect(day?.availableSpaces).toBe(1);
+    expect(day?.appointmentsCount).toBe(0);
     expect(day?.tone).toBe("low");
   });
 });

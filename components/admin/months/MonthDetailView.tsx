@@ -53,7 +53,14 @@ function resolveLocale(language: AppLanguage) {
   return language === "en" ? "en-US" : "es-MX";
 }
 
-function getToneClasses(tone: MonthDetailCalendarDay["tone"]) {
+function getToneClasses(
+  tone: MonthDetailCalendarDay["tone"],
+  isCurrentDay: boolean,
+) {
+  if (isCurrentDay) {
+    return "bg-[color-mix(in_srgb,var(--admin-primary)_20%,white)] text-[var(--admin-accent)]";
+  }
+
   switch (tone) {
     case "available":
       return "bg-[var(--admin-availability-high)] text-[var(--admin-success-text)]";
@@ -549,18 +556,47 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
               );
             }
 
+            const isActionableDay = !cell.day.isWeekend;
+            const dayToneClasses = getToneClasses(
+              cell.day.tone,
+              cell.day.date === data.currentDate,
+            );
+
             return (
               <button
                 type="button"
                 key={cell.key}
-                className={`flex h-11 items-center justify-center rounded-lg border border-transparent text-sm font-semibold ${getToneClasses(cell.day.tone)}`}
+                disabled={!isActionableDay}
+                className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-transparent text-sm font-semibold ${dayToneClasses} disabled:cursor-not-allowed disabled:opacity-75`}
                 title={cell.day.date}
-                onClick={() => void dayAgendaModal.open(cell.day.date)}
+                onClick={() => {
+                  if (!isActionableDay) {
+                    return;
+                  }
+
+                  void dayAgendaModal.open(cell.day.date);
+                }}
                 aria-label={t("monthsDetail.dayModal.title", {
                   date: dayLabelFormatter.format(parseDateOnly(cell.day.date)),
                 })}
               >
-                {cell.day.day}
+                <span>{cell.day.day}</span>
+                {cell.day.appointmentsCount && cell.day.appointmentsCount > 0 ? (
+                  <span
+                    className="mt-0.5 flex items-center justify-center gap-0.5"
+                    aria-hidden
+                  >
+                    {Array.from({
+                      length: Math.min(cell.day.appointmentsCount, 6),
+                    }).map((_, index) => (
+                      <span
+                        key={`${cell.day.date}-dot-${index}`}
+                        data-testid={`${cell.day.date}-appointment-dot`}
+                        className="h-1.5 w-1.5 rounded-full bg-current"
+                      />
+                    ))}
+                  </span>
+                ) : null}
               </button>
             );
           })}

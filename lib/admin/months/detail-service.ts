@@ -94,6 +94,7 @@ export async function getAdminMonthDetail(
       day: Number(date.slice(8, 10)),
       isWeekend,
       availableSpaces,
+      appointmentsCount: occupiedSlots.length,
       tone: resolveTone(isWeekend, availableSpaces),
     } satisfies MonthDetailCalendarDay;
   });

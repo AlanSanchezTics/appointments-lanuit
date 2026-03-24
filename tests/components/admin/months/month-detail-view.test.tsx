@@ -33,6 +33,7 @@ describe("MonthDetailView", () => {
               day: 1,
               isWeekend: true,
               availableSpaces: 0,
+              appointmentsCount: 0,
               tone: "weekend",
             },
             {
@@ -40,6 +41,7 @@ describe("MonthDetailView", () => {
               day: 2,
               isWeekend: false,
               availableSpaces: 6,
+              appointmentsCount: 2,
               tone: "available",
             },
           ],
@@ -55,6 +57,7 @@ describe("MonthDetailView", () => {
     expect(screen.getByText("Saturación proyectada")).toBeInTheDocument();
     expect(screen.getByText("85%")).toBeInTheDocument();
     expect(screen.getByText("Vista mensual")).toBeInTheDocument();
+    expect(screen.getAllByTestId("2026-03-02-appointment-dot")).toHaveLength(2);
   });
 
   it("opens the daily agenda modal when a day is selected", async () => {
@@ -151,6 +154,56 @@ describe("MonthDetailView", () => {
         }),
       );
     });
+  });
+
+  it("does not open the daily agenda modal when weekend day is clicked", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    expect(dayButtons[0]).toBeDisabled();
+    fireEvent.click(dayButtons[0]);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("does not cancel appointment when confirmation is rejected", async () => {

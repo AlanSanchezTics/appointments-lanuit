@@ -55,6 +55,7 @@ export type MonthDetailCalendarDay = {
   day: number;
   isWeekend: boolean;
   availableSpaces: number;
+  appointmentsCount?: number;
   tone: MonthDetailDayTone;
 };
 

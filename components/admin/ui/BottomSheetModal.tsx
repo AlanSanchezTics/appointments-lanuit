@@ -112,7 +112,7 @@ export function BottomSheetModal({
             <AdminIcon icon={adminIcons.close} />
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-6 pb-[3rem]">
+        <div className="max-h-[70vh] overflow-y-auto px-6 pb-[5rem]">
           {children}
         </div>
       </section>
