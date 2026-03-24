@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseBlockedSlotIdParam,
   parseBlockableSlotsParams,
   parseCreateBlockedSlotsPayload,
+  parseDeleteBlockedSlotPayload,
+  parseUpdateBlockedSlotPayload,
 } from "@/lib/admin/blocked-spaces/validation";
 
 describe("admin blocked spaces validation", () => {
@@ -59,5 +62,30 @@ describe("admin blocked spaces validation", () => {
         reason: "DESCANSO",
       }),
     ).toThrow("DUPLICATE_SLOTS");
+  });
+
+  it("parses blocked slot id and mutation payloads", () => {
+    expect(parseBlockedSlotIdParam("12")).toBe(12);
+    expect(() => parseBlockedSlotIdParam("abc")).toThrow(
+      "BLOCKED_SLOT_ID_INVALID",
+    );
+
+    expect(
+      parseUpdateBlockedSlotPayload({
+        month: "2026-03",
+        reason: "PERSONAL",
+      }),
+    ).toEqual({
+      month: "2026-03",
+      reason: "PERSONAL",
+    });
+
+    expect(
+      parseDeleteBlockedSlotPayload({
+        month: "2026-03",
+      }),
+    ).toEqual({
+      month: "2026-03",
+    });
   });
 });

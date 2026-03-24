@@ -158,7 +158,7 @@
       "close": "Close day detail",
       "sectionTitle": "Day agenda",
       "loading": "Loading agenda...",
-      "empty": "There are no active appointments for this day.",
+      "empty": "There are no active appointments or blocked spaces for this day.",
       "actions": {
         "edit": "Edit appointment",
         "delete": "Delete appointment",
@@ -179,6 +179,28 @@
         "cancelLoading": "Cancelling appointment...",
         "cancelSuccess": "Appointment cancelled",
         "cancelError": "Unable to cancel appointment."
+      },
+      "blocked": {
+        "sectionTitle": "Blocked spaces",
+        "subtitle": "Manual block",
+        "actions": {
+          "edit": "Edit blocked space",
+          "delete": "Delete blocked space"
+        },
+        "edit": {
+          "reason": "Reason"
+        },
+        "confirmDelete": {
+          "question": "Confirm deleting the block for {{time}} ({{reason}})?"
+        },
+        "notifications": {
+          "updateLoading": "Updating blocked space...",
+          "updateSuccess": "Blocked space updated",
+          "updateError": "Unable to update blocked space.",
+          "deleteLoading": "Deleting blocked space...",
+          "deleteSuccess": "Blocked space deleted",
+          "deleteError": "Unable to delete blocked space."
+        }
       }
     },
     "blockModal": {

@@ -52,13 +52,17 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - día completo bloqueado => sin disponibilidad.
 12. Admin toca un día del calendario y se abre modal de detalle diario.
 13. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
-14. Modal muestra agenda cronológica del día con acciones por cita:
+14. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes.
      - Al guardar edición, el subformulario se cierra de inmediato.
      - Mientras procesa la mutación, las acciones de la fila se reemplazan por spinner.
      - Al finalizar, la agenda diaria se refresca con los cambios persistidos.
    - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`).
+   - En `Espacios bloqueados`:
+     - `Editar`: permite cambiar motivo (`DESCANSO`, `PERSONAL`, `OTRO`) y guardar.
+     - `Eliminar`: solicita confirmación y elimina el bloqueo manual.
+     - Ambas acciones refrescan agenda diaria y métricas/calendario del mes al finalizar.
 
 ## Reglas de cálculo
 

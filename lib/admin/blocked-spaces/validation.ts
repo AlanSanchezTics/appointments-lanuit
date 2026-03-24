@@ -70,3 +70,43 @@ export function parseCreateBlockedSlotsPayload(payload: unknown) {
     reason: parsed.reason,
   };
 }
+
+const UPDATE_BLOCKED_SLOT_SCHEMA = z.object({
+  month: z.string(),
+  reason: z.enum(BLOCK_REASON_VALUES),
+});
+
+export function parseBlockedSlotIdParam(rawValue: string) {
+  if (!/^\d+$/.test(rawValue)) {
+    throw new Error("BLOCKED_SLOT_ID_INVALID");
+  }
+
+  const blockedSlotId = Number(rawValue);
+
+  if (!Number.isSafeInteger(blockedSlotId) || blockedSlotId <= 0) {
+    throw new Error("BLOCKED_SLOT_ID_INVALID");
+  }
+
+  return blockedSlotId;
+}
+
+export function parseUpdateBlockedSlotPayload(payload: unknown) {
+  const parsed = UPDATE_BLOCKED_SLOT_SCHEMA.parse(payload);
+
+  return {
+    month: parseAdminMonthKey(parsed.month),
+    reason: parsed.reason,
+  };
+}
+
+const DELETE_BLOCKED_SLOT_SCHEMA = z.object({
+  month: z.string(),
+});
+
+export function parseDeleteBlockedSlotPayload(payload: unknown) {
+  const parsed = DELETE_BLOCKED_SLOT_SCHEMA.parse(payload);
+
+  return {
+    month: parseAdminMonthKey(parsed.month),
+  };
+}

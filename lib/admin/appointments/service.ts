@@ -1,4 +1,4 @@
-import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { createCalendarEvent, deleteCalendarEvent, GoogleCalendarConfigError } from "@/lib/calendar/google";
 import type {
@@ -21,6 +21,10 @@ import {
   findActiveReservationLockForSlotForUpdate,
   lockConflictingAppointments,
 } from "@/lib/db/appointments";
+import {
+  listBlockedSlotsByDate,
+  listBlockedSlotsByDateForUpdate,
+} from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
 import { validateBookingRules } from "@/lib/validation/appointment";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
@@ -52,7 +56,10 @@ export async function getAdminDayAgenda(input: {
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  const appointments = await listActiveAppointmentsByDate(input.date);
+  const [appointments, blockedSlots] = await Promise.all([
+    listActiveAppointmentsByDate(input.date),
+    listBlockedSlotsByDate(input.date),
+  ]);
 
   return {
     month: input.month,
@@ -65,6 +72,12 @@ export async function getAdminDayAgenda(input: {
       status: appointment.status,
       name: appointment.name,
       phone: appointment.phone,
+    })),
+    blockedSlots: blockedSlots.map((blockedSlot) => ({
+      blockedSlotId: blockedSlot.id,
+      date: blockedSlot.date,
+      timeSlot: blockedSlot.timeSlot,
+      reason: blockedSlot.reason,
     })),
   };
 }
@@ -175,12 +188,19 @@ export async function rescheduleAdminAppointment(
       throw new Error("SLOT_LOCKED");
     }
 
-    const occupiedSlots = await listActiveAppointmentsByDateExcludingForUpdate(tx, {
-      date: input.date,
-      excludeAppointmentId: current.id,
-    });
+    const [occupiedSlots, blockedSlots] = await Promise.all([
+      listActiveAppointmentsByDateExcludingForUpdate(tx, {
+        date: input.date,
+        excludeAppointmentId: current.id,
+      }),
+      listBlockedSlotsByDateForUpdate(tx, input.date),
+    ]);
 
-    const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
+    const availableSlots = getAvailableStartSlotsWithManualBlocks(
+      baseSlots,
+      occupiedSlots,
+      blockedSlots.map((blockedSlot) => blockedSlot.timeSlot),
+    );
 
     if (!availableSlots.includes(input.timeSlot)) {
       throw new Error("SLOT_NOT_AVAILABLE");

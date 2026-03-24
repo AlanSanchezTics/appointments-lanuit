@@ -210,6 +210,7 @@ Business behavior is defined by:
   - Day-level agenda is requested with `month + date`.
   - `date` must belong to the selected `month`.
   - Agenda lists only active appointments (`CONFIRMED`, `SYNC_FAILED`) ordered by `timeSlot`.
+  - Agenda includes manually blocked slots for the same day ordered by `timeSlot`.
   - Agenda item includes customer identity fields `name` and `phone` for operational context in admin UI.
 
 - Admin edit policy:
@@ -250,6 +251,10 @@ Business behavior is defined by:
     - In `SECOND_ONLY_MODE`, blocked-spaces modal only allows `Por hora`.
     - Selecting a block toggles both slots of the directional pair in the current day.
     - Persistence remains slot-based in `blocked_slots` (no additional block-level entity).
+  - Day-agenda management behavior:
+    - Admin can edit reason of a manual blocked slot from day-agenda modal.
+    - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
+    - Edit/delete is allowed only for future blocked slots.
 
 ## Availability Rules
 

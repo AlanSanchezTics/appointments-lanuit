@@ -52,6 +52,14 @@ describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
           phone: "5512345678",
         },
       ],
+      blockedSlots: [
+        {
+          blockedSlotId: 90,
+          date: "2026-03-13",
+          timeSlot: "13:00",
+          reason: "DESCANSO",
+        },
+      ],
     });
 
     const { GET } = await import("@/app/api/admin/months/[month]/days/[date]/agenda/route");
@@ -78,6 +86,14 @@ describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
           status: "CONFIRMED",
           name: "Ana Garcia",
           phone: "5512345678",
+        },
+      ],
+      blockedSlots: [
+        {
+          blockedSlotId: 90,
+          date: "2026-03-13",
+          timeSlot: "13:00",
+          reason: "DESCANSO",
         },
       ],
     });

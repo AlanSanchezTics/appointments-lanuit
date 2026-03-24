@@ -1,4 +1,5 @@
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import type { BlockReason } from "@/lib/admin/blocked-spaces/types";
 
 export type AdminDayAgendaItem = {
   appointmentId: number;
@@ -14,6 +15,12 @@ export type AdminDayAgendaResponse = {
   date: string;
   total: number;
   appointments: AdminDayAgendaItem[];
+  blockedSlots: Array<{
+    blockedSlotId: number;
+    date: string;
+    timeSlot: string;
+    reason: BlockReason;
+  }>;
 };
 
 export type AdminRescheduleAppointmentPayload = {

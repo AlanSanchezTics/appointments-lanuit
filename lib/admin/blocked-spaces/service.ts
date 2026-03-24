@@ -3,7 +3,11 @@ import { Prisma } from "@prisma/client";
 import type {
   CreateAdminBlockedSlotsPayload,
   CreateAdminBlockedSlotsResponse,
+  DeleteAdminBlockedSlotPayload,
+  DeleteAdminBlockedSlotResponse,
   GetAdminBlockableSlotsResponse,
+  UpdateAdminBlockedSlotPayload,
+  UpdateAdminBlockedSlotResponse,
 } from "@/lib/admin/blocked-spaces/types";
 import {
   getAvailableStartSlotsWithManualBlocks,
@@ -22,8 +26,11 @@ import {
 } from "@/lib/db/appointments";
 import {
   createBlockedSlots,
+  deleteBlockedSlotById,
+  findBlockedSlotByIdForUpdate,
   listBlockedSlotsByDateForUpdate,
   listMonthBlockedSlots,
+  updateBlockedSlotReasonById,
 } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
 
@@ -93,6 +100,18 @@ function normalizeCreateBlockedSlotError(error: unknown) {
   }
 
   throw error;
+}
+
+function assertBlockedSlotBelongsToMonth(date: string, month: string) {
+  if (!date.startsWith(`${month}-`)) {
+    throw new Error("BLOCKED_SLOT_NOT_FOUND");
+  }
+}
+
+function assertBlockedSlotIsEditable(date: string, timeSlot: string, now: Date) {
+  if (!isFutureDateTime(date, timeSlot, now)) {
+    throw new Error("BLOCKED_SLOT_NOT_EDITABLE");
+  }
 }
 
 export async function getAdminBlockableSlots(
@@ -234,5 +253,71 @@ export async function createAdminBlockedSlots(
       timeSlot,
       reason: input.reason,
     })),
+  };
+}
+
+export async function updateAdminBlockedSlot(
+  input: UpdateAdminBlockedSlotPayload,
+  now = new Date(),
+): Promise<UpdateAdminBlockedSlotResponse> {
+  const registration = await findRegisteredMonth(input.month);
+
+  if (!registration) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const blockedSlot = await findBlockedSlotByIdForUpdate(tx, input.blockedSlotId);
+
+    if (!blockedSlot) {
+      throw new Error("BLOCKED_SLOT_NOT_FOUND");
+    }
+
+    assertBlockedSlotBelongsToMonth(blockedSlot.date, input.month);
+    assertBlockedSlotIsEditable(blockedSlot.date, blockedSlot.timeSlot, now);
+
+    await updateBlockedSlotReasonById(tx, {
+      blockedSlotId: input.blockedSlotId,
+      reason: input.reason,
+    });
+
+    return blockedSlot;
+  });
+
+  return {
+    month: input.month,
+    blockedSlotId: input.blockedSlotId,
+    date: result.date,
+    timeSlot: result.timeSlot,
+    reason: input.reason,
+  };
+}
+
+export async function deleteAdminBlockedSlot(
+  input: DeleteAdminBlockedSlotPayload,
+  now = new Date(),
+): Promise<DeleteAdminBlockedSlotResponse> {
+  const registration = await findRegisteredMonth(input.month);
+
+  if (!registration) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const blockedSlot = await findBlockedSlotByIdForUpdate(tx, input.blockedSlotId);
+
+    if (!blockedSlot) {
+      throw new Error("BLOCKED_SLOT_NOT_FOUND");
+    }
+
+    assertBlockedSlotBelongsToMonth(blockedSlot.date, input.month);
+    assertBlockedSlotIsEditable(blockedSlot.date, blockedSlot.timeSlot, now);
+    await deleteBlockedSlotById(tx, input.blockedSlotId);
+  });
+
+  return {
+    month: input.month,
+    blockedSlotId: input.blockedSlotId,
+    status: "DELETED",
   };
 }

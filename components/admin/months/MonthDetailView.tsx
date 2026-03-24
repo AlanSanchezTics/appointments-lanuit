@@ -12,6 +12,10 @@ import {
   fetchAdminDayAgenda,
   rescheduleAdminAppointmentById,
 } from "@/lib/admin/appointments/api-client";
+import {
+  deleteAdminBlockedSlotById,
+  updateAdminBlockedSlotById,
+} from "@/lib/admin/blocked-spaces/api-client";
 import { updateAdminMonthSlotMode } from "@/lib/admin/months/api-client";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
@@ -30,13 +34,14 @@ import {
   isFutureDateTime,
   parseDateOnly,
 } from "@/lib/datetime/mexico-city";
-import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type {
   MonthSlotMode,
   MonthDetailCalendarDay,
   MonthDetailResponse,
 } from "@/lib/admin/months/types";
+import type { BlockReason } from "@/lib/admin/blocked-spaces/types";
 
 type MonthDetailViewProps = {
   month: string;
@@ -121,6 +126,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const [processingAppointmentId, setProcessingAppointmentId] = useState<
     number | null
   >(null);
+  const [editingBlockedSlotId, setEditingBlockedSlotId] = useState<
+    number | null
+  >(null);
+  const [editingBlockedReason, setEditingBlockedReason] =
+    useState<BlockReason>("DESCANSO");
+  const [processingBlockedSlotId, setProcessingBlockedSlotId] = useState<
+    number | null
+  >(null);
   const [isUpdatingSlotMode, setIsUpdatingSlotMode] = useState(false);
   const [isSlotModeModalOpen, setIsSlotModeModalOpen] = useState(false);
   const [slotModeDraft, setSlotModeDraft] = useState<MonthSlotMode>(
@@ -201,6 +214,24 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     setAvailableEditSlots([]);
   }
 
+  function closeDayAgendaModal() {
+    stopEditing();
+    setEditingBlockedSlotId(null);
+    setEditingBlockedReason("DESCANSO");
+    setProcessingBlockedSlotId(null);
+    dayAgendaModal.close();
+  }
+
+  function startEditingBlockedSlot(blockedSlotId: number, reason: BlockReason) {
+    setEditingBlockedSlotId(blockedSlotId);
+    setEditingBlockedReason(reason);
+  }
+
+  function stopEditingBlockedSlot() {
+    setEditingBlockedSlotId(null);
+    setEditingBlockedReason("DESCANSO");
+  }
+
   useEffect(() => {
     if (!dayAgendaModal.editingAppointmentId || !editDate) {
       setAvailableEditSlots([]);
@@ -228,9 +259,13 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           .map((appointment) => appointment.timeSlot.slice(0, 5));
 
         const monthBaseSlots = resolveBaseSlotsByMonthMode(data.slotMode);
-        const slots = getAvailableStartSlots(
+        const blockedSlots = agendaForEditDate.blockedSlots.map(
+          (blockedSlot) => blockedSlot.timeSlot.slice(0, 5),
+        );
+        const slots = getAvailableStartSlotsWithManualBlocks(
           monthBaseSlots,
           occupiedSlots,
+          blockedSlots,
         ).filter((slot) => isFutureDateTime(editDate, slot));
 
         setAvailableEditSlots(slots);
@@ -345,6 +380,82 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     } finally {
       setProcessingAppointmentId(null);
       await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    }
+  }
+
+  async function handleUpdateBlockedSlotReason(blockedSlotId: number) {
+    if (processingBlockedSlotId !== null) {
+      return;
+    }
+
+    setProcessingBlockedSlotId(blockedSlotId);
+
+    try {
+      await sileo.promise(
+        updateAdminBlockedSlotById({
+          month: data.month,
+          blockedSlotId,
+          reason: editingBlockedReason,
+        }),
+        {
+          loading: {
+            title: t("monthsDetail.dayModal.blocked.notifications.updateLoading"),
+          },
+          success: {
+            title: t("monthsDetail.dayModal.blocked.notifications.updateSuccess"),
+          },
+          error: {
+            title: t("monthsDetail.dayModal.blocked.notifications.updateError"),
+          },
+        },
+      );
+      stopEditingBlockedSlot();
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    } finally {
+      setProcessingBlockedSlotId(null);
+    }
+  }
+
+  async function handleDeleteBlockedSlot(input: {
+    blockedSlotId: number;
+    reason: BlockReason;
+    timeSlot: string;
+  }) {
+    const confirmed = window.confirm(
+      t("monthsDetail.dayModal.blocked.confirmDelete.question", {
+        time: formatTimeSlotLabel(input.timeSlot, language),
+        reason: t(`monthsDetail.blockModal.reasons.${input.reason}`),
+      }),
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setProcessingBlockedSlotId(input.blockedSlotId);
+
+    try {
+      await sileo.promise(
+        deleteAdminBlockedSlotById({
+          month: data.month,
+          blockedSlotId: input.blockedSlotId,
+        }),
+        {
+          loading: {
+            title: t("monthsDetail.dayModal.blocked.notifications.deleteLoading"),
+          },
+          success: {
+            title: t("monthsDetail.dayModal.blocked.notifications.deleteSuccess"),
+          },
+          error: {
+            title: t("monthsDetail.dayModal.blocked.notifications.deleteError"),
+          },
+        },
+      );
+      stopEditingBlockedSlot();
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    } finally {
+      setProcessingBlockedSlotId(null);
     }
   }
 
@@ -694,7 +805,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
 
       <BottomSheetModal
         isOpen={dayAgendaModal.isOpen}
-        onClose={dayAgendaModal.close}
+        onClose={closeDayAgendaModal}
         title={t("monthsDetail.dayModal.title", { date: selectedDateLabel })}
         closeLabel={t("monthsDetail.dayModal.close")}
       >
@@ -732,7 +843,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           {!dayAgendaModal.isLoadingAgenda &&
           !dayAgendaModal.agendaErrorCode &&
           dayAgendaModal.agenda &&
-          dayAgendaModal.agenda.appointments.length === 0 ? (
+          dayAgendaModal.agenda.appointments.length === 0 &&
+          dayAgendaModal.agenda.blockedSlots.length === 0 ? (
             <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
               {t("monthsDetail.dayModal.empty")}
             </p>
@@ -838,6 +950,121 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                   ) : null}
                 </article>
               ))}
+
+              {dayAgendaModal.agenda.blockedSlots.length > 0 ? (
+                <>
+                  <h3 className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+                    {t("monthsDetail.dayModal.blocked.sectionTitle")}
+                  </h3>
+                  {dayAgendaModal.agenda.blockedSlots.map((blockedSlot) => (
+                    <article
+                      key={blockedSlot.blockedSlotId}
+                      className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex min-h-[72px] items-center gap-3">
+                        <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
+                          {formatTimeSlotLabel(blockedSlot.timeSlot, language)}
+                        </span>
+                        <div className="flex-1">
+                          <p className="font-semibold text-[var(--admin-text-primary)]">
+                            {t(`monthsDetail.blockModal.reasons.${blockedSlot.reason}`)}
+                          </p>
+                          <p className="text-sm text-[var(--admin-text-secondary)]">
+                            {t("monthsDetail.dayModal.blocked.subtitle")}
+                          </p>
+                        </div>
+                        {processingBlockedSlotId === blockedSlot.blockedSlotId ? (
+                          <div
+                            className="inline-flex h-11 w-11 items-center justify-center"
+                            role="status"
+                            aria-label={t("monthsDetail.dayModal.loading")}
+                          >
+                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <button
+                              type="button"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
+                              aria-label={t("monthsDetail.dayModal.blocked.actions.edit")}
+                              onClick={() =>
+                                startEditingBlockedSlot(
+                                  blockedSlot.blockedSlotId,
+                                  blockedSlot.reason,
+                                )
+                              }
+                            >
+                              <AdminIcon icon={adminIcons.edit} tone="secondary" />
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
+                              aria-label={t("monthsDetail.dayModal.blocked.actions.delete")}
+                              onClick={() =>
+                                void handleDeleteBlockedSlot({
+                                  blockedSlotId: blockedSlot.blockedSlotId,
+                                  reason: blockedSlot.reason,
+                                  timeSlot: blockedSlot.timeSlot,
+                                })
+                              }
+                            >
+                              <AdminIcon
+                                icon={adminIcons.delete}
+                                tone="secondary"
+                              />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {editingBlockedSlotId === blockedSlot.blockedSlotId ? (
+                        <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
+                          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                            {t("monthsDetail.dayModal.blocked.edit.reason")}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {(["DESCANSO", "PERSONAL", "OTRO"] as const).map(
+                              (reasonOption) => (
+                                <button
+                                  key={reasonOption}
+                                  type="button"
+                                  onClick={() => setEditingBlockedReason(reasonOption)}
+                                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                                    editingBlockedReason === reasonOption
+                                      ? "bg-[var(--admin-success-bg)] text-[var(--admin-success-text)]"
+                                      : "bg-[var(--admin-surface)] text-[var(--admin-text-secondary)]"
+                                  }`}
+                                >
+                                  {t(`monthsDetail.blockModal.reasons.${reasonOption}`)}
+                                </button>
+                              ),
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              onClick={() =>
+                                void handleUpdateBlockedSlotReason(
+                                  blockedSlot.blockedSlotId,
+                                )
+                              }
+                            >
+                              {t("monthsDetail.dayModal.actions.save")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={stopEditingBlockedSlot}
+                            >
+                              {t("monthsDetail.dayModal.actions.cancel")}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
+                </>
+              ) : null}
             </div>
           ) : null}
         </div>

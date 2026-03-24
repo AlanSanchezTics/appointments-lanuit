@@ -33,3 +33,28 @@ export type CreateAdminBlockedSlotsResponse = {
     reason: BlockReason;
   }>;
 };
+
+export type UpdateAdminBlockedSlotPayload = {
+  month: string;
+  blockedSlotId: number;
+  reason: BlockReason;
+};
+
+export type UpdateAdminBlockedSlotResponse = {
+  month: string;
+  blockedSlotId: number;
+  date: string;
+  timeSlot: (typeof BASE_TIME_SLOTS)[number];
+  reason: BlockReason;
+};
+
+export type DeleteAdminBlockedSlotPayload = {
+  month: string;
+  blockedSlotId: number;
+};
+
+export type DeleteAdminBlockedSlotResponse = {
+  month: string;
+  blockedSlotId: number;
+  status: "DELETED";
+};

@@ -74,6 +74,57 @@ export async function listBlockedSlotsByDateForUpdate(tx: Prisma.TransactionClie
   return rows.map(mapBlockedSlot);
 }
 
+export async function findBlockedSlotById(blockedSlotId: number) {
+  const row = await prisma.blockedSlot.findUnique({
+    where: {
+      id: blockedSlotId,
+    },
+  });
+
+  return row ? mapBlockedSlot(row) : null;
+}
+
+export async function findBlockedSlotByIdForUpdate(
+  tx: Prisma.TransactionClient,
+  blockedSlotId: number,
+) {
+  const row = await tx.blockedSlot.findUnique({
+    where: {
+      id: blockedSlotId,
+    },
+  });
+
+  return row ? mapBlockedSlot(row) : null;
+}
+
+export async function updateBlockedSlotReasonById(
+  tx: Prisma.TransactionClient,
+  input: {
+    blockedSlotId: number;
+    reason: BlockedSlotReason;
+  },
+) {
+  await tx.blockedSlot.update({
+    where: {
+      id: input.blockedSlotId,
+    },
+    data: {
+      reason: input.reason,
+    },
+  });
+}
+
+export async function deleteBlockedSlotById(
+  tx: Prisma.TransactionClient,
+  blockedSlotId: number,
+) {
+  await tx.blockedSlot.delete({
+    where: {
+      id: blockedSlotId,
+    },
+  });
+}
+
 export async function createBlockedSlots(
   tx: Prisma.TransactionClient,
   input: {

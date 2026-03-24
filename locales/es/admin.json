@@ -158,7 +158,7 @@
       "close": "Cerrar detalle del día",
       "sectionTitle": "Agenda del día",
       "loading": "Cargando agenda...",
-      "empty": "No hay citas activas para este día.",
+      "empty": "No hay citas activas ni espacios bloqueados para este día.",
       "actions": {
         "edit": "Editar cita",
         "delete": "Eliminar cita",
@@ -179,6 +179,28 @@
         "cancelLoading": "Cancelando cita...",
         "cancelSuccess": "Cita cancelada",
         "cancelError": "No se pudo cancelar la cita."
+      },
+      "blocked": {
+        "sectionTitle": "Espacios bloqueados",
+        "subtitle": "Bloqueo manual",
+        "actions": {
+          "edit": "Editar espacio bloqueado",
+          "delete": "Eliminar espacio bloqueado"
+        },
+        "edit": {
+          "reason": "Motivo"
+        },
+        "confirmDelete": {
+          "question": "¿Confirmas eliminar el bloqueo de {{time}} ({{reason}})?"
+        },
+        "notifications": {
+          "updateLoading": "Actualizando espacio bloqueado...",
+          "updateSuccess": "Espacio bloqueado actualizado",
+          "updateError": "No se pudo actualizar el espacio bloqueado.",
+          "deleteLoading": "Eliminando espacio bloqueado...",
+          "deleteSuccess": "Espacio bloqueado eliminado",
+          "deleteError": "No se pudo eliminar el espacio bloqueado."
+        }
       }
     },
     "blockModal": {

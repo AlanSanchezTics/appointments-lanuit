@@ -523,11 +523,17 @@ Flujo UI:
    - Fórmula de `Disponibles` (métrica mensual):
      - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
      - `espacios bloqueados` se calcula desde `blocked_slots` (bloqueo manual admin).
-   - En modal de agenda diaria, cada fila muestra:
+   - En modal de agenda diaria, cada fila de cita muestra:
      - hora,
      - nombre del cliente,
      - teléfono como subtítulo,
      - acciones (`Editar`, `Eliminar`), donde `Eliminar` requiere confirmación previa.
+   - El mismo modal diario incluye sección `Espacios bloqueados` con filas por bloqueo manual:
+     - hora,
+     - motivo (`DESCANSO|PERSONAL|OTRO`),
+     - acciones (`Editar motivo`, `Eliminar bloqueo`).
+   - Restricción operativa para bloqueos manuales en modal diario:
+     - solo se permite editar/eliminar slots bloqueados futuros (no pasados).
    - En edición de cita del modal diario:
      - al confirmar `Guardar`, el formulario de edición se cierra inmediatamente,
      - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
@@ -602,6 +608,8 @@ Contrato API:
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
   - `GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD` (`date` opcional)
   - `POST /api/admin/months/[month]/blocked-slots`
+  - `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]`
+  - `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]`
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`
   - `POST /api/admin/appointments/[appointmentId]/cancel`
 - Auth:
@@ -636,6 +644,15 @@ Contrato API:
     - si algún slot ya no está disponible -> `SLOT_NOT_AVAILABLE` (`409`),
     - colisión por duplicado persistido -> `BLOCKED_SLOT_ALREADY_EXISTS` (`409`),
     - no dispara integraciones externas (Google Calendar) en este flujo.
+  - `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
+    - payload `{ reason }`,
+    - `blockedSlotId` válido (>0),
+    - registro debe existir dentro del `month`,
+    - permite actualizar solo slots bloqueados futuros, de lo contrario `BLOCKED_SLOT_NOT_EDITABLE` (`409`).
+  - `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
+    - `blockedSlotId` válido (>0),
+    - registro debe existir dentro del `month`,
+    - permite eliminar solo slots bloqueados futuros, de lo contrario `BLOCKED_SLOT_NOT_EDITABLE` (`409`).
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`:
     - payload `{ month, date, timeSlot }`,
     - `appointmentId` válido (>0),
@@ -667,14 +684,19 @@ Contrato API:
 - Success `PATCH /api/admin/months/[month]/slot-mode` (`200`):
   - `{ month, slotMode }`
 - Success `GET /api/admin/months/[month]/days/[date]/agenda` (`200`):
-  - `{ month, date, total, appointments[] }`
+  - `{ month, date, total, appointments[], blockedSlots[] }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`
+  - `blockedSlots[]`: `{ blockedSlotId, date, timeSlot, reason }`
 - Success `GET /api/admin/months/[month]/blockable-slots` (`200`):
   - `{ month, currentDate, days[] }`
   - `days[]`: `{ date, slots[] }`
 - Success `POST /api/admin/months/[month]/blocked-slots` (`200`):
   - `{ month, date, reason, totalCreated, blockedSlots[] }`
   - `blockedSlots[]`: `{ date, timeSlot, reason }`
+- Success `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]` (`200`):
+  - `{ month, blockedSlotId, date, timeSlot, reason }`
+- Success `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]` (`200`):
+  - `{ month, blockedSlotId, status: "DELETED" }`
 - Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
   - `{ appointmentId, date, timeSlot, status, syncReason? }`
 - Success `POST /api/admin/appointments/[appointmentId]/cancel` (`200`):
