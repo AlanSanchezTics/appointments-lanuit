@@ -173,6 +173,10 @@
       "emptySlots": "No hay espacios disponibles en este día.",
       "confirm": "Confirmar bloqueo",
       "helper": "Esta acción bloqueará los espacios seleccionados.",
+      "actions": {
+        "selectAll": "Seleccionar todo",
+        "clearSelection": "Limpiar selección"
+      },
       "reasons": {
         "DESCANSO": "Descanso",
         "PERSONAL": "Personal",

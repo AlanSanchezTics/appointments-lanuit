@@ -266,6 +266,9 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
 - reusa `BottomSheetModal` como contenedor
 - selector horizontal de días bloqueables
 - lista de slots bloqueables con selección múltiple
+- acciones masivas de selección:
+  - `Bloquear todo el día`
+  - `Limpiar selección`
 - chips de motivo con selección única (`DESCANSO`, `PERSONAL`, `OTRO`)
 - CTA de confirmación con estado loading bloqueante
 

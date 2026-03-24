@@ -242,6 +242,9 @@ Business behavior is defined by:
   - Submit behavior:
     - operation is atomic all-or-nothing for selected slots,
     - UI disables all modal interactions while submit is in progress.
+  - Mass-action behavior:
+    - `Bloquear todo el día` selects all currently blockable slots for the selected day in one action.
+    - `Limpiar selección` removes every selected slot before submit.
 
 ## Availability Rules
 

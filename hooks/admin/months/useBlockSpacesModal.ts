@@ -31,6 +31,14 @@ export function useBlockSpacesModal(month: string) {
     return days.find((day) => day.date === selectedDate)?.slots ?? [];
   }, [days, selectedDate]);
 
+  const areAllSelectedForDay = useMemo(() => {
+    if (selectedDaySlots.length === 0) {
+      return false;
+    }
+
+    return selectedDaySlots.every((slot) => selectedSlots.includes(slot));
+  }, [selectedDaySlots, selectedSlots]);
+
   const isReadyToSubmit = Boolean(selectedDate) && selectedSlots.length > 0 && !isSubmitting;
 
   const open = useCallback(async () => {
@@ -99,6 +107,17 @@ export function useBlockSpacesModal(month: string) {
     });
   }, []);
 
+  const selectAllSlotsForDay = useCallback(() => {
+    setSelectedSlots((current) => {
+      const merged = new Set([...current, ...selectedDaySlots]);
+      return Array.from(merged).sort();
+    });
+  }, [selectedDaySlots]);
+
+  const clearSelectedSlots = useCallback(() => {
+    setSelectedSlots([]);
+  }, []);
+
   const submit = useCallback(
     async (onSuccess?: () => Promise<void> | void) => {
       if (!selectedDate || selectedSlots.length === 0 || isSubmitting) {
@@ -142,11 +161,14 @@ export function useBlockSpacesModal(month: string) {
     selectedDate,
     selectedDaySlots,
     selectedSlots,
+    areAllSelectedForDay,
     reason,
     open,
     close,
     selectDate,
     toggleSlot,
+    selectAllSlotsForDay,
+    clearSelectedSlots,
     setReason,
     submit,
   };

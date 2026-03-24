@@ -23,11 +23,14 @@ type BlockSpacesModalProps = {
   currentDate: string;
   selectedDaySlots: string[];
   selectedSlots: string[];
+  areAllSelectedForDay: boolean;
   reason: BlockReason;
   onClose: () => void;
   onRetry: () => void;
   onSelectDate: (date: string) => void;
   onToggleSlot: (slot: string) => void;
+  onSelectAllSlots: () => void;
+  onClearSelectedSlots: () => void;
   onReasonChange: (reason: BlockReason) => void;
   onSubmit: () => void;
 };
@@ -55,11 +58,14 @@ export function BlockSpacesModal({
   currentDate,
   selectedDaySlots,
   selectedSlots,
+  areAllSelectedForDay,
   reason,
   onClose,
   onRetry,
   onSelectDate,
   onToggleSlot,
+  onSelectAllSlots,
+  onClearSelectedSlots,
   onReasonChange,
   onSubmit,
 }: BlockSpacesModalProps) {
@@ -167,9 +173,28 @@ export function BlockSpacesModal({
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
-            {t("monthsDetail.blockModal.slotSection")}
-          </h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+              {t("monthsDetail.blockModal.slotSection")}
+            </h3>
+            <button
+              type="button"
+              onClick={
+                areAllSelectedForDay ? onClearSelectedSlots : onSelectAllSlots
+              }
+              disabled={isSubmitting || selectedDaySlots.length === 0}
+              aria-pressed={areAllSelectedForDay}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-[13px] font-semibold text-[var(--admin-accent)] transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <span>{t("monthsDetail.blockModal.actions.selectAll")}</span>
+              <span
+                className={`inline-flex h-4 w-4 items-center justify-center rounded-[3px] border text-[10px] leading-none ${areAllSelectedForDay ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white" : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-transparent"}`}
+                aria-hidden
+              >
+                ✓
+              </span>
+            </button>
+          </div>
           {selectedDate && selectedDaySlots.length > 0 ? (
             <div className="space-y-3">
               {selectedDaySlots.map((slot) => {
@@ -188,7 +213,7 @@ export function BlockSpacesModal({
                     }`}
                   >
                     <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
+                      className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
                         isSelected
                           ? "bg-white/20"
                           : "bg-[var(--admin-inactive-bg)]"
@@ -197,6 +222,7 @@ export function BlockSpacesModal({
                       <AdminIcon
                         icon={adminIcons.blockSchedule}
                         tone={isSelected ? "primary" : "secondary"}
+                        className={isSelected ? "text-white" : null}
                       />
                     </span>
                     <span
@@ -261,9 +287,7 @@ export function BlockSpacesModal({
           >
             {isSubmitting ? (
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            ) : (
-              <AdminIcon icon={adminIcons.blockConfirm} tone="primary" />
-            )}
+            ) : null}
             {t("monthsDetail.blockModal.confirm")}
           </Button>
           <p className="text-center text-xs text-[var(--admin-text-secondary)]">

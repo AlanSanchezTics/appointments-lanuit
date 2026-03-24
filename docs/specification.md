@@ -540,6 +540,8 @@ Flujo UI:
    - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
      - selección horizontal de días bloqueables,
      - selección múltiple de slots bloqueables,
+     - acción masiva `Bloquear todo el día` para seleccionar todos los slots bloqueables del día activo,
+     - acción `Limpiar selección` para resetear selección del día activo,
      - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`),
      - botón `Confirmar bloqueo`.
    - Restricciones del modal de bloqueo:

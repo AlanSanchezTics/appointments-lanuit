@@ -31,6 +31,8 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 8. `Bloquear espacios` abre `BottomSheetModal` con:
    - selector horizontal de días bloqueables,
    - selección múltiple de slots bloqueables,
+   - acción masiva `Bloquear todo el día` (selecciona todos los slots bloqueables del día activo),
+   - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
 9. Al confirmar:
    - UI bloquea todas las interacciones del modal mientras procesa,
