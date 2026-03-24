@@ -113,10 +113,10 @@ export function BookingWizardStep1({
                   weekday: formatShortWeekdayLabel(day.date, language),
                   day: formatDayOfMonthLabel(day.date),
                 })}
-                className={`min-h-24 w-[100%] rounded-[2rem] border px-2 py-3 text-center transition ${
+                className={`min-h-24 w-[100%] flex flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
                   isSelected
-                    ? "border-transparent bg-[var(--accent)] text-white"
-                    : "border-[var(--border)] bg-white text-[var(--foreground)]"
+                    ? "bg-[var(--admin-primary)] text-white shadow-sm"
+                    : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-primary)]"
                 }`}
                 onClick={() =>
                   onDraftChange({
@@ -129,11 +129,11 @@ export function BookingWizardStep1({
                 type="button"
               >
                 <span
-                  className={`block text-[0.68rem] font-bold uppercase tracking-[0.12em] ${isSelected ? "text-white/80" : "text-[var(--muted)]"}`}
+                  className={`text-[12px] font-semibold ${isSelected ? "text-white/90" : "text-[var(--admin-text-secondary)]"}`}
                 >
                   {formatShortWeekdayLabel(day.date, language)}
                 </span>
-                <span className="mt-2 block text-[1.8rem] font-bold leading-none tracking-[-0.04em]">
+                <span className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.04em]">
                   {formatDayOfMonthLabel(day.date)}
                 </span>
               </button>
