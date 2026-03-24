@@ -16,7 +16,10 @@ import {
   deleteAdminBlockedSlotById,
   updateAdminBlockedSlotById,
 } from "@/lib/admin/blocked-spaces/api-client";
-import { updateAdminMonthSlotMode } from "@/lib/admin/months/api-client";
+import {
+  updateAdminMonthStatus,
+  updateAdminMonthSlotMode,
+} from "@/lib/admin/months/api-client";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
 import { Button } from "@/components/admin/ui/Button";
@@ -37,6 +40,7 @@ import {
 import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type {
+  ActiveMonthStatus,
   MonthSlotMode,
   MonthDetailCalendarDay,
   MonthDetailResponse,
@@ -139,6 +143,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const [slotModeDraft, setSlotModeDraft] = useState<MonthSlotMode>(
     initialData.slotMode,
   );
+  const [isUpdatingMonthStatus, setIsUpdatingMonthStatus] = useState(false);
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
@@ -259,8 +264,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           .map((appointment) => appointment.timeSlot.slice(0, 5));
 
         const monthBaseSlots = resolveBaseSlotsByMonthMode(data.slotMode);
-        const blockedSlots = agendaForEditDate.blockedSlots.map(
-          (blockedSlot) => blockedSlot.timeSlot.slice(0, 5),
+        const blockedSlots = agendaForEditDate.blockedSlots.map((blockedSlot) =>
+          blockedSlot.timeSlot.slice(0, 5),
         );
         const slots = getAvailableStartSlotsWithManualBlocks(
           monthBaseSlots,
@@ -399,10 +404,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         }),
         {
           loading: {
-            title: t("monthsDetail.dayModal.blocked.notifications.updateLoading"),
+            title: t(
+              "monthsDetail.dayModal.blocked.notifications.updateLoading",
+            ),
           },
           success: {
-            title: t("monthsDetail.dayModal.blocked.notifications.updateSuccess"),
+            title: t(
+              "monthsDetail.dayModal.blocked.notifications.updateSuccess",
+            ),
           },
           error: {
             title: t("monthsDetail.dayModal.blocked.notifications.updateError"),
@@ -442,10 +451,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         }),
         {
           loading: {
-            title: t("monthsDetail.dayModal.blocked.notifications.deleteLoading"),
+            title: t(
+              "monthsDetail.dayModal.blocked.notifications.deleteLoading",
+            ),
           },
           success: {
-            title: t("monthsDetail.dayModal.blocked.notifications.deleteSuccess"),
+            title: t(
+              "monthsDetail.dayModal.blocked.notifications.deleteSuccess",
+            ),
           },
           error: {
             title: t("monthsDetail.dayModal.blocked.notifications.deleteError"),
@@ -511,6 +524,51 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     }
   }
 
+  async function handleUpdateMonthStatus(nextStatus: ActiveMonthStatus) {
+    if (nextStatus === data.monthStatus || isUpdatingMonthStatus) {
+      return;
+    }
+
+    setIsUpdatingMonthStatus(true);
+
+    try {
+      await sileo.promise(updateAdminMonthStatus(data.month, nextStatus), {
+        loading: {
+          title: t("monthsDetail.monthStatus.notifications.updateLoading"),
+        },
+        success: {
+          title: t("monthsDetail.monthStatus.notifications.updateSuccess"),
+        },
+        error: {
+          title: t("monthsDetail.monthStatus.notifications.updateError"),
+        },
+      });
+
+      await refresh();
+    } finally {
+      setIsUpdatingMonthStatus(false);
+    }
+  }
+
+  const monthStatusTagClassName =
+    data.monthStatus === "ACTIVE"
+      ? "bg-[rgba(34,197,94,0.15)] text-[rgb(21,128,61)]"
+      : "bg-[rgba(239,68,68,0.15)] text-[rgb(185,28,28)]";
+  const monthStatusTagText =
+    data.monthStatus === "ACTIVE"
+      ? t("monthsDetail.monthStatus.tag.active")
+      : t("monthsDetail.monthStatus.tag.inactive");
+  const nextMonthStatus: ActiveMonthStatus =
+    data.monthStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+  const monthStatusToggleClassName =
+    data.monthStatus === "ACTIVE"
+      ? "h-12 border-transparent bg-[var(--admin-availability-full)]! text-[#7f1d1d]! hover:brightness-95 focus-visible:outline-[#7f1d1d]"
+      : "h-12 border-transparent bg-[var(--admin-availability-high)]! text-[var(--admin-success-text)]! hover:brightness-95 focus-visible:outline-[var(--admin-success-text)]";
+  const monthStatusToggleText =
+    data.monthStatus === "ACTIVE"
+      ? t("monthsDetail.monthStatus.actions.deactivate")
+      : t("monthsDetail.monthStatus.actions.activate");
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center gap-2">
@@ -524,6 +582,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         <h1 className="text-2xl font-bold text-[var(--admin-accent)]">
           {monthTitle}
         </h1>
+        <span
+          className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${monthStatusTagClassName}`}
+        >
+          {monthStatusTagText}
+        </span>
         <Button
           type="button"
           variant="ghost"
@@ -532,7 +595,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             setIsSlotModeModalOpen(true);
           }}
           aria-label={t("monthsDetail.slotMode.openCta")}
-          disabled={isLoading || isUpdatingSlotMode}
+          disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
           className="ml-auto h-10 w-10 justify-center rounded-full p-0"
         >
           <AdminIcon icon={adminIcons.slotModeSettings} tone="secondary" />
@@ -692,7 +755,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                 })}
               >
                 <span>{cell.day.day}</span>
-                {cell.day.appointmentsCount && cell.day.appointmentsCount > 0 ? (
+                {cell.day.appointmentsCount &&
+                cell.day.appointmentsCount > 0 ? (
                   <span
                     className="mt-0.5 flex items-center justify-center gap-0.5"
                     aria-hidden
@@ -716,13 +780,24 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
 
       <Button
         type="button"
-        variant="secondary"
+        variant="primary"
         fullWidth
-        disabled={isLoading || isUpdatingSlotMode}
+        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
         onClick={() => void blockSpacesModal.open()}
         className="h-12"
       >
         {t("monthsDetail.blockModal.openCta")}
+      </Button>
+
+      <Button
+        type="button"
+        variant="primary"
+        fullWidth
+        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+        onClick={() => void handleUpdateMonthStatus(nextMonthStatus)}
+        className={monthStatusToggleClassName}
+      >
+        {monthStatusToggleText}
       </Button>
 
       <BottomSheetModal
@@ -967,13 +1042,16 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                         </span>
                         <div className="flex-1">
                           <p className="font-semibold text-[var(--admin-text-primary)]">
-                            {t(`monthsDetail.blockModal.reasons.${blockedSlot.reason}`)}
+                            {t(
+                              `monthsDetail.blockModal.reasons.${blockedSlot.reason}`,
+                            )}
                           </p>
                           <p className="text-sm text-[var(--admin-text-secondary)]">
                             {t("monthsDetail.dayModal.blocked.subtitle")}
                           </p>
                         </div>
-                        {processingBlockedSlotId === blockedSlot.blockedSlotId ? (
+                        {processingBlockedSlotId ===
+                        blockedSlot.blockedSlotId ? (
                           <div
                             className="inline-flex h-11 w-11 items-center justify-center"
                             role="status"
@@ -986,7 +1064,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                             <button
                               type="button"
                               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
-                              aria-label={t("monthsDetail.dayModal.blocked.actions.edit")}
+                              aria-label={t(
+                                "monthsDetail.dayModal.blocked.actions.edit",
+                              )}
                               onClick={() =>
                                 startEditingBlockedSlot(
                                   blockedSlot.blockedSlotId,
@@ -994,12 +1074,17 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                                 )
                               }
                             >
-                              <AdminIcon icon={adminIcons.edit} tone="secondary" />
+                              <AdminIcon
+                                icon={adminIcons.edit}
+                                tone="secondary"
+                              />
                             </button>
                             <button
                               type="button"
                               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
-                              aria-label={t("monthsDetail.dayModal.blocked.actions.delete")}
+                              aria-label={t(
+                                "monthsDetail.dayModal.blocked.actions.delete",
+                              )}
                               onClick={() =>
                                 void handleDeleteBlockedSlot({
                                   blockedSlotId: blockedSlot.blockedSlotId,
@@ -1028,14 +1113,18 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                                 <button
                                   key={reasonOption}
                                   type="button"
-                                  onClick={() => setEditingBlockedReason(reasonOption)}
+                                  onClick={() =>
+                                    setEditingBlockedReason(reasonOption)
+                                  }
                                   className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                                     editingBlockedReason === reasonOption
                                       ? "bg-[var(--admin-success-bg)] text-[var(--admin-success-text)]"
                                       : "bg-[var(--admin-surface)] text-[var(--admin-text-secondary)]"
                                   }`}
                                 >
-                                  {t(`monthsDetail.blockModal.reasons.${reasonOption}`)}
+                                  {t(
+                                    `monthsDetail.blockModal.reasons.${reasonOption}`,
+                                  )}
                                 </button>
                               ),
                             )}

@@ -183,7 +183,7 @@ Business behavior is defined by:
 ## Admin Month Detail Rules
 
 - Scope:
-  - Applies to `/admin/months/[month]` and `GET /api/admin/months/[month]`.
+  - Applies to `/admin/months/[month]`, `GET /api/admin/months/[month]`, `PATCH /api/admin/months/[month]/slot-mode`, and `PATCH /api/admin/months/[month]/status`.
 
 - Access and identity:
   - Admin authentication is mandatory for the endpoint.
@@ -214,6 +214,9 @@ Business behavior is defined by:
   - Agenda item includes customer identity fields `name` and `phone` for operational context in admin UI.
 
 - Admin edit policy:
+  - Month status action updates `active_months.status` between `ACTIVE` and `INACTIVE`.
+  - Month status update is only allowed for current or future months.
+  - Updating month status in past months is rejected with `MONTH_IN_PAST`.
   - Edit action reprograms appointment `date + timeSlot` within the same selected month.
   - Destination must satisfy booking availability invariants (weekday-only, valid slot, future slot, pair-direction constraints, daily max, and active lock checks).
 

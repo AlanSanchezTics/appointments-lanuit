@@ -33,7 +33,14 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - `Horario fijo` (`SECOND_ONLY_MODE`): base `10:00,14:00,18:00`.
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
 9. Debajo del calendario, admin puede abrir `Bloquear espacios`.
-10. `Bloquear espacios` abre `BottomSheetModal` con:
+10. Debajo de `Bloquear espacios`, admin visualiza CTA contextual para estado:
+   - si el mes está `ACTIVE`, CTA roja `Desactivar mes`,
+   - si el mes está `INACTIVE`, CTA verde `Activar mes`.
+11. Al tocar la CTA de estado:
+   - frontend ejecuta `PATCH /api/admin/months/[month]/status` con el estado destino,
+   - backend actualiza `active_months.status`,
+   - UI refresca detalle mensual al finalizar.
+12. `Bloquear espacios` abre `BottomSheetModal` con:
    - selector horizontal de días bloqueables,
    - selector de visualización de espacios (`Por hora` / `Por bloque`) solo en `BLOCK_MODE`,
    - en `SECOND_ONLY_MODE` solo se muestra `Por hora`,
@@ -41,7 +48,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - acción masiva `Seleccionar todo` (selecciona todos los slots bloqueables del día activo),
    - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
-11. Al confirmar:
+13. Al confirmar:
    - UI bloquea todas las interacciones del modal mientras procesa,
    - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
    - backend persiste bloqueo por slot en `blocked_slots`,
@@ -50,9 +57,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - slot único bloqueado en par => propagación direccional,
      - par completo bloqueado => sin propagación adicional,
      - día completo bloqueado => sin disponibilidad.
-12. Admin toca un día del calendario y se abre modal de detalle diario.
-13. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
-14. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
+14. Admin toca un día del calendario y se abre modal de detalle diario.
+15. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
+16. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes.
      - Al guardar edición, el subformulario se cierra de inmediato.
@@ -97,4 +104,6 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 6. Bloqueo manual con conflicto:
    - API responde `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED` o `BLOCKED_SLOT_ALREADY_EXISTS`.
 7. Cambio de modalidad en mes pasado:
+   - API responde `MONTH_IN_PAST` (`422`).
+8. Cambio de estado en mes pasado:
    - API responde `MONTH_IN_PAST` (`422`).

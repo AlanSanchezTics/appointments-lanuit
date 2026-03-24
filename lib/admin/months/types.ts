@@ -4,8 +4,10 @@ import {
 } from "@/lib/availability/month-slot-mode";
 
 export const MONTHS_CATALOG_STATUS_VALUES = ["ALL", "ACTIVE", "INACTIVE"] as const;
+export const ACTIVE_MONTH_STATUS_VALUES = ["ACTIVE", "INACTIVE"] as const;
 
 export type MonthsCatalogStatus = (typeof MONTHS_CATALOG_STATUS_VALUES)[number];
+export type ActiveMonthStatus = (typeof ACTIVE_MONTH_STATUS_VALUES)[number];
 export { MONTH_SLOT_MODE_VALUES };
 export type { MonthSlotMode };
 
@@ -20,7 +22,7 @@ export type MonthsCatalogMetrics = {
 
 export type AdminMonthListItem = {
   month: string;
-  status: "ACTIVE" | "INACTIVE";
+  status: ActiveMonthStatus;
 };
 
 export type MonthsCatalogResponse = {
@@ -69,7 +71,7 @@ export type MonthDetailMetrics = {
 
 export type MonthDetailResponse = {
   month: string;
-  monthStatus: "ACTIVE" | "INACTIVE";
+  monthStatus: ActiveMonthStatus;
   slotMode: MonthSlotMode;
   currentMonth: string;
   currentDate: string;
@@ -86,4 +88,13 @@ export type UpdateAdminMonthSlotModePayload = {
 export type UpdateAdminMonthSlotModeResponse = {
   month: string;
   slotMode: MonthSlotMode;
+};
+
+export type UpdateAdminMonthStatusPayload = {
+  status: ActiveMonthStatus;
+};
+
+export type UpdateAdminMonthStatusResponse = {
+  month: string;
+  status: ActiveMonthStatus;
 };

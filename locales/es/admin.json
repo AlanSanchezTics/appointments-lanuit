@@ -153,6 +153,21 @@
         "updateError": "No se pudo actualizar la modalidad mensual."
       }
     },
+    "monthStatus": {
+      "actions": {
+        "activate": "Activar mes",
+        "deactivate": "Desactivar mes"
+      },
+      "tag": {
+        "active": "Activo",
+        "inactive": "Inactivo"
+      },
+      "notifications": {
+        "updateLoading": "Actualizando estado mensual...",
+        "updateSuccess": "Estado mensual actualizado",
+        "updateError": "No se pudo actualizar el estado mensual."
+      }
+    },
     "dayModal": {
       "title": "Detalles del {{date}}",
       "close": "Cerrar detalle del día",

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createAdminMonths,
   getMonthsCatalog,
+  updateAdminMonthStatus,
   updateAdminMonthSlotMode,
 } from "@/lib/admin/months/service";
 import {
@@ -16,6 +17,7 @@ import {
   findRegisteredMonth,
   listExistingMonths,
   listMonthsByYear,
+  updateRegisteredMonthStatus,
   updateRegisteredMonthSlotMode,
 } from "@/lib/db/admin-months";
 
@@ -30,6 +32,7 @@ vi.mock("@/lib/db/admin-months", () => ({
   listExistingMonths: vi.fn(),
   createInactiveMonths: vi.fn(),
   findRegisteredMonth: vi.fn(),
+  updateRegisteredMonthStatus: vi.fn(),
   updateRegisteredMonthSlotMode: vi.fn(),
 }));
 
@@ -43,6 +46,7 @@ const listMonthsByYearMock = vi.mocked(listMonthsByYear);
 const listExistingMonthsMock = vi.mocked(listExistingMonths);
 const createInactiveMonthsMock = vi.mocked(createInactiveMonths);
 const findRegisteredMonthMock = vi.mocked(findRegisteredMonth);
+const updateRegisteredMonthStatusMock = vi.mocked(updateRegisteredMonthStatus);
 const updateRegisteredMonthSlotModeMock = vi.mocked(updateRegisteredMonthSlotMode);
 
 describe("admin months catalog service", () => {
@@ -176,6 +180,49 @@ describe("admin months catalog service", () => {
       updateAdminMonthSlotMode(
         "2026-02",
         "SECOND_ONLY_MODE",
+        new Date("2026-03-10T15:00:00.000Z"),
+      ),
+    ).rejects.toThrow("MONTH_IN_PAST");
+  });
+
+  it("updates month status for a registered future month", async () => {
+    findRegisteredMonthMock.mockResolvedValueOnce({
+      month: "2026-06",
+      status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
+    });
+    updateRegisteredMonthStatusMock.mockResolvedValueOnce({
+      month: "2026-06",
+      status: "INACTIVE",
+    });
+
+    const result = await updateAdminMonthStatus(
+      "2026-06",
+      "INACTIVE",
+      new Date("2026-03-10T15:00:00.000Z"),
+    );
+
+    expect(updateRegisteredMonthStatusMock).toHaveBeenCalledWith(
+      "2026-06",
+      "INACTIVE",
+    );
+    expect(result).toEqual({
+      month: "2026-06",
+      status: "INACTIVE",
+    });
+  });
+
+  it("rejects month status update when month is in the past", async () => {
+    findRegisteredMonthMock.mockResolvedValueOnce({
+      month: "2026-02",
+      status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
+    });
+
+    await expect(
+      updateAdminMonthStatus(
+        "2026-02",
+        "INACTIVE",
         new Date("2026-03-10T15:00:00.000Z"),
       ),
     ).rejects.toThrow("MONTH_IN_PAST");

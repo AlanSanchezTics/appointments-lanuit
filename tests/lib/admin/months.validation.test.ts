@@ -6,6 +6,7 @@ import {
   parseMonthsCatalogQuery,
   parseMonthsCatalogQueryFromObject,
   parseMonthsCatalogQueryOrDefault,
+  parseUpdateMonthStatusPayload,
   parseUpdateMonthSlotModePayload,
 } from "@/lib/admin/months/validation";
 
@@ -136,6 +137,24 @@ describe("admin months catalog validation", () => {
     expect(() =>
       parseUpdateMonthSlotModePayload({
         slotMode: "INVALID",
+      }),
+    ).toThrow();
+  });
+
+  it("parses valid update month status payload", () => {
+    expect(
+      parseUpdateMonthStatusPayload({
+        status: "INACTIVE",
+      }),
+    ).toEqual({
+      status: "INACTIVE",
+    });
+  });
+
+  it("rejects invalid update month status payload", () => {
+    expect(() =>
+      parseUpdateMonthStatusPayload({
+        status: "INVALID",
       }),
     ).toThrow();
   });

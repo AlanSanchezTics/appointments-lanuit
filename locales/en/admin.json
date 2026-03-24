@@ -153,6 +153,21 @@
         "updateError": "Unable to update monthly mode."
       }
     },
+    "monthStatus": {
+      "actions": {
+        "activate": "Activate month",
+        "deactivate": "Deactivate month"
+      },
+      "tag": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "notifications": {
+        "updateLoading": "Updating month status...",
+        "updateSuccess": "Month status updated",
+        "updateError": "Unable to update month status."
+      }
+    },
     "dayModal": {
       "title": "Details for {{date}}",
       "close": "Close day detail",

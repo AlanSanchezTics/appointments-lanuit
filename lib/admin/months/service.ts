@@ -11,12 +11,14 @@ import {
   listExistingMonths,
   findRegisteredMonth,
   listMonthsByYear,
+  updateRegisteredMonthStatus,
   updateRegisteredMonthSlotMode,
 } from "@/lib/db/admin-months";
 
 import type {
   CreateAdminMonthsPayload,
   CreateAdminMonthsResponse,
+  ActiveMonthStatus,
   MonthsCatalogResponse,
   MonthsCatalogStatus,
 } from "@/lib/admin/months/types";
@@ -124,4 +126,31 @@ export async function updateAdminMonthSlotMode(
   }
 
   return updateRegisteredMonthSlotMode(month, slotMode);
+}
+
+export async function updateAdminMonthStatus(
+  month: string,
+  status: ActiveMonthStatus,
+  now = new Date(),
+) {
+  const registration = await findRegisteredMonth(month);
+
+  if (!registration) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  const currentMonth = getCurrentMonthKey(now);
+
+  if (month < currentMonth) {
+    throw new Error("MONTH_IN_PAST");
+  }
+
+  if (registration.status === status) {
+    return {
+      month: registration.month,
+      status: registration.status,
+    };
+  }
+
+  return updateRegisteredMonthStatus(month, status);
 }

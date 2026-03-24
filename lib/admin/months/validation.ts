@@ -3,11 +3,14 @@ import { z } from "zod";
 
 import { MONTH_KEY_PATTERN } from "@/lib/admin/months/month-helpers";
 import {
+  ACTIVE_MONTH_STATUS_VALUES,
   MONTHS_CATALOG_STATUS_VALUES,
   MONTH_SLOT_MODE_VALUES,
+  type ActiveMonthStatus,
   type CreateAdminMonthsPayload,
   type MonthSlotMode,
   type MonthsCatalogStatus,
+  type UpdateAdminMonthStatusPayload,
   type UpdateAdminMonthSlotModePayload,
 } from "@/lib/admin/months/types";
 
@@ -178,5 +181,19 @@ export function parseUpdateMonthSlotModePayload(
 
   return {
     slotMode: parsed.slotMode as MonthSlotMode,
+  };
+}
+
+const UPDATE_MONTH_STATUS_SCHEMA = z.object({
+  status: z.enum(ACTIVE_MONTH_STATUS_VALUES),
+});
+
+export function parseUpdateMonthStatusPayload(
+  payload: unknown,
+): UpdateAdminMonthStatusPayload {
+  const parsed = UPDATE_MONTH_STATUS_SCHEMA.parse(payload);
+
+  return {
+    status: parsed.status as ActiveMonthStatus,
   };
 }

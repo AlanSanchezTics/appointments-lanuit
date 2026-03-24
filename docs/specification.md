@@ -551,6 +551,19 @@ Flujo UI:
      - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
    - Debajo del calendario se muestra CTA secundaria `Bloquear espacios`.
+   - Junto al título del mes se muestra tag de estado actual:
+     - `Activo` cuando `monthStatus=ACTIVE`,
+     - `Inactivo` cuando `monthStatus=INACTIVE`.
+   - Debajo de `Bloquear espacios` se muestra CTA contextual para cambio de estado:
+     - `Desactivar mes` (estilo rojo) cuando `monthStatus=ACTIVE`,
+     - `Activar mes` (estilo verde) cuando `monthStatus=INACTIVE`.
+   - Restricciones de cambio de estado:
+     - requiere mes registrado,
+     - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
+   - Al confirmar estado:
+     - frontend ejecuta `PATCH /api/admin/months/[month]/status` con el estado destino,
+     - backend actualiza `active_months.status`,
+     - frontend refresca detalle mensual.
    - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
      - selección horizontal de días bloqueables,
      - selector de visualización de espacios: `Por hora` y `Por bloque` solo en `Modalidad 1`,
@@ -604,6 +617,7 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
+  - `PATCH /api/admin/months/[month]/status`
   - `PATCH /api/admin/months/[month]/slot-mode`
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
   - `GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD` (`date` opcional)
@@ -625,6 +639,11 @@ Contrato API:
   - `PATCH /api/admin/months/[month]/slot-mode`:
     - payload `{ slotMode }`,
     - `slotMode` permitido: `BLOCK_MODE|SECOND_ONLY_MODE`,
+    - requiere mes registrado,
+    - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
+  - `PATCH /api/admin/months/[month]/status`:
+    - payload `{ status }`,
+    - `status` permitido: `ACTIVE|INACTIVE`,
     - requiere mes registrado,
     - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
   - `GET /api/admin/months/[month]/days/[date]/agenda`:
@@ -683,6 +702,8 @@ Contrato API:
   - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`
 - Success `PATCH /api/admin/months/[month]/slot-mode` (`200`):
   - `{ month, slotMode }`
+- Success `PATCH /api/admin/months/[month]/status` (`200`):
+  - `{ month, status }`
 - Success `GET /api/admin/months/[month]/days/[date]/agenda` (`200`):
   - `{ month, date, total, appointments[], blockedSlots[] }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`

@@ -60,6 +60,53 @@ describe("MonthDetailView", () => {
     expect(screen.getAllByTestId("2026-03-02-appointment-dot")).toHaveLength(2);
   });
 
+  it("shows month status tag and contextual toggle action", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-21",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Activo")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Desactivar mes" }),
+    ).toBeInTheDocument();
+  });
+
   it("opens the daily agenda modal when a day is selected", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
