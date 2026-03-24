@@ -195,7 +195,7 @@ Business behavior is defined by:
   - `cancelledAppointments`: appointments in `CANCELLED` within the selected month.
   - `occupiedSpaces`: same count as active appointments for the month.
   - `availableSpaces`: `(operationalWeekdays * 3) - (occupiedSpaces + blockedSpaces)` where `3` is max daily capacity.
-  - `blockedSpaces`: fixed to `0` in MVP until manual blocking model is introduced.
+  - `blockedSpaces`: count of manual blocked slots persisted in `blocked_slots` for the selected month.
   - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
 
 - Calendar policy:
@@ -221,6 +221,28 @@ Business behavior is defined by:
   - Cancel action performs logical cancellation (`status = CANCELLED`) and preserves history.
   - Admin cancellation does not apply the public 24-hour restriction.
 
+- Admin blocked-slots policy:
+  - Admin can manually block multiple slots in `/admin/months/[month]`.
+  - Allowed reasons are constrained to: `DESCANSO`, `PERSONAL`, `OTRO`.
+  - Only one reason can be selected per submit operation.
+  - Day eligibility:
+    - inside selected `month`,
+    - current day or future day,
+    - operational weekday.
+  - Slot eligibility:
+    - base slot from the official catalog,
+    - not in the past for same-day,
+    - not occupied by active appointment,
+    - not blocked by active temporary lock,
+    - not already manually blocked.
+  - Manual-block directional propagation:
+    - Blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
+    - Blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
+    - Blocking all base slots in a day results in no bookable slots for that day.
+  - Submit behavior:
+    - operation is atomic all-or-nothing for selected slots,
+    - UI disables all modal interactions while submit is in progress.
+
 ## Availability Rules
 
 - Valid base time slots are fixed:
@@ -235,6 +257,7 @@ Business behavior is defined by:
   - Past-time slots for same-day booking.
   - Slots occupied by active appointments.
   - Slots blocked by active temporary locks.
+  - Slots manually blocked by admin (`blocked_slots`).
   - Slots invalidated by pair-direction constraints.
 
 - Pair-direction rule:

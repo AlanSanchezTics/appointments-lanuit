@@ -115,6 +115,26 @@ export async function listActiveAppointmentsByDateExcludingForUpdate(
   return rows.map((row) => timeToTimeSlotKey(row.timeSlot));
 }
 
+export async function listActiveAppointmentSlotsByDateForUpdate(
+  tx: Prisma.TransactionClient,
+  date: string,
+) {
+  const rows = await tx.appointment.findMany({
+    where: {
+      date: new Date(`${date}T00:00:00.000Z`),
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+    },
+    select: {
+      timeSlot: true,
+    },
+    orderBy: [{ timeSlot: "asc" }],
+  });
+
+  return rows.map((row) => timeToTimeSlotKey(row.timeSlot));
+}
+
 export async function updateAppointmentScheduleById(
   tx: Prisma.TransactionClient,
   input: { appointmentId: number; date: string; timeSlot: string },

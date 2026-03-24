@@ -308,6 +308,22 @@ Tabla: active_months
 - UNIQUE(month)
 - INDEX(status, month)
 
+Tabla: blocked_slots
+
+- id (PK)
+- date DATE
+- time_slot TIME
+- reason ENUM('DESCANSO','PERSONAL','OTRO')
+- created_by_admin_user_id INT NULL (FK -> admin_users.id)
+- created_at DATETIME
+- updated_at DATETIME
+
+Índices:
+
+- UNIQUE(date, time_slot)
+- INDEX(date)
+- INDEX(created_by_admin_user_id)
+
 Tabla: admin_users
 
 - id (PK)
@@ -505,7 +521,7 @@ Flujo UI:
      - calendario operativo mensual.
    - Fórmula de `Disponibles` (métrica mensual):
      - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
-     - Para MVP, `espacios bloqueados = 0`.
+     - `espacios bloqueados` se calcula desde `blocked_slots` (bloqueo manual admin).
    - En modal de agenda diaria, cada fila muestra:
      - hora,
      - nombre del cliente,
@@ -520,6 +536,27 @@ Flujo UI:
      - amarillo (`availableSpaces = 1`),
      - rojo (`availableSpaces = 0`),
      - gris en fines de semana (no operativos).
+   - Debajo del calendario se muestra CTA secundaria `Bloquear espacios`.
+   - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
+     - selección horizontal de días bloqueables,
+     - selección múltiple de slots bloqueables,
+     - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`),
+     - botón `Confirmar bloqueo`.
+   - Restricciones del modal de bloqueo:
+     - solo días `>= currentDate` dentro del `month`,
+     - solo se listan días que tengan al menos un slot bloqueable,
+     - slot bloqueable = no pasado (same-day), no ocupado por cita activa, sin lock temporal activo y no bloqueado manualmente.
+   - Regla direccional para bloqueos manuales:
+     - si se bloquea **una sola hora** dentro de un par direccional, se aplica propagación direccional en slots homólogos de pares posteriores/anteriores;
+     - si se bloquea el **par completo** (ej. `09:00` y `10:00`), no se propaga restricción direccional adicional y solo ese par queda fuera;
+     - si se bloquean los 6 slots del día, el día queda sin disponibilidad para reserva.
+   - Ejemplos normativos:
+     - bloquear `09:00` => disponibles `10:00`, `14:00`, `18:00`;
+     - bloquear `09:00` + `10:00` => disponibles `13:00`, `14:00`, `17:00`, `18:00`;
+     - bloquear día completo => sin slots disponibles.
+   - Al confirmar bloqueo:
+     - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),
+     - backend crea registro en `blocked_slots` por cada slot seleccionado.
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
    - Selector de año (`currentYear..currentYear+5`).
    - Grilla de meses del año seleccionado.
@@ -548,6 +585,8 @@ Contrato API:
   - `POST /api/admin/months`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
+  - `GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD` (`date` opcional)
+  - `POST /api/admin/months/[month]/blocked-slots`
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`
   - `POST /api/admin/appointments/[appointmentId]/cancel`
 - Auth:
@@ -564,6 +603,19 @@ Contrato API:
     - `date` debe cumplir formato `YYYY-MM-DD`,
     - `date` debe pertenecer al `month` solicitado,
     - agenda devuelve solo citas activas (`CONFIRMED`, `SYNC_FAILED`) ordenadas por horario.
+  - `GET /api/admin/months/[month]/blockable-slots`:
+    - `month` válido y registrado,
+    - si `date` se envía, debe cumplir formato `YYYY-MM-DD` y pertenecer al `month`,
+    - devuelve días/slots elegibles para bloqueo manual según reglas de disponibilidad admin.
+  - `POST /api/admin/months/[month]/blocked-slots`:
+    - payload `{ date, slots[], reason }`,
+    - `slots` no vacío y sin duplicados,
+    - `reason` permitido: `DESCANSO|PERSONAL|OTRO`,
+    - `date` no puede ser pasada y debe ser día operativo,
+    - si algún slot tiene lock temporal activo -> `SLOT_LOCKED` (`409`),
+    - si algún slot ya no está disponible -> `SLOT_NOT_AVAILABLE` (`409`),
+    - colisión por duplicado persistido -> `BLOCKED_SLOT_ALREADY_EXISTS` (`409`),
+    - no dispara integraciones externas (Google Calendar) en este flujo.
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`:
     - payload `{ month, date, timeSlot }`,
     - `appointmentId` válido (>0),
@@ -595,6 +647,12 @@ Contrato API:
 - Success `GET /api/admin/months/[month]/days/[date]/agenda` (`200`):
   - `{ month, date, total, appointments[] }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`
+- Success `GET /api/admin/months/[month]/blockable-slots` (`200`):
+  - `{ month, currentDate, days[] }`
+  - `days[]`: `{ date, slots[] }`
+- Success `POST /api/admin/months/[month]/blocked-slots` (`200`):
+  - `{ month, date, reason, totalCreated, blockedSlots[] }`
+  - `blockedSlots[]`: `{ date, timeSlot, reason }`
 - Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
   - `{ appointmentId, date, timeSlot, status, syncReason? }`
 - Success `POST /api/admin/appointments/[appointmentId]/cancel` (`200`):

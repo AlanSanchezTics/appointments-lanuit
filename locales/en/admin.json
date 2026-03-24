@@ -159,6 +159,30 @@
         "cancelSuccess": "Appointment cancelled",
         "cancelError": "Unable to cancel appointment."
       }
+    },
+    "blockModal": {
+      "openCta": "Block spaces",
+      "title": "Block schedule",
+      "close": "Close block schedule modal",
+      "daySection": "Day selection",
+      "slotSection": "Space selection",
+      "reasonSection": "Reason",
+      "today": "Today",
+      "loading": "Loading blockable spaces...",
+      "emptyDays": "There are no days with spaces available to block.",
+      "emptySlots": "There are no spaces available for this day.",
+      "confirm": "Confirm block",
+      "helper": "This action will block the selected spaces.",
+      "reasons": {
+        "DESCANSO": "Rest",
+        "PERSONAL": "Personal",
+        "OTRO": "Other"
+      },
+      "notifications": {
+        "submitLoading": "Blocking spaces...",
+        "submitSuccess": "Spaces blocked",
+        "submitError": "Unable to block spaces."
+      }
     }
   }
 }

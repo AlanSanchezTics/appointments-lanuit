@@ -259,6 +259,24 @@ Ejemplo:
 
 ### BottomSheet Modal (Day Agenda)
 
+### BottomSheet Modal (Block Spaces)
+
+- Ubicación: detalle mensual admin (`/admin/months/[month]`), CTA secundaria `Bloquear espacios`.
+- Estructura:
+  - título + close icon,
+  - sección `Selección de día` (chips verticales 72x88 en scroll horizontal),
+  - sección `Selección de espacio` (cards full-width seleccionables múltiples),
+  - sección `Motivo` (chips tipo pill, selección única),
+  - CTA `Confirmar bloqueo`.
+- Estados visuales obligatorios:
+  - día activo: fondo `primary` (`#E49F53`) + texto blanco,
+  - slot activo: tarjeta completa en `primary` + texto/icono blanco,
+  - motivo activo: `success-bg` + `success-text`.
+- Interacción:
+  - touch targets mínimos `44px`,
+  - foco visible en todos los controles,
+  - durante submit: modal bloqueado (sin cerrar por overlay, `X` o `Escape`).
+
 - Uso: detalle diario desde calendario mensual (`/admin/months/[month]`).
 - Layout:
   - anclado al fondo de la pantalla,

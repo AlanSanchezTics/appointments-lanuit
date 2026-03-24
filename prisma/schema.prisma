@@ -23,6 +23,12 @@ enum AdminUserStatus {
   inactive
 }
 
+enum BlockedSlotReason {
+  DESCANSO
+  PERSONAL
+  OTRO
+}
+
 model Appointment {
   id            Int               @id @default(autoincrement())
   clientId      Int               @map("client_id")
@@ -87,7 +93,24 @@ model AdminUser {
   lastLoginAt  DateTime?       @map("last_login_at")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
+  blockedSlots BlockedSlot[]
 
   @@index([status])
   @@map("admin_users")
+}
+
+model BlockedSlot {
+  id               Int               @id @default(autoincrement())
+  date             DateTime          @db.Date
+  timeSlot         DateTime          @map("time_slot") @db.Time(0)
+  reason           BlockedSlotReason
+  createdByAdminId Int?              @map("created_by_admin_user_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  createdByAdmin   AdminUser?        @relation(fields: [createdByAdminId], references: [id])
+
+  @@unique([date, timeSlot])
+  @@index([date])
+  @@index([createdByAdminId])
+  @@map("blocked_slots")
 }

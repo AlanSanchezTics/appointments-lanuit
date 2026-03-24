@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { sileo } from "sileo";
 
+import { BlockSpacesModal } from "@/components/admin/months/BlockSpacesModal";
 import type { AdminDayAgendaItem } from "@/lib/admin/appointments/types";
 import {
   cancelAdminAppointmentById,
@@ -17,6 +18,7 @@ import { Button } from "@/components/admin/ui/Button";
 import { Card } from "@/components/admin/ui/Card";
 import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
+import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
@@ -102,6 +104,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     initialData,
   });
   const dayAgendaModal = useDayAgendaModal(data.month);
+  const blockSpacesModal = useBlockSpacesModal(data.month);
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
@@ -300,6 +303,25 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     }
   }
 
+  async function handleConfirmBlockedSlots() {
+    await sileo.promise(
+      blockSpacesModal.submit(async () => {
+        await refresh();
+      }),
+      {
+        loading: {
+          title: t("monthsDetail.blockModal.notifications.submitLoading"),
+        },
+        success: {
+          title: t("monthsDetail.blockModal.notifications.submitSuccess"),
+        },
+        error: {
+          title: t("monthsDetail.blockModal.notifications.submitError"),
+        },
+      },
+    );
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center gap-2">
@@ -461,6 +483,17 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         </div>
       </Card>
 
+      <Button
+        type="button"
+        variant="secondary"
+        fullWidth
+        disabled={isLoading}
+        onClick={() => void blockSpacesModal.open()}
+        className="h-12"
+      >
+        {t("monthsDetail.blockModal.openCta")}
+      </Button>
+
       <BottomSheetModal
         isOpen={dayAgendaModal.isOpen}
         onClose={dayAgendaModal.close}
@@ -608,6 +641,26 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           ) : null}
         </div>
       </BottomSheetModal>
+
+      <BlockSpacesModal
+        isOpen={blockSpacesModal.isOpen}
+        isLoadingDays={blockSpacesModal.isLoadingDays}
+        isSubmitting={blockSpacesModal.isSubmitting}
+        isReadyToSubmit={blockSpacesModal.isReadyToSubmit}
+        errorCode={blockSpacesModal.errorCode}
+        days={blockSpacesModal.days}
+        selectedDate={blockSpacesModal.selectedDate}
+        currentDate={data.currentDate}
+        selectedDaySlots={blockSpacesModal.selectedDaySlots}
+        selectedSlots={blockSpacesModal.selectedSlots}
+        reason={blockSpacesModal.reason}
+        onClose={blockSpacesModal.close}
+        onRetry={() => void blockSpacesModal.open()}
+        onSelectDate={blockSpacesModal.selectDate}
+        onToggleSlot={blockSpacesModal.toggleSlot}
+        onReasonChange={blockSpacesModal.setReason}
+        onSubmit={() => void handleConfirmBlockedSlots()}
+      />
     </main>
   );
 }

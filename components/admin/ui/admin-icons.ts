@@ -10,6 +10,7 @@ import {
   faEye,
   faEyeSlash,
   faListCheck,
+  faLeaf,
   faLock,
   faRotateRight,
   faTrash,
@@ -56,6 +57,10 @@ export const adminIcons = {
   monthDetailCancelled: fasCircleXmark,
   monthDetailAvailable: faCalendar,
   monthDetailBlocked: faLock,
+  blockSchedule: faClock,
+  blockConfirm: faLock,
+  blockReasonRest: faLeaf,
+  blockReasonPersonal: faUser,
   edit: faPen,
   delete: faTrash,
 } as const;

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getAvailableStartSlots } from "@/lib/availability/rules";
+import {
+  getAvailableStartSlots,
+  getAvailableStartSlotsWithManualBlocks,
+} from "@/lib/availability/rules";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 
 describe("availability rules", () => {
@@ -38,6 +41,36 @@ describe("availability rules", () => {
 
   it("returns no slots when there are already 3 active appointments in the day", () => {
     const available = getAvailableStartSlots(BASE_TIME_SLOTS, ["09:00", "14:00", "18:00"]);
+
+    expect(available).toEqual([]);
+  });
+
+  it("applies manual block directional rule for single blocked first slot", () => {
+    const available = getAvailableStartSlotsWithManualBlocks(
+      BASE_TIME_SLOTS,
+      [],
+      ["09:00"],
+    );
+
+    expect(available).toEqual(["10:00", "14:00", "18:00"]);
+  });
+
+  it("does not propagate directional restriction when a full pair is manually blocked", () => {
+    const available = getAvailableStartSlotsWithManualBlocks(
+      BASE_TIME_SLOTS,
+      [],
+      ["09:00", "10:00"],
+    );
+
+    expect(available).toEqual(["13:00", "14:00", "17:00", "18:00"]);
+  });
+
+  it("returns no slots when full day is manually blocked", () => {
+    const available = getAvailableStartSlotsWithManualBlocks(
+      BASE_TIME_SLOTS,
+      [],
+      [...BASE_TIME_SLOTS],
+    );
 
     expect(available).toEqual([]);
   });

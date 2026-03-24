@@ -255,6 +255,31 @@ Reglas:
 
 ---
 
+## Component: BlockSpacesModal
+
+### Purpose
+
+Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegación adicional.
+
+### Structure
+
+- reusa `BottomSheetModal` como contenedor
+- selector horizontal de días bloqueables
+- lista de slots bloqueables con selección múltiple
+- chips de motivo con selección única (`DESCANSO`, `PERSONAL`, `OTRO`)
+- CTA de confirmación con estado loading bloqueante
+
+### Rules
+
+- usa iconografía outline (`schedule`, `lock`, `leaf/user`) vía `AdminIcon`.
+- no permite texto libre para `OTRO` en v1.
+- durante submit:
+  - deshabilita campos, acciones y CTA,
+  - impide cierre por overlay, `X` y `Escape`.
+- todo copy visible se resuelve desde `react-i18next`.
+
+---
+
 ## Component: Input
 
 ### Purpose

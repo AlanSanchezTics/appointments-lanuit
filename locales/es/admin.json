@@ -159,6 +159,30 @@
         "cancelSuccess": "Cita cancelada",
         "cancelError": "No se pudo cancelar la cita."
       }
+    },
+    "blockModal": {
+      "openCta": "Bloquear espacios",
+      "title": "Bloquear horario",
+      "close": "Cerrar bloqueo de horario",
+      "daySection": "Selección de día",
+      "slotSection": "Selección de espacio",
+      "reasonSection": "Motivo",
+      "today": "Hoy",
+      "loading": "Cargando espacios disponibles...",
+      "emptyDays": "No hay días con espacios disponibles para bloquear.",
+      "emptySlots": "No hay espacios disponibles en este día.",
+      "confirm": "Confirmar bloqueo",
+      "helper": "Esta acción bloqueará los espacios seleccionados.",
+      "reasons": {
+        "DESCANSO": "Descanso",
+        "PERSONAL": "Personal",
+        "OTRO": "Otro"
+      },
+      "notifications": {
+        "submitLoading": "Bloqueando espacios...",
+        "submitSuccess": "Espacios bloqueados",
+        "submitError": "No se pudieron bloquear los espacios."
+      }
     }
   }
 }

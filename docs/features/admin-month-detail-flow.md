@@ -27,9 +27,23 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - grid de métricas 2x2,
    - tarjeta de saturación proyectada,
    - calendario operativo mensual.
-7. Admin toca un día del calendario y se abre modal de detalle diario.
-8. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
-9. Modal muestra agenda cronológica del día con acciones por cita:
+7. Debajo del calendario, admin puede abrir `Bloquear espacios`.
+8. `Bloquear espacios` abre `BottomSheetModal` con:
+   - selector horizontal de días bloqueables,
+   - selección múltiple de slots bloqueables,
+   - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
+9. Al confirmar:
+   - UI bloquea todas las interacciones del modal mientras procesa,
+   - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
+   - backend persiste bloqueo por slot en `blocked_slots`,
+   - frontend refresca detalle mensual (métricas + calendario).
+   - disponibilidad pública/admin del día se recalcula con regla direccional de bloqueos manuales:
+     - slot único bloqueado en par => propagación direccional,
+     - par completo bloqueado => sin propagación adicional,
+     - día completo bloqueado => sin disponibilidad.
+10. Admin toca un día del calendario y se abre modal de detalle diario.
+11. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
+12. Modal muestra agenda cronológica del día con acciones por cita:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes.
      - Al guardar edición, el subformulario se cierra de inmediato.
@@ -46,7 +60,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Espacios disponibles:
   - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
 - Espacios bloqueados:
-  - `0` en MVP (bloqueo manual pendiente de implementación).
+  - total de slots persistidos en `blocked_slots` para el mes.
 - Saturación proyectada:
   - `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100` (redondeado).
 - Tono de día:
@@ -67,3 +81,5 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - API agenda responde `DATE_OUTSIDE_MONTH`.
 5. Reprogramación con conflicto:
    - API responde `SLOT_NOT_AVAILABLE` o `SLOT_LOCKED`.
+6. Bloqueo manual con conflicto:
+   - API responde `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED` o `BLOCKED_SLOT_ALREADY_EXISTS`.

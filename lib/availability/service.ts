@@ -2,7 +2,11 @@ import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { assertMonthIsBookable } from "@/lib/active-months/service";
 import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
-import { getAvailableStartSlots, isWeekdayBookingDate } from "@/lib/availability/rules";
+import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
+import {
+  getAvailableStartSlotsWithManualBlocks,
+  isWeekdayBookingDate,
+} from "@/lib/availability/rules";
 
 export type DayAvailability = {
   date: string;
@@ -33,8 +37,10 @@ export async function getMonthAvailability(month: string, now = new Date()) {
   const { monthStart, monthEnd } = getMonthBounds(month);
   const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);
   const lockedSlots = await listMonthActiveReservationLocks(monthStart, monthEnd, now);
+  const blockedSlots = await listMonthBlockedSlots(monthStart, monthEnd);
   const appointmentsByDate = new Map<string, string[]>();
   const lockedSlotsByDate = new Map<string, string[]>();
+  const blockedSlotsByDate = new Map<string, string[]>();
   const currentDate = getCurrentDateKey(now);
   const currentTime = getCurrentTimeKey(now);
 
@@ -50,13 +56,24 @@ export async function getMonthAvailability(month: string, now = new Date()) {
     lockedSlotsByDate.set(lock.date, dayLocks);
   }
 
+  for (const blockedSlot of blockedSlots) {
+    const dayBlockedSlots = blockedSlotsByDate.get(blockedSlot.date) ?? [];
+    dayBlockedSlots.push(blockedSlot.timeSlot);
+    blockedSlotsByDate.set(blockedSlot.date, dayBlockedSlots);
+  }
+
   return getMonthDays(month)
     .filter((date) => date >= currentDate)
     .filter((date) => isWeekdayBookingDate(date))
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
       const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
-      const slots = getAvailableStartSlots(BASE_TIME_SLOTS, [...occupiedSlots, ...activeLockSlots])
+      const dayBlockedSlots = blockedSlotsByDate.get(date) ?? [];
+      const slots = getAvailableStartSlotsWithManualBlocks(
+        BASE_TIME_SLOTS,
+        [...occupiedSlots, ...activeLockSlots],
+        dayBlockedSlots,
+      )
         .filter((slot) => {
         if (date !== currentDate) {
           return true;

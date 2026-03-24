@@ -10,6 +10,7 @@ type BottomSheetModalProps = {
   title: string;
   closeLabel: string;
   onClose: () => void;
+  disableClose?: boolean;
   children: React.ReactNode;
 };
 
@@ -20,6 +21,7 @@ export function BottomSheetModal({
   title,
   closeLabel,
   onClose,
+  disableClose = false,
   children,
 }: BottomSheetModalProps) {
   const [isRendered, setIsRendered] = useState(isOpen);
@@ -56,6 +58,10 @@ export function BottomSheetModal({
     document.body.style.overflow = "hidden";
 
     function onKeyDown(event: KeyboardEvent) {
+      if (disableClose) {
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -68,7 +74,7 @@ export function BottomSheetModal({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isRendered, onClose]);
+  }, [disableClose, isRendered, onClose]);
 
   if (!isRendered) {
     return null;
@@ -79,8 +85,9 @@ export function BottomSheetModal({
       <button
         type="button"
         aria-label={closeLabel}
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
+        className={`absolute inset-0 ${disableClose ? "cursor-not-allowed" : "cursor-default"}`}
+        onClick={disableClose ? undefined : onClose}
+        disabled={disableClose}
       />
       <section
         role="dialog"
@@ -97,14 +104,15 @@ export function BottomSheetModal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={disableClose ? undefined : onClose}
             aria-label={closeLabel}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)] transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]"
+            disabled={disableClose}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)] transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <AdminIcon icon={adminIcons.close} />
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-6 pb-[10vh]">
+        <div className="max-h-[70vh] overflow-y-auto px-6 pb-[3rem]">
           {children}
         </div>
       </section>
