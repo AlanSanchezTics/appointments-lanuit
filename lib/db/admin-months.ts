@@ -1,6 +1,7 @@
 import type { ActiveMonthStatus, AppointmentStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { type MonthSlotMode } from "@/lib/availability/month-slot-mode";
 
 const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = [
   "CONFIRMED",
@@ -242,6 +243,22 @@ export async function findRegisteredMonth(month: string) {
     select: {
       month: true,
       status: true,
+      slotMode: true,
+    },
+  });
+}
+
+export async function updateRegisteredMonthSlotMode(month: string, slotMode: MonthSlotMode) {
+  return prisma.activeMonth.update({
+    where: {
+      month,
+    },
+    data: {
+      slotMode,
+    },
+    select: {
+      month: true,
+      slotMode: true,
     },
   });
 }

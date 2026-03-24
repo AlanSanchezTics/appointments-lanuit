@@ -1,4 +1,5 @@
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
+import { type MonthSlotMode } from "@/lib/availability/month-slot-mode";
 import {
   createInactiveMonths,
   countActiveMonthsByYear,
@@ -8,7 +9,9 @@ import {
   countPastAppointmentsByYear,
   countPastMonthsByYear,
   listExistingMonths,
+  findRegisteredMonth,
   listMonthsByYear,
+  updateRegisteredMonthSlotMode,
 } from "@/lib/db/admin-months";
 
 import type {
@@ -94,4 +97,31 @@ export async function createAdminMonths(
     totalCreated: monthsToCreate.length,
     totalSkipped: existingMonths.length,
   };
+}
+
+export async function updateAdminMonthSlotMode(
+  month: string,
+  slotMode: MonthSlotMode,
+  now = new Date(),
+) {
+  const registration = await findRegisteredMonth(month);
+
+  if (!registration) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  const currentMonth = getCurrentMonthKey(now);
+
+  if (month < currentMonth) {
+    throw new Error("MONTH_IN_PAST");
+  }
+
+  if (registration.slotMode === slotMode) {
+    return {
+      month: registration.month,
+      slotMode: registration.slotMode,
+    };
+  }
+
+  return updateRegisteredMonthSlotMode(month, slotMode);
 }

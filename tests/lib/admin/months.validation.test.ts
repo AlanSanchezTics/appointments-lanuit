@@ -6,6 +6,7 @@ import {
   parseMonthsCatalogQuery,
   parseMonthsCatalogQueryFromObject,
   parseMonthsCatalogQueryOrDefault,
+  parseUpdateMonthSlotModePayload,
 } from "@/lib/admin/months/validation";
 
 describe("admin months catalog validation", () => {
@@ -119,5 +120,23 @@ describe("admin months catalog validation", () => {
   it("rejects invalid admin month route key", () => {
     expect(() => parseAdminMonthKey("2026-13")).toThrow("MONTHS_INVALID_FORMAT");
     expect(() => parseAdminMonthKey("2026-00")).toThrow("MONTHS_INVALID_FORMAT");
+  });
+
+  it("parses valid update slot mode payload", () => {
+    expect(
+      parseUpdateMonthSlotModePayload({
+        slotMode: "SECOND_ONLY_MODE",
+      }),
+    ).toEqual({
+      slotMode: "SECOND_ONLY_MODE",
+    });
+  });
+
+  it("rejects invalid update slot mode payload", () => {
+    expect(() =>
+      parseUpdateMonthSlotModePayload({
+        slotMode: "INVALID",
+      }),
+    ).toThrow();
   });
 });

@@ -1,7 +1,7 @@
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { Prisma } from "@prisma/client";
-import { assertMonthIsBookable } from "@/lib/active-months/service";
+import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import {
   acquireBookingLocks,
@@ -66,6 +66,7 @@ async function createAppointmentInTransaction(
   tx: Prisma.TransactionClient,
   input: { phone: string; date: string; timeSlot: string; name?: string },
   currentDate: string,
+  baseSlots: readonly string[],
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
 
@@ -103,7 +104,7 @@ async function createAppointmentInTransaction(
   });
 
   const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
-  const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
+  const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
 
   if (!availableSlots.includes(input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
@@ -149,14 +150,15 @@ async function finalizeAppointment(input: { appointmentId: number; date: string;
 
 export async function bookAppointment(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(bookingSchema.parse(rawInput), now);
-  await assertMonthIsBookable(input.date.slice(0, 7), now);
+  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
+  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
   const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
     await acquireBookingLocks(tx, input.date, input.phone);
 
     try {
-      return createAppointmentInTransaction(tx, input, currentDate);
+      return createAppointmentInTransaction(tx, input, currentDate, baseSlots);
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
@@ -183,7 +185,8 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
   }
 
   const input = validateBookingRules(confirmBookingWithLockSchema.parse(rawInput), now);
-  await assertMonthIsBookable(input.date.slice(0, 7), now);
+  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
+  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
   const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
@@ -206,7 +209,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         throw new Error("LOCK_EXPIRED_OR_INVALID");
       }
 
-      const created = await createAppointmentInTransaction(tx, input, currentDate);
+      const created = await createAppointmentInTransaction(tx, input, currentDate, baseSlots);
       await deleteReservationLockByToken(tx, lockToken);
 
       return created;

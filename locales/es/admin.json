@@ -132,6 +132,27 @@
       "loadFailed": "No se pudo actualizar el detalle del mes.",
       "retry": "Reintentar"
     },
+    "slotMode": {
+      "title": "Modalidad de disponibilidad",
+      "close": "Cerrar selector de modalidad",
+      "openCta": "Modalidad",
+      "sectionTitle": "Selecciona modalidad",
+      "helpers": {
+        "block": "En el flujo de reserva se mostrarán horarios por bloques (09:00am - 10:00am, 01:00pm - 02:00pm, 05:00pm - 06:00pm)",
+        "secondOnly": "En el flujo de reserva solo se mostrarán horarios fijos: 10:00am, 02:00pm y 06:00pm."
+      },
+      "save": "Guardar modalidad",
+      "saving": "Guardando...",
+      "options": {
+        "block": "Bloques de horarios",
+        "secondOnly": "Horario fijo"
+      },
+      "notifications": {
+        "updateLoading": "Actualizando modalidad mensual...",
+        "updateSuccess": "Modalidad mensual actualizada",
+        "updateError": "No se pudo actualizar la modalidad mensual."
+      }
+    },
     "dayModal": {
       "title": "Detalles del {{date}}",
       "close": "Cerrar detalle del día",

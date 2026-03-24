@@ -6,6 +6,8 @@ import type {
   MonthDetailResponse,
   MonthsCatalogResponse,
   MonthsCatalogStatus,
+  UpdateAdminMonthSlotModeResponse,
+  MonthSlotMode,
 } from "@/lib/admin/months/types";
 
 type FetchMonthsCatalogInput = {
@@ -76,4 +78,28 @@ export async function fetchAdminMonthDetail(
   }
 
   return response.json() as Promise<MonthDetailResponse>;
+}
+
+export async function updateAdminMonthSlotMode(
+  month: string,
+  slotMode: MonthSlotMode,
+): Promise<UpdateAdminMonthSlotModeResponse> {
+  const response = await fetch(`/api/admin/months/${month}/slot-mode`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      slotMode,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { errorCode?: string }
+      | null;
+    throw new Error(payload?.errorCode ?? "UNKNOWN_ERROR");
+  }
+
+  return response.json() as Promise<UpdateAdminMonthSlotModeResponse>;
 }

@@ -35,6 +35,7 @@ describe("admin month detail service", () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-03",
       status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
     });
 
     listAppointmentsByMonthMock.mockResolvedValueOnce([
@@ -52,6 +53,7 @@ describe("admin month detail service", () => {
 
     expect(result.month).toBe("2026-03");
     expect(result.monthStatus).toBe("ACTIVE");
+    expect(result.slotMode).toBe("BLOCK_MODE");
     expect(result.currentMonth).toBe("2026-03");
     expect(result.currentDate).toBe("2026-03-21");
     expect(result.isPastMonth).toBe(false);
@@ -91,6 +93,7 @@ describe("admin month detail service", () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-03",
       status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
     });
     listAppointmentsByMonthMock.mockResolvedValueOnce([
       { date: "2026-03-02", timeSlot: "09:00", status: "CONFIRMED" },

@@ -12,6 +12,7 @@ import {
   faListCheck,
   faLeaf,
   faLock,
+  faGear,
   faRotateRight,
   faTrash,
   faTriangleExclamation,
@@ -61,6 +62,7 @@ export const adminIcons = {
   blockConfirm: faLock,
   blockReasonRest: faLeaf,
   blockReasonPersonal: faUser,
+  slotModeSettings: faGear,
   edit: faPen,
   delete: faTrash,
 } as const;

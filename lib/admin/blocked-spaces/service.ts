@@ -9,7 +9,7 @@ import {
   getAvailableStartSlotsWithManualBlocks,
   isWeekdayBookingDate,
 } from "@/lib/availability/rules";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { getCurrentDateKey, getCurrentTimeKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { listActiveAppointmentSlotsByDateForUpdate } from "@/lib/db/admin-appointments";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
@@ -51,6 +51,7 @@ function getMonthDays(month: string) {
 function buildBlockableDays(params: {
   month: string;
   now: Date;
+  baseSlots: readonly string[];
   occupiedByDate: Map<string, string[]>;
   lockByDate: Map<string, string[]>;
   blockedByDate: Map<string, string[]>;
@@ -67,7 +68,7 @@ function buildBlockableDays(params: {
       const blockedSlots = params.blockedByDate.get(date) ?? [];
 
       const slots = getAvailableStartSlotsWithManualBlocks(
-        BASE_TIME_SLOTS,
+        params.baseSlots,
         [...occupiedSlots, ...activeLocks],
         blockedSlots,
       ).filter((slot) => {
@@ -104,6 +105,7 @@ export async function getAdminBlockableSlots(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
+  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
   const { monthStart, monthEndExclusive } = getMonthBounds(input.month);
   const [appointments, locks, blockedSlots] = await Promise.all([
     listMonthAppointments(monthStart, monthEndExclusive),
@@ -136,6 +138,7 @@ export async function getAdminBlockableSlots(
   const allBlockableDays = buildBlockableDays({
     month: input.month,
     now,
+    baseSlots,
     occupiedByDate,
     lockByDate,
     blockedByDate,
@@ -162,6 +165,8 @@ export async function createAdminBlockedSlots(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
+  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+
   if (!isWeekdayBookingDate(input.date)) {
     throw new Error("DATE_NOT_OPERATIONAL");
   }
@@ -171,6 +176,10 @@ export async function createAdminBlockedSlots(
   }
 
   for (const slot of input.slots) {
+    if (!baseSlots.includes(slot)) {
+      throw new Error("SLOT_NOT_AVAILABLE");
+    }
+
     if (!isFutureDateTime(input.date, slot, now)) {
       throw new Error("SLOT_NOT_AVAILABLE");
     }
@@ -194,7 +203,7 @@ export async function createAdminBlockedSlots(
     }
 
     const availableSlots = getAvailableStartSlotsWithManualBlocks(
-      BASE_TIME_SLOTS,
+      baseSlots,
       [...occupiedSlots, ...activeLockSlots],
       blockedTimeSlots,
     ).filter((slot) => isFutureDateTime(input.date, slot, now));

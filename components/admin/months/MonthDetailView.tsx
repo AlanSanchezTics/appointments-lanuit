@@ -12,6 +12,7 @@ import {
   fetchAdminDayAgenda,
   rescheduleAdminAppointmentById,
 } from "@/lib/admin/appointments/api-client";
+import { updateAdminMonthSlotMode } from "@/lib/admin/months/api-client";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
 import { Button } from "@/components/admin/ui/Button";
@@ -22,6 +23,7 @@ import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import {
   formatMonthLabel,
   formatTimeSlotLabel,
@@ -31,6 +33,7 @@ import {
 import { getAvailableStartSlots } from "@/lib/availability/rules";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type {
+  MonthSlotMode,
   MonthDetailCalendarDay,
   MonthDetailResponse,
 } from "@/lib/admin/months/types";
@@ -108,7 +111,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
-  const [processingAppointmentId, setProcessingAppointmentId] = useState<number | null>(null);
+  const [processingAppointmentId, setProcessingAppointmentId] = useState<
+    number | null
+  >(null);
+  const [isUpdatingSlotMode, setIsUpdatingSlotMode] = useState(false);
+  const [isSlotModeModalOpen, setIsSlotModeModalOpen] = useState(false);
+  const [slotModeDraft, setSlotModeDraft] = useState<MonthSlotMode>(
+    initialData.slotMode,
+  );
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
@@ -118,7 +128,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const editingAppointment = useMemo(
     () =>
       dayAgendaModal.agenda?.appointments.find(
-        (appointment) => appointment.appointmentId === dayAgendaModal.editingAppointmentId,
+        (appointment) =>
+          appointment.appointmentId === dayAgendaModal.editingAppointmentId,
       ) ?? null,
     [dayAgendaModal.agenda, dayAgendaModal.editingAppointmentId],
   );
@@ -167,6 +178,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const selectedDateLabel = dayAgendaModal.selectedDate
     ? dayLabelFormatter.format(parseDateOnly(dayAgendaModal.selectedDate))
     : "";
+  const slotModeHelperKey =
+    slotModeDraft === "BLOCK_MODE"
+      ? "monthsDetail.slotMode.helpers.block"
+      : "monthsDetail.slotMode.helpers.secondOnly";
 
   function startEditing(appointment: AdminDayAgendaItem) {
     dayAgendaModal.setEditingAppointmentId(appointment.appointmentId);
@@ -192,15 +207,24 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         const agendaForEditDate =
           dayAgendaModal.agenda?.date === editDate
             ? dayAgendaModal.agenda
-            : await fetchAdminDayAgenda(data.month, editDate, controller.signal);
+            : await fetchAdminDayAgenda(
+                data.month,
+                editDate,
+                controller.signal,
+              );
 
         const occupiedSlots = agendaForEditDate.appointments
-          .filter((appointment) => appointment.appointmentId !== dayAgendaModal.editingAppointmentId)
+          .filter(
+            (appointment) =>
+              appointment.appointmentId !== dayAgendaModal.editingAppointmentId,
+          )
           .map((appointment) => appointment.timeSlot.slice(0, 5));
 
-        const slots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots).filter((slot) =>
-          isFutureDateTime(editDate, slot),
-        );
+        const monthBaseSlots = resolveBaseSlotsByMonthMode(data.slotMode);
+        const slots = getAvailableStartSlots(
+          monthBaseSlots,
+          occupiedSlots,
+        ).filter((slot) => isFutureDateTime(editDate, slot));
 
         setAvailableEditSlots(slots);
       } catch {
@@ -213,7 +237,13 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     return () => {
       controller.abort();
     };
-  }, [data.month, dayAgendaModal.agenda, dayAgendaModal.editingAppointmentId, editDate]);
+  }, [
+    data.month,
+    data.slotMode,
+    dayAgendaModal.agenda,
+    dayAgendaModal.editingAppointmentId,
+    editDate,
+  ]);
 
   useEffect(() => {
     if (!dayAgendaModal.editingAppointmentId) {
@@ -229,6 +259,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       setEditTimeSlot(availableEditSlots[0]);
     }
   }, [availableEditSlots, dayAgendaModal.editingAppointmentId, editTimeSlot]);
+
+  useEffect(() => {
+    if (isSlotModeModalOpen) {
+      return;
+    }
+
+    setSlotModeDraft(data.slotMode);
+  }, [data.slotMode, isSlotModeModalOpen]);
 
   async function handleReschedule(appointmentId: number) {
     const normalizedTimeSlot = toBaseTimeSlot(editTimeSlot);
@@ -322,6 +360,39 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     );
   }
 
+  async function handleUpdateMonthSlotMode() {
+    if (slotModeDraft === data.slotMode || isUpdatingSlotMode) {
+      setIsSlotModeModalOpen(false);
+      return;
+    }
+
+    setIsUpdatingSlotMode(true);
+
+    try {
+      await sileo.promise(updateAdminMonthSlotMode(data.month, slotModeDraft), {
+        loading: {
+          title: t("monthsDetail.slotMode.notifications.updateLoading"),
+        },
+        success: {
+          title: t("monthsDetail.slotMode.notifications.updateSuccess"),
+        },
+        error: {
+          title: t("monthsDetail.slotMode.notifications.updateError"),
+        },
+      });
+
+      await refresh();
+
+      if (blockSpacesModal.isOpen) {
+        await blockSpacesModal.open();
+      }
+
+      setIsSlotModeModalOpen(false);
+    } finally {
+      setIsUpdatingSlotMode(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center gap-2">
@@ -335,6 +406,19 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         <h1 className="text-2xl font-bold text-[var(--admin-accent)]">
           {monthTitle}
         </h1>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setSlotModeDraft(data.slotMode);
+            setIsSlotModeModalOpen(true);
+          }}
+          aria-label={t("monthsDetail.slotMode.openCta")}
+          disabled={isLoading || isUpdatingSlotMode}
+          className="ml-auto h-10 w-10 justify-center rounded-full p-0"
+        >
+          <AdminIcon icon={adminIcons.slotModeSettings} tone="secondary" />
+        </Button>
         {data.isPastMonth ? (
           <span className="ml-auto rounded-full bg-[var(--admin-inactive-bg)] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--admin-text-secondary)]">
             {t("monthsDetail.header.historical")}
@@ -487,12 +571,90 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         type="button"
         variant="secondary"
         fullWidth
-        disabled={isLoading}
+        disabled={isLoading || isUpdatingSlotMode}
         onClick={() => void blockSpacesModal.open()}
         className="h-12"
       >
         {t("monthsDetail.blockModal.openCta")}
       </Button>
+
+      <BottomSheetModal
+        isOpen={isSlotModeModalOpen}
+        onClose={() => {
+          if (isUpdatingSlotMode) {
+            return;
+          }
+
+          setIsSlotModeModalOpen(false);
+        }}
+        title={t("monthsDetail.slotMode.title")}
+        closeLabel={t("monthsDetail.slotMode.close")}
+      >
+        <div className="space-y-4">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+            {t("monthsDetail.slotMode.sectionTitle")}
+          </h3>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setSlotModeDraft("BLOCK_MODE")}
+              disabled={isUpdatingSlotMode}
+              aria-pressed={slotModeDraft === "BLOCK_MODE"}
+              className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                slotModeDraft === "BLOCK_MODE"
+                  ? "border-transparent bg-[var(--admin-primary)] text-white"
+                  : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
+              }`}
+            >
+              <span className="font-semibold">
+                {t("monthsDetail.slotMode.options.block")}
+              </span>
+              <AdminIcon
+                icon={adminIcons.monthDetailAvailable}
+                tone={slotModeDraft === "BLOCK_MODE" ? "primary" : "secondary"}
+                className={slotModeDraft === "BLOCK_MODE" ? "text-white" : null}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSlotModeDraft("SECOND_ONLY_MODE")}
+              disabled={isUpdatingSlotMode}
+              aria-pressed={slotModeDraft === "SECOND_ONLY_MODE"}
+              className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                slotModeDraft === "SECOND_ONLY_MODE"
+                  ? "border-transparent bg-[var(--admin-primary)] text-white"
+                  : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
+              }`}
+            >
+              <span className="font-semibold">
+                {t("monthsDetail.slotMode.options.secondOnly")}
+              </span>
+              <AdminIcon
+                icon={adminIcons.blockSchedule}
+                tone={
+                  slotModeDraft === "SECOND_ONLY_MODE" ? "primary" : "secondary"
+                }
+                className={
+                  slotModeDraft === "SECOND_ONLY_MODE" ? "text-white" : null
+                }
+              />
+            </button>
+          </div>
+          <p className="text-xs text-[var(--admin-text-secondary)]">
+            {t(slotModeHelperKey)}
+          </p>
+          <Button
+            type="button"
+            fullWidth
+            disabled={isUpdatingSlotMode}
+            onClick={() => void handleUpdateMonthSlotMode()}
+          >
+            {isUpdatingSlotMode
+              ? t("monthsDetail.slotMode.saving")
+              : t("monthsDetail.slotMode.save")}
+          </Button>
+        </div>
+      </BottomSheetModal>
 
       <BottomSheetModal
         isOpen={dayAgendaModal.isOpen}
@@ -585,7 +747,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                           aria-label={t("monthsDetail.dayModal.actions.delete")}
                           onClick={() => void handleCancel(appointment)}
                         >
-                          <AdminIcon icon={adminIcons.delete} tone="secondary" />
+                          <AdminIcon
+                            icon={adminIcons.delete}
+                            tone="secondary"
+                          />
                         </button>
                       </div>
                     )}
@@ -655,6 +820,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         selectedSlots={blockSpacesModal.selectedSlots}
         areAllSelectedForDay={blockSpacesModal.areAllSelectedForDay}
         reason={blockSpacesModal.reason}
+        allowBlockView={data.slotMode === "BLOCK_MODE"}
         slotViewMode={blockSpacesModal.slotViewMode}
         onClose={blockSpacesModal.close}
         onRetry={() => void blockSpacesModal.open()}

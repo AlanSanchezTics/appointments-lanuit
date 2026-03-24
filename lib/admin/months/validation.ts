@@ -4,8 +4,11 @@ import { z } from "zod";
 import { MONTH_KEY_PATTERN } from "@/lib/admin/months/month-helpers";
 import {
   MONTHS_CATALOG_STATUS_VALUES,
+  MONTH_SLOT_MODE_VALUES,
   type CreateAdminMonthsPayload,
+  type MonthSlotMode,
   type MonthsCatalogStatus,
+  type UpdateAdminMonthSlotModePayload,
 } from "@/lib/admin/months/types";
 
 type ParsedMonthsCatalogQuery = {
@@ -162,4 +165,18 @@ export function parseAdminMonthKey(month: string) {
   }
 
   return month;
+}
+
+const UPDATE_MONTH_SLOT_MODE_SCHEMA = z.object({
+  slotMode: z.enum(MONTH_SLOT_MODE_VALUES),
+});
+
+export function parseUpdateMonthSlotModePayload(
+  payload: unknown,
+): UpdateAdminMonthSlotModePayload {
+  const parsed = UPDATE_MONTH_SLOT_MODE_SCHEMA.parse(payload);
+
+  return {
+    slotMode: parsed.slotMode as MonthSlotMode,
+  };
 }

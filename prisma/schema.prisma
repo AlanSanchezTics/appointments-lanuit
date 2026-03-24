@@ -18,6 +18,11 @@ enum ActiveMonthStatus {
   INACTIVE
 }
 
+enum MonthSlotMode {
+  BLOCK_MODE
+  SECOND_ONLY_MODE
+}
+
 enum AdminUserStatus {
   active
   inactive
@@ -76,6 +81,7 @@ model ActiveMonth {
   id        Int               @id @default(autoincrement())
   month     String            @unique @db.Char(7)
   status    ActiveMonthStatus @default(ACTIVE)
+  slotMode  MonthSlotMode     @default(BLOCK_MODE) @map("slot_mode")
   createdAt DateTime          @default(now()) @map("created_at")
   updatedAt DateTime          @updatedAt @map("updated_at")
 

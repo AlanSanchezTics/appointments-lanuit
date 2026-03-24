@@ -1,4 +1,8 @@
-import { findActiveMonth, listActiveMonths, reconcileActiveMonthsInDatabase } from "@/lib/db/active-months";
+import {
+  findActiveMonth,
+  listActiveMonths,
+  reconcileActiveMonthsInDatabase,
+} from "@/lib/db/active-months";
 import { getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 
 const BOOKING_MONTH_PATTERN = /^\d{4}-\d{2}$/;
@@ -37,7 +41,7 @@ function isBookingMonthFormat(month: string) {
   return BOOKING_MONTH_PATTERN.test(month);
 }
 
-export async function assertMonthIsBookable(month: string, now = new Date()) {
+export async function getBookableMonthConfig(month: string, now = new Date()) {
   if (!isBookingMonthFormat(month)) {
     throw new Error("MONTH_NOT_ALLOWED");
   }
@@ -53,6 +57,12 @@ export async function assertMonthIsBookable(month: string, now = new Date()) {
   if (!record || record.status !== "ACTIVE") {
     throw new Error("MONTH_NOT_ALLOWED");
   }
+
+  return record;
+}
+
+export async function assertMonthIsBookable(month: string, now = new Date()) {
+  await getBookableMonthConfig(month, now);
 }
 
 export async function listBookableMonths(now = new Date()) {

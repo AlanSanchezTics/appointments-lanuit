@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MonthDetailView } from "@/components/admin/months/MonthDetailView";
@@ -15,6 +15,7 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
           currentMonth: "2026-03",
           currentDate: "2026-03-21",
           isPastMonth: false,
@@ -102,6 +103,7 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
           currentMonth: "2026-03",
           currentDate: "2026-03-01",
           isPastMonth: false,
@@ -198,6 +200,7 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
           currentMonth: "2026-03",
           currentDate: "2026-03-01",
           isPastMonth: false,
@@ -241,5 +244,60 @@ describe("MonthDetailView", () => {
         String(input).includes("/api/admin/appointments/10/cancel"),
       ),
     ).toBe(false);
+  });
+
+  it("shows contextual helper text in slot mode modal based on selected option", async () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Modalidad/i }));
+    const modal = await screen.findByRole("dialog", {
+      name: /Modalidad de disponibilidad/i,
+    });
+
+    expect(
+      within(modal).getByText(/09:00am - 10:00am/i),
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(modal).getByRole("button", { name: "Horario fijo" }));
+
+    expect(
+      within(modal).getByText(/10:00am, 02:00pm y 06:00pm/i),
+    ).toBeInTheDocument();
   });
 });

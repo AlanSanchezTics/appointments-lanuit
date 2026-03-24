@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
 
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { assertMonthIsBookable } from "@/lib/active-months/service";
+import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { prisma } from "@/lib/db/prisma";
 import {
   acquireBookingLocks,
@@ -24,7 +24,8 @@ function computeLockExpiration(now: Date) {
 
 async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(lockReservationSchema.parse(rawInput), now);
-  await assertMonthIsBookable(input.date.slice(0, 7), now);
+  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
+  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
   const currentDate = getCurrentDateKey(now);
   const expiresAt = computeLockExpiration(now);
 
@@ -83,7 +84,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
       const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
       const lockedSlots = activeLocks.map((item) => item.timeSlot);
       const allOccupiedSlots = [...occupiedSlots, ...lockedSlots];
-      const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, allOccupiedSlots);
+      const availableSlots = getAvailableStartSlots(baseSlots, allOccupiedSlots);
 
       if (!availableSlots.includes(input.timeSlot)) {
         if (lockedSlots.includes(input.timeSlot)) {

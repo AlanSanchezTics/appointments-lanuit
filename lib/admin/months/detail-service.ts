@@ -113,6 +113,7 @@ export async function getAdminMonthDetail(
   return {
     month,
     monthStatus: registration.status,
+    slotMode: registration.slotMode,
     currentMonth,
     currentDate,
     isPastMonth: month < currentMonth,

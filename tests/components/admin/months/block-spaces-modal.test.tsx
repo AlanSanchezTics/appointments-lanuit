@@ -35,6 +35,7 @@ describe("BlockSpacesModal", () => {
         selectedSlots={["09:00"]}
         areAllSelectedForDay={false}
         reason="DESCANSO"
+        allowBlockView
         slotViewMode="hour"
         onClose={onClose}
         onRetry={onRetry}
@@ -86,6 +87,7 @@ describe("BlockSpacesModal", () => {
         selectedSlots={["09:00", "10:00", "13:00"]}
         areAllSelectedForDay
         reason="DESCANSO"
+        allowBlockView
         slotViewMode="hour"
         onClose={onClose}
         onRetry={onRetry}
@@ -128,6 +130,7 @@ describe("BlockSpacesModal", () => {
         selectedSlots={[]}
         areAllSelectedForDay={false}
         reason="DESCANSO"
+        allowBlockView
         slotViewMode="hour"
         onClose={vi.fn()}
         onRetry={vi.fn()}
@@ -169,6 +172,7 @@ describe("BlockSpacesModal", () => {
         selectedSlots={[]}
         areAllSelectedForDay={false}
         reason="DESCANSO"
+        allowBlockView
         slotViewMode="block"
         onClose={vi.fn()}
         onRetry={vi.fn()}
@@ -186,5 +190,44 @@ describe("BlockSpacesModal", () => {
     fireEvent.click(screen.getByRole("button", { name: /09:00 AM - 10:00 AM/i }));
 
     expect(onToggleBlockSlots).toHaveBeenCalledWith(["09:00", "10:00"]);
+  });
+
+  it("hides block view toggle when month mode does not allow blocks", () => {
+    render(
+      <BlockSpacesModal
+        isOpen
+        isLoadingDays={false}
+        isSubmitting={false}
+        isReadyToSubmit
+        errorCode={null}
+        days={[
+          {
+            date: "2026-03-23",
+            slots: ["10:00", "14:00", "18:00"],
+          },
+        ]}
+        selectedDate="2026-03-23"
+        currentDate="2026-03-23"
+        selectedDaySlots={["10:00", "14:00", "18:00"]}
+        selectedSlots={[]}
+        areAllSelectedForDay={false}
+        reason="DESCANSO"
+        allowBlockView={false}
+        slotViewMode="block"
+        onClose={vi.fn()}
+        onRetry={vi.fn()}
+        onSelectDate={vi.fn()}
+        onToggleSlot={vi.fn()}
+        onToggleBlockSlots={vi.fn()}
+        onSelectAllSlots={vi.fn()}
+        onClearSelectedSlots={vi.fn()}
+        onReasonChange={vi.fn()}
+        onSlotViewModeChange={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /Por bloque/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /10:00 AM/i })).toBeInTheDocument();
   });
 });

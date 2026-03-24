@@ -26,6 +26,7 @@ type BlockSpacesModalProps = {
   selectedSlots: string[];
   areAllSelectedForDay: boolean;
   reason: BlockReason;
+  allowBlockView: boolean;
   slotViewMode: "hour" | "block";
   onClose: () => void;
   onRetry: () => void;
@@ -64,6 +65,7 @@ export function BlockSpacesModal({
   selectedSlots,
   areAllSelectedForDay,
   reason,
+  allowBlockView,
   slotViewMode,
   onClose,
   onRetry,
@@ -78,6 +80,7 @@ export function BlockSpacesModal({
 }: BlockSpacesModalProps) {
   const { t, i18n } = useTranslation("admin");
   const locale = i18n.resolvedLanguage === "en" ? "en-US" : "es-MX";
+  const effectiveSlotViewMode = allowBlockView ? slotViewMode : "hour";
 
   const dayFormatter = useMemo(
     () =>
@@ -193,34 +196,36 @@ export function BlockSpacesModal({
         </section>
 
         <section className="space-y-3">
-          <div className="inline-flex w-full rounded-full bg-[var(--admin-inactive-bg)] p-1">
-            <button
-              type="button"
-              onClick={() => onSlotViewModeChange("hour")}
-              disabled={isSubmitting}
-              aria-pressed={slotViewMode === "hour"}
-              className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
-                slotViewMode === "hour"
-                  ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
-                  : "text-[var(--admin-text-secondary)]"
-              }`}
-            >
-              {t("monthsDetail.blockModal.viewModes.hour")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onSlotViewModeChange("block")}
-              disabled={isSubmitting}
-              aria-pressed={slotViewMode === "block"}
-              className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
-                slotViewMode === "block"
-                  ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
-                  : "text-[var(--admin-text-secondary)]"
-              }`}
-            >
-              {t("monthsDetail.blockModal.viewModes.block")}
-            </button>
-          </div>
+          {allowBlockView ? (
+            <div className="inline-flex w-full rounded-full bg-[var(--admin-inactive-bg)] p-1">
+              <button
+                type="button"
+                onClick={() => onSlotViewModeChange("hour")}
+                disabled={isSubmitting}
+                aria-pressed={effectiveSlotViewMode === "hour"}
+                className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                  effectiveSlotViewMode === "hour"
+                    ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
+                    : "text-[var(--admin-text-secondary)]"
+                }`}
+              >
+                {t("monthsDetail.blockModal.viewModes.hour")}
+              </button>
+              <button
+                type="button"
+                onClick={() => onSlotViewModeChange("block")}
+                disabled={isSubmitting}
+                aria-pressed={effectiveSlotViewMode === "block"}
+                className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                  effectiveSlotViewMode === "block"
+                    ? "bg-[var(--admin-surface)] text-[var(--admin-text-primary)] shadow-sm"
+                    : "text-[var(--admin-text-secondary)]"
+                }`}
+              >
+                {t("monthsDetail.blockModal.viewModes.block")}
+              </button>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
               {t("monthsDetail.blockModal.slotSection")}
@@ -244,7 +249,7 @@ export function BlockSpacesModal({
             </button>
           </div>
           {selectedDate && selectedDaySlots.length > 0 ? (
-            slotViewMode === "hour" ? (
+            effectiveSlotViewMode === "hour" ? (
               <div className="space-y-3">
                 {selectedDaySlots.map((slot) => {
                   const isSelected = selectedSlots.includes(slot);

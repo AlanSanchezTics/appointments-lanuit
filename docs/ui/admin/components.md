@@ -266,8 +266,10 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
 - reusa `BottomSheetModal` como contenedor
 - selector horizontal de días bloqueables
 - lista de slots bloqueables con selección múltiple
+- selector de visualización `Por hora / Por bloque` disponible en `BLOCK_MODE`
+- en `SECOND_ONLY_MODE`, la visualización se fuerza a `Por hora`
 - acciones masivas de selección:
-  - `Bloquear todo el día`
+  - `Seleccionar todo`
   - `Limpiar selección`
 - chips de motivo con selección única (`DESCANSO`, `PERSONAL`, `OTRO`)
 - CTA de confirmación con estado loading bloqueante
@@ -280,6 +282,28 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
   - deshabilita campos, acciones y CTA,
   - impide cierre por overlay, `X` y `Escape`.
 - todo copy visible se resuelve desde `react-i18next`.
+
+---
+
+## Component: MonthSlotModeModal
+
+### Purpose
+
+Permitir configurar la modalidad mensual desde un CTA `Modalidad` ubicado junto al título del mes en `/admin/months/[month]`.
+
+### Structure
+
+- botón de acción `Modalidad` en header de detalle mensual
+- `BottomSheetModal` con selección única:
+  - `Bloques de horarios`
+  - `Horario fijo`
+- CTA de guardado con estado loading bloqueante
+
+### Rules
+
+- guardar usando feedback con `sileo.promise`.
+- durante guardado, deshabilitar selección/cierre/CTA para evitar doble submit.
+- textos vía `react-i18next`.
 
 ---
 

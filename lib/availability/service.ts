@@ -1,5 +1,4 @@
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { assertMonthIsBookable } from "@/lib/active-months/service";
+import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
 import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
@@ -7,6 +6,7 @@ import {
   getAvailableStartSlotsWithManualBlocks,
   isWeekdayBookingDate,
 } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 
 export type DayAvailability = {
   date: string;
@@ -32,7 +32,8 @@ function getMonthDays(month: string) {
 }
 
 export async function getMonthAvailability(month: string, now = new Date()) {
-  await assertMonthIsBookable(month, now);
+  const monthConfig = await getBookableMonthConfig(month, now);
+  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
 
   const { monthStart, monthEnd } = getMonthBounds(month);
   const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);
@@ -70,7 +71,7 @@ export async function getMonthAvailability(month: string, now = new Date()) {
       const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
       const dayBlockedSlots = blockedSlotsByDate.get(date) ?? [];
       const slots = getAvailableStartSlotsWithManualBlocks(
-        BASE_TIME_SLOTS,
+        baseSlots,
         [...occupiedSlots, ...activeLockSlots],
         dayBlockedSlots,
       )

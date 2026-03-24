@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getMonthAvailability } from "@/lib/availability/service";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
 import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
-import { assertMonthIsBookable } from "@/lib/active-months/service";
+import { getBookableMonthConfig } from "@/lib/active-months/service";
 
 vi.mock("@/lib/db/appointments", () => ({
   listMonthAppointments: vi.fn(),
@@ -15,18 +15,23 @@ vi.mock("@/lib/db/blocked-slots", () => ({
 }));
 
 vi.mock("@/lib/active-months/service", () => ({
-  assertMonthIsBookable: vi.fn(),
+  getBookableMonthConfig: vi.fn(),
 }));
 
 const listMonthAppointmentsMock = vi.mocked(listMonthAppointments);
 const listMonthActiveReservationLocksMock = vi.mocked(listMonthActiveReservationLocks);
 const listMonthBlockedSlotsMock = vi.mocked(listMonthBlockedSlots);
-const assertMonthIsBookableMock = vi.mocked(assertMonthIsBookable);
+const getBookableMonthConfigMock = vi.mocked(getBookableMonthConfig);
 
 describe("availability service", () => {
   beforeEach(() => {
     listMonthBlockedSlotsMock.mockResolvedValue([]);
-    assertMonthIsBookableMock.mockResolvedValue(undefined);
+    getBookableMonthConfigMock.mockResolvedValue({
+      id: 1,
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
+    });
   });
 
   it("removes occupied slots with directional pair logic", async () => {
@@ -233,5 +238,21 @@ describe("availability service", () => {
     const day = result.find((entry) => entry.date === "2026-03-04");
 
     expect(day).toBeUndefined();
+  });
+
+  it("limits availability to 10:00, 14:00 and 18:00 in SECOND_ONLY_MODE", async () => {
+    listMonthAppointmentsMock.mockResolvedValueOnce([]);
+    listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);
+    getBookableMonthConfigMock.mockResolvedValueOnce({
+      id: 1,
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "SECOND_ONLY_MODE",
+    });
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day?.slots).toEqual(["10:00", "14:00", "18:00"]);
   });
 });

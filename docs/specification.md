@@ -300,6 +300,7 @@ Tabla: active_months
 - id (PK)
 - month CHAR(7) UNIQUE (`YYYY-MM`)
 - status ENUM('ACTIVE','INACTIVE')
+- slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') DEFAULT 'BLOCK_MODE'
 - created_at DATETIME
 - updated_at DATETIME
 
@@ -536,10 +537,18 @@ Flujo UI:
      - amarillo (`availableSpaces = 1`),
      - rojo (`availableSpaces = 0`),
      - gris en fines de semana (no operativos).
+   - A la derecha del título del mes existe botón de acción `Modalidad` que abre `BottomSheetModal`.
+   - En el modal de modalidad:
+     - `Bloques de horarios` (`BLOCK_MODE`): base de slots `09:00,10:00,13:00,14:00,17:00,18:00`.
+     - `Horario fijo` (`SECOND_ONLY_MODE`): base de slots `10:00,14:00,18:00`.
+     - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
+     - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
+     - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
    - Debajo del calendario se muestra CTA secundaria `Bloquear espacios`.
    - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
      - selección horizontal de días bloqueables,
-     - selector de visualización de espacios: `Por hora` y `Por bloque`,
+     - selector de visualización de espacios: `Por hora` y `Por bloque` solo en `Modalidad 1`,
+     - en `Modalidad 2` se fuerza visualización `Por hora`,
      - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta representa y selecciona el par direccional completo),
      - acción masiva `Seleccionar todo` para seleccionar todos los slots bloqueables del día activo,
      - acción `Limpiar selección` para resetear selección del día activo,
@@ -589,6 +598,7 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
+  - `PATCH /api/admin/months/[month]/slot-mode`
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
   - `GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD` (`date` opcional)
   - `POST /api/admin/months/[month]/blocked-slots`
@@ -604,6 +614,11 @@ Contrato API:
     - `month` debe cumplir formato `YYYY-MM`,
     - el mes debe existir en `active_months`,
     - si no existe, responde `404` con `MONTH_NOT_REGISTERED`.
+  - `PATCH /api/admin/months/[month]/slot-mode`:
+    - payload `{ slotMode }`,
+    - `slotMode` permitido: `BLOCK_MODE|SECOND_ONLY_MODE`,
+    - requiere mes registrado,
+    - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
   - `GET /api/admin/months/[month]/days/[date]/agenda`:
     - `date` debe cumplir formato `YYYY-MM-DD`,
     - `date` debe pertenecer al `month` solicitado,
@@ -645,10 +660,12 @@ Contrato API:
 - Success `POST /api/admin/months` (`200`):
   - `{ createdMonths, skippedMonths, totalCreated, totalSkipped }`
 - Success `GET /api/admin/months/[month]` (`200`):
-  - `month`, `monthStatus`, `currentMonth`, `currentDate`, `isPastMonth`
+  - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
   - `projectedSaturationPercent`
   - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`
+- Success `PATCH /api/admin/months/[month]/slot-mode` (`200`):
+  - `{ month, slotMode }`
 - Success `GET /api/admin/months/[month]/days/[date]/agenda` (`200`):
   - `{ month, date, total, appointments[] }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`

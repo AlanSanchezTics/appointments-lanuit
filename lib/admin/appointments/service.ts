@@ -1,5 +1,5 @@
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { createCalendarEvent, deleteCalendarEvent, GoogleCalendarConfigError } from "@/lib/calendar/google";
 import type {
   AdminCancelAppointmentPayload,
@@ -139,6 +139,8 @@ export async function rescheduleAdminAppointment(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
+  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+
   validateBookingRules(
     {
       date: input.date,
@@ -178,7 +180,7 @@ export async function rescheduleAdminAppointment(
       excludeAppointmentId: current.id,
     });
 
-    const availableSlots = getAvailableStartSlots(BASE_TIME_SLOTS, occupiedSlots);
+    const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
 
     if (!availableSlots.includes(input.timeSlot)) {
       throw new Error("SLOT_NOT_AVAILABLE");

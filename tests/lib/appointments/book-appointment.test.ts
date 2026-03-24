@@ -9,7 +9,12 @@ const deleteReservationLockByTokenMock = vi.fn(async () => undefined);
 const syncAppointmentToCalendarMock = vi.fn(async () => ({ status: "CONFIRMED" as const }));
 const getWhatsappPhoneMock = vi.fn(() => "5215512345678");
 const getAvailableStartSlotsMock = vi.fn(() => ["09:00", "13:00"]);
-const assertMonthIsBookableMock = vi.fn(async () => undefined);
+const getBookableMonthConfigMock = vi.fn(async () => ({
+  id: 1,
+  month: "2026-03",
+  status: "ACTIVE",
+  slotMode: "BLOCK_MODE",
+}));
 const transactionMock = vi.fn();
 const findFirstMock = vi.fn();
 const findManyMock = vi.fn();
@@ -45,7 +50,7 @@ vi.mock("@/lib/availability/rules", () => ({
 }));
 
 vi.mock("@/lib/active-months/service", () => ({
-  assertMonthIsBookable: assertMonthIsBookableMock,
+  getBookableMonthConfig: getBookableMonthConfigMock,
 }));
 
 describe("bookAppointment", () => {

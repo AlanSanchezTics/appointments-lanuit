@@ -246,19 +246,21 @@ Business behavior is defined by:
     - `Seleccionar todo` selects all currently blockable slots for the selected day in one action.
     - `Limpiar selección` removes every selected slot before submit.
   - Slot visualization behavior:
-    - UI supports `Por hora` and `Por bloque` views over the same eligible slot set.
+    - UI supports `Por hora` and `Por bloque` views over the same eligible slot set in `BLOCK_MODE`.
+    - In `SECOND_ONLY_MODE`, blocked-spaces modal only allows `Por hora`.
     - Selecting a block toggles both slots of the directional pair in the current day.
     - Persistence remains slot-based in `blocked_slots` (no additional block-level entity).
 
 ## Availability Rules
 
-- Valid base time slots are fixed:
-  - 09:00
-  - 10:00
-  - 13:00
-  - 14:00
-  - 17:00
-  - 18:00
+- Month slot mode policy:
+  - `BLOCK_MODE`:
+    - valid base time slots: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
+  - `SECOND_ONLY_MODE`:
+    - valid base time slots: `10:00`, `14:00`, `18:00`.
+  - Month slot mode is persisted in `active_months.slot_mode`.
+  - Mode change does not alter or cancel existing appointments.
+  - Mode affects new booking lock, booking confirmation, admin reschedule, and blockable-slot eligibility.
 
 - Visible/eligible availability must exclude:
   - Past-time slots for same-day booking.

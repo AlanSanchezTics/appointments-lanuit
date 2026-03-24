@@ -73,6 +73,7 @@ describe("GET /api/admin/months/[month]", () => {
     getAdminMonthDetailMock.mockResolvedValueOnce({
       month: "2026-03",
       monthStatus: "ACTIVE",
+      slotMode: "BLOCK_MODE",
       currentMonth: "2026-03",
       currentDate: "2026-03-21",
       isPastMonth: false,
@@ -98,6 +99,7 @@ describe("GET /api/admin/months/[month]", () => {
     await expect(response.json()).resolves.toEqual({
       month: "2026-03",
       monthStatus: "ACTIVE",
+      slotMode: "BLOCK_MODE",
       currentMonth: "2026-03",
       currentDate: "2026-03-21",
       isPastMonth: false,
