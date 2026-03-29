@@ -359,6 +359,7 @@
       "openCta": "Compartir agenda",
       "notifications": {
         "copySuccess": "Enlace copiado al portapapeles",
+        "shareSuccess": "Agenda compartida",
         "copyError": "No se pudo copiar el enlace."
       }
     }

@@ -36,7 +36,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
 9. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
 10. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`.
-11. Al usar `Compartir agenda`, se copia al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y se muestra toast de éxito `Enlace copiado`.
+11. Al usar `Compartir agenda`, frontend intenta copiar al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y muestra toast de éxito.
+    - Si clipboard no está disponible (casos frecuentes en mobile), usa fallback de copia legacy.
+    - Si la copia sigue fallando y el navegador soporta Web Share API, abre el flujo nativo de compartir para la misma URL.
 12. Debajo de `Compartir agenda`, admin puede abrir `Agendar nueva cita`.
 13. `Agendar nueva cita` abre `BottomSheetModal` con:
    - selector horizontal de días agendables,

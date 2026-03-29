@@ -578,7 +578,10 @@ Flujo UI:
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
    - Cuando `isPastMonth=false`, debajo del calendario se muestra CTA secundaria `Compartir agenda`.
    - `Compartir agenda` permanece deshabilitado cuando `monthStatus=INACTIVE`.
-   - `Compartir agenda` copia al portapapeles la URL pública completa del mes seleccionado (`<origen>/citas/[month]`, ej. `https://dominio.com/citas/2026-03`) y muestra notificación de éxito.
+   - `Compartir agenda` intenta copiar al portapapeles la URL pública completa del mes seleccionado (`<origen>/citas/[month]`, ej. `https://dominio.com/citas/2026-03`) y muestra notificación de éxito.
+   - Compatibilidad cross-device obligatoria para `Compartir agenda`:
+     - desktop: usa clipboard como comportamiento principal,
+     - mobile o navegadores sin permisos de clipboard: usa fallback de copia legacy y, si aún falla, invoca Web Share API para compartir la misma URL.
    - Debajo de `Compartir agenda` se muestra CTA primaria `Agendar nueva cita`.
    - `Agendar nueva cita` abre `BottomSheetModal` para:
      - seleccionar día,

@@ -359,6 +359,7 @@
       "openCta": "Share schedule",
       "notifications": {
         "copySuccess": "Link copied to clipboard",
+        "shareSuccess": "Schedule shared",
         "copyError": "Unable to copy the link."
       }
     }

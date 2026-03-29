@@ -29,6 +29,7 @@ import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { useBookAppointmentModal } from "@/hooks/admin/months/useBookAppointmentModal";
+import { useShareMonthAgenda } from "@/hooks/admin/months/useShareMonthAgenda";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
@@ -170,6 +171,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const dayAgendaModal = useDayAgendaModal(data.month);
   const blockSpacesModal = useBlockSpacesModal(data.month);
   const bookAppointmentModal = useBookAppointmentModal(data.month);
+  const { shareMonthAgenda } = useShareMonthAgenda();
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
@@ -654,20 +656,29 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   }
 
   async function handleCopyMonthAgendaLink() {
-    try {
-      const publicMonthUrl = new URL(
-        `/citas/${data.month}`,
-        window.location.origin,
-      ).toString();
-      await navigator.clipboard.writeText(publicMonthUrl);
+    const result = await shareMonthAgenda(data.month);
+
+    if (result === "cancelled") {
+      return;
+    }
+
+    if (result === "copied") {
       sileo.success({
         title: t("monthsDetail.shareAgenda.notifications.copySuccess"),
       });
-    } catch {
-      sileo.error({
-        title: t("monthsDetail.shareAgenda.notifications.copyError"),
-      });
+      return;
     }
+
+    if (result === "shared") {
+      sileo.success({
+        title: t("monthsDetail.shareAgenda.notifications.shareSuccess"),
+      });
+      return;
+    }
+
+    sileo.error({
+      title: t("monthsDetail.shareAgenda.notifications.copyError"),
+    });
   }
 
   async function handleUpdateMonthSlotMode() {
