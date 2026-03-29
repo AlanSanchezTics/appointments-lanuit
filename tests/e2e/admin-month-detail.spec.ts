@@ -165,7 +165,7 @@ e2eSuite("admin months detail e2e", () => {
     await expect(page).toHaveURL(/\/admin\/months\/\d{4}-\d{2}$/);
     await expect(
       page.getByRole("heading", {
-        name: /Saturaci.n proyectada|Projected saturation/i,
+        name: /Ocupaci.n proyectada para este mes|Projected occupancy for this month/i,
       }),
     ).toBeVisible();
     await expect(

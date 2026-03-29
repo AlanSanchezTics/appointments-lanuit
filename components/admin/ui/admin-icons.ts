@@ -30,6 +30,9 @@ import {
   faBan,
   faCalendar as fasCalendar,
   faExternalLinkSquareAlt,
+  faCircleArrowUp,
+  faCircleArrowDown,
+  faCircleMinus,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -79,5 +82,8 @@ export const adminIcons = {
   delete: faTrash,
   addNewAppointment: fasCalendarDays,
   blockSpaces: faBan,
-  shareAgenda: faExternalLinkSquareAlt
+  shareAgenda: faExternalLinkSquareAlt,
+  trendUp: faCircleArrowUp,
+  trendDown: faCircleArrowDown,
+  trendNeutral: faCircleMinus,
 } as const;

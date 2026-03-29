@@ -253,6 +253,46 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     slotModeDraft === "BLOCK_MODE"
       ? "monthsDetail.slotMode.helpers.block"
       : "monthsDetail.slotMode.helpers.secondOnly";
+  const saturationComparison = useMemo(() => {
+    if (!data.saturationComparison) {
+      return null;
+    }
+
+    const { previousMonth, deltaPercentPoints } = data.saturationComparison;
+    const previousMonthLabel = formatMonthLabel(previousMonth, language);
+    const delta = Math.abs(deltaPercentPoints);
+
+    if (deltaPercentPoints > 0) {
+      return {
+        icon: adminIcons.trendUp,
+        iconClassName: "text-[var(--admin-success-text)]",
+        iconTitle: t("monthsDetail.saturation.trend.up"),
+        text: t("monthsDetail.saturation.comparison.more", {
+          previousMonth: previousMonthLabel,
+          delta,
+        }),
+      };
+    }
+
+    if (deltaPercentPoints < 0) {
+      return {
+        icon: adminIcons.trendDown,
+        iconClassName: "text-[#b91c1c]!",
+        iconTitle: t("monthsDetail.saturation.trend.down"),
+        text: t("monthsDetail.saturation.comparison.less", {
+          previousMonth: previousMonthLabel,
+          delta,
+        }),
+      };
+    }
+
+    return {
+      icon: adminIcons.trendNeutral,
+      iconClassName: "text-[var(--admin-text-secondary)]",
+      iconTitle: t("monthsDetail.saturation.trend.neutral"),
+      text: t("monthsDetail.saturation.comparison.neutral"),
+    };
+  }, [data.saturationComparison, language, t]);
 
   function startEditing(appointment: AdminDayAgendaItem) {
     const normalizedTimeSlot = appointment.timeSlot.slice(0, 5);
@@ -707,10 +747,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     data.monthStatus === "ACTIVE"
       ? t("monthsDetail.monthStatus.actions.deactivate")
       : t("monthsDetail.monthStatus.actions.activate");
+  const shouldShowActionButtons = !data.isPastMonth;
 
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
-      <section className="flex items-center gap-2">
+      <section className="flex items-start gap-2">
         <Link
           href="/admin/months"
           aria-label={t("monthsDetail.header.back")}
@@ -718,31 +759,37 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         >
           <AdminIcon icon={adminIcons.back} />
         </Link>
-        <h1 className="text-2xl font-bold text-[var(--admin-accent)]">
-          {monthTitle}
-        </h1>
-        <span
-          className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${monthStatusTagClassName}`}
-        >
-          {monthStatusTagText}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => {
-            setSlotModeDraft(data.slotMode);
-            setIsSlotModeModalOpen(true);
-          }}
-          aria-label={t("monthsDetail.slotMode.openCta")}
-          disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-          className="ml-auto h-10 w-10 justify-center rounded-full p-0"
-        >
-          <AdminIcon icon={adminIcons.slotModeSettings} tone="secondary" />
-        </Button>
-        {data.isPastMonth ? (
-          <span className="ml-auto rounded-full bg-[var(--admin-inactive-bg)] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--admin-text-secondary)]">
-            {t("monthsDetail.header.historical")}
-          </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="text-2xl font-bold text-[var(--admin-accent)]">
+            {monthTitle}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${monthStatusTagClassName}`}
+            >
+              {monthStatusTagText}
+            </span>
+            {data.isPastMonth ? (
+              <span className="rounded-full bg-[var(--admin-inactive-bg)] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--admin-text-secondary)]">
+                {t("monthsDetail.header.historical")}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        {!data.isPastMonth ? (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setSlotModeDraft(data.slotMode);
+              setIsSlotModeModalOpen(true);
+            }}
+            aria-label={t("monthsDetail.slotMode.openCta")}
+            disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+            className="h-10 w-10 justify-center rounded-full p-0"
+          >
+            <AdminIcon icon={adminIcons.slotModeSettings} tone="secondary" />
+          </Button>
         ) : null}
       </section>
 
@@ -825,7 +872,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
 
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[var(--admin-text-primary)]">
+          <h2 className="font-bold text-[var(--admin-text-primary)]">
             {t("monthsDetail.saturation.title")}
           </h2>
           <span className="text-2xl font-extrabold text-[var(--admin-accent)]">
@@ -843,6 +890,16 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             aria-label={t("monthsDetail.saturation.ariaLabel")}
           />
         </div>
+        {saturationComparison ? (
+          <p className="flex items-center gap-1.5 text-xs text-[var(--admin-text-secondary)]">
+            <AdminIcon
+              icon={saturationComparison.icon}
+              className={saturationComparison.iconClassName}
+              title={saturationComparison.iconTitle}
+            />
+            <span>{saturationComparison.text}</span>
+          </p>
+        ) : null}
       </Card>
 
       <Card className="space-y-4 p-4">
@@ -917,60 +974,75 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         </div>
       </Card>
 
-      <Button
-        type="button"
-        variant="primary"
-        fullWidth
-        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-        onClick={() => void handleCopyMonthAgendaLink()}
-        className="h-12"
-      >
-        <AdminIcon icon={adminIcons.shareAgenda} className="text-white! mr-2" />
-        {t("monthsDetail.shareAgenda.openCta")}
-      </Button>
+      {shouldShowActionButtons ? (
+        <>
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={
+              isLoading ||
+              isUpdatingSlotMode ||
+              isUpdatingMonthStatus ||
+              data.monthStatus !== "ACTIVE"
+            }
+            onClick={() => void handleCopyMonthAgendaLink()}
+            className="h-12"
+          >
+            <AdminIcon
+              icon={adminIcons.shareAgenda}
+              className="text-white! mr-2"
+            />
+            {t("monthsDetail.shareAgenda.openCta")}
+          </Button>
 
-      <Button
-        type="button"
-        variant="primary"
-        fullWidth
-        disabled={
-          isLoading ||
-          isUpdatingSlotMode ||
-          isUpdatingMonthStatus ||
-          data.monthStatus !== "ACTIVE"
-        }
-        onClick={() => void handleOpenBookAppointmentModal()}
-        className="h-12"
-      >
-        <AdminIcon
-          icon={adminIcons.addNewAppointment}
-          className="text-white! mr-2"
-        />
-        {t("monthsDetail.bookModal.openCta")}
-      </Button>
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={
+              isLoading ||
+              isUpdatingSlotMode ||
+              isUpdatingMonthStatus ||
+              data.monthStatus !== "ACTIVE"
+            }
+            onClick={() => void handleOpenBookAppointmentModal()}
+            className="h-12"
+          >
+            <AdminIcon
+              icon={adminIcons.addNewAppointment}
+              className="text-white! mr-2"
+            />
+            {t("monthsDetail.bookModal.openCta")}
+          </Button>
 
-      <Button
-        type="button"
-        variant="primary"
-        fullWidth
-        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-        onClick={() => void blockSpacesModal.open()}
-        className="h-12"
-      >
-        <AdminIcon icon={adminIcons.blockSpaces} className="text-white! mr-2" />
-        {t("monthsDetail.blockModal.openCta")}
-      </Button>
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+            onClick={() => void blockSpacesModal.open()}
+            className="h-12"
+          >
+            <AdminIcon
+              icon={adminIcons.blockSpaces}
+              className="text-white! mr-2"
+            />
+            {t("monthsDetail.blockModal.openCta")}
+          </Button>
 
-      <Button
-        type="button"
-        variant="primary"
-        fullWidth
-        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-        onClick={() => void handleUpdateMonthStatus(nextMonthStatus)}
-        className={monthStatusToggleClassName}
-      >
-        {monthStatusToggleText}
-      </Button>
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+            onClick={() => void handleUpdateMonthStatus(nextMonthStatus)}
+            className={monthStatusToggleClassName}
+          >
+            {monthStatusToggleText}
+          </Button>
+        </>
+      ) : null}
 
       <BottomSheetModal
         isOpen={isSlotModeModalOpen}

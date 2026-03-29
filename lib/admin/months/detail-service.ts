@@ -26,6 +26,15 @@ function getMonthDays(month: string) {
   });
 }
 
+function getPreviousMonthKey(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const previousMonthDate = new Date(Date.UTC(year, monthNumber - 2, 1));
+  const previousYear = previousMonthDate.getUTCFullYear();
+  const previousMonth = String(previousMonthDate.getUTCMonth() + 1).padStart(2, "0");
+
+  return `${previousYear}-${previousMonth}`;
+}
+
 function resolveTone(isWeekend: boolean, availableSpaces: number): MonthDetailCalendarDay["tone"] {
   if (isWeekend) {
     return "weekend";
@@ -53,10 +62,16 @@ export async function getAdminMonthDetail(
   }
 
   const { monthStart, monthEndExclusive } = getMonthBounds(month);
-  const [appointments, blockedSlots] = await Promise.all([
-    listAppointmentsByMonth(monthStart, monthEndExclusive),
-    listMonthBlockedSlots(monthStart, monthEndExclusive),
-  ]);
+  const previousMonth = getPreviousMonthKey(month);
+  const { monthStart: previousMonthStart, monthEndExclusive: previousMonthEndExclusive } =
+    getMonthBounds(previousMonth);
+  const [appointments, blockedSlots, previousMonthAppointments, previousMonthBlockedSlots] =
+    await Promise.all([
+      listAppointmentsByMonth(monthStart, monthEndExclusive),
+      listMonthBlockedSlots(monthStart, monthEndExclusive),
+      listAppointmentsByMonth(previousMonthStart, previousMonthEndExclusive),
+      listMonthBlockedSlots(previousMonthStart, previousMonthEndExclusive),
+    ]);
   const activeSlotsByDate = new Map<string, string[]>();
   const blockedSlotsByDate = new Map<string, string[]>();
 
@@ -110,6 +125,25 @@ export async function getAdminMonthDetail(
   const projectedSaturationPercent = totalModeledSpaces
     ? Math.round((occupiedSpaces / totalModeledSpaces) * 100)
     : 0;
+  const previousMonthOperationalDays = getMonthDays(previousMonth).filter((date) =>
+    isWeekdayBookingDate(date),
+  ).length;
+  const previousMonthOccupiedSpaces = previousMonthAppointments.filter(
+    (appointment) => appointment.status !== "CANCELLED",
+  ).length;
+  const previousMonthBlockedSpaces = previousMonthBlockedSlots.length;
+  const previousMonthTotalCapacity = previousMonthOperationalDays * MAX_APPOINTMENTS_PER_DAY;
+  const previousMonthAvailableSpaces = Math.max(
+    0,
+    previousMonthTotalCapacity - (previousMonthOccupiedSpaces + previousMonthBlockedSpaces),
+  );
+  const previousMonthModeledSpaces =
+    previousMonthOccupiedSpaces + previousMonthAvailableSpaces;
+  const previousProjectedSaturationPercent = previousMonthModeledSpaces
+    ? Math.round((previousMonthOccupiedSpaces / previousMonthModeledSpaces) * 100)
+    : 0;
+  const deltaPercentPoints =
+    projectedSaturationPercent - previousProjectedSaturationPercent;
 
   return {
     month,
@@ -119,6 +153,11 @@ export async function getAdminMonthDetail(
     currentDate,
     isPastMonth: month < currentMonth,
     projectedSaturationPercent,
+    saturationComparison: {
+      previousMonth,
+      previousProjectedSaturationPercent,
+      deltaPercentPoints,
+    },
     metrics: {
       confirmedAppointments,
       cancelledAppointments,

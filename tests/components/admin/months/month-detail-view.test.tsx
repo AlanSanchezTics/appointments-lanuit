@@ -20,6 +20,11 @@ describe("MonthDetailView", () => {
           currentDate: "2026-03-21",
           isPastMonth: false,
           projectedSaturationPercent: 85,
+          saturationComparison: {
+            previousMonth: "2026-02",
+            previousProjectedSaturationPercent: 72,
+            deltaPercentPoints: 13,
+          },
           metrics: {
             confirmedAppointments: 8,
             cancelledAppointments: 1,
@@ -54,7 +59,15 @@ describe("MonthDetailView", () => {
     expect(screen.getByText("Canceladas")).toBeInTheDocument();
     expect(screen.getByText("Disponibles")).toBeInTheDocument();
     expect(screen.getByText("Bloqueados")).toBeInTheDocument();
-    expect(screen.getByText("Saturación proyectada")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ocupación proyectada para este mes"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("13% más comparado con Febrero de 2026"),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-icon="circle-arrow-up"]'),
+    ).toBeInTheDocument();
     expect(screen.getByText("85%")).toBeInTheDocument();
     expect(screen.getByText("Vista mensual")).toBeInTheDocument();
     expect(screen.getAllByTestId("2026-03-02-appointment-dot")).toHaveLength(2);
@@ -105,6 +118,111 @@ describe("MonthDetailView", () => {
     expect(
       screen.getByRole("button", { name: "Desactivar mes" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows neutral occupancy comparison text and neutral icon when there is no change", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-21",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          saturationComparison: {
+            previousMonth: "2026-02",
+            previousProjectedSaturationPercent: 85,
+            deltaPercentPoints: 0,
+          },
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("Misma ocupación comparada con el mes anterior"),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-icon="circle-minus"]'),
+    ).toBeInTheDocument();
+  });
+
+  it("hides slot mode button for past months and keeps status tags under title", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-04",
+          currentDate: "2026-04-01",
+          isPastMonth: true,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const title = screen.getByRole("heading", { name: "Marzo de 2026" });
+    const headerContent = title.parentElement;
+    expect(headerContent).not.toBeNull();
+    expect(within(headerContent!).getByText("Activo")).toBeInTheDocument();
+    expect(within(headerContent!).getByText("Histórico")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Modalidad/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders schedule CTA before block spaces CTA", () => {
@@ -205,6 +323,62 @@ describe("MonthDetailView", () => {
     expect(
       screen.getByRole("button", { name: "Agendar nueva cita" }),
     ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Compartir agenda" })).toBeDisabled();
+  });
+
+  it("hides all action CTAs when month is past", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-04",
+          currentDate: "2026-04-01",
+          isPastMonth: true,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Compartir agenda" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Agendar nueva cita" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Bloquear espacios" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Desactivar mes" }),
+    ).not.toBeInTheDocument();
   });
 
   it("opens booking modal from schedule CTA", async () => {

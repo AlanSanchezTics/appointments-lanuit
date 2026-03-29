@@ -69,6 +69,12 @@ export type MonthDetailMetrics = {
   occupiedSpaces: number;
 };
 
+export type MonthSaturationComparison = {
+  previousMonth: string;
+  previousProjectedSaturationPercent: number;
+  deltaPercentPoints: number;
+};
+
 export type MonthDetailResponse = {
   month: string;
   monthStatus: ActiveMonthStatus;
@@ -77,6 +83,7 @@ export type MonthDetailResponse = {
   currentDate: string;
   isPastMonth: boolean;
   projectedSaturationPercent: number;
+  saturationComparison?: MonthSaturationComparison;
   metrics: MonthDetailMetrics;
   calendarDays: MonthDetailCalendarDay[];
 };

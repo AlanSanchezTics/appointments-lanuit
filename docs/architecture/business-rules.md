@@ -197,6 +197,10 @@ Business behavior is defined by:
   - `availableSpaces`: `(operationalWeekdays * 3) - (occupiedSpaces + blockedSpaces)` where `3` is max daily capacity.
   - `blockedSpaces`: count of manual blocked slots persisted in `blocked_slots` for the selected month.
   - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
+  - `saturationComparison`:
+    - `previousMonth`: previous chronological month (`YYYY-MM`).
+    - `previousProjectedSaturationPercent`: same saturation formula calculated for previous month.
+    - `deltaPercentPoints`: `projectedSaturationPercent - previousProjectedSaturationPercent`.
 
 - Calendar policy:
   - Calendar includes every day of the selected month.
@@ -215,6 +219,9 @@ Business behavior is defined by:
 
 - Admin edit policy:
   - Month status action updates `active_months.status` between `ACTIVE` and `INACTIVE`.
+  - Month slot-mode action is only exposed in UI for current/future months (`isPastMonth=false`).
+  - Share-agenda action is exposed only for current/future months and must stay disabled when `monthStatus=INACTIVE`.
+  - If `isPastMonth=true`, UI must hide the 4 action CTAs block (`Compartir agenda`, `Agendar nueva cita`, `Bloquear espacios`, `Activar|Desactivar mes`).
   - Month status update is only allowed for current or future months.
   - Updating month status in past months is rejected with `MONTH_IN_PAST`.
   - Edit action reprograms appointment `date + timeSlot` within the same selected month.

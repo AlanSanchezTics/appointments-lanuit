@@ -130,8 +130,18 @@
       "blocked": "Blocked"
     },
     "saturation": {
-      "title": "Projected saturation",
-      "ariaLabel": "Projected monthly saturation"
+      "title": "Projected occupancy for this month",
+      "ariaLabel": "Projected monthly saturation",
+      "comparison": {
+        "more": "{{delta}}% more compared with {{previousMonth}}",
+        "less": "{{delta}}% less compared with {{previousMonth}}",
+        "neutral": "Same occupancy compared with previous month"
+      },
+      "trend": {
+        "up": "More occupancy",
+        "down": "Less occupancy",
+        "neutral": "No occupancy change"
+      }
     },
     "calendar": {
       "title": "Monthly view",

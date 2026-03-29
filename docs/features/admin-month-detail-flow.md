@@ -25,36 +25,39 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - calendario diario del mes con tono operativo por disponibilidad.
 6. UI renderiza bloques:
    - grid de métricas 2x2,
-   - tarjeta de saturación proyectada,
-   - calendario operativo mensual.
-7. Admin puede tocar botón `Modalidad` junto al título del mes para abrir modal de configuración.
+   - tarjeta de `Ocupación proyectada para este mes`,
+   - comparativa de ocupación vs mes anterior dentro de la misma tarjeta en formato `N% más/menos comparado con (mes) (año)` con icono de tendencia,
+   - calendario operativo mensual,
+   - tags de estado (`Activo|Inactivo`) y `Histórico` debajo del título cuando `isPastMonth=true`.
+7. Si `isPastMonth=false`, admin puede tocar botón `Modalidad` en el encabezado para abrir modal de configuración.
 8. En el modal de modalidad selecciona:
    - `Bloques de horarios` (`BLOCK_MODE`): base `09:00,10:00,13:00,14:00,17:00,18:00`.
    - `Horario fijo` (`SECOND_ONLY_MODE`): base `10:00,14:00,18:00`.
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
-9. Debajo del calendario, admin puede usar `Compartir agenda`.
-10. `Compartir agenda` copia al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y muestra toast de éxito `Enlace copiado`.
-11. Debajo de `Compartir agenda`, admin puede abrir `Agendar nueva cita`.
-12. `Agendar nueva cita` abre `BottomSheetModal` con:
+9. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
+10. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`.
+11. Al usar `Compartir agenda`, se copia al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y se muestra toast de éxito `Enlace copiado`.
+12. Debajo de `Compartir agenda`, admin puede abrir `Agendar nueva cita`.
+13. `Agendar nueva cita` abre `BottomSheetModal` con:
    - selector horizontal de días agendables,
    - selector de horarios disponibles por día,
    - selector de cliente con dos modalidades:
      - cliente existente por búsqueda remota,
      - alta inline de cliente nuevo (nombre + teléfono),
    - CTA `Agendar cita` para ejecutar alta en backend.
-13. Al confirmar `Agendar cita`:
+14. Al confirmar `Agendar cita`:
    - backend crea la cita y ejecuta sync de calendario según reglas de dominio,
    - UI muestra vista local de éxito en el mismo bottom sheet,
    - acción `Volver` cierra modal y refresca métricas/calendario del mes.
-14. Debajo de `Agendar nueva cita`, admin puede abrir `Bloquear espacios`.
-15. Debajo de `Bloquear espacios`, admin visualiza CTA contextual para estado:
+15. Debajo de `Agendar nueva cita`, admin puede abrir `Bloquear espacios`.
+16. Debajo de `Bloquear espacios`, admin visualiza CTA contextual para estado:
    - si el mes está `ACTIVE`, CTA roja `Desactivar mes`,
    - si el mes está `INACTIVE`, CTA verde `Activar mes`.
-16. Al tocar la CTA de estado:
+17. Al tocar la CTA de estado:
    - frontend ejecuta `PATCH /api/admin/months/[month]/status` con el estado destino,
    - backend actualiza `active_months.status`,
    - UI refresca detalle mensual al finalizar.
-17. `Bloquear espacios` abre `BottomSheetModal` con:
+18. `Bloquear espacios` abre `BottomSheetModal` con:
    - selector horizontal de días bloqueables,
    - selector de visualización de espacios (`Por hora` / `Por bloque`) solo en `BLOCK_MODE`,
    - en `SECOND_ONLY_MODE` solo se muestra `Por hora`,
@@ -62,7 +65,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - acción masiva `Seleccionar todo` (selecciona todos los slots bloqueables del día activo),
    - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
-18. Al confirmar:
+19. Al confirmar:
    - UI bloquea todas las interacciones del modal mientras procesa,
    - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
    - backend persiste bloqueo por slot en `blocked_slots`,
@@ -71,9 +74,10 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - slot único bloqueado en par => propagación direccional,
      - par completo bloqueado => sin propagación adicional,
      - día completo bloqueado => sin disponibilidad.
-19. Admin toca un día del calendario y se abre modal de detalle diario.
-20. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
-21. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
+20. Si `isPastMonth=true`, no se renderiza el bloque completo de 4 CTAs (`Compartir agenda`, `Agendar nueva cita`, `Bloquear espacios`, `Activar|Desactivar mes`).
+21. Admin toca un día del calendario y se abre modal de detalle diario.
+22. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
+23. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes solo para citas futuras.
      - Al guardar edición, el subformulario se cierra de inmediato.
@@ -97,8 +101,15 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
   - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
 - Espacios bloqueados:
   - total de slots persistidos en `blocked_slots` para el mes.
-- Saturación proyectada:
+- Ocupación proyectada para este mes:
   - `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100` (redondeado).
+- Comparativa contra mes anterior:
+  - `previousProjectedSaturationPercent`: misma fórmula aplicada al mes previo.
+  - `deltaPercentPoints`: diferencia `actual - mesAnterior` en puntos porcentuales.
+  - UI deriva texto de tendencia:
+    - `delta > 0`: `N% más` + icono `ArrowCircleUp` en verde.
+    - `delta < 0`: `N% menos` + icono `ArrowCircleDown` en rojo.
+    - `delta = 0`: `Misma ocupación comparada con el mes anterior` + icono `MinusCircle` neutro.
 - Tono de día:
   - `available` cuando hay `>= 2` espacios,
   - `low` cuando hay `1`,

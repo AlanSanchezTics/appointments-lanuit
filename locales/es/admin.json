@@ -130,8 +130,18 @@
       "blocked": "Bloqueados"
     },
     "saturation": {
-      "title": "Saturación proyectada",
-      "ariaLabel": "Saturación proyectada del mes"
+      "title": "Ocupación proyectada para este mes",
+      "ariaLabel": "Saturación proyectada del mes",
+      "comparison": {
+        "more": "{{delta}}% más comparado con {{previousMonth}}",
+        "less": "{{delta}}% menos comparado con {{previousMonth}}",
+        "neutral": "Misma ocupación comparada con el mes anterior"
+      },
+      "trend": {
+        "up": "Más ocupación",
+        "down": "Menos ocupación",
+        "neutral": "Sin cambio de ocupación"
+      }
     },
     "calendar": {
       "title": "Vista mensual",

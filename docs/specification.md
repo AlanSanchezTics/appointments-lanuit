@@ -535,7 +535,12 @@ Flujo UI:
 5. Admin puede navegar a `/admin/months/[month]` para consultar detalle operativo del mes seleccionado.
    - Vista de detalle:
      - grid de métricas 2x2 (`Confirmadas`, `Canceladas`, `Disponibles`, `Bloqueados`),
-     - tarjeta de `Saturación proyectada` (porcentaje + barra),
+     - tarjeta de `Ocupación proyectada para este mes` (porcentaje + barra),
+     - comparativa textual vs mes anterior en la misma tarjeta en formato `N% más/menos comparado con (mes) (año)`,
+     - la comparativa muestra iconografía de tendencia:
+       - `ArrowCircleUp` verde para `más`,
+       - `ArrowCircleDown` rojo para `menos`,
+       - `MinusCircle` neutro cuando no hay cambio + texto `Misma ocupación comparada con el mes anterior`,
      - calendario operativo mensual.
    - Fórmula de `Disponibles` (métrica mensual):
      - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
@@ -563,14 +568,16 @@ Flujo UI:
      - amarillo (`availableSpaces = 1`),
      - rojo (`availableSpaces = 0`),
      - gris en fines de semana (no operativos).
-   - A la derecha del título del mes existe botón de acción `Modalidad` que abre `BottomSheetModal`.
+   - A la derecha del encabezado del mes existe botón de acción `Modalidad` que abre `BottomSheetModal` únicamente cuando `isPastMonth=false`.
+   - En meses pasados (`isPastMonth=true`) el botón `Modalidad` no se renderiza.
    - En el modal de modalidad:
      - `Bloques de horarios` (`BLOCK_MODE`): base de slots `09:00,10:00,13:00,14:00,17:00,18:00`.
      - `Horario fijo` (`SECOND_ONLY_MODE`): base de slots `10:00,14:00,18:00`.
      - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
      - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
-   - Debajo del calendario se muestra CTA secundaria `Compartir agenda`.
+   - Cuando `isPastMonth=false`, debajo del calendario se muestra CTA secundaria `Compartir agenda`.
+   - `Compartir agenda` permanece deshabilitado cuando `monthStatus=INACTIVE`.
    - `Compartir agenda` copia al portapapeles la URL pública completa del mes seleccionado (`<origen>/citas/[month]`, ej. `https://dominio.com/citas/2026-03`) y muestra notificación de éxito.
    - Debajo de `Compartir agenda` se muestra CTA primaria `Agendar nueva cita`.
    - `Agendar nueva cita` abre `BottomSheetModal` para:
@@ -580,12 +587,18 @@ Flujo UI:
      - confirmar `Agendar cita`.
    - Al completar `Agendar cita`, UI muestra vista local de éxito en el mismo modal con acción `Volver` (cerrar modal + refrescar detalle mensual).
    - Debajo de `Agendar nueva cita` se muestra CTA secundaria `Bloquear espacios`.
-   - Junto al título del mes se muestra tag de estado actual:
+   - Debajo del título del mes se muestran tags de estado:
      - `Activo` cuando `monthStatus=ACTIVE`,
      - `Inactivo` cuando `monthStatus=INACTIVE`.
+     - `Histórico` cuando `isPastMonth=true`.
    - Debajo de `Bloquear espacios` se muestra CTA contextual para cambio de estado:
      - `Desactivar mes` (estilo rojo) cuando `monthStatus=ACTIVE`,
      - `Activar mes` (estilo verde) cuando `monthStatus=INACTIVE`.
+   - En meses pasados (`isPastMonth=true`) no se renderizan los 4 CTAs operativos del bloque inferior:
+     - `Compartir agenda`,
+     - `Agendar nueva cita`,
+     - `Bloquear espacios`,
+     - `Activar mes|Desactivar mes`.
    - Restricciones de cambio de estado:
      - requiere mes registrado,
      - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
@@ -746,6 +759,7 @@ Contrato API:
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
   - `projectedSaturationPercent`
+  - `saturationComparison`: `{ previousMonth, previousProjectedSaturationPercent, deltaPercentPoints }`
   - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`
 - Success `POST /api/admin/months/[month]/appointments` (`201`):
   - `{ appointmentId, date, timeSlot, status, client, syncReason? }`

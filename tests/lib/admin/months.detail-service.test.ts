@@ -20,6 +20,7 @@ const listMonthBlockedSlotsMock = vi.mocked(listMonthBlockedSlots);
 describe("admin month detail service", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    listAppointmentsByMonthMock.mockResolvedValue([]);
     listMonthBlockedSlotsMock.mockResolvedValue([]);
   });
 
@@ -90,6 +91,11 @@ describe("admin month detail service", () => {
           * 100,
       ),
     );
+    expect(result.saturationComparison).toEqual({
+      previousMonth: "2026-02",
+      previousProjectedSaturationPercent: 0,
+      deltaPercentPoints: result.projectedSaturationPercent,
+    });
   });
 
   it("counts manually blocked slots in metrics and day tone", async () => {
