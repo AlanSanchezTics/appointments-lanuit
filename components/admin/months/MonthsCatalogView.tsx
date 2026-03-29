@@ -29,7 +29,15 @@ function resolveAppLanguage(language: string): AppLanguage {
   return language === "en" ? "en" : "es";
 }
 
-function getMonthItemIcon(month: string, currentMonth: string) {
+function getMonthItemIcon(
+  month: string,
+  status: MonthsCatalogStatus,
+  currentMonth: string,
+) {
+  if (status === "ACTIVE") {
+    return adminIcons.monthListCurrent;
+  }
+
   if (month > currentMonth) {
     return adminIcons.monthListFuture;
   }
@@ -41,7 +49,15 @@ function getMonthItemIcon(month: string, currentMonth: string) {
   return adminIcons.monthListCurrent;
 }
 
-function getMonthItemTone(month: string, currentMonth: string) {
+function getMonthItemTone(
+  month: string,
+  status: MonthsCatalogStatus,
+  currentMonth: string,
+) {
+  if (status === "INACTIVE") {
+    return "secondary" as const;
+  }
+
   if (month < currentMonth) {
     return "secondary" as const;
   }
@@ -269,8 +285,16 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
                   className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.status === "INACTIVE" ? "bg-[var(--admin-inactive-bg)]" : "bg-(--accent)"} `}
                 >
                   <AdminIcon
-                    icon={getMonthItemIcon(item.month, data.currentMonth)}
-                    tone={getMonthItemTone(item.month, data.currentMonth)}
+                    icon={getMonthItemIcon(
+                      item.month,
+                      item.status,
+                      data.currentMonth,
+                    )}
+                    tone={getMonthItemTone(
+                      item.month,
+                      item.status,
+                      data.currentMonth,
+                    )}
                     className={item.status !== "INACTIVE" ? "text-white!" : ""}
                   />
                 </span>
