@@ -344,7 +344,7 @@
         "title": "¡Cita Confirmada!",
         "description": "La cita ha sido agendada con éxito",
         "sendWhatsapp": "Envíar confirmación de cita por whatsapp",
-        "whatsappMessage": "Hola *{{name}}*.\nYa quedó agendada tu cita para el día *{{date}}, a las {{time}}*.\n¡Nos vemos pronto!",
+        "whatsappMessage": "Hola *{{name}}* 👋🏼.\nYa quedó agendada tu cita para el día *{{date}}, a las {{time}}* 🗓️.\n¡Nos vemos pronto ✨!",
         "back": "Volver",
         "labels": {
           "name": "Nombre",

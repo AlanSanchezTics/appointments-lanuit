@@ -20,7 +20,7 @@
     "unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",
     "contactWhatsapp": "Contactar por WhatsApp",
     "whatsappUnavailable": "WhatsApp no disponible por el momento.",
-    "unavailableWhatsappMessage": "Hola Pau 👋🏼, me gustaría recibir más información sobre disponibilidad de agenda."
+    "unavailableWhatsappMessage": "Hola Pau 👋🏼,\n Me gustaría recibir más información sobre disponibilidad de agenda 😊."
   },
   "notFound": {
     "invalidRoute": "Ruta invalida",
@@ -115,6 +115,6 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}}.\nMuchas gracias y bonito día 😊\n\n(Para cancelar tu cita accede a {{cancelUrl}})"
+    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}} 🗓️.\nMuchas gracias y bonito día 😊."
   }
 }

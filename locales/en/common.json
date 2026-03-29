@@ -20,7 +20,7 @@
     "unavailableHint": "As soon as there are active months available, booking will resume from this entry point.",
     "contactWhatsapp": "Contact on WhatsApp",
     "whatsappUnavailable": "WhatsApp is currently unavailable.",
-    "unavailableWhatsappMessage": "Hi Pau 👋🏼, I'd like more information about appointment availability."
+    "unavailableWhatsappMessage": "Hi Pau 👋🏼,\n I'd like more information about appointment availability 😊."
   },
   "notFound": {
     "invalidRoute": "Invalid route",
@@ -115,6 +115,6 @@
     "phone": "Phone"
   },
   "whatsapp": {
-    "messageTemplate": "Hi Pau ✨\nthis is {{name}} ✌️.\nI already booked for {{date}} at {{time}}.\nThank you very much and have a great day 😊\n\n(To cancel your appointment, go to {{cancelUrl}})"
+    "messageTemplate": "Hi Pau ✨\nthis is {{name}} ✌️.\nI already booked for {{date}} at {{time}} 🗓️.\nThank you very much and have a great day 😊."
   }
 }

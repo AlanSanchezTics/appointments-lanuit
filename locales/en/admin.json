@@ -344,7 +344,7 @@
         "title": "Appointment Confirmed!",
         "description": "The appointment was successfully scheduled",
         "sendWhatsapp": "Send appointment confirmation via WhatsApp",
-        "whatsappMessage": "Hi *{{name}}*.\nYour appointment is scheduled for *{{date}} at {{time}}*.\nSee you soon!",
+        "whatsappMessage": "Hi *{{name}}* 👋🏼.\nYour appointment is scheduled for *{{date}} at {{time}}* 🗓️.\nSee you soon ✨!",
         "back": "Back",
         "labels": {
           "name": "Name",
