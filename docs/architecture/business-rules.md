@@ -17,7 +17,7 @@ Business behavior is defined by:
 - Appointment scheduling windows based on active months.
 - A fixed weekday/time-slot model.
 - Booking and cancellation eligibility rules.
-- One-active-appointment policy per customer phone number.
+- One-active-future-appointment-per-month policy per customer phone number in public booking flow (admin flow allows multiple future appointments per phone).
 - Temporary slot holding during booking confirmation.
 - A single source of truth for appointment state.
 - All time-based rules are evaluated using a fixed business timezone (`America/Mexico_City`).
@@ -92,9 +92,11 @@ Business behavior is defined by:
   - Customer is resolved by phone.
   - A phone cannot map to multiple names.
 
-- Active appointment exclusivity per phone:
-  - A phone can hold at most one active future appointment.
-  - Customer must cancel their active future appointment before creating another.
+- Public booking exclusivity per phone:
+  - In public booking flow, a phone can hold at most one active future appointment within the same target month.
+  - In public booking flow, customer must cancel their active future appointment in that month before creating another in the same month.
+  - In public booking flow, customer may hold active future appointments across different months.
+  - In admin booking flow, multiple active future appointments are allowed for the same phone.
 
 - Booking confirmation rules:
   - Confirmation requires a valid, unexpired lock tied to the selected slot/date/phone.
@@ -243,8 +245,8 @@ Business behavior is defined by:
     - future slot for same-day,
     - pair-direction constraints,
     - daily max capacity,
-    - no active temporary lock for another phone on same slot,
-    - no active future appointment for the same phone.
+    - no active temporary lock for another phone on same slot.
+  - Admin can create multiple active future appointments for the same phone/customer.
   - Customer selection supports:
     - existing customer by `clientId`,
     - inline customer upsert by `name + phone`.
@@ -349,7 +351,7 @@ Business behavior is defined by:
   - Slot availability.
   - Daily and pair constraints.
   - Valid temporary lock at confirmation step.
-  - No existing active future appointment for the same phone.
+  - Public flow only: no existing active future appointment for the same phone within the same target month.
 
 - Cancellation precondition validation:
   - `CONFIRMED` status.
@@ -363,7 +365,8 @@ Business behavior is defined by:
 - External calendar acts as mirror, not authority.
 - No overlapping active occupancy per slot.
 - Pair-direction constraints and daily max capacity are always enforced.
-- A phone can have at most one active future appointment.
+- Public flow: a phone can have at most one active future appointment per month.
+- Admin flow: a phone can have multiple active future appointments.
 - Booking and cancellation are only valid within active months.
 - Same-day booking is only valid for future slots in local business time.
 - Cancellation releases availability.

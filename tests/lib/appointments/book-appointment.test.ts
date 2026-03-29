@@ -16,7 +16,6 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
   slotMode: "BLOCK_MODE",
 }));
 const transactionMock = vi.fn();
-const findFirstMock = vi.fn();
 const findManyMock = vi.fn();
 const createMock = vi.fn();
 const clientUpsertMock = vi.fn();
@@ -60,7 +59,6 @@ describe("bookAppointment", () => {
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({
         appointment: {
-          findFirst: findFirstMock,
           findMany: findManyMock,
           create: createMock,
         },
@@ -70,11 +68,10 @@ describe("bookAppointment", () => {
         },
       }),
     );
+    findManyMock.mockResolvedValue([]);
   });
 
   it("creates a new appointment even when there is historical cancellation on the same slot", async () => {
-    findFirstMock.mockResolvedValueOnce(null);
-    findManyMock.mockResolvedValueOnce([]);
     clientUpsertMock.mockResolvedValueOnce({
       id: 21,
       name: "Bety Ruiz",
@@ -122,8 +119,9 @@ describe("bookAppointment", () => {
   });
 
   it("returns SLOT_NOT_AVAILABLE when the candidate time slot is blocked by active appointments", async () => {
-    findFirstMock.mockResolvedValueOnce(null);
-    findManyMock.mockResolvedValueOnce([{ timeSlot: new Date("1970-01-01T09:00:00.000Z") }]);
+    findManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ timeSlot: new Date("1970-01-01T09:00:00.000Z") }]);
     getAvailableStartSlotsMock.mockReturnValueOnce(["13:00"]);
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
@@ -144,8 +142,6 @@ describe("bookAppointment", () => {
   });
 
   it("keeps successful booking flow with calendar sync and whatsapp payload", async () => {
-    findFirstMock.mockResolvedValueOnce(null);
-    findManyMock.mockResolvedValueOnce([]);
     clientUpsertMock.mockResolvedValueOnce({
       id: 33,
       name: "Ana Lopez",
@@ -197,8 +193,6 @@ describe("bookAppointment", () => {
       lockToken: "lock-123",
       expiresAt: "2026-03-03T12:10:00.000Z",
     });
-    findFirstMock.mockResolvedValueOnce(null);
-    findManyMock.mockResolvedValueOnce([]);
     clientUpsertMock.mockResolvedValueOnce({
       id: 12,
       name: "Ana Lopez",
@@ -245,8 +239,6 @@ describe("bookAppointment", () => {
       lockToken: "lock-123",
       expiresAt: "2026-03-03T12:10:00.000Z",
     });
-    findFirstMock.mockResolvedValueOnce(null);
-    findManyMock.mockResolvedValueOnce([]);
     clientFindUniqueMock.mockResolvedValueOnce(null);
 
     const { confirmAppointmentWithLock } = await import("@/lib/appointments/book-appointment");
@@ -262,5 +254,54 @@ describe("bookAppointment", () => {
         new Date("2026-03-03T12:00:00.000Z"),
       ),
     ).rejects.toThrow("NAME_REQUIRED_FOR_NEW_CLIENT");
+  });
+
+  it("rejects booking when the same phone already has a future booking in the same month", async () => {
+    findManyMock.mockResolvedValueOnce([
+      {
+        date: new Date("2026-03-18T00:00:00.000Z"),
+        timeSlot: new Date("1970-01-01T13:00:00.000Z"),
+      },
+    ]);
+
+    const { bookAppointment } = await import("@/lib/appointments/book-appointment");
+
+    await expect(
+      bookAppointment(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-20",
+          timeSlot: "09:00",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+  });
+
+  it("allows booking in a different month for the same phone", async () => {
+    findManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    clientUpsertMock.mockResolvedValueOnce({
+      id: 55,
+      name: "Ana Lopez",
+      phone: "5512345678",
+    });
+    createMock.mockResolvedValueOnce({ id: 88, client: { name: "Ana Lopez" } });
+
+    const { bookAppointment } = await import("@/lib/appointments/book-appointment");
+    const result = await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-04-02",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(result.appointmentId).toBe(88);
+    expect(createMock).toHaveBeenCalledOnce();
   });
 });

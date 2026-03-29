@@ -54,7 +54,7 @@ integrationSuite("bookAppointment integration", () => {
     expect(appointment.status).toBe("CONFIRMED");
   });
 
-  it("rejects a second future booking for the same phone", async () => {
+  it("rejects a second future booking in the same month for the same phone", async () => {
     await bookAppointment(
       {
         name: "Ana Lopez",

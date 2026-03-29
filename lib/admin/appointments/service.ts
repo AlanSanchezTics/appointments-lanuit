@@ -33,7 +33,7 @@ import {
 } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
 import { validateBookingRules, bookingSchema } from "@/lib/validation/appointment";
-import { getCurrentDateKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
+import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 
 function getMonthRange(month: string) {
@@ -165,7 +165,6 @@ export async function createAdminAppointment(
   );
 
   const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
-  const currentDate = getCurrentDateKey(now);
 
   const created = await prisma.$transaction(async (tx) => {
     const resolvedClient = await resolveClientForCreate(tx, input);
@@ -176,25 +175,6 @@ export async function createAdminAppointment(
     try {
       await cleanupExpiredReservationLocks(tx, now);
       await lockConflictingAppointments(tx, input.date, lockPhone);
-
-      const activeAppointment = await tx.appointment.findFirst({
-        where: {
-          clientId: resolvedClient.id,
-          status: {
-            in: ["CONFIRMED", "SYNC_FAILED"],
-          },
-          date: {
-            gt: new Date(`${currentDate}T00:00:00.000Z`),
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (activeAppointment) {
-        throw new Error("PHONE_ALREADY_BOOKED");
-      }
 
       const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
         date: input.date,

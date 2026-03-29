@@ -12,7 +12,7 @@ import {
   releaseBookingLocks,
 } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
-import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
+import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import {
   bookingSchema,
   confirmBookingWithLockSchema,
@@ -22,6 +22,50 @@ import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
+}
+
+function getMonthRange(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStart = `${month}-01`;
+  const monthEndExclusive = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 10);
+
+  return {
+    monthStart,
+    monthEndExclusive,
+  };
+}
+
+async function hasActiveFutureAppointmentInMonth(
+  tx: Prisma.TransactionClient,
+  input: { phone: string; month: string },
+  now: Date,
+) {
+  const { monthStart, monthEndExclusive } = getMonthRange(input.month);
+  const appointments = await tx.appointment.findMany({
+    where: {
+      client: {
+        phone: input.phone,
+      },
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    select: {
+      date: true,
+      timeSlot: true,
+    },
+  });
+
+  return appointments.some((appointment) =>
+    isFutureDateTime(
+      appointment.date.toISOString().slice(0, 10),
+      appointment.timeSlot.toISOString().slice(11, 16),
+      now,
+    ));
 }
 
 async function resolveClientInTransaction(
@@ -65,29 +109,21 @@ async function resolveClientInTransaction(
 async function createAppointmentInTransaction(
   tx: Prisma.TransactionClient,
   input: { phone: string; date: string; timeSlot: string; name?: string },
-  currentDate: string,
   baseSlots: readonly string[],
+  now: Date,
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
 
-  const activeAppointment = await tx.appointment.findFirst({
-    where: {
-      client: {
-        phone: input.phone,
-      },
-      status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
-      },
-      date: {
-        gt: new Date(`${currentDate}T00:00:00.000Z`),
-      },
+  const hasFutureInTargetMonth = await hasActiveFutureAppointmentInMonth(
+    tx,
+    {
+      phone: input.phone,
+      month: input.date.slice(0, 7),
     },
-    select: {
-      id: true,
-    },
-  });
+    now,
+  );
 
-  if (activeAppointment) {
+  if (hasFutureInTargetMonth) {
     throw new Error("PHONE_ALREADY_BOOKED");
   }
 
@@ -152,13 +188,12 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(bookingSchema.parse(rawInput), now);
   const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
   const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
-  const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
     await acquireBookingLocks(tx, input.date, input.phone);
 
     try {
-      return createAppointmentInTransaction(tx, input, currentDate, baseSlots);
+      return createAppointmentInTransaction(tx, input, baseSlots, now);
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
@@ -187,7 +222,6 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
   const input = validateBookingRules(confirmBookingWithLockSchema.parse(rawInput), now);
   const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
   const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
-  const currentDate = getCurrentDateKey(now);
 
   const appointment = await prisma.$transaction(async (tx) => {
     await acquireBookingLocks(tx, input.date, input.phone);
@@ -209,7 +243,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         throw new Error("LOCK_EXPIRED_OR_INVALID");
       }
 
-      const created = await createAppointmentInTransaction(tx, input, currentDate, baseSlots);
+      const created = await createAppointmentInTransaction(tx, input, baseSlots, now);
       await deleteReservationLockByToken(tx, lockToken);
 
       return created;

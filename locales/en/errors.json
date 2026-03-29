@@ -2,7 +2,7 @@
   "api": {
     "SLOT_NOT_AVAILABLE": "That time is no longer available. Choose another one.",
     "SLOT_LOCKED": "That time was just locked by someone else. Choose another one.",
-    "PHONE_ALREADY_BOOKED": "You already have an active future appointment with this phone.",
+    "PHONE_ALREADY_BOOKED": "You already have an active future appointment in this month with this phone.",
     "MONTH_NOT_ALLOWED": "Booking is only allowed in enabled months.",
     "LOCK_TIMEOUT": "A temporary conflict occurred while booking. Please try again.",
     "LOCK_EXPIRED_OR_INVALID": "The temporary lock expired. Please select your slot again.",

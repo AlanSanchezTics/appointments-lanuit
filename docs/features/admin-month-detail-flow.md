@@ -153,7 +153,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
   - reglas de dominio aplicadas:
     - `month` registrado y `ACTIVE`,
     - disponibilidad del slot (ocupación + locks + bloqueos manuales + reglas direccionales),
-    - restricción de teléfono con cita activa futura,
+    - permite múltiples citas activas futuras para el mismo cliente/teléfono cuando agenda admin,
     - validaciones de identidad por teléfono/nombre.
   - respuesta exitosa (`201`):
     - `{ appointmentId, date, timeSlot, status, client, syncReason? }`

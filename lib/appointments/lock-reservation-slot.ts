@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
@@ -13,7 +14,7 @@ import {
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
-import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
+import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { lockReservationSchema, validateBookingRules } from "@/lib/validation/appointment";
 
 const RESERVATION_LOCK_WINDOW_MINUTES = 10;
@@ -22,11 +23,54 @@ function computeLockExpiration(now: Date) {
   return new Date(now.getTime() + RESERVATION_LOCK_WINDOW_MINUTES * 60 * 1000);
 }
 
+function getMonthRange(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStart = `${month}-01`;
+  const monthEndExclusive = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 10);
+
+  return {
+    monthStart,
+    monthEndExclusive,
+  };
+}
+
+async function hasActiveFutureAppointmentInMonth(
+  tx: Prisma.TransactionClient,
+  input: { phone: string; month: string },
+  now: Date,
+) {
+  const { monthStart, monthEndExclusive } = getMonthRange(input.month);
+  const appointments = await tx.appointment.findMany({
+    where: {
+      client: {
+        phone: input.phone,
+      },
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    select: {
+      date: true,
+      timeSlot: true,
+    },
+  });
+
+  return appointments.some((appointment) =>
+    isFutureDateTime(
+      appointment.date.toISOString().slice(0, 10),
+      appointment.timeSlot.toISOString().slice(11, 16),
+      now,
+    ));
+}
+
 async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(lockReservationSchema.parse(rawInput), now);
   const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
   const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
-  const currentDate = getCurrentDateKey(now);
   const expiresAt = computeLockExpiration(now);
 
   const result = await prisma.$transaction(async (tx) => {
@@ -46,24 +90,16 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         },
       });
 
-      const activeAppointment = await tx.appointment.findFirst({
-        where: {
-          client: {
-            phone: input.phone,
-          },
-          status: {
-            in: ["CONFIRMED", "SYNC_FAILED"],
-          },
-          date: {
-            gt: new Date(`${currentDate}T00:00:00.000Z`),
-          },
+      const hasFutureInTargetMonth = await hasActiveFutureAppointmentInMonth(
+        tx,
+        {
+          phone: input.phone,
+          month: input.date.slice(0, 7),
         },
-        select: {
-          id: true,
-        },
-      });
+        now,
+      );
 
-      if (activeAppointment) {
+      if (hasFutureInTargetMonth) {
         throw new Error("PHONE_ALREADY_BOOKED");
       }
 

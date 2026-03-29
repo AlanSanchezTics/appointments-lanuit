@@ -19,7 +19,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Solo se permiten horarios base oficiales: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
 - Para el mismo día, solo se permiten horarios futuros (no transcurridos).
 - El teléfono se valida/persiste normalizado a 10 dígitos.
-- Un teléfono solo puede tener una cita activa futura (`CONFIRMED` o `SYNC_FAILED`).
+- Un teléfono solo puede tener una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`).
+- Un mismo teléfono puede tener citas activas futuras en meses distintos.
 
 ## High-Level Flow
 1. Usuario entra a `/`:
@@ -60,7 +61,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Backend:
   - valida reglas de reserva (mes, día hábil, horario futuro, slot válido),
   - verifica conflictos por disponibilidad,
-  - verifica restricción por teléfono (cita activa futura),
+  - verifica restricción por teléfono (cita activa futura en el mismo mes),
   - crea lock temporal (`reservation_locks`) con TTL 10 minutos.
 - Resultado:
   - cliente existente: retorna `clientExists=true` y avanza a confirmación,
@@ -113,7 +114,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Debe cumplir disponibilidad global del día (ocupados + locks + regla direccional + máximo diario).
 - Teléfono:
   - Se normaliza a 10 dígitos.
-  - Un teléfono no puede tener más de una cita activa futura.
+  - Un teléfono no puede tener más de una cita activa futura en el mismo mes.
+  - Un teléfono puede tener citas activas futuras en meses distintos.
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
@@ -136,7 +138,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Mes inválido/inactivo/pasado: rechazo de disponibilidad y/o reserva.
 - Fecha fuera de reglas (fin de semana o slot pasado en mismo día): rechazo.
 - Slot no disponible por ocupación, lock activo o restricciones direccionales: conflicto.
-- Teléfono con cita activa futura: conflicto, no permite nueva reserva.
+- Teléfono con cita activa futura en el mismo mes: conflicto, no permite nueva reserva.
 - Lock inexistente, expirado o no coincidente: conflicto en confirmación.
 - Timeout al adquirir locks de concurrencia: conflicto.
 - Validación de payload inválida: error de validación.

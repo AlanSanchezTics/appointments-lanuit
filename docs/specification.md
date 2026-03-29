@@ -95,8 +95,10 @@ Regla direccional formal:
 
 ## 5. Restricciones por Teléfono
 
-- Un número telefónico solo puede tener una cita activa futura.
-- Debe cancelar antes de crear otra.
+- Flujo público (`/citas/*`): un número telefónico solo puede tener una cita activa futura por mes.
+- Flujo público (`/citas/*`): puede tener citas activas futuras en meses distintos.
+- Flujo admin (`/admin/months/[month]`): puede crear múltiples citas activas futuras para el mismo cliente/teléfono.
+- La obligación de cancelar antes de crear otra aplica solo al flujo público.
 - Formato persistido obligatorio: 10 dígitos numéricos.
 - En UI se permite captura con separadores (espacios/guiones/paréntesis), pero backend normaliza a 10 dígitos antes de validar y persistir.
 - Nombre mínimo: 3 caracteres.
@@ -373,7 +375,7 @@ Tabla: admin_users
 2. Google Calendar es sistema espejo.
 3. No existen traslapes.
 4. Regla direccional por pares y máximo 3 citas activas por día.
-5. Solo una cita activa por teléfono.
+5. En flujo público: máximo una cita activa futura por teléfono en el mismo mes (se permiten citas futuras en meses distintos). En admin: se permiten múltiples citas futuras por cliente.
 6. Solo lunes a viernes.
 7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
 8. Solo meses `ACTIVE` y nunca meses pasados.
@@ -710,7 +712,7 @@ Contrato API:
     - exactamente una modalidad de cliente por request,
     - `month` debe existir y estar `ACTIVE`,
     - aplica invariantes de disponibilidad (weekday, slot válido por modalidad, slot futuro, conflictos por lock/ocupación/bloqueo manual y reglas direccionales),
-    - aplica restricción de teléfono con cita activa futura,
+    - permite múltiples citas activas futuras para el mismo cliente/teléfono cuando la creación la realiza admin,
     - `clientId` debe existir en modalidad de cliente existente,
     - en modalidad inline, nombre/teléfono deben cumplir validaciones de identidad del dominio.
   - `GET /api/admin/months/[month]/blockable-slots`:

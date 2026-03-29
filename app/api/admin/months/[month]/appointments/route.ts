@@ -19,11 +19,7 @@ function resolveStatusCode(errorCode: string) {
     return 404;
   }
 
-  if (
-    errorCode === "SLOT_NOT_AVAILABLE"
-    || errorCode === "SLOT_LOCKED"
-    || errorCode === "PHONE_ALREADY_BOOKED"
-  ) {
+  if (errorCode === "SLOT_NOT_AVAILABLE" || errorCode === "SLOT_LOCKED") {
     return 409;
   }
 
