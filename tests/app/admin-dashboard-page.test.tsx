@@ -10,6 +10,7 @@ import { MetricCard } from "@/components/admin/ui/MetricCard";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin",
   useRouter: () => ({
     push: vi.fn(),
     refresh: vi.fn(),
@@ -45,7 +46,13 @@ describe("admin dashboard page", () => {
       </AdminLayout>,
     );
 
-    expect(screen.getByText("Panel Administrativo")).toBeInTheDocument();
+    expect(screen.getByTestId("admin-app-header")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Dashboard" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar-item-dashboard")).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar-item-months")).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar-item-clients")).toBeInTheDocument();
     expect(screen.getByText("Navegación")).toBeInTheDocument();
     expect(screen.getByText("Próximas secciones")).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="calendar-day"]')).toBeInTheDocument();

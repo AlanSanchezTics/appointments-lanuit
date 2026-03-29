@@ -25,9 +25,18 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - Todos los textos del flujo (labels, placeholders, botones, alertas) se resuelven con `react-i18next` (`admin`, `adminErrors`).
 4. Backend valida credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
 5. Si son válidas y el usuario está `active`, NextAuth crea sesión y redirige al dashboard.
-6. Usuario autenticado accede a `/admin/`.
-7. Si no existe sesión válida y se intenta abrir `/admin/*`, middleware redirige a `/admin/login`.
-8. Acción `Cerrar sesión` ejecuta `signOut` de NextAuth y limpia sesión.
+6. Usuario autenticado accede a `/admin/` dentro del shell admin:
+   - `appHeader` superior minimalista con título de sección,
+   - `SideBar` principal.
+7. Navegación base visible en sidebar:
+   - `Dashboard` (`/admin`),
+   - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),
+   - `Clientes` visible como `disabled/coming soon` en esta fase.
+8. Comportamiento responsive del shell:
+   - desktop (`lg+`): sidebar fijo,
+   - mobile: sidebar en drawer mediante botón menú del header.
+9. Si no existe sesión válida y se intenta abrir `/admin/*`, middleware redirige a `/admin/login`.
+10. Acción `Cerrar sesión` en sidebar ejecuta `signOut` de NextAuth y limpia sesión.
 
 ## Validation Points
 - Username obligatorio.

@@ -422,8 +422,25 @@ Reglas obligatorias:
 - Rutas UI base:
   - `/admin/login`
   - `/admin/`
-- El sistema visual del admin usa exclusivamente `docs/ui/admin/*` y `components/admin/ui`.
+- El sistema visual del admin usa exclusivamente `docs/ui/admin/*`, `components/admin/ui` y el shell de `components/admin/layout`.
 - No debe reutilizar ni alterar el sistema visual del flujo público.
+
+### 15.1.1 App Shell de navegación admin
+
+- Todas las rutas autenticadas `/admin/*` (excepto `/admin/login`) deben usar un shell de navegación compuesto por:
+  - `appHeader` superior minimalista,
+  - `SideBar` de navegación principal.
+- Comportamiento responsive obligatorio:
+  - desktop (`lg+`): sidebar fijo lateral izquierdo,
+  - mobile: sidebar en modo drawer, abierto mediante acción de menú en el header.
+- Navegación mínima visible del shell:
+  - `Dashboard` -> `/admin`
+  - `Meses` -> `/admin/months` (activo también para `/admin/months/[month]`)
+  - `Clientes` visible como deshabilitado (sin navegación funcional en esta fase).
+- Acción global `Cerrar sesión`:
+  - visible al final del sidebar,
+  - ejecuta `signOut` de NextAuth y redirige a `/admin/login`.
+- El `appHeader` debe mostrar título de sección resuelto por ruta vía i18n (`react-i18next`), sin breadcrumbs en esta fase.
 
 ### 15.2 Flujo de autenticación admin
 

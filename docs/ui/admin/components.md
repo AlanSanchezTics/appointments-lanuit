@@ -41,6 +41,16 @@ components/admin/ui/
 
 El agente debe reutilizar estos componentes antes de crear nuevos.
 
+## Layout Components Location
+
+Los componentes estructurales del shell admin deben vivir en:
+
+```txt
+components/admin/layout/
+```
+
+Incluye `AdminLayout`, `AppHeader` y `AdminSidebar`.
+
 ## Regla i18n obligatoria
 
 - Todo texto UX visible del admin debe provenir de `react-i18next`.
@@ -565,7 +575,8 @@ Proveer el shell principal del panel administrativo para vistas protegidas.
 
 ### Composition
 
-- `Header`
+- `AppHeader`
+- `AdminSidebar`
 - `ContentWrapper`
 
 ### Usage
@@ -602,22 +613,58 @@ Uso:
 
 ---
 
-## Component: Header
+## Component: Header (Legacy)
+
+### Status
+
+Componente reemplazado por `AppHeader` + `AdminSidebar` dentro de `AdminLayout`.
+
+---
+
+## Component: AppHeader
 
 ### Purpose
 
-Mostrar identidad del panel y acción global de cierre de sesión.
+Mostrar el título de sección del módulo admin y el disparador de menú en mobile.
 
 ### Composition
 
-- branding del panel
-- acción `Cerrar sesión` usando `Button`
+- botón de menú (solo mobile)
+- ícono contextual
+- título de sección resuelto por i18n según ruta activa
 
 ### Usage
 
 Uso:
 
-- barra superior persistente de vistas administrativas autenticadas
+- barra superior persistente en rutas autenticadas `/admin/*` (excepto login)
+
+---
+
+## Component: AdminSidebar
+
+### Purpose
+
+Proveer navegación principal del panel admin y acción global de logout.
+
+### Composition
+
+- branding (`title` + `subtitle`)
+- lista de navegación (`Dashboard`, `Meses`, `Clientes`)
+- item disabled para módulos no habilitados
+- acción `Cerrar sesión` al final
+
+### Behavior
+
+- desktop (`lg+`): sidebar fijo
+- mobile: drawer con overlay + botón de cierre
+- estado activo por ruta (`exact`/`prefix`)
+
+### Usage
+
+Uso:
+
+- shell global de navegación en rutas autenticadas del admin
 
 ---
 

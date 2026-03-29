@@ -16,8 +16,25 @@
     }
   },
   "header": {
+    "menu": "Abrir menú",
     "panelLabel": "Panel Administrativo",
     "title": "La Nuit",
+    "logout": "Cerrar sesión",
+    "sectionTitle": {
+      "dashboard": "Dashboard",
+      "months": "Meses",
+      "default": "Panel administrativo"
+    }
+  },
+  "sidebar": {
+    "title": "La Nuit - Administración",
+    "subtitle": "Studio Manager",
+    "close": "Cerrar menú lateral",
+    "navAriaLabel": "Navegación principal del panel admin",
+    "dashboard": "Dashboard",
+    "months": "Meses",
+    "clients": "Clientes",
+    "comingSoon": "Próximamente",
     "logout": "Cerrar sesión"
   },
   "dashboard": {

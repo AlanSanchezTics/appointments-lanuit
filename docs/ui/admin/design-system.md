@@ -322,6 +322,26 @@ Uso:
 
 ## Layout Patterns
 
+### App Shell (Header + Sidebar)
+
+- Las vistas autenticadas del admin usan shell estructural:
+  - sidebar lateral,
+  - app header superior,
+  - área de contenido principal.
+- Sidebar:
+  - ancho fijo por token (`sidebar-width`),
+  - fondo `surface`,
+  - borde derecho `border`,
+  - navegación vertical con estado activo y estado deshabilitado.
+- App header:
+  - altura fija por token (`header-height`),
+  - fondo `surface`,
+  - borde inferior `border`,
+  - versión minimalista (título de sección + acción menú en mobile).
+- Responsive:
+  - desktop (`lg+`): sidebar persistente,
+  - mobile: sidebar en drawer con overlay y botón de cierre.
+
 ### Metrics Grid
 
 - Desktop: 3 columnas

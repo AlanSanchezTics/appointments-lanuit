@@ -178,9 +178,16 @@ El sistema visual del admin prioriza ligereza y claridad sobre profundidad exces
 
 - `metrics-grid-desktop-columns`: `3`
 - `metrics-grid-mobile-columns`: `2`
+- `sidebar-width`: `270px`
+- `header-height`: `64px`
 - `block-day-chip-width`: `72px`
 - `block-day-chip-height`: `88px`
 - `block-slot-card-min-height`: `56px`
+
+### Layering (Shell)
+
+- `shell-z-header`: `30`
+- `shell-z-sidebar`: `50`
 
 ---
 
@@ -236,6 +243,9 @@ Estos tokens deben reflejarse en:
 - `sheet-enter-duration`: `260ms`
 - `sheet-exit-duration`: `260ms`
 - `sheet-easing`: `ease-out`
+- `drawer-enter-duration`: `220ms`
+- `drawer-exit-duration`: `220ms`
+- `drawer-easing`: `cubic-bezier(0.22, 1, 0.36, 1)`
 - `reduced-motion`: sin transición en `prefers-reduced-motion`
 - `blocking-submit`: durante submit en modal de bloqueo se deshabilitan acciones de cierre/interacción
 
