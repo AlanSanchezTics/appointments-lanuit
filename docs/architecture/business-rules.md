@@ -149,6 +149,27 @@ Business behavior is defined by:
   - clears session cookie,
   - invalidates further access to protected admin routes.
 
+## Admin Dashboard Rules
+
+- Scope:
+  - Applies to `/admin` dashboard UI.
+
+- Weekly occupancy widget policy:
+  - Widget displays exactly 5 bars, one per operational weekday (`Monday` to `Friday`) of the current business week.
+  - Occupancy source uses only active appointments (`CONFIRMED`, `SYNC_FAILED`).
+  - Daily occupancy percent is calculated as:
+    - `activeAppointmentsForDay / 3 * 100`, rounded to integer.
+  - Weekly occupancy percent is calculated as:
+    - `activeAppointmentsInWeek / 15 * 100`, rounded to integer.
+    - where `15 = 5 weekdays * 3 max daily appointments`.
+  - Weekly comparison is computed against previous business week (`Monday` to `Friday`) using the same formula.
+  - Comparison indicator shows percent points delta (`currentWeekPercent - previousWeekPercent`) with semantic state:
+    - `delta > 0`: `more`,
+    - `delta < 0`: `less`,
+    - `delta = 0`: `similar`.
+  - Week boundaries and weekday resolution must use `America/Mexico_City`.
+  - All visible copy in the widget must be resolved in frontend via `react-i18next`.
+
 ## Admin Months Catalog Rules
 
 - Scope:

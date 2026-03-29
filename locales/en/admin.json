@@ -38,6 +38,19 @@
     "logout": "Sign out"
   },
   "dashboard": {
+    "hero": {
+      "dateLabel": "{{weekday}}, {{month}} {{day}} {{year}}",
+      "greeting": "Hi {{name}}",
+      "fallbackName": "Pau"
+    },
+    "weeklyOccupancy": {
+      "title": "Weekly occupancy",
+      "more": "more",
+      "less": "less",
+      "similar": "similar",
+      "versusPreviousWeek": "Vs last week",
+      "dayAppointmentsTooltip": "{{count}} appointments"
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",

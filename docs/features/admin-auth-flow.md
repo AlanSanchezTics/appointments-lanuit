@@ -29,6 +29,9 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - `appHeader` superior minimalista con título de sección + selector de idioma (`es`/`en`),
    - `SideBar` principal.
    - en rutas autenticadas del admin no se usa selector flotante tipo FAB.
+   - el dashboard incluye tarjeta `Ocupación semanal` con:
+     - 5 barras (`lunes` a `viernes`) para ocupación diaria de la semana actual,
+     - indicador `N% más|menos|similar` contra la semana anterior.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),
    - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),

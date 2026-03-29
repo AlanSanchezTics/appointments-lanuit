@@ -467,6 +467,34 @@ Reglas obligatorias:
 - El `appHeader` debe mostrar título de sección resuelto por ruta vía i18n (`react-i18next`), sin breadcrumbs en esta fase.
 - El `appHeader` debe incluir el control de cambio de idioma (`es`/`en`) para rutas admin autenticadas.
 
+### 15.1.2 Dashboard (`/admin`) – bloque de ocupación semanal
+
+- La parte superior del dashboard debe incluir una tarjeta `Ocupación semanal`.
+- La tarjeta muestra:
+  - título `Ocupación semanal`,
+  - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
+  - gráfico de barras con 5 columnas (`lunes` a `viernes`) para la semana de negocio actual,
+  - tooltip por barra con la cantidad de citas activas del día.
+  - en dispositivos táctiles, el tooltip se abre al tocar la barra y se cierra al perder foco de esa barra.
+- Fuente de ocupación:
+  - citas activas (`CONFIRMED`, `SYNC_FAILED`) del rango lunes-viernes de la semana actual en zona `America/Mexico_City`.
+- Cálculo de barras por día:
+  - `% ocupación día = citas activas del día / 3 * 100` (redondeado entero).
+- Cálculo comparativo semanal:
+  - `% semana actual = citas activas lunes-viernes / 15 * 100`,
+  - `% semana anterior = citas activas lunes-viernes / 15 * 100`,
+  - `delta = semana actual - semana anterior` (puntos porcentuales).
+- Semántica del indicador:
+  - `delta > 0` -> `más`,
+  - `delta < 0` -> `menos`,
+  - `delta = 0` -> `similar`.
+  - Iconografía obligatoria:
+    - `delta > 0`: `ArrowCircleUp` verde,
+    - `delta < 0`: `ArrowCircleDown` rojo,
+    - `delta = 0`: `MinusCircle` gris.
+- Contrato i18n:
+  - título, badge y etiquetas semánticas (`más|menos|similar`) se resuelven por `react-i18next` en `admin`.
+
 ### 15.2 Flujo de autenticación admin
 
 1. Usuario abre `/admin/login`.

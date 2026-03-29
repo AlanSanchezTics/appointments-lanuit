@@ -6,9 +6,12 @@ import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { Card } from "@/components/admin/ui/Card";
+import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
 import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
+import { WeeklyOccupancyCard } from "@/components/admin/ui/WeeklyOccupancyCard";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
+import { getAdminDashboardWeeklyOccupancy } from "@/lib/admin/dashboard/service";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -21,9 +24,33 @@ export default async function AdminDashboardPage() {
     redirect("/admin/login");
   }
 
+  const firstName = session.user?.name?.trim().split(/\s+/)[0]
+    ?? t("dashboard.hero.fallbackName", { ns: "admin" });
+  const weeklyOccupancy = await getAdminDashboardWeeklyOccupancy();
+
   return (
     <AdminLayout>
       <ContentWrapper>
+        <DashboardGreetingCard
+          language={language}
+          dateTemplate={t("dashboard.hero.dateLabel", { ns: "admin" })}
+          greeting={t("dashboard.hero.greeting", { ns: "admin", name: firstName })}
+        />
+
+        <WeeklyOccupancyCard
+          language={language}
+          data={weeklyOccupancy}
+          title={t("dashboard.weeklyOccupancy.title", { ns: "admin" })}
+          moreLabel={t("dashboard.weeklyOccupancy.more", { ns: "admin" })}
+          lessLabel={t("dashboard.weeklyOccupancy.less", { ns: "admin" })}
+          similarLabel={t("dashboard.weeklyOccupancy.similar", { ns: "admin" })}
+          versusLabel={t("dashboard.weeklyOccupancy.versusPreviousWeek", { ns: "admin" })}
+          dayAppointmentsTooltip={t("dashboard.weeklyOccupancy.dayAppointmentsTooltip", {
+            ns: "admin",
+            count: "{{count}}",
+          })}
+        />
+
         <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard
             icon={<AdminIcon icon={adminIcons.appointmentsToday} />}

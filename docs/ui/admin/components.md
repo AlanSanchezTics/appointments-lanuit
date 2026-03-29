@@ -169,6 +169,94 @@ Uso:
 
 ---
 
+## Component: DashboardGreetingCard
+
+### Purpose
+
+Mostrar encabezado contextual del dashboard con fecha de negocio y saludo breve.
+
+### Structure
+
+- fecha en formato corto contextual (zona `America/Mexico_City`)
+- saludo principal con nombre del usuario/admin
+
+### Style
+
+- contenedor propio (`section`) sin uso de `Card`
+- fondo: `inactive-bg`
+- fecha:
+  - `metric-label` adaptado (uppercase + tracking)
+  - color `text-secondary`
+- saludo:
+  - tipografía destacada (Montserrat bold)
+  - color `text-primary`
+
+### Usage
+
+Uso:
+
+- cabecera de `/admin` (dashboard principal)
+
+### Rules
+
+El agente debe:
+
+- resolver texto visible vía `react-i18next`
+- respetar timezone de negocio para la fecha
+
+El agente no debe:
+
+- hardcodear copy visible del saludo o fecha
+
+---
+
+## Component: WeeklyOccupancyCard
+
+### Purpose
+
+Mostrar la ocupación operativa de la semana en dashboard admin con comparación frente a la semana anterior.
+
+### Structure
+
+- título del bloque
+- indicador comparativo unificado `N% más|menos|similar Vs semana pasada`
+- gráfico de barras de 5 días (`lunes` a `viernes`)
+- tooltip por barra con número de citas del día
+
+### Style
+
+- contenedor base: `Card`
+- barras sobre `inactive-bg` con relleno `primary`
+- títulos y labels con tipografía `metric-label` adaptada
+- valor principal en peso `extrabold`
+- indicador comparativo renderizado como tag/pill sobre `inactive-bg`
+- indicador delta con icono semántico:
+  - `ArrowCircleUp` verde para `más`
+  - `ArrowCircleDown` rojo para `menos`
+  - `MinusCircle` gris para `similar`
+
+### Usage
+
+Uso:
+
+- bloque superior del dashboard `/admin`
+
+### Rules
+
+El agente debe:
+
+- usar datos de citas activas (`CONFIRMED`, `SYNC_FAILED`)
+- calcular ocupación semanal y delta vs semana anterior en `America/Mexico_City`
+- resolver texto visible vía `react-i18next`
+- soportar interacción táctil de tooltip (tap para mostrar, blur para ocultar)
+
+El agente no debe:
+
+- hardcodear etiquetas de UI
+- incluir sábados o domingos en el gráfico
+
+---
+
 ## Component: ListItem
 
 ### Purpose
