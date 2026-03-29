@@ -24,7 +24,6 @@ import {
   faXmark,
   faPen,
   faCircleXmark as fasCircleXmark,
-  faCheck as fasCheck,
   faCheckCircle as fasCheckCircle,
   faCalendarDays as fasCalendarDays,
   faBan,
@@ -35,6 +34,7 @@ import {
   faCircleMinus,
   faCircleInfo,
   faStar,
+  faLightbulb,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -91,4 +91,5 @@ export const adminIcons = {
   trendNeutral: faCircleMinus,
   info: faCircleInfo,
   busiestDay: faStar,
+  dailyTip: faLightbulb,
 } as const;

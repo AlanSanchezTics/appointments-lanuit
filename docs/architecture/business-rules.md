@@ -210,6 +210,18 @@ Business behavior is defined by:
   - `IN_PROGRESS` status tag must blink unless `prefers-reduced-motion` disables animation.
   - When no active appointments exist for current day, widget renders an empty informational state.
 
+- Daily-tip widget policy:
+  - Dashboard includes a `Tip del día` card sourced from CSV assets.
+  - Tips are selected by deterministic date-based rotation in `America/Mexico_City`.
+  - Anchor date is fixed at `2026-03-29` mapping to first row.
+  - Selection formula:
+    - `tipIndex = ((dayOffset % totalTips) + totalTips) % totalTips`.
+  - Language source:
+    - Spanish UI uses `tips_operativos_salon_unas.csv`.
+    - English UI uses `tips_operativos_salon_unas_en.csv` only when row count matches ES.
+  - Fallback:
+    - If EN source is missing/misaligned, use Spanish tips.
+
 ## Admin Months Catalog Rules
 
 - Scope:

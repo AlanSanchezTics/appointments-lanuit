@@ -473,6 +473,7 @@ Reglas obligatorias:
 - La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación del día`.
 - La parte superior del dashboard debe incluir un bloque `Agenda de Hoy` en formato línea de tiempo.
+- La parte superior del dashboard debe incluir una tarjeta `Tip del día`.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
   - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
@@ -535,6 +536,24 @@ Reglas obligatorias:
   - para el estado `En curso`, la tag debe usar animación de parpadeo.
   - la lógica de estado usa duración operativa de 3 horas por cita.
   - si no hay citas activas para hoy, muestra estado vacío informativo.
+- Tarjeta `Tip del día`:
+  - muestra título `Tip del día`,
+  - muestra un tip operativo diario resuelto desde catálogo CSV en `assets/`,
+  - usa rotación determinista por fecha de negocio (`America/Mexico_City`).
+  - algoritmo:
+    - ancla: `2026-03-29` = tip #1,
+    - `dayOffset = daysBetween(anchorDate, currentDate)`,
+    - `tipIndex = ((dayOffset % totalTips) + totalTips) % totalTips`,
+    - tip del día = fila `tipIndex`.
+  - catálogo vigente:
+    - ES: `assets/tips_operativos_salon_unas.csv`,
+    - EN: `assets/tips_operativos_salon_unas_en.csv`.
+  - contrato de catálogo CSV:
+    - una fila = un tip,
+    - sin encabezado,
+    - el orden de filas define la secuencia diaria.
+  - fallback:
+    - si catálogo EN no existe o no está alineado en longitud con ES, se usa ES.
 
 ### 15.2 Flujo de autenticación admin
 

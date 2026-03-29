@@ -6,6 +6,7 @@ import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 import { BusiestDayCard } from "@/components/admin/ui/BusiestDayCard";
 import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
 import { DailyOccupancyCard } from "@/components/admin/ui/DailyOccupancyCard";
+import { DailyTipCard } from "@/components/admin/ui/DailyTipCard";
 import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
 import { TodayAgendaTimelineCard } from "@/components/admin/ui/TodayAgendaTimelineCard";
 import { WeeklyOccupancyCard } from "@/components/admin/ui/WeeklyOccupancyCard";
@@ -26,7 +27,7 @@ export default async function AdminDashboardPage() {
   const firstName =
     session.user?.name?.trim().split(/\s+/)[0] ??
     t("dashboard.hero.fallbackName", { ns: "admin" });
-  const weeklyOccupancy = await getAdminDashboardWeeklyOccupancy();
+  const weeklyOccupancy = await getAdminDashboardWeeklyOccupancy(language);
   const currentMonth = getCurrentMonthKey();
   const hasWeeklyAppointments = weeklyOccupancy.days.some(
     (day) => day.occupiedSlots > 0,
@@ -104,6 +105,11 @@ export default async function AdminDashboardPage() {
           monthLinkAriaLabel={t("dashboard.todayAgenda.monthLinkAriaLabel", {
             ns: "admin",
           })}
+        />
+
+        <DailyTipCard
+          title={t("dashboard.dailyTip.title", { ns: "admin" })}
+          tip={weeklyOccupancy.dailyTip}
         />
       </ContentWrapper>
     </AdminLayout>

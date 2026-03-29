@@ -15,6 +15,13 @@ export interface TodayAgendaItem {
   status: TodayAgendaStatus;
 }
 
+export interface DailyTip {
+  title: string;
+  content: string;
+  index: number;
+  total: number;
+}
+
 export interface WeeklyOccupancySummary {
   days: WeeklyOccupancyDay[];
   busiestDay: WeeklyOccupancyDay;
@@ -26,6 +33,7 @@ export interface WeeklyOccupancySummary {
   };
   todayAgendaTargetDate: string;
   todayAgenda: TodayAgendaItem[];
+  dailyTip: DailyTip;
   currentWeekOccupancyPercent: number;
   previousWeekOccupancyPercent: number;
   deltaPercentPoints: number;

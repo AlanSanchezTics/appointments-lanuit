@@ -41,6 +41,9 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - porcentaje de ocupación del día actual,
      - barra de progreso,
      - texto `N citas agendadas para hoy` acompañado de icono informativo.
+   - el dashboard incluye tarjeta `Tip del día` con:
+     - título del bloque,
+     - tip operativo diario obtenido por rotación determinista desde CSV según idioma.
    - el dashboard incluye bloque `Agenda de Hoy` en formato timeline con:
      - título `Agenda de Hoy` o `Agenda para el Lunes` si hoy es sábado/domingo,
      - icono en encabezado con enlace a `/admin/months/[currentMonth]`,

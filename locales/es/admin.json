@@ -55,6 +55,9 @@
       "title": "Día más ocupado",
       "subtitle": "Máxima demanda de citas"
     },
+    "dailyTip": {
+      "title": "Tip del día"
+    },
     "dailyOccupancy": {
       "title": "Ocupación del día",
       "titleForMonday": "Ocupación para el Lunes",

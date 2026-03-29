@@ -210,6 +210,48 @@ El agente no debe:
 
 ---
 
+## Component: DailyTipCard
+
+### Purpose
+
+Mostrar un tip operativo diario en el dashboard admin con rotación determinista por fecha.
+
+### Structure
+
+- contenedor base: `Card`
+- bloque visual lateral con icono `Lightbulb`
+- título del bloque (`Tip del día`)
+- contenido textual del tip diario
+
+### Style
+
+- fondo base `canvas`
+- borde suave derivado de `primary` (mezcla sobre blanco)
+- bloque de icono con fondo `primary` y contraste alto
+- título en `accent` con jerarquía fuerte
+- texto del tip en `text-primary`, multilinea y legible
+
+### Usage
+
+Uso:
+
+- bloque superior del dashboard `/admin`, debajo de `DashboardGreetingCard`
+
+### Rules
+
+El agente debe:
+
+- resolver el título visible vía `react-i18next`
+- consumir contenido desde el servicio de dashboard (`dailyTip`)
+- mantener layout responsive sin colapsar el texto en mobile
+
+El agente no debe:
+
+- hardcodear tips en el componente
+- resolver rutas de assets CSV dentro de la capa UI
+
+---
+
 ## Component: WeeklyOccupancyCard
 
 ### Purpose

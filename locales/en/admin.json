@@ -55,6 +55,9 @@
       "title": "Busiest day",
       "subtitle": "Highest appointment demand"
     },
+    "dailyTip": {
+      "title": "Tip of the day"
+    },
     "dailyOccupancy": {
       "title": "Today's occupancy",
       "titleForMonday": "Occupancy for Monday",

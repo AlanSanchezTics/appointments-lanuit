@@ -4,7 +4,9 @@ import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listActiveAppointmentsByDate } from "@/lib/db/admin-appointments";
 import { prisma } from "@/lib/db/prisma";
+import type { AppLanguage } from "@/lib/i18n/config";
 
+import { getDailyTipSelection } from "./daily-tip";
 import type { WeeklyOccupancySummary } from "./types";
 
 const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = ["CONFIRMED", "SYNC_FAILED"];
@@ -116,6 +118,7 @@ function getBusinessWeekDays(mondayKey: string) {
 }
 
 export async function getAdminDashboardWeeklyOccupancy(
+  language: AppLanguage,
   now = new Date(),
 ): Promise<WeeklyOccupancySummary> {
   const currentDateKey = getCurrentDateKey(now);
@@ -127,10 +130,11 @@ export async function getAdminDashboardWeeklyOccupancy(
   const currentWeekDays = getBusinessWeekDays(currentMondayKey);
   const previousWeekDays = getBusinessWeekDays(previousMondayKey);
 
-  const [currentWeekCounts, previousWeekCounts, todayAppointments] = await Promise.all([
+  const [currentWeekCounts, previousWeekCounts, todayAppointments, dailyTip] = await Promise.all([
     groupActiveAppointmentsByDate(currentMondayKey, nextMondayKey),
     groupActiveAppointmentsByDate(previousMondayKey, currentMondayKey),
     listActiveAppointmentsByDate(agendaTargetDateKey),
+    getDailyTipSelection(language, now),
   ]);
 
   const days = currentWeekDays.map((date) => {
@@ -180,6 +184,7 @@ export async function getAdminDashboardWeeklyOccupancy(
     },
     todayAgendaTargetDate: agendaTargetDateKey,
     todayAgenda,
+    dailyTip,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,
     deltaPercentPoints: currentWeekOccupancyPercent - previousWeekOccupancyPercent,
