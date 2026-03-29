@@ -337,7 +337,7 @@ Uso:
   - altura fija por token (`header-height`),
   - fondo `surface`,
   - borde inferior `border`,
-  - versión minimalista (título de sección + acción menú en mobile).
+  - versión minimalista (título de sección + acción menú en mobile + selector de idioma en el extremo derecho).
 - Responsive:
   - desktop (`lg+`): sidebar persistente,
   - mobile: sidebar en drawer con overlay y botón de cierre.

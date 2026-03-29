@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
+import { LanguageSelector } from "@/components/i18n/language-selector";
 
 interface AppHeaderProps {
   sectionTitleKey: string;
@@ -45,6 +46,9 @@ export function AppHeader({ sectionTitleKey, onMenuClick }: AppHeaderProps) {
       <h1 className="text-[15px] font-bold text-[var(--admin-text-primary)]">
         {t(sectionTitleKey)}
       </h1>
+      <div className="ml-auto">
+        <LanguageSelector variant="inline" />
+      </div>
     </header>
   );
 }

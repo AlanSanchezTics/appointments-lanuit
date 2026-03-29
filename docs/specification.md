@@ -123,7 +123,9 @@ No existe estado PENDING persistente.
    - Si el mes actual está inactivo pero existe un mes futuro activo, debe redirigir al mes futuro activo más cercano.
    - Si no existe ningún mes activo elegible, `/` muestra una vista de indisponibilidad con mensaje y CTA para contactar por WhatsApp.
    - No existe pantalla de bienvenida en `/`.
-   - La selección de idioma (`es`/`en`) permanece disponible desde el selector global de UI.
+   - La selección de idioma (`es`/`en`) permanece disponible en todo el producto:
+     - flujo público: selector tipo FAB global,
+     - panel admin autenticado (`/admin/*` excepto `/admin/login`): selector integrado al `appHeader`.
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
    - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
 
@@ -417,7 +419,9 @@ Reglas obligatorias:
    - `es`
    - `en`
 2. Fallback obligatorio: `es`.
-3. El selector de idioma está disponible en pantalla inicial y de forma global.
+3. El selector de idioma está disponible en pantalla inicial y en todo el producto con este contrato de ubicación:
+   - flujo público: FAB global fijo.
+   - panel admin autenticado (`/admin/*` excepto `/admin/login`): control en `appHeader` (sin FAB flotante).
 4. Persistencia de idioma:
    - `cookie` (`app_lang`) para SSR y navegación.
    - `localStorage` para continuidad del cliente.
@@ -461,6 +465,7 @@ Reglas obligatorias:
   - visible al final del sidebar,
   - ejecuta `signOut` de NextAuth y redirige a `/admin/login`.
 - El `appHeader` debe mostrar título de sección resuelto por ruta vía i18n (`react-i18next`), sin breadcrumbs en esta fase.
+- El `appHeader` debe incluir el control de cambio de idioma (`es`/`en`) para rutas admin autenticadas.
 
 ### 15.2 Flujo de autenticación admin
 

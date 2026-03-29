@@ -4,8 +4,8 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { cookies } from "next/headers";
 import { Montserrat } from "next/font/google";
 
+import { GlobalLanguageFab } from "@/components/i18n/global-language-fab";
 import { I18nProvider } from "@/components/i18n/i18n-provider";
-import { LanguageSelector } from "@/components/i18n/language-selector";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
 import "./globals.css";
@@ -39,9 +39,7 @@ export default async function RootLayout({
         className={`${montserrat.variable} font-[family-name:var(--font-body)] antialiased overflow-x-hidden`}
       >
         <I18nProvider initialLanguage={language}>
-          <div className="fixed bottom-5 right-5 z-50">
-            <LanguageSelector />
-          </div>
+          <GlobalLanguageFab />
           {children}
         </I18nProvider>
       </body>

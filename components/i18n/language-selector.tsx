@@ -12,7 +12,11 @@ const FLAG_BY_LANGUAGE: Record<AppLanguage, string> = {
   en: "🇺🇸",
 };
 
-export function LanguageSelector() {
+type LanguageSelectorProps = {
+  variant?: "fab" | "inline";
+};
+
+export function LanguageSelector({ variant = "fab" }: LanguageSelectorProps) {
   const router = useRouter();
   const { i18n, t } = useTranslation("common");
   const [isOpen, setIsOpen] = useState(false);
@@ -29,15 +33,30 @@ export function LanguageSelector() {
     router.refresh();
   }
 
+  const isInline = variant === "inline";
+  const panelClasses = isInline
+    ? "absolute right-0 top-[calc(100%+8px)] z-20 flex flex-col items-center gap-2 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-2 shadow-lg"
+    : "flex flex-col items-center gap-2";
+  const optionButtonClasses = isInline
+    ? "outline-0 inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 shadow-sm transition"
+    : "outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition";
+  const triggerButtonClasses = isInline
+    ? "outline-0 inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 text-sm shadow-sm transition ring-1 ring-[var(--admin-primary)]"
+    : "outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition ring-2 ring-[var(--accent)]";
+  const containerClasses = isInline
+    ? "relative flex items-center"
+    : "flex flex-col items-center gap-2";
+  const activeRingClass = isInline ? "ring-2 ring-[var(--admin-primary)]" : "ring-2 ring-[var(--accent)]";
+
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className={containerClasses}>
       {isOpen ? (
-        <div className="flex flex-col items-center gap-2">
+        <div className={panelClasses}>
           <button
             aria-label={t("language.switchTo", {
               language: t("language.useSpanish"),
             })}
-            className={`outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition ${currentLanguage === "es" ? "ring-2 ring-[var(--accent)]" : ""}`}
+            className={`${optionButtonClasses} ${currentLanguage === "es" ? activeRingClass : ""}`}
             onClick={() => handleLanguageChange("es")}
             type="button"
           >
@@ -47,7 +66,7 @@ export function LanguageSelector() {
             aria-label={t("language.switchTo", {
               language: t("language.useEnglish"),
             })}
-            className={`outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition ${currentLanguage === "en" ? "ring-2 ring-[var(--accent)]" : ""}`}
+            className={`${optionButtonClasses} ${currentLanguage === "en" ? activeRingClass : ""}`}
             onClick={() => handleLanguageChange("en")}
             type="button"
           >
@@ -58,7 +77,7 @@ export function LanguageSelector() {
 
       <button
         aria-label={t("language.label")}
-        className="outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition ring-2 ring-[var(--accent)]"
+        className={triggerButtonClasses}
         onClick={() => setIsOpen((current) => !current)}
         type="button"
       >

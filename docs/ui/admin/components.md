@@ -625,13 +625,14 @@ Componente reemplazado por `AppHeader` + `AdminSidebar` dentro de `AdminLayout`.
 
 ### Purpose
 
-Mostrar el título de sección del módulo admin y el disparador de menú en mobile.
+Mostrar el título de sección del módulo admin, el disparador de menú en mobile y el control de idioma del shell.
 
 ### Composition
 
 - botón de menú (solo mobile)
 - ícono contextual
 - título de sección resuelto por i18n según ruta activa
+- selector de idioma (`es`/`en`) integrado al extremo derecho del header
 
 ### Usage
 
