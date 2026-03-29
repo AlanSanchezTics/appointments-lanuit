@@ -373,6 +373,9 @@ Business behavior is defined by:
 ## Edge Cases
 
 - Requesting bookings in past or inactive months must be rejected.
+- Root-entry routing (`/`) behavior when current month is inactive:
+  - if at least one active eligible month exists, redirect must resolve to the nearest active month (ascending `YYYY-MM`),
+  - if no active eligible months exist, root must render an unavailable-agenda state with WhatsApp contact action.
 - Two users trying to secure the same slot at nearly the same time can result in only one successful booking.
 - A lock can expire while the user is confirming; confirmation must fail and force reselection.
 - Same-day booking near slot time cutoff may become invalid between selection and confirmation.

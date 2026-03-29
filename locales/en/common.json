@@ -15,7 +15,12 @@
     "subtitle": "Don't wait too long and reserve your spot before it's gone.",
     "bookNow": "Book now",
     "cancel": "Cancel appointment",
-    "languageHint": "You can change the language at any time."
+    "languageHint": "You can change the language at any time.",
+    "unavailableMessage": "Agenda is currently unavailable. Contact us on WhatsApp for more information.",
+    "unavailableHint": "As soon as there are active months available, booking will resume from this entry point.",
+    "contactWhatsapp": "Contact on WhatsApp",
+    "whatsappUnavailable": "WhatsApp is currently unavailable.",
+    "unavailableWhatsappMessage": "Hi Pau 👋🏼, I'd like more information about appointment availability."
   },
   "notFound": {
     "invalidRoute": "Invalid route",

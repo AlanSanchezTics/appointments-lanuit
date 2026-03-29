@@ -15,7 +15,12 @@
     "subtitle": "No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde.",
     "bookNow": "Agendar ahora",
     "cancel": "Cancelar cita",
-    "languageHint": "Puedes cambiar el idioma en cualquier momento."
+    "languageHint": "Puedes cambiar el idioma en cualquier momento.",
+    "unavailableMessage": "Agenda no disponible por el momento, contactanos por WhatsApp para más información.",
+    "unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",
+    "contactWhatsapp": "Contactar por WhatsApp",
+    "whatsappUnavailable": "WhatsApp no disponible por el momento.",
+    "unavailableWhatsappMessage": "Hola Pau 👋🏼, me gustaría recibir más información sobre disponibilidad de agenda."
   },
   "notFound": {
     "invalidRoute": "Ruta invalida",

@@ -51,6 +51,8 @@ Restricciones:
 - Todas las reglas de disponibilidad aplican únicamente dentro de meses activos.
 - Ventana operativa por defecto: mes actual + siguiente mes (`ACTIVE_MONTH_WINDOW_SIZE=2`), extensible a N meses.
 - Los meses pasados deben quedar `INACTIVE` por reconciliación automática.
+- La entrada raíz (`/`) debe resolver el **primer mes activo disponible** (orden ascendente por `YYYY-MM`) para redirigir a `/citas/YYYY-MM`.
+- Si no existe ningún mes activo elegible (`>= currentMonth`), `/` no redirige y muestra una vista de indisponibilidad con CTA de contacto por WhatsApp.
 
 ---
 
@@ -115,7 +117,9 @@ No existe estado PENDING persistente.
 
 ## 7. Flujo de Reserva
 
-0. Usuario ingresa al inicio (`/`) y el sistema redirige automáticamente al mes actual (`/citas/YYYY-MM`).
+0. Usuario ingresa al inicio (`/`) y el sistema intenta redirigir automáticamente al primer mes activo elegible (`/citas/YYYY-MM`).
+   - Si el mes actual está inactivo pero existe un mes futuro activo, debe redirigir al mes futuro activo más cercano.
+   - Si no existe ningún mes activo elegible, `/` muestra una vista de indisponibilidad con mensaje y CTA para contactar por WhatsApp.
    - No existe pantalla de bienvenida en `/`.
    - La selección de idioma (`es`/`en`) permanece disponible desde el selector global de UI.
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.

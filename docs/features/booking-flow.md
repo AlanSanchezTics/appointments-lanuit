@@ -22,7 +22,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Un teléfono solo puede tener una cita activa futura (`CONFIRMED` o `SYNC_FAILED`).
 
 ## High-Level Flow
-1. Usuario entra a `/` y es redirigido a `/citas/YYYY-MM` del mes actual.
+1. Usuario entra a `/`:
+   - si existe al menos un mes activo elegible (`>= currentMonth`), se redirige a `/citas/YYYY-MM` del primer mes activo disponible (orden ascendente),
+   - si no existe ningún mes activo elegible, se muestra vista de indisponibilidad con mensaje y CTA para contactar por WhatsApp.
 2. En `/citas/YYYY-MM`, visualiza la entrada del flujo y selecciona `Agendar cita`.
 3. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
 4. Al continuar, backend ejecuta `check + lock` temporal (TTL 10 minutos).
@@ -36,8 +38,12 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 ## Step-by-Step Flow
 1. Entrada al mes
 - Trigger: navegación a `/`.
-- Comportamiento: redirect automático a `/citas/YYYY-MM`.
-- Resultado: el flujo inicia sin pantalla de bienvenida intermedia.
+- Comportamiento:
+  - intenta redirect automático al primer mes activo elegible (`/citas/YYYY-MM`),
+  - si no hay meses activos elegibles, renderiza vista de indisponibilidad con acción de contacto por WhatsApp.
+- Resultado:
+  - con meses activos: el flujo inicia sin pantalla de bienvenida intermedia,
+  - sin meses activos: usuario recibe salida controlada para contacto y no entra al flujo de booking.
 
 2. Pantalla de entrada del mes
 - Trigger: carga de `/citas/YYYY-MM`.
