@@ -95,10 +95,10 @@ Regla direccional formal:
 
 ## 5. Restricciones por Teléfono
 
-- Flujo público (`/citas/*`): un número telefónico solo puede tener una cita activa futura por mes.
+- Flujo público (`/citas/*`): un número telefónico puede tener más de una cita activa futura en el mismo mes, siempre que exista una separación mínima de 15 días naturales entre cada cita activa del mes.
 - Flujo público (`/citas/*`): puede tener citas activas futuras en meses distintos.
 - Flujo admin (`/admin/months/[month]`): puede crear múltiples citas activas futuras para el mismo cliente/teléfono.
-- La obligación de cancelar antes de crear otra aplica solo al flujo público.
+- En flujo público, si la nueva cita viola la separación mínima de 15 días naturales con alguna cita activa del mes, no puede crearse como cita adicional y debe resolverse mediante reagendado.
 - Formato persistido obligatorio: 10 dígitos numéricos.
 - En UI se permite captura con separadores (espacios/guiones/paréntesis), pero backend normaliza a 10 dígitos antes de validar y persistir.
 - Nombre mínimo: 3 caracteres.
@@ -131,7 +131,13 @@ No existe estado PENDING persistente.
 2. Desde esa pantalla selecciona `Agendar cita` y avanza a `/citas/YYYY-MM/booking`.
 3. En el paso 1 del wizard selecciona día y horario, e ingresa teléfono.
 4. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
-   - Si el cliente existe por teléfono, se avanza directo a confirmación.
+   - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
+   - Si el cliente tiene citas futuras activas en el mismo mes, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
+   - Si la nueva fecha mantiene al menos 15 días naturales de separación con todas las citas activas del mes, esa vista incluye separador `O` + acción `Agendar como nueva cita` para continuar sin reagendar.
+   - Si la nueva fecha rompe la separación mínima de 15 días naturales con alguna cita activa del mes, esa vista exige seleccionar una cita activa para reagendar al nuevo `date + timeSlot`.
+   - Si hay una sola cita activa elegible en ese estado, puede preseleccionarse para reagendar.
+   - Mientras UI está en selección de cita a reagendar, se muestra un bloque resumen con `name`, `phone`, `date` y `timeSlot` actualmente seleccionados, antes de la lista de citas activas del mes.
+   - En este estado se ocultan los controles del paso 1 para cambiar `date`, `timeSlot` y `phone`.
    - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
 5. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
 6. Usuario confirma cita (paso 2 del wizard).
@@ -141,7 +147,8 @@ No existe estado PENDING persistente.
    - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
    - Valida disponibilidad.
    - Resuelve cliente por teléfono (reutiliza si existe, crea si no existe).
-   - Inserta cita CONFIRMED ligada a `client_id`.
+   - Si se envía `appointmentIdToReschedule`, reprograma esa cita del cliente al nuevo `date + timeSlot`.
+   - Si no se envía `appointmentIdToReschedule`, inserta cita `CONFIRMED` ligada a `client_id`.
    - Elimina lock temporal consumido.
    - Commit.
 8. Crea evento en Google Calendar.
@@ -150,6 +157,13 @@ No existe estado PENDING persistente.
     - El frontend compone el texto final localizado.
     - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
+
+Contratos de payload relevantes en flujo vigente:
+- `POST /api/reservar/client-check-lock`:
+  - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes.
+  - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar si, además de reagendar, está permitido `Agendar como nueva cita` bajo la regla de 15 días naturales.
+- `POST /api/reservar/confirm`:
+  - admite `appointmentIdToReschedule` opcional para reprogramar una cita futura activa del mismo teléfono y mes al `date + timeSlot` seleccionado.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
 

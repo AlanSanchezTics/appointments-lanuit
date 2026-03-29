@@ -15,11 +15,12 @@ import {
 } from "@/lib/booking/draft-rules";
 import type {
   BookingDraft,
+  BookingStep,
   BookingSuccess,
   BookingValidationErrors,
-  BookingStep,
   ClientCheckLockResult,
   ClientState,
+  RescheduleOption,
   SlotLock,
 } from "@/lib/booking/types";
 import { useBookingLockTimer } from "@/hooks/booking/use-booking-lock-timer";
@@ -37,6 +38,7 @@ type UseBookingWizardParams = {
   submitBooking?: (
     draft: BookingDraft,
     lockToken: string,
+    appointmentIdToReschedule?: number | null,
   ) => Promise<BookingSuccess>;
 };
 
@@ -73,6 +75,13 @@ export function useBookingWizard({
   const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
   const [activeLock, setActiveLock] = useState<SlotLock | null>(null);
+  const [rescheduleOptions, setRescheduleOptions] = useState<RescheduleOption[]>(
+    [],
+  );
+  const [canBookAsNewAppointment, setCanBookAsNewAppointment] = useState(false);
+  const [isBookingAsNewAppointment, setIsBookingAsNewAppointment] = useState(false);
+  const [selectedRescheduleAppointmentId, setSelectedRescheduleAppointmentId] =
+    useState<number | null>(null);
   const [currentDays, setCurrentDays] = useState<DayAvailability[]>(days);
   const [draft, setDraft] = useState<BookingDraft>(() =>
     getInitialDraft(initialDraft, days),
@@ -94,12 +103,18 @@ export function useBookingWizard({
 
   const { remainingSeconds, setRemainingSeconds } = useBookingLockTimer({
     activeLock,
-    isActive: Boolean(activeLock) && (step === "confirm" || clientState === "new"),
+    isActive:
+      Boolean(activeLock)
+      && (step === "confirm" || clientState === "new" || clientState === "reschedule"),
     releaseLock,
     onExpired: () => {
       startTransition(() => {
         setActiveLock(null);
         setClientState("unknown");
+        setRescheduleOptions([]);
+        setCanBookAsNewAppointment(false);
+        setIsBookingAsNewAppointment(false);
+        setSelectedRescheduleAppointmentId(null);
         setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
         setStep("details");
       });
@@ -132,19 +147,23 @@ export function useBookingWizard({
   const updateDraft = useCallback(
     (nextDraft: Partial<BookingDraft>) => {
       const shouldInvalidateActiveLock =
-        activeLock &&
-        step === "details" &&
-        ((typeof nextDraft.date === "string" && nextDraft.date !== draft.date) ||
-          (typeof nextDraft.timeSlot === "string" &&
-            nextDraft.timeSlot !== draft.timeSlot) ||
-          (typeof nextDraft.phone === "string" &&
-            normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
+        activeLock
+        && step === "details"
+        && ((typeof nextDraft.date === "string" && nextDraft.date !== draft.date)
+          || (typeof nextDraft.timeSlot === "string"
+            && nextDraft.timeSlot !== draft.timeSlot)
+          || (typeof nextDraft.phone === "string"
+            && normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
 
       if (shouldInvalidateActiveLock && activeLock) {
         void releaseLock(activeLock.lockToken).catch(() => undefined);
         setActiveLock(null);
         setRemainingSeconds(0);
         setClientState("unknown");
+        setRescheduleOptions([]);
+        setCanBookAsNewAppointment(false);
+        setIsBookingAsNewAppointment(false);
+        setSelectedRescheduleAppointmentId(null);
         setDraft((current) => ({
           ...current,
           ...nextDraft,
@@ -159,6 +178,10 @@ export function useBookingWizard({
 
       if (typeof nextDraft.phone === "string" && clientState !== "unknown") {
         setClientState("unknown");
+        setRescheduleOptions([]);
+        setCanBookAsNewAppointment(false);
+        setIsBookingAsNewAppointment(false);
+        setSelectedRescheduleAppointmentId(null);
         setDraft((current) => ({
           ...current,
           ...nextDraft,
@@ -176,18 +199,36 @@ export function useBookingWizard({
       }));
       setSubmitErrorCode(null);
     },
-    [activeLock, clientState, draft.date, draft.phone, draft.timeSlot, releaseLock, setRemainingSeconds, step],
+    [
+      activeLock,
+      clientState,
+      draft.date,
+      draft.phone,
+      draft.timeSlot,
+      releaseLock,
+      setRemainingSeconds,
+      step,
+    ],
   );
 
   const handleContinue = useCallback(() => {
     const nextErrors = validateDraft(draft, clientState === "new");
+
+    if (
+      clientState === "reschedule"
+      && !isBookingAsNewAppointment
+      && selectedRescheduleAppointmentId === null
+    ) {
+      nextErrors.form = "RESCHEDULE_DECISION_REQUIRED";
+    }
+
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
-    if (clientState === "new") {
+    if (clientState === "new" || clientState === "reschedule") {
       if (!activeLock?.lockToken) {
         setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
         return;
@@ -214,6 +255,26 @@ export function useBookingWizard({
         );
         setSubmitErrorCode(null);
 
+        const futureAppointmentsInMonth = response.futureAppointmentsInMonth ?? [];
+
+        if (futureAppointmentsInMonth.length > 0) {
+          const canBookAsNew = response.canBookAsNewAppointment ?? false;
+          setClientState("reschedule");
+          setRescheduleOptions(futureAppointmentsInMonth);
+          setCanBookAsNewAppointment(canBookAsNew);
+          setIsBookingAsNewAppointment(false);
+          setSelectedRescheduleAppointmentId(
+            !canBookAsNew && futureAppointmentsInMonth.length === 1
+              ? (futureAppointmentsInMonth[0]?.appointmentId ?? null)
+              : null,
+          );
+          setDraft((current) => ({
+            ...current,
+            name: response.clientName ?? current.name,
+          }));
+          return;
+        }
+
         if (response.clientExists) {
           setClientState("existing");
           setDraft((current) => ({
@@ -230,7 +291,15 @@ export function useBookingWizard({
         setSubmitErrorCode(code);
       }
     });
-  }, [activeLock?.lockToken, checkClientAndAcquireLock, clientState, draft, setRemainingSeconds]);
+  }, [
+    activeLock?.lockToken,
+    checkClientAndAcquireLock,
+    clientState,
+    draft,
+    selectedRescheduleAppointmentId,
+    isBookingAsNewAppointment,
+    setRemainingSeconds,
+  ]);
 
   const handleBack = useCallback(() => {
     startTransition(async () => {
@@ -242,6 +311,10 @@ export function useBookingWizard({
       setRemainingSeconds(0);
       setSubmitErrorCode(null);
       setClientState("unknown");
+      setRescheduleOptions([]);
+      setCanBookAsNewAppointment(false);
+      setIsBookingAsNewAppointment(false);
+      setSelectedRescheduleAppointmentId(null);
       setStep("details");
     });
   }, [activeLock?.lockToken, releaseLock, setRemainingSeconds]);
@@ -265,10 +338,18 @@ export function useBookingWizard({
       setSubmitErrorCode(null);
 
       try {
-        const result = await submitBooking(draft, activeLock.lockToken);
+        const result = await submitBooking(
+          draft,
+          activeLock.lockToken,
+          isBookingAsNewAppointment ? null : selectedRescheduleAppointmentId,
+        );
         setActiveLock(null);
         setRemainingSeconds(0);
         setClientState("unknown");
+        setRescheduleOptions([]);
+        setCanBookAsNewAppointment(false);
+        setIsBookingAsNewAppointment(false);
+        setSelectedRescheduleAppointmentId(null);
         setSuccess(result);
         setStep("success");
       } catch (error) {
@@ -276,7 +357,15 @@ export function useBookingWizard({
         setSubmitErrorCode(code);
       }
     });
-  }, [activeLock?.lockToken, clientState, draft, setRemainingSeconds, submitBooking]);
+  }, [
+    activeLock?.lockToken,
+    clientState,
+    draft,
+    isBookingAsNewAppointment,
+    selectedRescheduleAppointmentId,
+    setRemainingSeconds,
+    submitBooking,
+  ]);
 
   const stepTransition = useBookingStepTransition({
     step,
@@ -293,6 +382,10 @@ export function useBookingWizard({
       isCalendarOpen,
       isPending,
       remainingSeconds,
+      rescheduleOptions,
+      canBookAsNewAppointment,
+      isBookingAsNewAppointment,
+      selectedRescheduleAppointmentId,
       step,
       submitErrorCode,
       success,
@@ -303,6 +396,20 @@ export function useBookingWizard({
       handleConfirm,
       handleContinue,
       setCalendarOpen,
+      setSelectedRescheduleAppointmentId: (appointmentId: number | null) => {
+        setSelectedRescheduleAppointmentId(appointmentId);
+        if (typeof appointmentId === "number") {
+          setIsBookingAsNewAppointment(false);
+        }
+      },
+      chooseBookAsNewAppointment: () => {
+        setSelectedRescheduleAppointmentId(null);
+        setIsBookingAsNewAppointment(true);
+        setErrors((current) => ({
+          ...current,
+          form: undefined,
+        }));
+      },
       setStep,
       updateDraft,
     },

@@ -4,7 +4,13 @@ export type BookingStep = "details" | "confirm" | "success";
 
 export type StepTransitionDirection = "forward" | "backward";
 
-export type ClientState = "unknown" | "existing" | "new";
+export type ClientState = "unknown" | "existing" | "new" | "reschedule";
+
+export type RescheduleOption = {
+  appointmentId: number;
+  date: string;
+  timeSlot: string;
+};
 
 export type BookingDraft = {
   date: string | null;
@@ -33,6 +39,9 @@ export type SlotLock = {
 export type ClientCheckLockResult = SlotLock & {
   clientExists: boolean;
   clientName?: string;
+  futureAppointmentsInMonth?: RescheduleOption[];
+  canBookAsNewAppointment?: boolean;
+  whatsappPhone?: string;
 };
 
 export type BookingValidationErrors = {

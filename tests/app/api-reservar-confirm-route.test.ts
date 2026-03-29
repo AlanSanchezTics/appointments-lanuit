@@ -75,4 +75,31 @@ describe("POST /api/reservar/confirm", () => {
       error: "LOCK_EXPIRED_OR_INVALID",
     });
   });
+
+  it("returns 409 when appointment selected for reschedule is not found", async () => {
+    confirmAppointmentWithLockMock.mockRejectedValueOnce(
+      new Error("APPOINTMENT_NOT_FOUND"),
+    );
+
+    const { POST } = await import("@/app/api/reservar/confirm/route");
+    const response = await POST(
+      new Request("http://localhost/api/reservar/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-14",
+          timeSlot: "09:00",
+          lockToken: "lock-123",
+          appointmentIdToReschedule: 31,
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "APPOINTMENT_NOT_FOUND",
+      error: "APPOINTMENT_NOT_FOUND",
+    });
+  });
 });

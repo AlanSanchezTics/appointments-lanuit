@@ -19,7 +19,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Solo se permiten horarios base oficiales: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
 - Para el mismo día, solo se permiten horarios futuros (no transcurridos).
 - El teléfono se valida/persiste normalizado a 10 dígitos.
-- Un teléfono solo puede tener una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`).
+- Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`) si la separación entre citas activas del mismo mes es de al menos 15 días naturales.
 - Un mismo teléfono puede tener citas activas futuras en meses distintos.
 
 ## High-Level Flow
@@ -30,11 +30,15 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 3. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
 4. Al continuar, backend ejecuta `check + lock` temporal (TTL 10 minutos).
 5. Si el cliente ya existe por teléfono, avanza directo a confirmación.
-6. Si el cliente no existe, la UI solicita nombre y continúa con el mismo lock activo.
-7. Usuario confirma la cita; backend confirma de forma atómica usando `lock_token`.
-8. Tras commit, se intenta crear evento en Google Calendar.
-9. UI muestra vista de éxito local.
-10. Usuario puede ejecutar explícitamente `Enviar confirmación por WhatsApp`.
+6. Si el cliente ya tiene citas futuras activas en el mismo mes, UI muestra la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas en este mes`.
+7. Si la nueva fecha cumple separación mínima de 15 días naturales con todas sus citas activas del mes, esa vista muestra separador `O` y botón `Agendar como nueva cita`.
+8. Si la nueva fecha no cumple separación mínima de 15 días naturales con alguna cita activa, el cliente debe seleccionar cuál cita reagendar al nuevo `date + timeSlot` para continuar en autoservicio.
+9. Si el cliente no existe, la UI solicita nombre y continúa con el mismo lock activo.
+10. Al seleccionar cita a reagendar o al elegir `Agendar como nueva cita`, UI avanza a confirmación.
+11. Usuario confirma la cita; backend confirma de forma atómica usando `lock_token`.
+12. Tras commit, se intenta crear evento en Google Calendar.
+13. UI muestra vista de éxito local.
+14. Usuario puede ejecutar explícitamente `Enviar confirmación por WhatsApp`.
 
 ## Step-by-Step Flow
 1. Entrada al mes
@@ -61,42 +65,54 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Backend:
   - valida reglas de reserva (mes, día hábil, horario futuro, slot válido),
   - verifica conflictos por disponibilidad,
-  - verifica restricción por teléfono (cita activa futura en el mismo mes),
+  - verifica restricción por teléfono (separación mínima de 15 días naturales entre citas activas futuras del mismo mes),
   - crea lock temporal (`reservation_locks`) con TTL 10 minutos.
 - Resultado:
-  - cliente existente: retorna `clientExists=true` y avanza a confirmación,
+  - cliente existente sin citas futuras activas en ese mes: retorna `clientExists=true` y avanza a confirmación,
+  - cliente existente con citas futuras activas en ese mes: retorna `futureAppointmentsInMonth[]` y mantiene lock para entrar a vista de decisión,
+  - cuando separación es válida: además retorna `canBookAsNewAppointment=true`,
+  - cuando separación no es válida: retorna `canBookAsNewAppointment=false` y mantiene solo opciones de reagendado,
   - cliente nuevo: retorna `clientExists=false`, UI pide nombre y mantiene lock.
 
-5. Captura de nombre (solo cliente nuevo)
+5. Selección de cita a reagendar o agendar como nueva (cliente con citas futuras activas en el mes)
+- Trigger: respuesta con `futureAppointmentsInMonth[]`.
+- Regla:
+  - si `canBookAsNewAppointment=false`, el cliente debe elegir una cita activa para reagendar,
+  - si `canBookAsNewAppointment=true`, además de reagendar se permite `Agendar como nueva cita`,
+  - antes de esta lista, UI muestra un bloque resumen con `date`, `timeSlot`, `name` y `phone` actualmente seleccionados.
+  - en este estado no se renderizan los bloques del paso 1 para seleccionar día, horario y teléfono.
+- Resultado: al seleccionar cita o al elegir `Agendar como nueva cita`, avanza a confirmación con lock vigente.
+
+6. Captura de nombre (solo cliente nuevo)
 - Trigger: respuesta `clientExists=false`.
 - Regla: nombre mínimo 3 caracteres.
 - Resultado: al cumplir validación, avanza a confirmación con lock vigente.
 
-6. Confirmación de cita
+7. Confirmación de cita
 - Trigger: acción `Confirmar cita`.
 - Backend (transaccional):
   - limpia locks expirados,
   - valida lock vigente por `lock_token`, fecha, horario y teléfono,
   - valida disponibilidad final bajo bloqueo,
-  - resuelve cliente por teléfono (reutiliza o crea),
-  - inserta cita `CONFIRMED`,
+  - si llega `appointmentIdToReschedule`, reprograma esa cita,
+  - si no llega `appointmentIdToReschedule`, resuelve cliente por teléfono (reutiliza o crea) e inserta cita `CONFIRMED`,
   - elimina lock consumido,
   - `COMMIT`.
-- Resultado: cita confirmada en DB.
+- Resultado: cita creada o reprogramada en DB.
 
-7. Sincronización externa
+8. Sincronización externa
 - Trigger: confirmación exitosa en DB.
 - Comportamiento: intenta crear evento en Google Calendar.
 - Resultado:
   - éxito: cita permanece `CONFIRMED`,
   - falla: cita cambia a `SYNC_FAILED` y sigue contando como activa para conflictos.
 
-8. Éxito en UI + WhatsApp
+9. Éxito en UI + WhatsApp
 - Trigger: respuesta de confirmación.
 - Comportamiento: UI muestra pantalla de éxito local y CTA explícito para abrir `wa.me` con mensaje codificado.
 - Resultado: envío por WhatsApp depende de acción explícita del usuario.
 
-9. Abandono o expiración
+10. Abandono o expiración
 - Si usuario retrocede/abandona: lock puede liberarse explícitamente o vencer por TTL.
 - Si expira TTL en confirmación: se rechaza confirmación y se fuerza re-selección de horario.
 
@@ -114,8 +130,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Debe cumplir disponibilidad global del día (ocupados + locks + regla direccional + máximo diario).
 - Teléfono:
   - Se normaliza a 10 dígitos.
-  - Un teléfono no puede tener más de una cita activa futura en el mismo mes.
+  - Puede tener más de una cita activa futura en el mismo mes solo si existe separación mínima de 15 días naturales entre citas activas.
   - Un teléfono puede tener citas activas futuras en meses distintos.
+  - Si la nueva fecha no cumple la separación mínima de 15 días con alguna cita activa del mes, para continuar debe seleccionarse cita a reagendar.
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
@@ -138,7 +155,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Mes inválido/inactivo/pasado: rechazo de disponibilidad y/o reserva.
 - Fecha fuera de reglas (fin de semana o slot pasado en mismo día): rechazo.
 - Slot no disponible por ocupación, lock activo o restricciones direccionales: conflicto.
-- Teléfono con cita activa futura en el mismo mes: conflicto, no permite nueva reserva.
+- Teléfono con cita activa futura en el mismo mes y separación menor a 15 días naturales respecto a la nueva fecha: conflicto para creación directa (debe reagendar o elegir otra fecha).
 - Lock inexistente, expirado o no coincidente: conflicto en confirmación.
 - Timeout al adquirir locks de concurrencia: conflicto.
 - Validación de payload inválida: error de validación.

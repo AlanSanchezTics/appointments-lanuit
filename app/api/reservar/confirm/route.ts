@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       date: string;
       timeSlot: string;
       lockToken: string;
+      appointmentIdToReschedule?: number;
     };
 
     const response = await confirmAppointmentWithLock(payload);
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
       errorCode === "PHONE_ALREADY_BOOKED" ||
       errorCode === "LOCK_TIMEOUT" ||
       errorCode === "LOCK_EXPIRED_OR_INVALID" ||
-      errorCode === "CLIENT_NAME_MISMATCH"
+      errorCode === "CLIENT_NAME_MISMATCH" ||
+      errorCode === "APPOINTMENT_NOT_FOUND"
         ? 409
         : 400;
 

@@ -7,6 +7,8 @@ const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
 const findReservationLockByTokenForUpdateMock = vi.fn(async () => null);
 const deleteReservationLockByTokenMock = vi.fn(async () => undefined);
 const syncAppointmentToCalendarMock = vi.fn(async () => ({ status: "CONFIRMED" as const }));
+const createCalendarEventMock = vi.fn(async () => "google-event-1");
+const deleteCalendarEventMock = vi.fn(async () => undefined);
 const getWhatsappPhoneMock = vi.fn(() => "5215512345678");
 const getAvailableStartSlotsMock = vi.fn(() => ["09:00", "13:00"]);
 const getBookableMonthConfigMock = vi.fn(async () => ({
@@ -17,6 +19,8 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
 }));
 const transactionMock = vi.fn();
 const findManyMock = vi.fn();
+const findFirstMock = vi.fn();
+const updateMock = vi.fn();
 const createMock = vi.fn();
 const clientUpsertMock = vi.fn();
 const clientFindUniqueMock = vi.fn();
@@ -33,11 +37,19 @@ vi.mock("@/lib/db/appointments", () => ({
 vi.mock("@/lib/db/prisma", () => ({
   prisma: {
     $transaction: transactionMock,
+    appointment: {
+      update: updateMock,
+    },
   },
 }));
 
 vi.mock("@/lib/calendar/sync-appointment", () => ({
   syncAppointmentToCalendar: syncAppointmentToCalendarMock,
+}));
+
+vi.mock("@/lib/calendar/google", () => ({
+  createCalendarEvent: createCalendarEventMock,
+  deleteCalendarEvent: deleteCalendarEventMock,
 }));
 
 vi.mock("@/lib/whatsapp/message", () => ({
@@ -60,6 +72,8 @@ describe("bookAppointment", () => {
       callback({
         appointment: {
           findMany: findManyMock,
+          findFirst: findFirstMock,
+          update: updateMock,
           create: createMock,
         },
         client: {
@@ -256,7 +270,7 @@ describe("bookAppointment", () => {
     ).rejects.toThrow("NAME_REQUIRED_FOR_NEW_CLIENT");
   });
 
-  it("rejects booking when the same phone already has a future booking in the same month", async () => {
+  it("rejects booking when same-month future appointments are less than 15 days apart", async () => {
     findManyMock.mockResolvedValueOnce([
       {
         date: new Date("2026-03-18T00:00:00.000Z"),
@@ -277,6 +291,39 @@ describe("bookAppointment", () => {
         new Date("2026-03-03T12:00:00.000Z"),
       ),
     ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+  });
+
+  it("allows booking in the same month when future appointments are 15 or more days apart", async () => {
+    findManyMock
+      .mockResolvedValueOnce([
+        {
+          id: 70,
+          date: new Date("2026-03-04T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T13:00:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    clientUpsertMock.mockResolvedValueOnce({
+      id: 44,
+      name: "Ana Lopez",
+      phone: "5512345678",
+    });
+    createMock.mockResolvedValueOnce({ id: 91, client: { name: "Ana Lopez" } });
+
+    const { bookAppointment } = await import("@/lib/appointments/book-appointment");
+
+    const result = await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-19",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(result.appointmentId).toBe(91);
+    expect(createMock).toHaveBeenCalledOnce();
   });
 
   it("allows booking in a different month for the same phone", async () => {
@@ -303,5 +350,59 @@ describe("bookAppointment", () => {
 
     expect(result.appointmentId).toBe(88);
     expect(createMock).toHaveBeenCalledOnce();
+  });
+
+  it("reschedules a selected appointment when appointmentIdToReschedule is provided", async () => {
+    findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
+      id: 99,
+      date: "2026-03-20",
+      timeSlot: "13:00",
+      phone: "5512345678",
+      lockToken: "lock-123",
+      expiresAt: "2026-03-03T12:10:00.000Z",
+    });
+    findFirstMock.mockResolvedValueOnce({
+      id: 21,
+      date: new Date("2026-03-10T00:00:00.000Z"),
+      timeSlot: new Date("1970-01-01T10:00:00.000Z"),
+      status: "CONFIRMED",
+      googleEventId: "old-event",
+      client: {
+        name: "Ana Lopez",
+      },
+    });
+    findManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const { confirmAppointmentWithLock } = await import("@/lib/appointments/book-appointment");
+    const result = await confirmAppointmentWithLock(
+      {
+        phone: "5512345678",
+        date: "2026-03-20",
+        timeSlot: "13:00",
+        lockToken: "lock-123",
+        appointmentIdToReschedule: 21,
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(updateMock).toHaveBeenCalled();
+    expect(deleteCalendarEventMock).toHaveBeenCalledWith("old-event");
+    expect(createCalendarEventMock).toHaveBeenCalledWith({
+      name: "Ana Lopez",
+      date: "2026-03-20",
+      timeSlot: "13:00",
+    });
+    expect(result).toMatchObject({
+      appointmentId: 21,
+      status: "CONFIRMED",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-20",
+        timeSlot: "13:00",
+      },
+    });
   });
 });

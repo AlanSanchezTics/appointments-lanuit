@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
-import { acquireReservationSlotLock, releaseReservationSlotLock } from "@/lib/appointments/lock-reservation-slot";
+import {
+  acquireReservationSlotLock,
+  releaseReservationSlotLock,
+} from "@/lib/appointments/lock-reservation-slot";
 
 export const dynamic = "force-dynamic";
 

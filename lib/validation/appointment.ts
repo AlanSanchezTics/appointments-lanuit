@@ -37,6 +37,7 @@ export const confirmBookingWithLockSchema = bookingCoreSchema.extend({
   name: z
     .union([optionalNameSchema, z.literal("")])
     .transform((value) => (typeof value === "string" ? value.trim() : value)),
+  appointmentIdToReschedule: z.number().int().positive().optional(),
 });
 
 export function isBookingMonthAllowed(month: string, now = new Date()) {

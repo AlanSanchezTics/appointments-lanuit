@@ -48,6 +48,9 @@ vi.mock("@/lib/db/prisma", () => ({
 vi.mock("@/lib/active-months/service", () => ({
   getBookableMonthConfig: getBookableMonthConfigMock,
 }));
+vi.mock("@/lib/whatsapp/message", () => ({
+  getWhatsappPhone: vi.fn(() => "5215512345678"),
+}));
 
 describe("reservation slot locks", () => {
   beforeEach(() => {
@@ -168,35 +171,82 @@ describe("reservation slot locks", () => {
     expect(result).toEqual({
       lockToken: "lock-123",
       expiresAt: "2026-03-13T12:10:00.000Z",
+      futureAppointmentsInMonth: [],
+      canBookAsNewAppointment: false,
+      whatsappPhone: "5215512345678",
       clientExists: true,
       clientName: "Ana Lopez",
     });
   });
 
-  it("rejects lock when same phone already has future appointment in target month", async () => {
+  it("returns future appointments in month when same phone already has active bookings", async () => {
     findUniqueClientMock.mockResolvedValueOnce({
       id: 9,
       name: "Ana Lopez",
     });
     findManyMock.mockResolvedValueOnce([
       {
+        id: 77,
         date: new Date("2026-03-18T00:00:00.000Z"),
         timeSlot: new Date("1970-01-01T10:00:00.000Z"),
       },
     ]);
 
-    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+    const { checkClientAndAcquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
 
-    await expect(
-      acquireReservationSlotLock(
+    const result = await checkClientAndAcquireReservationSlotLock(
+      {
+        phone: "5512345678",
+        date: "2026-03-20",
+        timeSlot: "13:00",
+      },
+      new Date("2026-03-13T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      lockToken: "lock-123",
+      expiresAt: "2026-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Lopez",
+      canBookAsNewAppointment: false,
+      whatsappPhone: "5215512345678",
+      futureAppointmentsInMonth: [
         {
-          phone: "5512345678",
-          date: "2026-03-20",
-          timeSlot: "13:00",
+          appointmentId: 77,
+          date: "2026-03-18",
+          timeSlot: "10:00",
         },
-        new Date("2026-03-13T12:00:00.000Z"),
-      ),
-    ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+      ],
+    });
+  });
+
+  it("does not return reschedule options when same-month appointments keep a 15-day gap", async () => {
+    findUniqueClientMock.mockResolvedValueOnce({
+      id: 9,
+      name: "Ana Lopez",
+    });
+    findManyMock.mockResolvedValueOnce([
+      {
+        id: 88,
+        date: new Date("2026-03-01T00:00:00.000Z"),
+        timeSlot: new Date("1970-01-01T10:00:00.000Z"),
+      },
+    ]);
+
+    const { checkClientAndAcquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    const result = await checkClientAndAcquireReservationSlotLock(
+      {
+        phone: "5512345678",
+        date: "2026-03-16",
+        timeSlot: "13:00",
+      },
+      new Date("2026-02-27T12:00:00.000Z"),
+    );
+
+    expect(result.futureAppointmentsInMonth).toHaveLength(1);
+    expect(result.canBookAsNewAppointment).toBe(true);
+    expect(result.whatsappPhone).toBe("5215512345678");
   });
 
   it("allows lock when future appointment exists in a different month", async () => {
@@ -208,8 +258,8 @@ describe("reservation slot locks", () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
-    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
-    const result = await acquireReservationSlotLock(
+    const { checkClientAndAcquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+    const result = await checkClientAndAcquireReservationSlotLock(
       {
         phone: "5512345678",
         date: "2026-04-02",
@@ -219,5 +269,14 @@ describe("reservation slot locks", () => {
     );
 
     expect(result.lockToken).toBe("lock-123");
+    expect(result).toEqual({
+      lockToken: "lock-123",
+      expiresAt: "2026-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Lopez",
+      futureAppointmentsInMonth: [],
+      canBookAsNewAppointment: false,
+      whatsappPhone: "5215512345678",
+    });
   });
 });

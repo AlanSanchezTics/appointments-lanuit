@@ -2,7 +2,7 @@
   "api": {
     "SLOT_NOT_AVAILABLE": "That time is no longer available. Choose another one.",
     "SLOT_LOCKED": "That time was just locked by someone else. Choose another one.",
-    "PHONE_ALREADY_BOOKED": "You already have an active future appointment in this month with this phone.",
+    "PHONE_ALREADY_BOOKED": "There must be at least 15 calendar days between your active appointments in the same month.",
     "MONTH_NOT_ALLOWED": "Booking is only allowed in enabled months.",
     "LOCK_TIMEOUT": "A temporary conflict occurred while booking. Please try again.",
     "LOCK_EXPIRED_OR_INVALID": "The temporary lock expired. Please select your slot again.",
@@ -19,7 +19,8 @@
     "TIME_SLOT_REQUIRED": "Select a time before continuing.",
     "PHONE_INVALID": "Enter a 10-digit phone number.",
     "NAME_REQUIRED": "Enter your full name.",
-    "FORM_INCOMPLETE": "Complete date and time before continuing."
+    "FORM_INCOMPLETE": "Complete date and time before continuing.",
+    "RESCHEDULE_DECISION_REQUIRED": "Select one of the available options to continue"
   },
   "cancel": {
     "LOOKUP_FAILED": "Could not find your appointment. Please try again.",

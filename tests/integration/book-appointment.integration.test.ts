@@ -54,7 +54,7 @@ integrationSuite("bookAppointment integration", () => {
     expect(appointment.status).toBe("CONFIRMED");
   });
 
-  it("rejects a second future booking in the same month for the same phone", async () => {
+  it("rejects a second same-month future booking when appointments are less than 15 days apart", async () => {
     await bookAppointment(
       {
         name: "Ana Lopez",
@@ -76,6 +76,32 @@ integrationSuite("bookAppointment integration", () => {
         new Date("2026-03-03T12:00:00.000Z"),
       ),
     ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+  });
+
+  it("allows a second same-month future booking when appointments are at least 15 days apart", async () => {
+    await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    await expect(
+      bookAppointment(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-19",
+          timeSlot: "13:00",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).resolves.toMatchObject({
+      status: "CONFIRMED",
+    });
   });
 
   it("allows booking a slot that was previously cancelled", async () => {

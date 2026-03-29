@@ -1,7 +1,9 @@
 import { Prisma } from "@prisma/client";
+
 import { getBookableMonthConfig } from "@/lib/active-months/service";
-import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { createCalendarEvent, deleteCalendarEvent } from "@/lib/calendar/google";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import {
   acquireBookingLocks,
@@ -20,6 +22,8 @@ import {
 } from "@/lib/validation/appointment";
 import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
+const MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS = 15;
+
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
 }
@@ -27,7 +31,9 @@ function timeSlotToDate(timeSlot: string) {
 function getMonthRange(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
   const monthStart = `${month}-01`;
-  const monthEndExclusive = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 10);
+  const monthEndExclusive = new Date(Date.UTC(year, monthNumber, 1))
+    .toISOString()
+    .slice(0, 10);
 
   return {
     monthStart,
@@ -35,9 +41,34 @@ function getMonthRange(month: string) {
   };
 }
 
-async function hasActiveFutureAppointmentInMonth(
+function getNaturalDayDifference(dateA: string, dateB: string) {
+  const [yearA, monthA, dayA] = dateA.split("-").map(Number);
+  const [yearB, monthB, dayB] = dateB.split("-").map(Number);
+  const utcA = Date.UTC(yearA, monthA - 1, dayA);
+  const utcB = Date.UTC(yearB, monthB - 1, dayB);
+  return Math.abs(Math.floor((utcB - utcA) / (24 * 60 * 60 * 1000)));
+}
+
+type FutureAppointmentInMonth = {
+  appointmentId: number;
+  date: string;
+  timeSlot: string;
+};
+
+function hasInsufficientDayGap(
+  candidateDate: string,
+  futureAppointmentsInMonth: FutureAppointmentInMonth[],
+) {
+  return futureAppointmentsInMonth.some(
+    (appointment) =>
+      getNaturalDayDifference(candidateDate, appointment.date)
+      < MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS,
+  );
+}
+
+async function listActiveFutureAppointmentsInMonth(
   tx: Prisma.TransactionClient,
-  input: { phone: string; month: string },
+  input: { phone: string; month: string; excludeAppointmentId?: number },
   now: Date,
 ) {
   const { monthStart, monthEndExclusive } = getMonthRange(input.month);
@@ -53,19 +84,27 @@ async function hasActiveFutureAppointmentInMonth(
         gte: new Date(`${monthStart}T00:00:00.000Z`),
         lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
       },
+      ...(typeof input.excludeAppointmentId === "number"
+        ? { id: { not: input.excludeAppointmentId } }
+        : {}),
     },
     select: {
+      id: true,
       date: true,
       timeSlot: true,
     },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
   });
 
-  return appointments.some((appointment) =>
-    isFutureDateTime(
-      appointment.date.toISOString().slice(0, 10),
-      appointment.timeSlot.toISOString().slice(11, 16),
-      now,
-    ));
+  return appointments
+    .map((appointment) => ({
+      appointmentId: appointment.id,
+      date: appointment.date.toISOString().slice(0, 10),
+      timeSlot: appointment.timeSlot.toISOString().slice(11, 16),
+    }))
+    .filter((appointment) =>
+      isFutureDateTime(appointment.date, appointment.timeSlot, now),
+    ) satisfies FutureAppointmentInMonth[];
 }
 
 async function resolveClientInTransaction(
@@ -114,7 +153,7 @@ async function createAppointmentInTransaction(
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
 
-  const hasFutureInTargetMonth = await hasActiveFutureAppointmentInMonth(
+  const futureAppointmentsInTargetMonth = await listActiveFutureAppointmentsInMonth(
     tx,
     {
       phone: input.phone,
@@ -123,7 +162,7 @@ async function createAppointmentInTransaction(
     now,
   );
 
-  if (hasFutureInTargetMonth) {
+  if (hasInsufficientDayGap(input.date, futureAppointmentsInTargetMonth)) {
     throw new Error("PHONE_ALREADY_BOOKED");
   }
 
@@ -139,7 +178,9 @@ async function createAppointmentInTransaction(
     },
   });
 
-  const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
+  const occupiedSlots = occupied.map((item) =>
+    item.timeSlot.toISOString().slice(11, 16),
+  );
   const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
 
   if (!availableSlots.includes(input.timeSlot)) {
@@ -168,7 +209,121 @@ async function createAppointmentInTransaction(
   });
 }
 
-async function finalizeAppointment(input: { appointmentId: number; date: string; name: string; timeSlot: string }) {
+async function rescheduleAppointmentInTransaction(
+  tx: Prisma.TransactionClient,
+  input: {
+    appointmentIdToReschedule: number;
+    phone: string;
+    date: string;
+    timeSlot: string;
+  },
+  baseSlots: readonly string[],
+  now: Date,
+  lockToken: string,
+) {
+  await lockConflictingAppointments(tx, input.date, input.phone);
+
+  const { monthStart, monthEndExclusive } = getMonthRange(input.date.slice(0, 7));
+
+  const appointmentToReschedule = await tx.appointment.findFirst({
+    where: {
+      id: input.appointmentIdToReschedule,
+      client: {
+        phone: input.phone,
+      },
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    include: {
+      client: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!appointmentToReschedule) {
+    throw new Error("APPOINTMENT_NOT_FOUND");
+  }
+
+  const currentDate = appointmentToReschedule.date.toISOString().slice(0, 10);
+  const currentTimeSlot = appointmentToReschedule.timeSlot
+    .toISOString()
+    .slice(11, 16);
+
+  if (!isFutureDateTime(currentDate, currentTimeSlot, now)) {
+    throw new Error("APPOINTMENT_NOT_FOUND");
+  }
+
+  const futureAppointmentsInTargetMonth = await listActiveFutureAppointmentsInMonth(
+    tx,
+    {
+      phone: input.phone,
+      month: input.date.slice(0, 7),
+      excludeAppointmentId: appointmentToReschedule.id,
+    },
+    now,
+  );
+
+  if (hasInsufficientDayGap(input.date, futureAppointmentsInTargetMonth)) {
+    throw new Error("PHONE_ALREADY_BOOKED");
+  }
+
+  const occupied = await tx.appointment.findMany({
+    where: {
+      date: new Date(`${input.date}T00:00:00.000Z`),
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+      id: {
+        not: appointmentToReschedule.id,
+      },
+    },
+    select: {
+      timeSlot: true,
+    },
+  });
+
+  const occupiedSlots = occupied.map((item) =>
+    item.timeSlot.toISOString().slice(11, 16),
+  );
+  const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
+
+  if (!availableSlots.includes(input.timeSlot)) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  await tx.appointment.update({
+    where: {
+      id: appointmentToReschedule.id,
+    },
+    data: {
+      date: new Date(`${input.date}T00:00:00.000Z`),
+      timeSlot: timeSlotToDate(input.timeSlot),
+    },
+  });
+
+  await deleteReservationLockByToken(tx, lockToken);
+
+  return {
+    appointmentId: appointmentToReschedule.id,
+    name: appointmentToReschedule.client.name,
+    previousGoogleEventId: appointmentToReschedule.googleEventId,
+  };
+}
+
+async function finalizeAppointment(input: {
+  appointmentId: number;
+  date: string;
+  name: string;
+  timeSlot: string;
+}) {
   const syncResult = await syncAppointmentToCalendar(input);
 
   return {
@@ -182,6 +337,73 @@ async function finalizeAppointment(input: { appointmentId: number; date: string;
       timeSlot: input.timeSlot,
     },
   };
+}
+
+async function finalizeRescheduledAppointment(input: {
+  appointmentId: number;
+  date: string;
+  name: string;
+  timeSlot: string;
+  previousGoogleEventId: string | null;
+}) {
+  if (input.previousGoogleEventId) {
+    try {
+      await deleteCalendarEvent(input.previousGoogleEventId);
+    } catch {
+      // non-blocking
+    }
+  }
+
+  try {
+    const googleEventId = await createCalendarEvent({
+      name: input.name,
+      date: input.date,
+      timeSlot: input.timeSlot,
+    });
+
+    await prisma.appointment.update({
+      where: {
+        id: input.appointmentId,
+      },
+      data: {
+        googleEventId,
+        status: "CONFIRMED",
+      },
+    });
+
+    return {
+      appointmentId: input.appointmentId,
+      status: "CONFIRMED" as const,
+      whatsappPhone: getWhatsappPhone(),
+      whatsappData: {
+        name: input.name,
+        date: input.date,
+        timeSlot: input.timeSlot,
+      },
+    };
+  } catch {
+    await prisma.appointment.update({
+      where: {
+        id: input.appointmentId,
+      },
+      data: {
+        googleEventId: null,
+        status: "SYNC_FAILED",
+      },
+    });
+
+    return {
+      appointmentId: input.appointmentId,
+      status: "SYNC_FAILED" as const,
+      syncReason: "CALENDAR_SYNC_FAILED",
+      whatsappPhone: getWhatsappPhone(),
+      whatsappData: {
+        name: input.name,
+        date: input.date,
+        timeSlot: input.timeSlot,
+      },
+    };
+  }
 }
 
 export async function bookAppointment(rawInput: unknown, now = new Date()) {
@@ -219,11 +441,14 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
     throw new Error("LOCK_TOKEN_REQUIRED");
   }
 
-  const input = validateBookingRules(confirmBookingWithLockSchema.parse(rawInput), now);
+  const input = validateBookingRules(
+    confirmBookingWithLockSchema.parse(rawInput),
+    now,
+  );
   const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
   const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
 
-  const appointment = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await acquireBookingLocks(tx, input.date, input.phone);
 
     try {
@@ -239,23 +464,63 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         throw new Error("LOCK_EXPIRED_OR_INVALID");
       }
 
-      if (lock.date !== input.date || lock.timeSlot !== input.timeSlot || lock.phone !== input.phone) {
+      if (
+        lock.date !== input.date
+        || lock.timeSlot !== input.timeSlot
+        || lock.phone !== input.phone
+      ) {
         throw new Error("LOCK_EXPIRED_OR_INVALID");
+      }
+
+      if (typeof input.appointmentIdToReschedule === "number") {
+        const rescheduled = await rescheduleAppointmentInTransaction(
+          tx,
+          {
+            appointmentIdToReschedule: input.appointmentIdToReschedule,
+            phone: input.phone,
+            date: input.date,
+            timeSlot: input.timeSlot,
+          },
+          baseSlots,
+          now,
+          lockToken,
+        );
+
+        return {
+          type: "rescheduled" as const,
+          appointmentId: rescheduled.appointmentId,
+          name: rescheduled.name,
+          previousGoogleEventId: rescheduled.previousGoogleEventId,
+        };
       }
 
       const created = await createAppointmentInTransaction(tx, input, baseSlots, now);
       await deleteReservationLockByToken(tx, lockToken);
 
-      return created;
+      return {
+        type: "created" as const,
+        appointmentId: created.id,
+        name: created.client.name,
+      };
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
   });
 
+  if (result.type === "rescheduled") {
+    return finalizeRescheduledAppointment({
+      appointmentId: result.appointmentId,
+      date: input.date,
+      name: result.name,
+      timeSlot: input.timeSlot,
+      previousGoogleEventId: result.previousGoogleEventId,
+    });
+  }
+
   return finalizeAppointment({
-    appointmentId: appointment.id,
+    appointmentId: result.appointmentId,
     date: input.date,
-    name: appointment.client.name,
+    name: result.name,
     timeSlot: input.timeSlot,
   });
 }

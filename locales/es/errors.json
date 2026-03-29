@@ -2,7 +2,7 @@
   "api": {
     "SLOT_NOT_AVAILABLE": "Ese horario ya no esta disponible. Elige otro.",
     "SLOT_LOCKED": "Ese horario ya no esta disponible. Elige otro.",
-    "PHONE_ALREADY_BOOKED": "Ya tienes una cita futura activa en este mes con este telefono.",
+    "PHONE_ALREADY_BOOKED": "Debe existir al menos 15 dias naturales entre tus citas activas del mismo mes.",
     "MONTH_NOT_ALLOWED": "Solo se puede agendar en meses habilitados.",
     "LOCK_TIMEOUT": "Hubo un conflicto temporal al reservar. Intenta de nuevo.",
     "LOCK_EXPIRED_OR_INVALID": "El bloqueo temporal expiro. Selecciona de nuevo tu horario.",
@@ -19,7 +19,8 @@
     "TIME_SLOT_REQUIRED": "Selecciona un horario antes de continuar.",
     "PHONE_INVALID": "Ingresa un telefono de 10 digitos.",
     "NAME_REQUIRED": "Ingresa tu nombre completo.",
-    "FORM_INCOMPLETE": "Completa la fecha y el horario antes de continuar."
+    "FORM_INCOMPLETE": "Completa la fecha y el horario antes de continuar.",
+    "RESCHEDULE_DECISION_REQUIRED": "Selecciona una de las opciones disponibles para continuar"
   },
   "cancel": {
     "LOOKUP_FAILED": "No se pudo buscar tu cita. Intenta de nuevo.",

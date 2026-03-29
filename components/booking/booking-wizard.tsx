@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BookingConfirmStep } from "@/components/booking/booking-confirm-step";
@@ -11,6 +12,7 @@ import type { DayAvailability } from "@/lib/availability/service";
 import { translateApiError } from "@/lib/i18n/translate";
 import type {
   BookingDraft,
+  RescheduleOption,
   BookingSuccess,
   BookingStep,
   BookingValidationErrors,
@@ -30,6 +32,7 @@ type BookingWizardProps = {
   submitBooking?: (
     draft: BookingDraft,
     lockToken: string,
+    appointmentIdToReschedule?: number | null,
   ) => Promise<BookingSuccess>;
   onWhatsAppRedirect?: (url: string) => void;
 };
@@ -42,16 +45,22 @@ type RenderStepParams = {
   month: string;
   translatedSubmitError: string | null;
   isPending: boolean;
-  clientState: "unknown" | "existing" | "new";
+  clientState: "unknown" | "existing" | "new" | "reschedule";
+  rescheduleOptions: RescheduleOption[];
+  canBookAsNewAppointment: boolean;
+  isBookingAsNewAppointment: boolean;
+  selectedRescheduleAppointmentId: number | null;
   activeLock: SlotLock | null;
   remainingSeconds: number;
   success: BookingSuccess | null;
   onContinue: () => void;
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
   onOpenCalendar: () => void;
+  onSelectRescheduleAppointment: (appointmentId: number) => void;
+  onChooseBookAsNewAppointment: () => void;
+  onWhatsAppRedirect: (url: string) => void;
   onBack: () => void;
   onConfirm: () => void;
-  onWhatsAppRedirect: (url: string) => void;
 };
 
 export function BookingWizard({
@@ -62,9 +71,20 @@ export function BookingWizard({
   checkClientAndAcquireLock,
   releaseLock,
   submitBooking,
-  onWhatsAppRedirect = (url) => window.location.assign(url),
+  onWhatsAppRedirect,
 }: BookingWizardProps) {
   const { t } = useTranslation(["common", "errors"]);
+  const handleWhatsAppRedirect = useCallback(
+    (url: string) => {
+      if (onWhatsAppRedirect) {
+        onWhatsAppRedirect(url);
+        return;
+      }
+
+      window.location.assign(url);
+    },
+    [onWhatsAppRedirect],
+  );
   const { state, actions, transitions } = useBookingWizard({
     month,
     days,
@@ -88,15 +108,21 @@ export function BookingWizard({
     translatedSubmitError,
     isPending: state.isPending,
     clientState: state.clientState,
+    rescheduleOptions: state.rescheduleOptions,
+    canBookAsNewAppointment: state.canBookAsNewAppointment,
+    isBookingAsNewAppointment: state.isBookingAsNewAppointment,
+    selectedRescheduleAppointmentId: state.selectedRescheduleAppointmentId,
     activeLock: state.activeLock,
     remainingSeconds: state.remainingSeconds,
     success: state.success,
     onContinue: actions.handleContinue,
     onDraftChange: actions.updateDraft,
     onOpenCalendar: () => actions.setCalendarOpen(true),
+    onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
+    onChooseBookAsNewAppointment: actions.chooseBookAsNewAppointment,
     onBack: actions.handleBack,
     onConfirm: actions.handleConfirm,
-    onWhatsAppRedirect,
+    onWhatsAppRedirect: handleWhatsAppRedirect,
   });
   const leavingStepPane = transitions.leavingStep
     ? renderStep({
@@ -108,15 +134,21 @@ export function BookingWizard({
         translatedSubmitError,
         isPending: state.isPending,
         clientState: state.clientState,
+        rescheduleOptions: state.rescheduleOptions,
+        canBookAsNewAppointment: state.canBookAsNewAppointment,
+        isBookingAsNewAppointment: state.isBookingAsNewAppointment,
+        selectedRescheduleAppointmentId: state.selectedRescheduleAppointmentId,
         activeLock: state.activeLock,
         remainingSeconds: state.remainingSeconds,
         success: state.success,
         onContinue: actions.handleContinue,
         onDraftChange: actions.updateDraft,
         onOpenCalendar: () => actions.setCalendarOpen(true),
+        onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
+        onChooseBookAsNewAppointment: actions.chooseBookAsNewAppointment,
         onBack: actions.handleBack,
         onConfirm: actions.handleConfirm,
-        onWhatsAppRedirect,
+        onWhatsAppRedirect: handleWhatsAppRedirect,
       })
     : null;
 
@@ -191,12 +223,18 @@ function renderStep({
   translatedSubmitError,
   isPending,
   clientState,
+  rescheduleOptions,
+  canBookAsNewAppointment,
+  isBookingAsNewAppointment,
+  selectedRescheduleAppointmentId,
   activeLock,
   remainingSeconds,
   success,
   onContinue,
   onDraftChange,
   onOpenCalendar,
+  onSelectRescheduleAppointment,
+  onChooseBookAsNewAppointment,
   onBack,
   onConfirm,
   onWhatsAppRedirect,
@@ -214,7 +252,13 @@ function renderStep({
         onOpenCalendar={onOpenCalendar}
         isPending={isPending}
         showNameField={clientState === "new"}
-        hasActiveLock={clientState === "new" && Boolean(activeLock)}
+        hasActiveLock={(clientState === "new" || clientState === "reschedule") && Boolean(activeLock)}
+        rescheduleOptions={rescheduleOptions}
+        canBookAsNewAppointment={canBookAsNewAppointment}
+        isBookingAsNewAppointment={isBookingAsNewAppointment}
+        selectedRescheduleAppointmentId={selectedRescheduleAppointmentId}
+        onSelectRescheduleAppointment={onSelectRescheduleAppointment}
+        onChooseBookAsNewAppointment={onChooseBookAsNewAppointment}
         remainingSeconds={remainingSeconds}
       />
     );
@@ -251,6 +295,7 @@ function renderStep({
 
 export type {
   BookingDraft,
+  RescheduleOption,
   BookingSuccess,
   BookingStep,
   BookingValidationErrors,

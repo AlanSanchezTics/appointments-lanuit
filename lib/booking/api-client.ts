@@ -47,7 +47,11 @@ export async function releaseReservationLock(lockToken: string) {
   });
 }
 
-export async function submitBookingDraft(draft: BookingDraft, lockToken: string) {
+export async function submitBookingDraft(
+  draft: BookingDraft,
+  lockToken: string,
+  appointmentIdToReschedule?: number | null,
+) {
   const response = await fetch("/api/reservar/confirm", {
     method: "POST",
     headers: {
@@ -59,6 +63,7 @@ export async function submitBookingDraft(draft: BookingDraft, lockToken: string)
       date: draft.date,
       timeSlot: draft.timeSlot,
       lockToken,
+      appointmentIdToReschedule: appointmentIdToReschedule ?? undefined,
     }),
   });
 

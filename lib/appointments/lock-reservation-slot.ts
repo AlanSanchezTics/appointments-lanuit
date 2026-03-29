@@ -16,8 +16,16 @@ import {
 } from "@/lib/db/appointments";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { lockReservationSchema, validateBookingRules } from "@/lib/validation/appointment";
+import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
 const RESERVATION_LOCK_WINDOW_MINUTES = 10;
+const MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS = 15;
+
+type FutureAppointmentInMonth = {
+  appointmentId: number;
+  date: string;
+  timeSlot: string;
+};
 
 function computeLockExpiration(now: Date) {
   return new Date(now.getTime() + RESERVATION_LOCK_WINDOW_MINUTES * 60 * 1000);
@@ -34,7 +42,26 @@ function getMonthRange(month: string) {
   };
 }
 
-async function hasActiveFutureAppointmentInMonth(
+function getNaturalDayDifference(dateA: string, dateB: string) {
+  const [yearA, monthA, dayA] = dateA.split("-").map(Number);
+  const [yearB, monthB, dayB] = dateB.split("-").map(Number);
+  const utcA = Date.UTC(yearA, monthA - 1, dayA);
+  const utcB = Date.UTC(yearB, monthB - 1, dayB);
+  return Math.abs(Math.floor((utcB - utcA) / (24 * 60 * 60 * 1000)));
+}
+
+function hasInsufficientDayGap(
+  candidateDate: string,
+  futureAppointmentsInMonth: FutureAppointmentInMonth[],
+) {
+  return futureAppointmentsInMonth.some(
+    (appointment) =>
+      getNaturalDayDifference(candidateDate, appointment.date)
+      < MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS,
+  );
+}
+
+async function listActiveFutureAppointmentsInMonth(
   tx: Prisma.TransactionClient,
   input: { phone: string; month: string },
   now: Date,
@@ -54,17 +81,22 @@ async function hasActiveFutureAppointmentInMonth(
       },
     },
     select: {
+      id: true,
       date: true,
       timeSlot: true,
     },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
   });
 
-  return appointments.some((appointment) =>
-    isFutureDateTime(
-      appointment.date.toISOString().slice(0, 10),
-      appointment.timeSlot.toISOString().slice(11, 16),
-      now,
-    ));
+  return appointments
+    .map((appointment) => ({
+      appointmentId: appointment.id,
+      date: appointment.date.toISOString().slice(0, 10),
+      timeSlot: appointment.timeSlot.toISOString().slice(11, 16),
+    }))
+    .filter((appointment) =>
+      isFutureDateTime(appointment.date, appointment.timeSlot, now),
+    ) satisfies FutureAppointmentInMonth[];
 }
 
 async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
@@ -90,7 +122,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         },
       });
 
-      const hasFutureInTargetMonth = await hasActiveFutureAppointmentInMonth(
+      const futureAppointmentsInMonth = await listActiveFutureAppointmentsInMonth(
         tx,
         {
           phone: input.phone,
@@ -98,10 +130,10 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         },
         now,
       );
-
-      if (hasFutureInTargetMonth) {
-        throw new Error("PHONE_ALREADY_BOOKED");
-      }
+      const hasInsufficientGap = hasInsufficientDayGap(
+        input.date,
+        futureAppointmentsInMonth,
+      );
 
       const occupied = await tx.appointment.findMany({
         where: {
@@ -142,6 +174,10 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         lock,
         clientExists: Boolean(existingClient),
         clientName: existingClient?.name,
+        futureAppointmentsInMonth,
+        canBookAsNewAppointment:
+          futureAppointmentsInMonth.length > 0 ? !hasInsufficientGap : false,
+        whatsappPhone: getWhatsappPhone(),
       };
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
@@ -153,6 +189,9 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
     expiresAt: result.lock.expiresAt,
     clientExists: result.clientExists,
     clientName: result.clientName,
+    futureAppointmentsInMonth: result.futureAppointmentsInMonth,
+    canBookAsNewAppointment: result.canBookAsNewAppointment,
+    whatsappPhone: result.whatsappPhone,
   };
 }
 

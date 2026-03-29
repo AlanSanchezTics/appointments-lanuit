@@ -17,7 +17,7 @@ Business behavior is defined by:
 - Appointment scheduling windows based on active months.
 - A fixed weekday/time-slot model.
 - Booking and cancellation eligibility rules.
-- One-active-future-appointment-per-month policy per customer phone number in public booking flow (admin flow allows multiple future appointments per phone).
+- Minimum 15-calendar-day separation policy between active future appointments in the same month per customer phone in public booking flow (admin flow allows multiple future appointments without this separation rule).
 - Temporary slot holding during booking confirmation.
 - A single source of truth for appointment state.
 - All time-based rules are evaluated using a fixed business timezone (`America/Mexico_City`).
@@ -93,14 +93,19 @@ Business behavior is defined by:
   - A phone cannot map to multiple names.
 
 - Public booking exclusivity per phone:
-  - In public booking flow, a phone can hold at most one active future appointment within the same target month.
-  - In public booking flow, customer must cancel their active future appointment in that month before creating another in the same month.
+  - In public booking flow, a phone can hold multiple active future appointments within the same target month only when every pair remains at least 15 calendar days apart.
+  - In public booking flow, when same-month active future appointments exist, booking flow must enter a decision view with current selection details + list of active appointments.
+  - In public booking flow, when the new slot/date violates that 15-calendar-day separation against existing active future appointments in the same month, booking flow must require selecting one of those appointments to reschedule.
+  - In public booking flow, when the 15-calendar-day separation is valid, that same decision view must offer an alternative action to book as a new appointment.
+  - In public booking flow, while reschedule selection is active, UI must show a summary block with the currently selected `date`, `timeSlot`, `name`, and `phone` before listing active appointments to reschedule.
+  - In public booking flow, while reschedule selection is active, step-1 input sections (`available days`, `time selection`, `phone input`) must be hidden.
   - In public booking flow, customer may hold active future appointments across different months.
   - In admin booking flow, multiple active future appointments are allowed for the same phone.
 
 - Booking confirmation rules:
   - Confirmation requires a valid, unexpired lock tied to the selected slot/date/phone.
   - If lock expires or becomes invalid, confirmation is rejected and slot must be reselected.
+  - Public confirmation may include `appointmentIdToReschedule`; when present, the selected active future appointment for the same phone/month is rescheduled instead of creating a new record.
 
 ## Cancellation Rules
 
@@ -351,7 +356,7 @@ Business behavior is defined by:
   - Slot availability.
   - Daily and pair constraints.
   - Valid temporary lock at confirmation step.
-  - Public flow only: no existing active future appointment for the same phone within the same target month.
+  - Public flow only: if same-phone active future appointments already exist in the target month, the new booking date must keep a minimum 15-calendar-day gap against them.
 
 - Cancellation precondition validation:
   - `CONFIRMED` status.
@@ -365,7 +370,7 @@ Business behavior is defined by:
 - External calendar acts as mirror, not authority.
 - No overlapping active occupancy per slot.
 - Pair-direction constraints and daily max capacity are always enforced.
-- Public flow: a phone can have at most one active future appointment per month.
+- Public flow: a phone can have multiple active future appointments per month only if each active appointment keeps a minimum 15-calendar-day gap from the others.
 - Admin flow: a phone can have multiple active future appointments.
 - Booking and cancellation are only valid within active months.
 - Same-day booking is only valid for future slots in local business time.

@@ -116,4 +116,133 @@ describe("booking confirm step", () => {
       expect(screen.getByText(/El bloqueo temporal expiro/i)).toBeInTheDocument();
     });
   });
+
+  it("submits selected appointment id when confirming a reschedule", async () => {
+    const submitBooking = vi.fn().mockResolvedValue({
+      appointmentId: 11,
+      status: "CONFIRMED",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Garcia",
+        date: "2026-03-17",
+        timeSlot: "09:00",
+      },
+    });
+
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
+      futureAppointmentsInMonth: [
+        {
+          appointmentId: 11,
+          date: "2026-03-10",
+          timeSlot: "10:00",
+        },
+      ],
+    });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-17",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        submitBooking={submitBooking}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Ya tienes citas activas en este mes");
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Siguiente/i }),
+      ).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Confirmar Detalles");
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+
+    await waitFor(() => {
+      expect(submitBooking).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        }),
+        "lock-1",
+        11,
+      );
+    });
+  });
+
+  it("allows booking as a new appointment from reschedule view when 15-day gap is valid", async () => {
+    const submitBooking = vi.fn().mockResolvedValue({
+      appointmentId: 15,
+      status: "CONFIRMED",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Garcia",
+        date: "2026-03-20",
+        timeSlot: "09:00",
+      },
+    });
+
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
+      canBookAsNewAppointment: true,
+      futureAppointmentsInMonth: [
+        {
+          appointmentId: 11,
+          date: "2026-03-01",
+          timeSlot: "10:00",
+        },
+      ],
+    });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-20",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        submitBooking={submitBooking}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Ya tienes citas activas en este mes");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Agendar como nueva cita" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Confirmar Detalles");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
+
+    await waitFor(() => {
+      expect(submitBooking).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        }),
+        "lock-1",
+        null,
+      );
+    });
+  });
 });

@@ -17,6 +17,7 @@ describe("/api/reservar/client-check-lock", () => {
       expiresAt: "2026-03-13T12:10:00.000Z",
       clientExists: true,
       clientName: "Ana Lopez",
+      futureAppointmentsInMonth: [],
     });
 
     const { POST } = await import("@/app/api/reservar/client-check-lock/route");
@@ -37,6 +38,7 @@ describe("/api/reservar/client-check-lock", () => {
       expiresAt: "2026-03-13T12:10:00.000Z",
       clientExists: true,
       clientName: "Ana Lopez",
+      futureAppointmentsInMonth: [],
     });
   });
 
