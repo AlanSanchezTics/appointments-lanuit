@@ -265,10 +265,13 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
             <ListItem
               key={item.month}
               icon={
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--admin-inactive-bg)]">
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.status === "INACTIVE" ? "bg-[var(--admin-inactive-bg)]" : "bg-(--accent)"} `}
+                >
                   <AdminIcon
                     icon={getMonthItemIcon(item.month, data.currentMonth)}
                     tone={getMonthItemTone(item.month, data.currentMonth)}
+                    className={item.status !== "INACTIVE" ? "text-white!" : ""}
                   />
                 </span>
               }
