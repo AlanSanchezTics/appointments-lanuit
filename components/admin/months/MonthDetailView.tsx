@@ -613,6 +613,23 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     await refresh();
   }
 
+  async function handleCopyMonthAgendaLink() {
+    try {
+      const publicMonthUrl = new URL(
+        `/citas/${data.month}`,
+        window.location.origin,
+      ).toString();
+      await navigator.clipboard.writeText(publicMonthUrl);
+      sileo.success({
+        title: t("monthsDetail.shareAgenda.notifications.copySuccess"),
+      });
+    } catch {
+      sileo.error({
+        title: t("monthsDetail.shareAgenda.notifications.copyError"),
+      });
+    }
+  }
+
   async function handleUpdateMonthSlotMode() {
     if (slotModeDraft === data.slotMode || isUpdatingSlotMode) {
       setIsSlotModeModalOpen(false);
@@ -899,6 +916,18 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           })}
         </div>
       </Card>
+
+      <Button
+        type="button"
+        variant="primary"
+        fullWidth
+        disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+        onClick={() => void handleCopyMonthAgendaLink()}
+        className="h-12"
+      >
+        <AdminIcon icon={adminIcons.shareAgenda} className="text-white! mr-2" />
+        {t("monthsDetail.shareAgenda.openCta")}
+      </Button>
 
       <Button
         type="button"
@@ -1205,128 +1234,131 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                         key={blockedSlot.blockedSlotId}
                         className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
                       >
-                      <div className="flex min-h-[72px] items-center gap-3">
-                        <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
-                          {formatTimeSlotLabel(blockedSlot.timeSlot, language)}
-                        </span>
-                        <div className="flex-1">
-                          <p className="font-semibold text-[var(--admin-text-primary)]">
-                            {t(
-                              `monthsDetail.blockModal.reasons.${blockedSlot.reason}`,
+                        <div className="flex min-h-[72px] items-center gap-3">
+                          <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
+                            {formatTimeSlotLabel(
+                              blockedSlot.timeSlot,
+                              language,
                             )}
-                          </p>
-                          <p className="text-sm text-[var(--admin-text-secondary)]">
-                            {t("monthsDetail.dayModal.blocked.subtitle")}
-                          </p>
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-semibold text-[var(--admin-text-primary)]">
+                              {t(
+                                `monthsDetail.blockModal.reasons.${blockedSlot.reason}`,
+                              )}
+                            </p>
+                            <p className="text-sm text-[var(--admin-text-secondary)]">
+                              {t("monthsDetail.dayModal.blocked.subtitle")}
+                            </p>
+                          </div>
+                          {processingBlockedSlotId ===
+                          blockedSlot.blockedSlotId ? (
+                            <div
+                              className="inline-flex h-11 w-11 items-center justify-center"
+                              role="status"
+                              aria-label={t("monthsDetail.dayModal.loading")}
+                            >
+                              <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
+                            </div>
+                          ) : (
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition enabled:hover:bg-[var(--admin-inactive-bg)] enabled:hover:text-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-40"
+                                aria-label={t(
+                                  "monthsDetail.dayModal.blocked.actions.edit",
+                                )}
+                                title={
+                                  canEditBlockedSlot
+                                    ? undefined
+                                    : t(
+                                        "monthsDetail.dayModal.blocked.actions.editDisabled",
+                                      )
+                                }
+                                disabled={!canEditBlockedSlot}
+                                onClick={() =>
+                                  startEditingBlockedSlot(
+                                    blockedSlot.blockedSlotId,
+                                    blockedSlot.reason,
+                                  )
+                                }
+                              >
+                                <AdminIcon
+                                  icon={adminIcons.edit}
+                                  tone="secondary"
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
+                                aria-label={t(
+                                  "monthsDetail.dayModal.blocked.actions.delete",
+                                )}
+                                onClick={() =>
+                                  void handleDeleteBlockedSlot({
+                                    blockedSlotId: blockedSlot.blockedSlotId,
+                                    reason: blockedSlot.reason,
+                                    timeSlot: blockedSlot.timeSlot,
+                                  })
+                                }
+                              >
+                                <AdminIcon
+                                  icon={adminIcons.delete}
+                                  tone="secondary"
+                                />
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        {processingBlockedSlotId ===
-                        blockedSlot.blockedSlotId ? (
-                          <div
-                            className="inline-flex h-11 w-11 items-center justify-center"
-                            role="status"
-                            aria-label={t("monthsDetail.dayModal.loading")}
-                          >
-                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <button
-                              type="button"
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition enabled:hover:bg-[var(--admin-inactive-bg)] enabled:hover:text-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label={t(
-                                "monthsDetail.dayModal.blocked.actions.edit",
-                              )}
-                              title={
-                                canEditBlockedSlot
-                                  ? undefined
-                                  : t(
-                                      "monthsDetail.dayModal.blocked.actions.editDisabled",
-                                    )
-                              }
-                              disabled={!canEditBlockedSlot}
-                              onClick={() =>
-                                startEditingBlockedSlot(
-                                  blockedSlot.blockedSlotId,
-                                  blockedSlot.reason,
-                                )
-                              }
-                            >
-                              <AdminIcon
-                                icon={adminIcons.edit}
-                                tone="secondary"
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
-                              aria-label={t(
-                                "monthsDetail.dayModal.blocked.actions.delete",
-                              )}
-                              onClick={() =>
-                                void handleDeleteBlockedSlot({
-                                  blockedSlotId: blockedSlot.blockedSlotId,
-                                  reason: blockedSlot.reason,
-                                  timeSlot: blockedSlot.timeSlot,
-                                })
-                              }
-                            >
-                              <AdminIcon
-                                icon={adminIcons.delete}
-                                tone="secondary"
-                              />
-                            </button>
-                          </div>
-                        )}
-                      </div>
 
-                      {editingBlockedSlotId === blockedSlot.blockedSlotId ? (
-                        <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
-                          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
-                            {t("monthsDetail.dayModal.blocked.edit.reason")}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {(["DESCANSO", "PERSONAL", "OTRO"] as const).map(
-                              (reasonOption) => (
-                                <button
-                                  key={reasonOption}
-                                  type="button"
-                                  onClick={() =>
-                                    setEditingBlockedReason(reasonOption)
-                                  }
-                                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                                    editingBlockedReason === reasonOption
-                                      ? "bg-[var(--admin-success-bg)] text-[var(--admin-success-text)]"
-                                      : "bg-[var(--admin-surface)] text-[var(--admin-text-secondary)]"
-                                  }`}
-                                >
-                                  {t(
-                                    `monthsDetail.blockModal.reasons.${reasonOption}`,
-                                  )}
-                                </button>
-                              ),
-                            )}
+                        {editingBlockedSlotId === blockedSlot.blockedSlotId ? (
+                          <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
+                            <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                              {t("monthsDetail.dayModal.blocked.edit.reason")}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {(["DESCANSO", "PERSONAL", "OTRO"] as const).map(
+                                (reasonOption) => (
+                                  <button
+                                    key={reasonOption}
+                                    type="button"
+                                    onClick={() =>
+                                      setEditingBlockedReason(reasonOption)
+                                    }
+                                    className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                                      editingBlockedReason === reasonOption
+                                        ? "bg-[var(--admin-success-bg)] text-[var(--admin-success-text)]"
+                                        : "bg-[var(--admin-surface)] text-[var(--admin-text-secondary)]"
+                                    }`}
+                                  >
+                                    {t(
+                                      `monthsDetail.blockModal.reasons.${reasonOption}`,
+                                    )}
+                                  </button>
+                                ),
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                onClick={() =>
+                                  void handleUpdateBlockedSlotReason(
+                                    blockedSlot.blockedSlotId,
+                                  )
+                                }
+                              >
+                                {t("monthsDetail.dayModal.actions.save")}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={stopEditingBlockedSlot}
+                              >
+                                {t("monthsDetail.dayModal.actions.cancel")}
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              onClick={() =>
-                                void handleUpdateBlockedSlotReason(
-                                  blockedSlot.blockedSlotId,
-                                )
-                              }
-                            >
-                              {t("monthsDetail.dayModal.actions.save")}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={stopEditingBlockedSlot}
-                            >
-                              {t("monthsDetail.dayModal.actions.cancel")}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : null}
+                        ) : null}
                       </article>
                     );
                   })}

@@ -553,7 +553,9 @@ Flujo UI:
      - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
      - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
-   - Debajo del calendario se muestra CTA primaria `Agendar nueva cita`.
+   - Debajo del calendario se muestra CTA secundaria `Compartir agenda`.
+   - `Compartir agenda` copia al portapapeles la URL pública completa del mes seleccionado (`<origen>/citas/[month]`, ej. `https://dominio.com/citas/2026-03`) y muestra notificación de éxito.
+   - Debajo de `Compartir agenda` se muestra CTA primaria `Agendar nueva cita`.
    - `Agendar nueva cita` abre `BottomSheetModal` para:
      - seleccionar día,
      - seleccionar horario,

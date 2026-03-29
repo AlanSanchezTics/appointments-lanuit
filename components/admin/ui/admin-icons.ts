@@ -27,6 +27,7 @@ import {
   faCalendarDays as fasCalendarDays,
   faBan,
   faCalendar as fasCalendar,
+  faExternalLinkSquareAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -72,5 +73,6 @@ export const adminIcons = {
   edit: faPen,
   delete: faTrash,
   addNewAppointment: fasCalendarDays,
-  blockSpaces: faBan
+  blockSpaces: faBan,
+  shareAgenda: faExternalLinkSquareAlt
 } as const;

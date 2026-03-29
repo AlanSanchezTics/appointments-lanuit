@@ -327,6 +327,13 @@
           "phone": "Phone"
         }
       }
+    },
+    "shareAgenda": {
+      "openCta": "Share schedule",
+      "notifications": {
+        "copySuccess": "Link copied to clipboard",
+        "copyError": "Unable to copy the link."
+      }
     }
   }
 }

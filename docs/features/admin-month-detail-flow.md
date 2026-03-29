@@ -32,27 +32,29 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - `Bloques de horarios` (`BLOCK_MODE`): base `09:00,10:00,13:00,14:00,17:00,18:00`.
    - `Horario fijo` (`SECOND_ONLY_MODE`): base `10:00,14:00,18:00`.
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
-9. Debajo del calendario, admin puede abrir `Agendar nueva cita`.
-10. `Agendar nueva cita` abre `BottomSheetModal` con:
+9. Debajo del calendario, admin puede usar `Compartir agenda`.
+10. `Compartir agenda` copia al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y muestra toast de éxito `Enlace copiado`.
+11. Debajo de `Compartir agenda`, admin puede abrir `Agendar nueva cita`.
+12. `Agendar nueva cita` abre `BottomSheetModal` con:
    - selector horizontal de días agendables,
    - selector de horarios disponibles por día,
    - selector de cliente con dos modalidades:
      - cliente existente por búsqueda remota,
      - alta inline de cliente nuevo (nombre + teléfono),
    - CTA `Agendar cita` para ejecutar alta en backend.
-11. Al confirmar `Agendar cita`:
+13. Al confirmar `Agendar cita`:
    - backend crea la cita y ejecuta sync de calendario según reglas de dominio,
    - UI muestra vista local de éxito en el mismo bottom sheet,
    - acción `Volver` cierra modal y refresca métricas/calendario del mes.
-12. Debajo de `Agendar nueva cita`, admin puede abrir `Bloquear espacios`.
-13. Debajo de `Bloquear espacios`, admin visualiza CTA contextual para estado:
+14. Debajo de `Agendar nueva cita`, admin puede abrir `Bloquear espacios`.
+15. Debajo de `Bloquear espacios`, admin visualiza CTA contextual para estado:
    - si el mes está `ACTIVE`, CTA roja `Desactivar mes`,
    - si el mes está `INACTIVE`, CTA verde `Activar mes`.
-14. Al tocar la CTA de estado:
+16. Al tocar la CTA de estado:
    - frontend ejecuta `PATCH /api/admin/months/[month]/status` con el estado destino,
    - backend actualiza `active_months.status`,
    - UI refresca detalle mensual al finalizar.
-15. `Bloquear espacios` abre `BottomSheetModal` con:
+17. `Bloquear espacios` abre `BottomSheetModal` con:
    - selector horizontal de días bloqueables,
    - selector de visualización de espacios (`Por hora` / `Por bloque`) solo en `BLOCK_MODE`,
    - en `SECOND_ONLY_MODE` solo se muestra `Por hora`,
@@ -60,7 +62,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - acción masiva `Seleccionar todo` (selecciona todos los slots bloqueables del día activo),
    - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
-16. Al confirmar:
+18. Al confirmar:
    - UI bloquea todas las interacciones del modal mientras procesa,
    - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
    - backend persiste bloqueo por slot en `blocked_slots`,
@@ -69,9 +71,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - slot único bloqueado en par => propagación direccional,
      - par completo bloqueado => sin propagación adicional,
      - día completo bloqueado => sin disponibilidad.
-17. Admin toca un día del calendario y se abre modal de detalle diario.
-18. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
-19. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
+19. Admin toca un día del calendario y se abre modal de detalle diario.
+20. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
+21. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes solo para citas futuras.
      - Al guardar edición, el subformulario se cierra de inmediato.

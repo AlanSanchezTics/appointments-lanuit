@@ -327,6 +327,13 @@
           "phone": "Teléfono"
         }
       }
+    },
+    "shareAgenda": {
+      "openCta": "Compartir agenda",
+      "notifications": {
+        "copySuccess": "Enlace copiado al portapapeles",
+        "copyError": "No se pudo copiar el enlace."
+      }
     }
   }
 }
