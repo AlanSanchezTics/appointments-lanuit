@@ -36,6 +36,10 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - nombre del día con mayor demanda en la semana actual,
      - subtítulo de contexto operativo.
      - no se renderiza cuando la semana actual no tiene citas activas.
+   - el dashboard incluye tarjeta `Ocupación del día` con:
+     - porcentaje de ocupación del día actual,
+     - barra de progreso,
+     - texto `N citas agendadas para hoy` acompañado de icono informativo.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),
    - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),

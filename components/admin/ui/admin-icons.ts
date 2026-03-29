@@ -32,6 +32,7 @@ import {
   faCircleArrowUp,
   faCircleArrowDown,
   faCircleMinus,
+  faCircleInfo,
   faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -86,5 +87,6 @@ export const adminIcons = {
   trendUp: faCircleArrowUp,
   trendDown: faCircleArrowDown,
   trendNeutral: faCircleMinus,
+  info: faCircleInfo,
   busiestDay: faStar,
 } as const;

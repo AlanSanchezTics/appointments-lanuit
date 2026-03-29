@@ -99,10 +99,20 @@ export async function getAdminDashboardWeeklyOccupancy(
   const previousWeekOccupancyPercent = percent(previousWeekOccupiedTotal, WEEK_CAPACITY);
   const busiestDay = days.reduce((currentMax, day) =>
     day.occupiedSlots > currentMax.occupiedSlots ? day : currentMax);
+  const todayOccupiedAppointments = currentWeekCounts.get(currentDateKey) ?? 0;
 
   return {
     days,
     busiestDay,
+    dailyOccupancy: {
+      date: currentDateKey,
+      occupiedAppointments: todayOccupiedAppointments,
+      capacity: MAX_APPOINTMENTS_PER_DAY,
+      occupancyPercent: Math.min(
+        100,
+        percent(todayOccupiedAppointments, MAX_APPOINTMENTS_PER_DAY),
+      ),
+    },
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,
     deltaPercentPoints: currentWeekOccupancyPercent - previousWeekOccupancyPercent,

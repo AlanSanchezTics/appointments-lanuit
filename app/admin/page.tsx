@@ -7,6 +7,7 @@ import { BusiestDayCard } from "@/components/admin/ui/BusiestDayCard";
 import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { Card } from "@/components/admin/ui/Card";
+import { DailyOccupancyCard } from "@/components/admin/ui/DailyOccupancyCard";
 import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
 import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
@@ -69,6 +70,15 @@ export default async function AdminDashboardPage() {
             subtitle={t("dashboard.busiestDay.subtitle", { ns: "admin" })}
           />
         ) : null}
+
+        <DailyOccupancyCard
+          data={weeklyOccupancy.dailyOccupancy}
+          title={t("dashboard.dailyOccupancy.title", { ns: "admin" })}
+          scheduledTodayLabel={t("dashboard.dailyOccupancy.scheduledToday", {
+            ns: "admin",
+            count: weeklyOccupancy.dailyOccupancy.occupiedAppointments,
+          })}
+        />
 
         <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard

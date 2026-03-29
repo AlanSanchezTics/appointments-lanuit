@@ -11,9 +11,6 @@ interface WeeklyOccupancyCardProps {
   language: AppLanguage;
   data: WeeklyOccupancySummary;
   title: string;
-  moreLabel: string;
-  lessLabel: string;
-  similarLabel: string;
   versusLabel: string;
   dayAppointmentsTooltip: string;
 }

@@ -55,6 +55,11 @@
       "title": "Día más ocupado",
       "subtitle": "Máxima demanda de citas"
     },
+    "dailyOccupancy": {
+      "title": "Ocupación del día",
+      "scheduledToday_one": "{{count}} cita agendada para el día de hoy",
+      "scheduledToday_other": "{{count}} citas agendadas para el día de hoy"
+    },
     "metrics": {
       "appointmentsToday": "Citas hoy",
       "pending": "Pendientes",

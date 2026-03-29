@@ -298,6 +298,46 @@ El agente no debe:
 
 ---
 
+## Component: DailyOccupancyCard
+
+### Purpose
+
+Mostrar la ocupación operativa del día actual en dashboard admin.
+
+### Structure
+
+- título `Ocupación del día`
+- porcentaje de ocupación
+- barra de progreso horizontal
+- texto informativo `N citas agendadas para hoy` + icono `InfoCircle`
+
+### Style
+
+- contenedor base: `Card`
+- porcentaje en estilo `metric-value` destacado
+- barra con track `inactive-bg` y fill `accent`
+- línea informativa en `text-secondary`
+
+### Usage
+
+Uso:
+
+- bloque superior del dashboard `/admin`
+
+### Rules
+
+El agente debe:
+
+- calcular ocupación diaria con citas activas (`CONFIRMED`, `SYNC_FAILED`) del día actual
+- usar capacidad diaria `3` para porcentaje
+- resolver copy visible vía `react-i18next`
+
+El agente no debe:
+
+- usar datos de citas canceladas para el porcentaje
+
+---
+
 ## Component: ListItem
 
 ### Purpose

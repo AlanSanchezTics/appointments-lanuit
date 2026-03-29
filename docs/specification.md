@@ -471,6 +471,7 @@ Reglas obligatorias:
 
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación semanal`.
 - La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
+- La parte superior del dashboard debe incluir una tarjeta `Ocupación del día`.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
   - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
@@ -502,6 +503,14 @@ Reglas obligatorias:
   - usa iconografía de estrella en contenedor circular.
   - en empate de ocupación, debe elegirse el primer día en orden semanal (`lunes` a `viernes`).
   - si la semana actual no tiene citas activas, el bloque no debe renderizarse.
+- Tarjeta `Ocupación del día`:
+  - muestra título `Ocupación del día`,
+  - muestra porcentaje de ocupación de hoy,
+  - muestra barra de progreso horizontal asociada al porcentaje,
+  - debajo de la barra muestra texto `N citas agendadas para hoy` acompañado por icono `InfoCircle`.
+  - cálculo:
+    - `% ocupación hoy = citas activas de hoy / 3 * 100` (redondeado entero, máximo visual 100%),
+    - `citas activas de hoy` incluye estados `CONFIRMED`, `SYNC_FAILED`.
 
 ### 15.2 Flujo de autenticación admin
 

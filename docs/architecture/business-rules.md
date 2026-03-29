@@ -178,6 +178,17 @@ Business behavior is defined by:
   - Widget renders localized weekday name and localized supporting copy via `react-i18next`.
   - If the current week has no active appointments, widget is hidden.
 
+- Daily-occupancy widget policy:
+  - Dashboard includes a card showing current-day occupancy percentage.
+  - Source counts active appointments (`CONFIRMED`, `SYNC_FAILED`) for `currentDate` in `America/Mexico_City`.
+  - Percentage is `activeAppointmentsToday / 3 * 100`, rounded to integer and capped visually at `100`.
+  - Card must render:
+    - title (`Ocupación del día`),
+    - percentage value,
+    - progress bar tied to percentage,
+    - informational line `N appointments scheduled for today` with `InfoCircle` icon.
+  - Visible copy is frontend-resolved via `react-i18next`.
+
 ## Admin Months Catalog Rules
 
 - Scope:

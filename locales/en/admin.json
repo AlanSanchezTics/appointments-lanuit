@@ -55,6 +55,11 @@
       "title": "Busiest day",
       "subtitle": "Highest appointment demand"
     },
+    "dailyOccupancy": {
+      "title": "Today's occupancy",
+      "scheduledToday_one": "{{count}} appointment scheduled for today",
+      "scheduledToday_other": "{{count}} appointments scheduled for today"
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",
