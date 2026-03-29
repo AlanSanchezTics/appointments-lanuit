@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { sileo } from "sileo";
 
 import { BlockSpacesModal } from "@/components/admin/months/BlockSpacesModal";
+import { BookAppointmentModal } from "@/components/admin/months/BookAppointmentModal";
 import type { AdminDayAgendaItem } from "@/lib/admin/appointments/types";
 import {
   cancelAdminAppointmentById,
@@ -27,6 +28,7 @@ import { Card } from "@/components/admin/ui/Card";
 import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
+import { useBookAppointmentModal } from "@/hooks/admin/months/useBookAppointmentModal";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
@@ -60,6 +62,22 @@ function resolveAppLanguage(language: string): AppLanguage {
 
 function resolveLocale(language: AppLanguage) {
   return language === "en" ? "en-US" : "es-MX";
+}
+
+function resolveBookAppointmentErrorDescriptionKey(errorCode: string) {
+  switch (errorCode) {
+    case "PHONE_ALREADY_BOOKED":
+      return "monthsDetail.bookModal.notifications.errorDescriptions.phoneAlreadyBooked";
+    case "SLOT_NOT_AVAILABLE":
+    case "SLOT_LOCKED":
+      return "monthsDetail.bookModal.notifications.errorDescriptions.slotUnavailable";
+    case "MONTH_NOT_ACTIVE":
+      return "monthsDetail.bookModal.notifications.errorDescriptions.monthNotActive";
+    case "MONTH_NOT_REGISTERED":
+      return "monthsDetail.bookModal.notifications.errorDescriptions.monthNotFound";
+    default:
+      return "monthsDetail.bookModal.notifications.errorDescriptions.generic";
+  }
 }
 
 function getToneClasses(
@@ -124,6 +142,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   });
   const dayAgendaModal = useDayAgendaModal(data.month);
   const blockSpacesModal = useBlockSpacesModal(data.month);
+  const bookAppointmentModal = useBookAppointmentModal(data.month);
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
@@ -491,6 +510,51 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     );
   }
 
+  async function handleCreateAdminAppointment() {
+    try {
+      await sileo.promise(bookAppointmentModal.submit(), {
+        loading: {
+          title: t("monthsDetail.bookModal.notifications.submitLoading"),
+        },
+        success: {
+          title: t("monthsDetail.bookModal.notifications.submitSuccess"),
+        },
+        error: (error: unknown) => {
+          const errorCode =
+            error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+          return {
+            title: t("monthsDetail.bookModal.notifications.submitError"),
+            description: t(resolveBookAppointmentErrorDescriptionKey(errorCode)),
+          };
+        },
+      });
+    } catch {
+      try {
+        await bookAppointmentModal.refreshAvailability();
+      } catch {
+        // keep original error toast feedback
+      }
+    }
+  }
+
+  async function handleOpenBookAppointmentModal() {
+    try {
+      await bookAppointmentModal.open();
+    } catch (error) {
+      const errorCode = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+      sileo.error({
+        title: t("monthsDetail.bookModal.notifications.submitError"),
+        description: t(resolveBookAppointmentErrorDescriptionKey(errorCode)),
+      });
+    }
+  }
+
+  async function handleBackFromBookingSuccess() {
+    bookAppointmentModal.close();
+    await refresh();
+  }
+
   async function handleUpdateMonthSlotMode() {
     if (slotModeDraft === data.slotMode || isUpdatingSlotMode) {
       setIsSlotModeModalOpen(false);
@@ -777,6 +841,22 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           })}
         </div>
       </Card>
+
+      <Button
+        type="button"
+        variant="primary"
+        fullWidth
+        disabled={
+          isLoading ||
+          isUpdatingSlotMode ||
+          isUpdatingMonthStatus ||
+          data.monthStatus !== "ACTIVE"
+        }
+        onClick={() => void handleOpenBookAppointmentModal()}
+        className="h-12"
+      >
+        {t("monthsDetail.bookModal.openCta")}
+      </Button>
 
       <Button
         type="button"
@@ -1184,6 +1264,37 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         onReasonChange={blockSpacesModal.setReason}
         onSlotViewModeChange={blockSpacesModal.setSlotViewMode}
         onSubmit={() => void handleConfirmBlockedSlots()}
+      />
+
+      <BookAppointmentModal
+        isOpen={bookAppointmentModal.isOpen}
+        isLoadingDays={bookAppointmentModal.isLoadingDays}
+        isSubmitting={bookAppointmentModal.isSubmitting}
+        isReadyToSubmit={bookAppointmentModal.isReadyToSubmit}
+        errorCode={bookAppointmentModal.errorCode}
+        fieldErrors={bookAppointmentModal.fieldErrors}
+        days={bookAppointmentModal.days}
+        selectedDate={bookAppointmentModal.selectedDate}
+        selectedDaySlots={bookAppointmentModal.selectedDaySlots}
+        selectedTimeSlot={bookAppointmentModal.selectedTimeSlot}
+        clientMode={bookAppointmentModal.clientMode}
+        searchQuery={bookAppointmentModal.searchQuery}
+        searchResults={bookAppointmentModal.searchResults}
+        isSearchingClients={bookAppointmentModal.isSearchingClients}
+        selectedClient={bookAppointmentModal.selectedClient}
+        newClientName={bookAppointmentModal.newClientName}
+        newClientPhone={bookAppointmentModal.newClientPhone}
+        successResult={bookAppointmentModal.successResult}
+        onClose={bookAppointmentModal.close}
+        onSelectDate={bookAppointmentModal.selectDate}
+        onSelectTimeSlot={bookAppointmentModal.selectTimeSlot}
+        onChangeClientMode={bookAppointmentModal.changeClientMode}
+        onSearchQueryChange={bookAppointmentModal.setSearchQuery}
+        onSelectClient={bookAppointmentModal.selectClient}
+        onNewClientNameChange={bookAppointmentModal.setNewClientName}
+        onNewClientPhoneChange={bookAppointmentModal.setNewClientPhone}
+        onSubmit={() => void handleCreateAdminAppointment()}
+        onBackFromSuccess={() => void handleBackFromBookingSuccess()}
       />
     </main>
   );

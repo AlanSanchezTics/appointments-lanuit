@@ -1,15 +1,19 @@
-import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { Prisma } from "@prisma/client";
 import { createCalendarEvent, deleteCalendarEvent, GoogleCalendarConfigError } from "@/lib/calendar/google";
 import type {
   AdminCancelAppointmentPayload,
   AdminCancelAppointmentResponse,
+  AdminCreateAppointmentPayload,
+  AdminCreateAppointmentResponse,
   AdminDayAgendaResponse,
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
 } from "@/lib/admin/appointments/types";
+import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
 import {
+  listActiveAppointmentSlotsByDateForUpdate,
   cancelAppointmentById,
   findActiveAppointmentByIdInMonthForUpdate,
   listActiveAppointmentsByDate,
@@ -17,17 +21,20 @@ import {
   updateAppointmentScheduleById,
 } from "@/lib/db/admin-appointments";
 import {
+  acquireBookingLocks,
   cleanupExpiredReservationLocks,
   findActiveReservationLockForSlotForUpdate,
   lockConflictingAppointments,
+  releaseBookingLocks,
 } from "@/lib/db/appointments";
 import {
   listBlockedSlotsByDate,
   listBlockedSlotsByDateForUpdate,
 } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
-import { validateBookingRules } from "@/lib/validation/appointment";
-import { isFutureDateTime } from "@/lib/datetime/mexico-city";
+import { validateBookingRules, bookingSchema } from "@/lib/validation/appointment";
+import { getCurrentDateKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
+import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 
 function getMonthRange(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -44,6 +51,59 @@ function mapCalendarErrorReason(error: unknown) {
   return error instanceof GoogleCalendarConfigError
     ? "CALENDAR_NOT_CONFIGURED"
     : "CALENDAR_SYNC_FAILED";
+}
+
+async function resolveClientForCreate(
+  tx: Prisma.TransactionClient,
+  input: AdminCreateAppointmentPayload,
+) {
+  if ("clientId" in input) {
+    const client = await tx.client.findUnique({
+      where: {
+        id: input.clientId,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+      },
+    });
+
+    if (!client) {
+      throw new Error("CLIENT_NOT_FOUND");
+    }
+
+    return client;
+  }
+
+  const parsed = bookingSchema.parse({
+    name: input.client.name,
+    phone: input.client.phone,
+    date: input.date,
+    timeSlot: input.timeSlot,
+  });
+
+  const client = await tx.client.upsert({
+    where: {
+      phone: parsed.phone,
+    },
+    create: {
+      phone: parsed.phone,
+      name: parsed.name,
+    },
+    update: {},
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+    },
+  });
+
+  if (client.name !== parsed.name) {
+    throw new Error("CLIENT_NAME_MISMATCH");
+  }
+
+  return client;
 }
 
 export async function getAdminDayAgenda(input: {
@@ -79,6 +139,131 @@ export async function getAdminDayAgenda(input: {
       timeSlot: blockedSlot.timeSlot,
       reason: blockedSlot.reason,
     })),
+  };
+}
+
+export async function createAdminAppointment(
+  input: AdminCreateAppointmentPayload,
+  now = new Date(),
+): Promise<AdminCreateAppointmentResponse> {
+  const registration = await findRegisteredMonth(input.month);
+
+  if (!registration) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  if (registration.status !== "ACTIVE") {
+    throw new Error("MONTH_NOT_ACTIVE");
+  }
+
+  validateBookingRules(
+    {
+      date: input.date,
+      timeSlot: input.timeSlot,
+    },
+    now,
+  );
+
+  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+  const currentDate = getCurrentDateKey(now);
+
+  const created = await prisma.$transaction(async (tx) => {
+    const resolvedClient = await resolveClientForCreate(tx, input);
+    const lockPhone = resolvedClient.phone;
+
+    await acquireBookingLocks(tx, input.date, lockPhone);
+
+    try {
+      await cleanupExpiredReservationLocks(tx, now);
+      await lockConflictingAppointments(tx, input.date, lockPhone);
+
+      const activeAppointment = await tx.appointment.findFirst({
+        where: {
+          clientId: resolvedClient.id,
+          status: {
+            in: ["CONFIRMED", "SYNC_FAILED"],
+          },
+          date: {
+            gt: new Date(`${currentDate}T00:00:00.000Z`),
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (activeAppointment) {
+        throw new Error("PHONE_ALREADY_BOOKED");
+      }
+
+      const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
+        date: input.date,
+        timeSlot: input.timeSlot,
+        now,
+      });
+
+      if (activeLock && activeLock.phone !== resolvedClient.phone) {
+        throw new Error("SLOT_LOCKED");
+      }
+
+      const [occupiedSlots, blockedSlots] = await Promise.all([
+        listActiveAppointmentSlotsByDateForUpdate(tx, input.date),
+        listBlockedSlotsByDateForUpdate(tx, input.date),
+      ]);
+
+      const availableSlots = getAvailableStartSlotsWithManualBlocks(
+        baseSlots,
+        occupiedSlots,
+        blockedSlots.map((slot) => slot.timeSlot),
+      );
+
+      if (!availableSlots.includes(input.timeSlot)) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
+
+      const appointment = await tx.appointment.create({
+        data: {
+          clientId: resolvedClient.id,
+          date: new Date(`${input.date}T00:00:00.000Z`),
+          timeSlot: new Date(`1970-01-01T${input.timeSlot}:00.000Z`),
+          status: "CONFIRMED",
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return {
+        appointmentId: appointment.id,
+        client: resolvedClient,
+      };
+    } finally {
+      await releaseBookingLocks(tx, input.date, lockPhone);
+    }
+  });
+
+  const syncResult = await syncAppointmentToCalendar({
+    appointmentId: created.appointmentId,
+    name: created.client.name,
+    date: input.date,
+    timeSlot: input.timeSlot,
+  });
+  const syncReason =
+    syncResult.status === "SYNC_FAILED"
+      ? syncResult.reason
+      : undefined;
+
+  return {
+    appointmentId: created.appointmentId,
+    date: input.date,
+    timeSlot: input.timeSlot,
+    status: syncResult.status,
+    syncReason,
+    client: {
+      clientId: created.client.id,
+      name: created.client.name,
+      phone: created.client.phone,
+    },
   };
 }
 

@@ -10,7 +10,7 @@ export default function AdminRootLayout({ children }: { children: ReactNode }) {
           fill: "var(--foreground)",
           styles: {
             title: "text-white!",
-            description: "text-white!",
+            description: "text-white! text-center!",
           },
         }}
       />

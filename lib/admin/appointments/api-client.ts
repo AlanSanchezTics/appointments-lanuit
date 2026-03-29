@@ -2,6 +2,8 @@
 
 import type {
   AdminCancelAppointmentResponse,
+  AdminCreateAppointmentPayload,
+  AdminCreateAppointmentResponse,
   AdminDayAgendaResponse,
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
@@ -70,4 +72,25 @@ export async function cancelAdminAppointmentById(
   }
 
   return response.json() as Promise<AdminCancelAppointmentResponse>;
+}
+
+export async function createAdminAppointmentByMonth(
+  payload: AdminCreateAppointmentPayload,
+): Promise<AdminCreateAppointmentResponse> {
+  const response = await fetch(`/api/admin/months/${payload.month}/appointments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorPayload = (await response.json().catch(() => null)) as
+      | { errorCode?: string }
+      | null;
+    throw new Error(errorPayload?.errorCode ?? "UNKNOWN_ERROR");
+  }
+
+  return response.json() as Promise<AdminCreateAppointmentResponse>;
 }

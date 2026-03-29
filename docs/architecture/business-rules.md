@@ -225,6 +225,25 @@ Business behavior is defined by:
   - Cancel action performs logical cancellation (`status = CANCELLED`) and preserves history.
   - Admin cancellation does not apply the public 24-hour restriction.
 
+- Admin booking policy:
+  - Admin can create appointments inside `/admin/months/[month]` through admin-specific API contracts.
+  - Creation is only allowed when selected `month` exists and is `ACTIVE`.
+  - Booking must satisfy the same booking invariants as public flow:
+    - operational weekday,
+    - valid base slot according to month slot mode,
+    - future slot for same-day,
+    - pair-direction constraints,
+    - daily max capacity,
+    - no active temporary lock for another phone on same slot,
+    - no active future appointment for the same phone.
+  - Customer selection supports:
+    - existing customer by `clientId`,
+    - inline customer upsert by `name + phone`.
+  - Phone identity remains canonical:
+    - one phone maps to one customer name,
+    - mismatch on upsert is rejected.
+  - Admin booking uses deterministic API errors for conflicts/validation and keeps calendar sync behavior consistent with domain (`CONFIRMED` or `SYNC_FAILED`).
+
 - Admin blocked-slots policy:
   - Admin can manually block multiple slots in `/admin/months/[month]`.
   - Allowed reasons are constrained to: `DESCANSO`, `PERSONAL`, `OTRO`.

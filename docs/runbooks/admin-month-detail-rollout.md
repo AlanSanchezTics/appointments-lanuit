@@ -19,8 +19,13 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
    - `tests/app/api-admin-day-agenda-route.test.ts`
    - `tests/app/api-admin-reschedule-route.test.ts`
    - `tests/app/api-admin-cancel-route.test.ts`
+   - `tests/app/api-admin-month-appointments-route.test.ts`
+   - `tests/app/api-admin-clients-search-route.test.ts`
+   - `tests/lib/admin/appointments.validation.test.ts`
+   - `tests/lib/admin/clients.validation.test.ts`
 2. Ejecutar pruebas de UI/admin:
    - `tests/components/admin/months/month-detail-view.test.tsx`
+   - `tests/components/admin/months/book-appointment-modal.test.tsx`
    - `tests/app/admin-month-detail-page.test.tsx`
 3. Ejecutar E2E del flujo catálogo -> detalle -> modal diario:
    - `tests/e2e/admin-month-detail.spec.ts`
@@ -50,6 +55,14 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
    - acciones `Editar` y `Eliminar` visibles con separación 8px.
 6. Verificar i18n:
    - `es` y `en` sin literales hardcoded.
+7. Validar flujo de agendado admin:
+   - CTA `Agendar nueva cita` visible antes de `Bloquear espacios`,
+   - en mes `INACTIVE` CTA de agendado deshabilitado,
+   - modal de agendado abre con días/horarios disponibles,
+   - modo `Cliente existente` permite búsqueda y selección,
+   - modo `Nuevo cliente` permite alta inline,
+   - submit exitoso muestra vista de confirmación con `fecha`, `hora`, `cliente`,
+   - `Volver` cierra modal y refresca métricas/calendario.
 
 ## Rollout en producción
 
@@ -59,6 +72,8 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
    - navegación a un mes activo,
    - apertura/cierre de modal diario desde calendario,
    - verificación de respuestas API 200:
+     - `GET /api/admin/clients/search?query=<texto>`
+     - `POST /api/admin/months/[month]/appointments`
      - `GET /api/admin/months/[month]`
      - `GET /api/admin/months/[month]/days/[date]/agenda`
 3. Monitoreo inicial (30-60 min):
@@ -88,6 +103,13 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
 - [ ] Días con `0` espacios se muestran en rojo.
 - [ ] Vista histórica de mes pasado muestra badge y no rompe flujo.
 - [ ] Click en día abre modal diario con animación desde abajo.
+- [ ] CTA `Agendar nueva cita` aparece antes de `Bloquear espacios`.
+- [ ] CTA `Agendar nueva cita` deshabilitado cuando el mes está `INACTIVE`.
+- [ ] Modal de agendado lista días y horarios disponibles.
+- [ ] Búsqueda de cliente existente devuelve resultados esperados.
+- [ ] Alta inline de cliente nuevo valida nombre/teléfono.
+- [ ] Submit exitoso muestra pantalla de éxito con fecha/hora/cliente.
+- [ ] Acción `Volver` en éxito cierra modal y refresca vista mensual.
 - [ ] Cierre por botón `X`, clic en overlay y tecla `Escape`.
 - [ ] Agenda diaria respeta orden cronológico por `timeSlot`.
 - [ ] Acción editar reprograma y refresca métricas/calendario sin recargar manual.

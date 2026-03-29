@@ -636,6 +636,35 @@ Uso:
 
 ---
 
+## Component: BookAppointmentModal
+
+### Purpose
+
+Permitir que el admin agende una cita desde `/admin/months/[month]` sin navegar fuera del detalle mensual.
+
+### Structure
+
+- contenedor `BottomSheetModal`
+- selector horizontal de día disponible
+- selector de horario disponible por día
+- selector de cliente con dos modos:
+  - cliente existente (búsqueda remota + selección única)
+  - alta inline de cliente nuevo (nombre + teléfono)
+- CTA principal `Agendar cita`
+- vista de éxito en el mismo bottom sheet con resumen (`fecha`, `hora`, `cliente`) y acción `Volver`
+
+### Rules
+
+- CTA `Agendar nueva cita` se muestra antes de `Bloquear espacios` en `/admin/months/[month]`
+- solo habilitado cuando el mes está `ACTIVE`
+- durante submit:
+  - se bloquean interacciones del modal
+  - se impide cierre por overlay, `X` y `Escape`
+- notificaciones operativas del flujo usan `sileo`
+- todos los textos visibles se resuelven con `react-i18next`
+
+---
+
 ## Reuse Rules
 
 El agente debe:

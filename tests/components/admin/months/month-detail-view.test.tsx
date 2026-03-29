@@ -107,6 +107,184 @@ describe("MonthDetailView", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders schedule CTA before block spaces CTA", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-21",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const buttons = screen.getAllByRole("button");
+    const scheduleIndex = buttons.findIndex((button) =>
+      button.textContent?.includes("Agendar nueva cita"),
+    );
+    const blockIndex = buttons.findIndex((button) =>
+      button.textContent?.includes("Bloquear espacios"),
+    );
+
+    expect(scheduleIndex).toBeGreaterThan(-1);
+    expect(blockIndex).toBeGreaterThan(-1);
+    expect(scheduleIndex).toBeLessThan(blockIndex);
+  });
+
+  it("disables schedule CTA when month is inactive", () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "INACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-21",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              appointmentsCount: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              appointmentsCount: 2,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Agendar nueva cita" }),
+    ).toBeDisabled();
+  });
+
+  it("opens booking modal from schedule CTA", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [
+              {
+                date: "2026-03-02",
+                slots: ["10:00", "14:00"],
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Agendar nueva cita" }));
+
+    expect(await screen.findByRole("dialog", { name: "Agendar cita" })).toBeInTheDocument();
+  });
+
   it("opens the daily agenda modal when a day is selected", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();

@@ -46,3 +46,37 @@ export type AdminCancelAppointmentResponse = {
   status: "CANCELLED";
   syncReason?: "CALENDAR_DELETE_FAILED";
 };
+
+export type AdminCreateAppointmentClientInput = {
+  name: string;
+  phone: string;
+};
+
+export type AdminCreateAppointmentPayload =
+  | {
+      month: string;
+      date: string;
+      timeSlot: (typeof BASE_TIME_SLOTS)[number];
+      clientId: number;
+      client?: never;
+    }
+  | {
+      month: string;
+      date: string;
+      timeSlot: (typeof BASE_TIME_SLOTS)[number];
+      client: AdminCreateAppointmentClientInput;
+      clientId?: never;
+    };
+
+export type AdminCreateAppointmentResponse = {
+  appointmentId: number;
+  date: string;
+  timeSlot: string;
+  status: "CONFIRMED" | "SYNC_FAILED";
+  client: {
+    clientId: number;
+    name: string;
+    phone: string;
+  };
+  syncReason?: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";
+};

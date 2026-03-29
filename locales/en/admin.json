@@ -250,6 +250,74 @@
         "submitSuccess": "Spaces blocked",
         "submitError": "Unable to block spaces."
       }
+    },
+    "bookModal": {
+      "openCta": "Schedule new appointment",
+      "title": "Schedule appointment",
+      "close": "Close schedule appointment modal",
+      "loading": "Loading available spaces...",
+      "emptyDays": "There are no days with available spaces to schedule.",
+      "emptySlots": "Select a day to view available time slots.",
+      "searchingClients": "Searching clients...",
+      "emptyClientResults": "No clients found for this search.",
+      "sections": {
+        "day": "Select day",
+        "time": "Select time",
+        "client": "Select client"
+      },
+      "clientModes": {
+        "existing": "Existing client",
+        "new": "New client"
+      },
+      "placeholders": {
+        "searchClient": "Ex. Mariana Valenzuela",
+        "newClientName": "Full name",
+        "newClientPhone": "Phone"
+      },
+      "errors": {
+        "dateRequired": "Select a day to continue.",
+        "timeRequired": "Select a time slot to continue.",
+        "clientRequired": "Select an existing client.",
+        "nameRequired": "Name must have at least 3 characters.",
+        "phoneRequired": "Enter a valid phone number.",
+        "api": {
+          "phoneAlreadyBooked": "Unable to schedule this appointment because this client already has an upcoming appointment.",
+          "slotUnavailable": "Unable to schedule this appointment because this time slot is no longer available.",
+          "monthNotActive": "Unable to schedule this appointment because the month is no longer active.",
+          "monthNotFound": "Unable to schedule this appointment because the selected month was not found.",
+          "generic": "Unable to schedule this appointment. Please try again."
+        }
+      },
+      "actions": {
+        "submit": "Schedule appointment",
+        "submitting": "Scheduling..."
+      },
+      "notifications": {
+        "submitLoading": "Scheduling appointment...",
+        "submitSuccess": "Appointment scheduled",
+        "submitError": "Unable to schedule appointment.",
+        "errorDescriptions": {
+          "phoneAlreadyBooked": "This client already has an upcoming appointment.",
+          "slotUnavailable": "This time slot is no longer available. We refreshed the available slots.",
+          "monthNotActive": "The month is no longer active for new appointments.",
+          "monthNotFound": "The selected month was not found.",
+          "generic": "Please try again."
+        }
+      },
+      "success": {
+        "title": "Appointment Confirmed!",
+        "description": "The appointment was successfully scheduled",
+        "sendWhatsapp": "Send appointment confirmation via WhatsApp",
+        "whatsappMessage": "Hi *{{name}}*.\nYour appointment is scheduled for *{{date}} at {{time}}*.\nSee you soon!",
+        "back": "Back",
+        "labels": {
+          "name": "Name",
+          "date": "Date",
+          "time": "Time",
+          "client": "Client",
+          "phone": "Phone"
+        }
+      }
     }
   }
 }

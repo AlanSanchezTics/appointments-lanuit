@@ -250,6 +250,74 @@
         "submitSuccess": "Espacios bloqueados",
         "submitError": "No se pudieron bloquear los espacios."
       }
+    },
+    "bookModal": {
+      "openCta": "Agendar nueva cita",
+      "title": "Agendar cita",
+      "close": "Cerrar agendado de cita",
+      "loading": "Cargando espacios disponibles...",
+      "emptyDays": "No hay días con espacios disponibles para agendar.",
+      "emptySlots": "Selecciona un día para ver horarios disponibles.",
+      "searchingClients": "Buscando clientes...",
+      "emptyClientResults": "No se encontraron clientes para la búsqueda.",
+      "sections": {
+        "day": "Seleccionar día",
+        "time": "Seleccionar horario",
+        "client": "Seleccionar cliente"
+      },
+      "clientModes": {
+        "existing": "Cliente existente",
+        "new": "Nuevo cliente"
+      },
+      "placeholders": {
+        "searchClient": "Ej. Mariana Valenzuela",
+        "newClientName": "Nombre completo",
+        "newClientPhone": "Teléfono"
+      },
+      "errors": {
+        "dateRequired": "Selecciona un día para continuar.",
+        "timeRequired": "Selecciona un horario para continuar.",
+        "clientRequired": "Selecciona un cliente existente.",
+        "nameRequired": "El nombre debe tener al menos 3 caracteres.",
+        "phoneRequired": "Ingresa un teléfono válido.",
+        "api": {
+          "phoneAlreadyBooked": "No se pudo agendar la cita porque esta clienta ya tiene una cita programada a futuro.",
+          "slotUnavailable": "No se pudo agendar la cita porque ese horario ya no está disponible.",
+          "monthNotActive": "No se pudo agendar la cita porque el mes ya no está activo.",
+          "monthNotFound": "No se pudo agendar la cita porque no se encontró el mes seleccionado.",
+          "generic": "No se pudo agendar la cita. Intenta nuevamente."
+        }
+      },
+      "actions": {
+        "submit": "Agendar cita",
+        "submitting": "Agendando..."
+      },
+      "notifications": {
+        "submitLoading": "Agendando cita...",
+        "submitSuccess": "Cita agendada",
+        "submitError": "No se pudo agendar la cita.",
+        "errorDescriptions": {
+          "phoneAlreadyBooked": "Esta clienta ya tiene una cita programada a futuro.",
+          "slotUnavailable": "Ese horario ya no está disponible. Actualizamos los horarios disponibles.",
+          "monthNotActive": "El mes ya no está activo para nuevas citas.",
+          "monthNotFound": "No se encontró el mes seleccionado.",
+          "generic": "Intenta nuevamente."
+        }
+      },
+      "success": {
+        "title": "¡Cita Confirmada!",
+        "description": "La cita ha sido agendada con éxito",
+        "sendWhatsapp": "Envíar confirmación de cita por whatsapp",
+        "whatsappMessage": "Hola *{{name}}*.\nYa quedó agendada tu cita para el día *{{date}}, a las {{time}}*.\n¡Nos vemos pronto!",
+        "back": "Volver",
+        "labels": {
+          "name": "Nombre",
+          "date": "Fecha",
+          "time": "Hora",
+          "client": "Cliente",
+          "phone": "Teléfono"
+        }
+      }
     }
   }
 }

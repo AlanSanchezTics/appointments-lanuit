@@ -12,6 +12,7 @@ import {
   faListCheck,
   faLeaf,
   faLock,
+  faPhone,
   faGear,
   faRotateRight,
   faTrash,
@@ -22,6 +23,7 @@ import {
   faPen,
   faCircleCheck as fasCircleCheck,
   faCircleXmark as fasCircleXmark,
+  faCheck as fasCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar,
@@ -33,6 +35,7 @@ import {
 export const adminIcons = {
   username: faUser,
   password: faLock,
+  phone: faPhone,
   passwordShow: faEye,
   passwordHide: faEyeSlash,
   appointmentsToday: faCalendarDay,
@@ -54,7 +57,7 @@ export const adminIcons = {
   monthListFuture: faClockRotateLeft,
   close: faXmark,
   back: faArrowLeft,
-  monthDetailConfirmed: fasCircleCheck,
+  monthDetailConfirmed: fasCheck,
   monthDetailCancelled: fasCircleXmark,
   monthDetailAvailable: faCalendar,
   monthDetailBlocked: faLock,

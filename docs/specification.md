@@ -550,7 +550,14 @@ Flujo UI:
      - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
      - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
-   - Debajo del calendario se muestra CTA secundaria `Bloquear espacios`.
+   - Debajo del calendario se muestra CTA primaria `Agendar nueva cita`.
+   - `Agendar nueva cita` abre `BottomSheetModal` para:
+     - seleccionar día,
+     - seleccionar horario,
+     - seleccionar cliente existente o alta inline de cliente nuevo,
+     - confirmar `Agendar cita`.
+   - Al completar `Agendar cita`, UI muestra vista local de éxito en el mismo modal con acción `Volver` (cerrar modal + refrescar detalle mensual).
+   - Debajo de `Agendar nueva cita` se muestra CTA secundaria `Bloquear espacios`.
    - Junto al título del mes se muestra tag de estado actual:
      - `Activo` cuando `monthStatus=ACTIVE`,
      - `Inactivo` cuando `monthStatus=INACTIVE`.
@@ -616,7 +623,9 @@ Contrato API:
 - Endpoint:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
+  - `GET /api/admin/clients/search?query=<text>&limit=<n>`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
+  - `POST /api/admin/months/[month]/appointments`
   - `PATCH /api/admin/months/[month]/status`
   - `PATCH /api/admin/months/[month]/slot-mode`
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
@@ -650,6 +659,18 @@ Contrato API:
     - `date` debe cumplir formato `YYYY-MM-DD`,
     - `date` debe pertenecer al `month` solicitado,
     - agenda devuelve solo citas activas (`CONFIRMED`, `SYNC_FAILED`) ordenadas por horario.
+  - `GET /api/admin/clients/search`:
+    - `query` obligatorio (mínimo 2 caracteres),
+    - `limit` opcional, entero en rango permitido.
+  - `POST /api/admin/months/[month]/appointments`:
+    - payload con cliente existente: `{ date, timeSlot, clientId }`,
+    - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone } }`,
+    - exactamente una modalidad de cliente por request,
+    - `month` debe existir y estar `ACTIVE`,
+    - aplica invariantes de disponibilidad (weekday, slot válido por modalidad, slot futuro, conflictos por lock/ocupación/bloqueo manual y reglas direccionales),
+    - aplica restricción de teléfono con cita activa futura,
+    - `clientId` debe existir en modalidad de cliente existente,
+    - en modalidad inline, nombre/teléfono deben cumplir validaciones de identidad del dominio.
   - `GET /api/admin/months/[month]/blockable-slots`:
     - `month` válido y registrado,
     - si `date` se envía, debe cumplir formato `YYYY-MM-DD` y pertenecer al `month`,
@@ -695,11 +716,17 @@ Contrato API:
   - `currentMonth`, `currentDate` (referencia de evaluación de reglas temporales)
 - Success `POST /api/admin/months` (`200`):
   - `{ createdMonths, skippedMonths, totalCreated, totalSkipped }`
+- Success `GET /api/admin/clients/search` (`200`):
+  - `{ query, total, clients[] }`
+  - `clients[]`: `{ clientId, name, phone }`
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
   - `projectedSaturationPercent`
   - `calendarDays`: `[{ date, day, isWeekend, availableSpaces, tone }]`
+- Success `POST /api/admin/months/[month]/appointments` (`201`):
+  - `{ appointmentId, date, timeSlot, status, client, syncReason? }`
+  - `client`: `{ clientId, name, phone }`
 - Success `PATCH /api/admin/months/[month]/slot-mode` (`200`):
   - `{ month, slotMode }`
 - Success `PATCH /api/admin/months/[month]/status` (`200`):
