@@ -80,6 +80,33 @@ function resolveBookAppointmentErrorDescriptionKey(errorCode: string) {
   }
 }
 
+function resolveDayModalRescheduleErrorDescriptionKey(errorCode: string) {
+  switch (errorCode) {
+    case "APPOINTMENT_NOT_EDITABLE":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotEditable";
+    case "SLOT_NOT_AVAILABLE":
+    case "SLOT_LOCKED":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.slotUnavailable";
+    case "MONTH_NOT_REGISTERED":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.monthNotFound";
+    case "APPOINTMENT_NOT_FOUND":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotFound";
+    default:
+      return "monthsDetail.dayModal.notifications.errorDescriptions.generic";
+  }
+}
+
+function resolveDayModalCancelErrorDescriptionKey(errorCode: string) {
+  switch (errorCode) {
+    case "MONTH_NOT_REGISTERED":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.monthNotFound";
+    case "APPOINTMENT_NOT_FOUND":
+      return "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotFound";
+    default:
+      return "monthsDetail.dayModal.notifications.errorDescriptions.generic";
+  }
+}
+
 function getToneClasses(
   tone: MonthDetailCalendarDay["tone"],
   isCurrentDay: boolean,
@@ -228,9 +255,21 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       : "monthsDetail.slotMode.helpers.secondOnly";
 
   function startEditing(appointment: AdminDayAgendaItem) {
+    const normalizedTimeSlot = appointment.timeSlot.slice(0, 5);
+
+    if (!isFutureDateTime(appointment.date, normalizedTimeSlot)) {
+      sileo.warning({
+        title: t("monthsDetail.dayModal.notifications.rescheduleError"),
+        description: t(
+          "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotEditable",
+        ),
+      });
+      return;
+    }
+
     dayAgendaModal.setEditingAppointmentId(appointment.appointmentId);
     setEditDate(appointment.date);
-    setEditTimeSlot(appointment.timeSlot);
+    setEditTimeSlot(normalizedTimeSlot);
   }
 
   function stopEditing() {
@@ -358,8 +397,16 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           success: {
             title: t("monthsDetail.dayModal.notifications.rescheduleSuccess"),
           },
-          error: {
-            title: t("monthsDetail.dayModal.notifications.rescheduleError"),
+          error: (error: unknown) => {
+            const errorCode =
+              error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+            return {
+              title: t("monthsDetail.dayModal.notifications.rescheduleError"),
+              description: t(
+                resolveDayModalRescheduleErrorDescriptionKey(errorCode),
+              ),
+            };
           },
         },
       );
@@ -396,8 +443,16 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           success: {
             title: t("monthsDetail.dayModal.notifications.cancelSuccess"),
           },
-          error: {
-            title: t("monthsDetail.dayModal.notifications.cancelError"),
+          error: (error: unknown) => {
+            const errorCode =
+              error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+            return {
+              title: t("monthsDetail.dayModal.notifications.cancelError"),
+              description: t(
+                resolveDayModalCancelErrorDescriptionKey(errorCode),
+              ),
+            };
           },
         },
       );
@@ -525,7 +580,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
 
           return {
             title: t("monthsDetail.bookModal.notifications.submitError"),
-            description: t(resolveBookAppointmentErrorDescriptionKey(errorCode)),
+            description: t(
+              resolveBookAppointmentErrorDescriptionKey(errorCode),
+            ),
           };
         },
       });
@@ -542,7 +599,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     try {
       await bookAppointmentModal.open();
     } catch (error) {
-      const errorCode = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+      const errorCode =
+        error instanceof Error ? error.message : "UNKNOWN_ERROR";
       sileo.error({
         title: t("monthsDetail.bookModal.notifications.submitError"),
         description: t(resolveBookAppointmentErrorDescriptionKey(errorCode)),
@@ -855,6 +913,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         onClick={() => void handleOpenBookAppointmentModal()}
         className="h-12"
       >
+        <AdminIcon
+          icon={adminIcons.addNewAppointment}
+          className="text-white! mr-2"
+        />
         {t("monthsDetail.bookModal.openCta")}
       </Button>
 
@@ -866,6 +928,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         onClick={() => void blockSpacesModal.open()}
         className="h-12"
       >
+        <AdminIcon icon={adminIcons.blockSpaces} className="text-white! mr-2" />
         {t("monthsDetail.blockModal.openCta")}
       </Button>
 
@@ -1009,113 +1072,139 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           !dayAgendaModal.agendaErrorCode &&
           dayAgendaModal.agenda ? (
             <div className="space-y-3">
-              {dayAgendaModal.agenda.appointments.map((appointment) => (
-                <article
-                  key={appointment.appointmentId}
-                  className="rounded-2xl bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
-                >
-                  <div className="flex min-h-[72px] items-center gap-3">
-                    <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
-                      {formatTimeSlotLabel(appointment.timeSlot, language)}
-                    </span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-[var(--admin-text-primary)]">
-                        {appointment.name}
-                      </p>
-                      <p className="text-sm text-[var(--admin-text-secondary)]">
-                        {appointment.phone}
-                      </p>
-                    </div>
-                    {processingAppointmentId === appointment.appointmentId ? (
-                      <div
-                        className="inline-flex h-11 w-11 items-center justify-center"
-                        role="status"
-                        aria-label={t("monthsDetail.dayModal.loading")}
-                      >
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
-                          aria-label={t("monthsDetail.dayModal.actions.edit")}
-                          onClick={() => startEditing(appointment)}
-                        >
-                          <AdminIcon icon={adminIcons.edit} tone="secondary" />
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
-                          aria-label={t("monthsDetail.dayModal.actions.delete")}
-                          onClick={() => void handleCancel(appointment)}
-                        >
-                          <AdminIcon
-                            icon={adminIcons.delete}
-                            tone="secondary"
-                          />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+              {dayAgendaModal.agenda.appointments.map((appointment) => {
+                const canEditAppointment = isFutureDateTime(
+                  appointment.date,
+                  appointment.timeSlot.slice(0, 5),
+                );
 
-                  {dayAgendaModal.editingAppointmentId ===
-                  appointment.appointmentId ? (
-                    <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
-                          {t("monthsDetail.dayModal.edit.date")}
-                        </label>
-                        <Select
-                          value={editDate}
-                          options={agendaDateOptions}
-                          onChange={setEditDate}
-                          showPlaceholder={false}
-                        />
+                return (
+                  <article
+                    key={appointment.appointmentId}
+                    className="rounded-2xl bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex min-h-[72px] items-center gap-3">
+                      <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
+                        {formatTimeSlotLabel(appointment.timeSlot, language)}
+                      </span>
+                      <div className="flex-1">
+                        <p className="font-semibold text-[var(--admin-text-primary)]">
+                          {appointment.name}
+                        </p>
+                        <p className="text-sm text-[var(--admin-text-secondary)]">
+                          {appointment.phone}
+                        </p>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
-                          {t("monthsDetail.dayModal.edit.timeSlot")}
-                        </label>
-                        <Select
-                          value={editTimeSlot}
-                          options={timeSlotOptions}
-                          onChange={setEditTimeSlot}
-                          showPlaceholder={timeSlotOptions.length === 0}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          onClick={() =>
-                            void handleReschedule(appointment.appointmentId)
-                          }
+                      {processingAppointmentId === appointment.appointmentId ? (
+                        <div
+                          className="inline-flex h-11 w-11 items-center justify-center"
+                          role="status"
+                          aria-label={t("monthsDetail.dayModal.loading")}
                         >
-                          {t("monthsDetail.dayModal.actions.save")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={stopEditing}
-                        >
-                          {t("monthsDetail.dayModal.actions.cancel")}
-                        </Button>
-                      </div>
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--admin-border)] border-t-[var(--admin-accent)]" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition enabled:hover:bg-[var(--admin-inactive-bg)] enabled:hover:text-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label={t("monthsDetail.dayModal.actions.edit")}
+                            title={
+                              canEditAppointment
+                                ? undefined
+                                : t(
+                                    "monthsDetail.dayModal.actions.editDisabled",
+                                  )
+                            }
+                            disabled={!canEditAppointment}
+                            onClick={() => startEditing(appointment)}
+                          >
+                            <AdminIcon
+                              icon={adminIcons.edit}
+                              tone="secondary"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[rgba(254,226,226,0.7)] hover:text-red-700"
+                            aria-label={t(
+                              "monthsDetail.dayModal.actions.delete",
+                            )}
+                            onClick={() => void handleCancel(appointment)}
+                          >
+                            <AdminIcon
+                              icon={adminIcons.delete}
+                              tone="secondary"
+                            />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ) : null}
-                </article>
-              ))}
+
+                    {dayAgendaModal.editingAppointmentId ===
+                    appointment.appointmentId ? (
+                      <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                            {t("monthsDetail.dayModal.edit.date")}
+                          </label>
+                          <Select
+                            value={editDate}
+                            options={agendaDateOptions}
+                            onChange={setEditDate}
+                            showPlaceholder={false}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
+                            {t("monthsDetail.dayModal.edit.timeSlot")}
+                          </label>
+                          <Select
+                            value={editTimeSlot}
+                            options={timeSlotOptions}
+                            onChange={setEditTimeSlot}
+                            showPlaceholder={timeSlotOptions.length === 0}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              void handleReschedule(appointment.appointmentId)
+                            }
+                          >
+                            {t("monthsDetail.dayModal.actions.save")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={stopEditing}
+                          >
+                            {t("monthsDetail.dayModal.actions.cancel")}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
 
               {dayAgendaModal.agenda.blockedSlots.length > 0 ? (
                 <>
                   <h3 className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
                     {t("monthsDetail.dayModal.blocked.sectionTitle")}
                   </h3>
-                  {dayAgendaModal.agenda.blockedSlots.map((blockedSlot) => (
-                    <article
-                      key={blockedSlot.blockedSlotId}
-                      className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
-                    >
+                  {dayAgendaModal.agenda.blockedSlots.map((blockedSlot) => {
+                    const canEditBlockedSlot = isFutureDateTime(
+                      blockedSlot.date,
+                      blockedSlot.timeSlot.slice(0, 5),
+                    );
+
+                    return (
+                      <article
+                        key={blockedSlot.blockedSlotId}
+                        className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
+                      >
                       <div className="flex min-h-[72px] items-center gap-3">
                         <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
                           {formatTimeSlotLabel(blockedSlot.timeSlot, language)}
@@ -1143,10 +1232,18 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                           <div className="flex items-center">
                             <button
                               type="button"
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition hover:bg-[var(--admin-inactive-bg)] hover:text-[var(--admin-accent)]"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--admin-text-secondary)] transition enabled:hover:bg-[var(--admin-inactive-bg)] enabled:hover:text-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-40"
                               aria-label={t(
                                 "monthsDetail.dayModal.blocked.actions.edit",
                               )}
+                              title={
+                                canEditBlockedSlot
+                                  ? undefined
+                                  : t(
+                                      "monthsDetail.dayModal.blocked.actions.editDisabled",
+                                    )
+                              }
+                              disabled={!canEditBlockedSlot}
                               onClick={() =>
                                 startEditingBlockedSlot(
                                   blockedSlot.blockedSlotId,
@@ -1230,8 +1327,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                           </div>
                         </div>
                       ) : null}
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </>
               ) : null}
             </div>

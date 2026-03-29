@@ -360,6 +360,10 @@ export async function rescheduleAdminAppointment(
       throw new Error("APPOINTMENT_NOT_FOUND");
     }
 
+    if (!isFutureDateTime(current.date, current.timeSlot, now)) {
+      throw new Error("APPOINTMENT_NOT_EDITABLE");
+    }
+
     await cleanupExpiredReservationLocks(tx, now);
     await lockConflictingAppointments(tx, input.date, current.phone);
 
@@ -412,7 +416,6 @@ export async function rescheduleAdminAppointment(
 export async function cancelAdminAppointment(
   appointmentId: number,
   input: AdminCancelAppointmentPayload,
-  now = new Date(),
 ): Promise<AdminCancelAppointmentResponse> {
   const registration = await findRegisteredMonth(input.month);
 
@@ -431,10 +434,6 @@ export async function cancelAdminAppointment(
 
     if (!current) {
       throw new Error("APPOINTMENT_NOT_FOUND");
-    }
-
-    if (!isFutureDateTime(current.date, current.timeSlot, now)) {
-      throw new Error("APPOINTMENT_NOT_CANCELABLE");
     }
 
     await cancelAppointmentById(tx, current.id);

@@ -218,12 +218,14 @@ Business behavior is defined by:
   - Month status update is only allowed for current or future months.
   - Updating month status in past months is rejected with `MONTH_IN_PAST`.
   - Edit action reprograms appointment `date + timeSlot` within the same selected month.
+  - Past appointments are not editable in day-agenda actions.
   - Destination must satisfy booking availability invariants (weekday-only, valid slot, future slot, pair-direction constraints, daily max, and active lock checks).
 
 - Admin cancel policy:
   - UI must request explicit confirmation before executing cancel action.
   - Cancel action performs logical cancellation (`status = CANCELLED`) and preserves history.
   - Admin cancellation does not apply the public 24-hour restriction.
+  - Admin cancellation can be executed for active appointments in past or future dates within the selected month.
 
 - Admin booking policy:
   - Admin can create appointments inside `/admin/months/[month]` through admin-specific API contracts.
@@ -276,7 +278,8 @@ Business behavior is defined by:
   - Day-agenda management behavior:
     - Admin can edit reason of a manual blocked slot from day-agenda modal.
     - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
-    - Edit/delete is allowed only for future blocked slots.
+    - Edit is allowed only for future blocked slots.
+    - Delete is allowed for manual blocked slots in past or future dates.
 
 ## Availability Rules
 

@@ -209,7 +209,7 @@ Notas de contrato:
 - El frontend traduce `errorCode` al idioma activo.
 - El backend no retorna mensajes localizados de UX final.
 
-No se pueden cancelar citas pasadas.
+No se pueden cancelar citas pasadas en el flujo público (`/cancelar`).
 
 ---
 
@@ -528,12 +528,15 @@ Flujo UI:
      - nombre del cliente,
      - teléfono como subtítulo,
      - acciones (`Editar`, `Eliminar`), donde `Eliminar` requiere confirmación previa.
+     - `Editar` solo aplica a citas futuras; en citas pasadas la acción permanece deshabilitada con feedback de no editable.
+     - `Eliminar` (cancelación lógica) aplica para citas activas pasadas y futuras en contexto admin.
    - El mismo modal diario incluye sección `Espacios bloqueados` con filas por bloqueo manual:
      - hora,
      - motivo (`DESCANSO|PERSONAL|OTRO`),
      - acciones (`Editar motivo`, `Eliminar bloqueo`).
    - Restricción operativa para bloqueos manuales en modal diario:
-     - solo se permite editar/eliminar slots bloqueados futuros (no pasados).
+     - editar motivo solo se permite en slots bloqueados futuros (no pasados).
+     - eliminar bloqueo se permite en slots bloqueados pasados y futuros.
    - En edición de cita del modal diario:
      - al confirmar `Guardar`, el formulario de edición se cierra inmediatamente,
      - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
@@ -692,15 +695,16 @@ Contrato API:
   - `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
     - `blockedSlotId` válido (>0),
     - registro debe existir dentro del `month`,
-    - permite eliminar solo slots bloqueados futuros, de lo contrario `BLOCKED_SLOT_NOT_EDITABLE` (`409`).
+    - permite eliminar slots bloqueados pasados y futuros.
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`:
     - payload `{ month, date, timeSlot }`,
     - `appointmentId` válido (>0),
     - cita activa debe existir dentro del `month`,
+    - la cita origen debe ser futura; si ya pasó responde `APPOINTMENT_NOT_EDITABLE` (`409`),
     - destino debe cumplir reglas de disponibilidad (weekday, slot válido, no pasado, sin conflicto/lock).
   - `POST /api/admin/appointments/[appointmentId]/cancel`:
     - payload `{ month }`,
-    - cancelación admin aplica override (sin restricción web de 24h),
+    - cancelación admin aplica override (sin restricción web de 24h ni restricción de cita pasada/futura),
     - transición lógica de estado a `CANCELLED` (sin borrado físico).
   - `POST /api/admin/months`:
     - payload `{ year: number, months: string[] }`,

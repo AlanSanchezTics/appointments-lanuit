@@ -24,10 +24,12 @@ import {
   faCircleCheck as fasCircleCheck,
   faCircleXmark as fasCircleXmark,
   faCheck as fasCheck,
+  faCalendarDays as fasCalendarDays,
+  faBan,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar,
-  faCalendarDays,
+  faCalendarDays as farCalendarDays,
   faCalendarXmark,
   faClock,
 } from "@fortawesome/free-regular-svg-icons";
@@ -41,7 +43,7 @@ export const adminIcons = {
   appointmentsToday: faCalendarDay,
   pending: faClock,
   syncFailed: faTriangleExclamation,
-  monthsManagement: faCalendarDays,
+  monthsManagement: farCalendarDays,
   dailyAppointments: faListCheck,
   syncRetries: faRotateRight,
   monthActive: faCalendarDay,
@@ -68,4 +70,6 @@ export const adminIcons = {
   slotModeSettings: faGear,
   edit: faPen,
   delete: faTrash,
+  addNewAppointment: fasCalendarDays,
+  blockSpaces: faBan
 } as const;

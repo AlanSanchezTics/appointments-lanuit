@@ -89,4 +89,28 @@ describe("PATCH /api/admin/appointments/[appointmentId]/reschedule", () => {
 
     expect(response.status).toBe(409);
   });
+
+  it("returns 409 when appointment is not editable", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    rescheduleAdminAppointmentMock.mockRejectedValueOnce(
+      new Error("APPOINTMENT_NOT_EDITABLE"),
+    );
+
+    const { PATCH } = await import("@/app/api/admin/appointments/[appointmentId]/reschedule/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/appointments/11/reschedule", {
+        method: "PATCH",
+        body: JSON.stringify({
+          month: "2026-03",
+          date: "2026-03-17",
+          timeSlot: "14:00",
+        }),
+      }),
+      {
+        params: Promise.resolve({ appointmentId: "11" }),
+      },
+    );
+
+    expect(response.status).toBe(409);
+  });
 });

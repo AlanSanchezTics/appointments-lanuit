@@ -539,16 +539,16 @@ describe("MonthDetailView", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
 
-      if (url.includes("/api/admin/months/2026-03/days/2026-03-02/agenda")) {
+      if (url.includes("/api/admin/months/2099-03/days/2099-03-02/agenda")) {
         return new Response(
           JSON.stringify({
-            month: "2026-03",
-            date: "2026-03-02",
+            month: "2099-03",
+            date: "2099-03-02",
             total: 1,
             appointments: [
               {
                 appointmentId: 10,
-                date: "2026-03-02",
+                date: "2099-03-02",
                 timeSlot: "09:00:00",
                 status: "CONFIRMED",
                 name: "Ana Garcia",
@@ -558,7 +558,7 @@ describe("MonthDetailView", () => {
             blockedSlots: [
               {
                 blockedSlotId: 51,
-                date: "2026-03-02",
+                date: "2099-03-02",
                 timeSlot: "13:00",
                 reason: "DESCANSO",
               },
@@ -585,13 +585,13 @@ describe("MonthDetailView", () => {
 
     render(
       <MonthDetailView
-        month="2026-03"
+        month="2099-03"
         initialData={{
-          month: "2026-03",
+          month: "2099-03",
           monthStatus: "ACTIVE",
           slotMode: "BLOCK_MODE",
-          currentMonth: "2026-03",
-          currentDate: "2026-03-01",
+          currentMonth: "2099-03",
+          currentDate: "2099-03-01",
           isPastMonth: false,
           projectedSaturationPercent: 85,
           metrics: {
@@ -603,14 +603,14 @@ describe("MonthDetailView", () => {
           },
           calendarDays: [
             {
-              date: "2026-03-01",
+              date: "2099-03-01",
               day: 1,
               isWeekend: true,
               availableSpaces: 0,
               tone: "weekend",
             },
             {
-              date: "2026-03-02",
+              date: "2099-03-02",
               day: 2,
               isWeekend: false,
               availableSpaces: 6,
@@ -628,6 +628,323 @@ describe("MonthDetailView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Editar cita" }));
 
     expect(screen.queryByRole("option", { name: "01:00 PM" })).not.toBeInTheDocument();
+  });
+
+  it("disables edit and keeps cancel enabled for past appointments in day modal", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2000-03/days/2000-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2000-03",
+            date: "2000-03-02",
+            total: 1,
+            appointments: [
+              {
+                appointmentId: 10,
+                date: "2000-03-02",
+                timeSlot: "09:00:00",
+                status: "CONFIRMED",
+                name: "Ana Garcia",
+                phone: "5512345678",
+              },
+            ],
+            blockedSlots: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/appointments/10/cancel")) {
+        return new Response(
+          JSON.stringify({
+            appointmentId: 10,
+            status: "CANCELLED",
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2000-03")) {
+        return new Response(
+          JSON.stringify({
+            month: "2000-03",
+            monthStatus: "ACTIVE",
+            slotMode: "BLOCK_MODE",
+            currentMonth: "2000-03",
+            currentDate: "2000-03-01",
+            isPastMonth: false,
+            projectedSaturationPercent: 85,
+            metrics: {
+              confirmedAppointments: 8,
+              cancelledAppointments: 1,
+              availableSpaces: 54,
+              blockedSpaces: 0,
+              occupiedSpaces: 8,
+            },
+            calendarDays: [
+              {
+                date: "2000-03-01",
+                day: 1,
+                isWeekend: true,
+                availableSpaces: 0,
+                tone: "weekend",
+              },
+              {
+                date: "2000-03-02",
+                day: 2,
+                isWeekend: false,
+                availableSpaces: 6,
+                tone: "available",
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2000-03"
+        initialData={{
+          month: "2000-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2000-03",
+          currentDate: "2000-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2000-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2000-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+    await screen.findByRole("dialog");
+
+    const editButton = screen.getByRole("button", { name: "Editar cita" });
+    expect(editButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar cita" }));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, requestInit]) =>
+          String(input).includes("/api/admin/appointments/10/cancel") &&
+          requestInit?.method === "POST",
+      ),
+    ).toBe(true);
+  });
+
+  it("disables blocked-slot edit and keeps delete enabled for past blocked slots", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2000-03/days/2000-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2000-03",
+            date: "2000-03-02",
+            total: 0,
+            appointments: [],
+            blockedSlots: [
+              {
+                blockedSlotId: 50,
+                date: "2000-03-02",
+                timeSlot: "13:00",
+                reason: "DESCANSO",
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2000-03/blocked-slots/50")) {
+        return new Response(
+          JSON.stringify({
+            month: "2000-03",
+            blockedSlotId: 50,
+            status: "DELETED",
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2000-03")) {
+        return new Response(
+          JSON.stringify({
+            month: "2000-03",
+            monthStatus: "ACTIVE",
+            slotMode: "BLOCK_MODE",
+            currentMonth: "2000-03",
+            currentDate: "2000-03-01",
+            isPastMonth: false,
+            projectedSaturationPercent: 10,
+            metrics: {
+              confirmedAppointments: 0,
+              cancelledAppointments: 0,
+              availableSpaces: 64,
+              blockedSpaces: 1,
+              occupiedSpaces: 0,
+            },
+            calendarDays: [
+              {
+                date: "2000-03-01",
+                day: 1,
+                isWeekend: true,
+                availableSpaces: 0,
+                tone: "weekend",
+              },
+              {
+                date: "2000-03-02",
+                day: 2,
+                isWeekend: false,
+                availableSpaces: 6,
+                tone: "available",
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2000-03"
+        initialData={{
+          month: "2000-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2000-03",
+          currentDate: "2000-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 10,
+          metrics: {
+            confirmedAppointments: 0,
+            cancelledAppointments: 0,
+            availableSpaces: 64,
+            blockedSpaces: 1,
+            occupiedSpaces: 0,
+          },
+          calendarDays: [
+            {
+              date: "2000-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2000-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+    await screen.findByRole("dialog");
+
+    const editBlockedButton = screen.getByRole("button", {
+      name: "Editar espacio bloqueado",
+    });
+    expect(editBlockedButton).toBeDisabled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Eliminar espacio bloqueado" }),
+    );
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, requestInit]) =>
+          String(input).includes("/api/admin/months/2000-03/blocked-slots/50") &&
+          requestInit?.method === "DELETE",
+      ),
+    ).toBe(true);
   });
 
   it("shows contextual helper text in slot mode modal based on selected option", async () => {

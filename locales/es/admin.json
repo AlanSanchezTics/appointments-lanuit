@@ -176,6 +176,7 @@
       "empty": "No hay citas activas ni espacios bloqueados para este día.",
       "actions": {
         "edit": "Editar cita",
+        "editDisabled": "Las citas pasadas no se pueden editar",
         "delete": "Eliminar cita",
         "save": "Guardar",
         "cancel": "Cancelar"
@@ -193,13 +194,21 @@
         "rescheduleError": "No se pudo reprogramar la cita.",
         "cancelLoading": "Cancelando cita...",
         "cancelSuccess": "Cita cancelada",
-        "cancelError": "No se pudo cancelar la cita."
+        "cancelError": "No se pudo cancelar la cita.",
+        "errorDescriptions": {
+          "appointmentNotEditable": "La cita seleccionada ya pasó y no se puede editar.",
+          "slotUnavailable": "Ese horario ya no está disponible. Actualizamos los horarios disponibles.",
+          "monthNotFound": "No se encontró el mes seleccionado.",
+          "appointmentNotFound": "La cita ya no está activa o no existe en el mes seleccionado.",
+          "generic": "Intenta nuevamente."
+        }
       },
       "blocked": {
         "sectionTitle": "Espacios bloqueados",
         "subtitle": "Bloqueo manual",
         "actions": {
           "edit": "Editar espacio bloqueado",
+          "editDisabled": "Los espacios bloqueados pasados no se pueden editar",
           "delete": "Eliminar espacio bloqueado"
         },
         "edit": {

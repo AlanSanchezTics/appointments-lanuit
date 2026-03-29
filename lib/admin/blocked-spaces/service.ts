@@ -295,7 +295,6 @@ export async function updateAdminBlockedSlot(
 
 export async function deleteAdminBlockedSlot(
   input: DeleteAdminBlockedSlotPayload,
-  now = new Date(),
 ): Promise<DeleteAdminBlockedSlotResponse> {
   const registration = await findRegisteredMonth(input.month);
 
@@ -311,7 +310,6 @@ export async function deleteAdminBlockedSlot(
     }
 
     assertBlockedSlotBelongsToMonth(blockedSlot.date, input.month);
-    assertBlockedSlotIsEditable(blockedSlot.date, blockedSlot.timeSlot, now);
     await deleteBlockedSlotById(tx, input.blockedSlotId);
   });
 

@@ -176,6 +176,7 @@
       "empty": "There are no active appointments or blocked spaces for this day.",
       "actions": {
         "edit": "Edit appointment",
+        "editDisabled": "Past appointments cannot be edited",
         "delete": "Delete appointment",
         "save": "Save",
         "cancel": "Cancel"
@@ -193,13 +194,21 @@
         "rescheduleError": "Unable to reschedule appointment.",
         "cancelLoading": "Cancelling appointment...",
         "cancelSuccess": "Appointment cancelled",
-        "cancelError": "Unable to cancel appointment."
+        "cancelError": "Unable to cancel appointment.",
+        "errorDescriptions": {
+          "appointmentNotEditable": "The selected appointment is in the past and cannot be edited.",
+          "slotUnavailable": "This time slot is no longer available. We refreshed available times.",
+          "monthNotFound": "The selected month was not found.",
+          "appointmentNotFound": "The appointment is no longer active or does not exist in the selected month.",
+          "generic": "Please try again."
+        }
       },
       "blocked": {
         "sectionTitle": "Blocked spaces",
         "subtitle": "Manual block",
         "actions": {
           "edit": "Edit blocked space",
+          "editDisabled": "Past blocked spaces cannot be edited",
           "delete": "Delete blocked space"
         },
         "edit": {

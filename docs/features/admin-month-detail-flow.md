@@ -73,14 +73,16 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 18. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
 19. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
-   - `Editar`: reprogramar fecha+slot dentro del mismo mes.
+   - `Editar`: reprogramar fecha+slot dentro del mismo mes solo para citas futuras.
      - Al guardar edición, el subformulario se cierra de inmediato.
      - Mientras procesa la mutación, las acciones de la fila se reemplazan por spinner.
      - Al finalizar, la agenda diaria se refresca con los cambios persistidos.
-   - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`).
+   - `Editar` en citas pasadas permanece deshabilitado y debe mostrar feedback explícito de no editable.
+   - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`) tanto para citas pasadas como futuras.
    - En `Espacios bloqueados`:
-     - `Editar`: permite cambiar motivo (`DESCANSO`, `PERSONAL`, `OTRO`) y guardar.
-     - `Eliminar`: solicita confirmación y elimina el bloqueo manual.
+     - `Editar`: permite cambiar motivo (`DESCANSO`, `PERSONAL`, `OTRO`) y guardar solo en slots futuros.
+     - `Editar` en slots pasados permanece deshabilitado y debe mostrar feedback explícito de no editable.
+     - `Eliminar`: solicita confirmación y elimina el bloqueo manual tanto en slots pasados como futuros.
      - Ambas acciones refrescan agenda diaria y métricas/calendario del mes al finalizar.
 
 ## Reglas de cálculo

@@ -22,10 +22,6 @@ function resolveStatusCode(errorCode: string) {
     return 404;
   }
 
-  if (errorCode === "APPOINTMENT_NOT_CANCELABLE") {
-    return 409;
-  }
-
   return 400;
 }
 

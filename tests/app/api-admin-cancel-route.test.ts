@@ -60,9 +60,9 @@ describe("POST /api/admin/appointments/[appointmentId]/cancel", () => {
     });
   });
 
-  it("returns 409 when appointment cannot be cancelled", async () => {
+  it("returns 404 when appointment is not found", async () => {
     authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
-    cancelAdminAppointmentMock.mockRejectedValueOnce(new Error("APPOINTMENT_NOT_CANCELABLE"));
+    cancelAdminAppointmentMock.mockRejectedValueOnce(new Error("APPOINTMENT_NOT_FOUND"));
 
     const { POST } = await import("@/app/api/admin/appointments/[appointmentId]/cancel/route");
     const response = await POST(
@@ -77,6 +77,6 @@ describe("POST /api/admin/appointments/[appointmentId]/cancel", () => {
       },
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(404);
   });
 });
