@@ -2,45 +2,51 @@ import { listBookableMonths } from "@/lib/active-months/service";
 import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
 import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
-import { findConfirmedFutureAppointmentByPhoneInMonth } from "@/lib/db/appointments";
+import {
+  listConfirmedFutureAppointmentsByPhoneInMonth,
+  type PersistedAppointment,
+} from "@/lib/db/appointments";
 import { cancelLookupSchema } from "@/lib/validation/cancel";
 
 export async function findCancelableAppointment(rawInput: unknown, now = new Date()) {
   const input = cancelLookupSchema.parse(rawInput);
   const currentDate = getCurrentDateKey(now);
   const activeMonths = await listBookableMonths(now);
-  let appointment = null;
+  const appointments: PersistedAppointment[] = [];
 
   for (const month of activeMonths) {
     const { monthStart, monthEndExclusive } = getMonthRange(month);
 
-    appointment = await findConfirmedFutureAppointmentByPhoneInMonth(
+    const monthAppointments = await listConfirmedFutureAppointmentsByPhoneInMonth(
       input.phone,
       currentDate,
       monthStart,
       monthEndExclusive,
     );
-
-    if (appointment) {
-      break;
-    }
+    appointments.push(...monthAppointments);
   }
 
-  if (!appointment) {
+  if (appointments.length === 0) {
     throw new Error("APPOINTMENT_NOT_FOUND");
   }
 
-  if (!isWebCancellationWindowAllowed(appointment, now)) {
+  const cancelableAppointments = appointments.filter((appointment) =>
+    isWebCancellationWindowAllowed(appointment, now),
+  );
+
+  if (cancelableAppointments.length === 0) {
     throw new Error(APPOINTMENT_IS_COMING_SOON);
   }
 
   return {
-    appointmentId: appointment.id,
-    name: appointment.name,
-    phone: appointment.phone,
-    date: appointment.date,
-    timeSlot: appointment.timeSlot,
-    status: "CONFIRMED" as const,
+    appointments: cancelableAppointments.map((appointment) => ({
+      appointmentId: appointment.id,
+      name: appointment.name,
+      phone: appointment.phone,
+      date: appointment.date,
+      timeSlot: appointment.timeSlot,
+      status: "CONFIRMED" as const,
+    })),
   };
 }
 

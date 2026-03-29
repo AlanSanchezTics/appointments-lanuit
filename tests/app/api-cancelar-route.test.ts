@@ -13,8 +13,12 @@ describe("POST /api/cancelar", () => {
 
   it("returns 200 for a successful cancellation", async () => {
     cancelAppointmentMock.mockResolvedValueOnce({
-      appointmentId: 3,
-      status: "CANCELLED",
+      cancelledAppointments: [
+        {
+          appointmentId: 3,
+          status: "CANCELLED",
+        },
+      ],
     });
 
     const { POST } = await import("@/app/api/cancelar/route");
@@ -23,23 +27,31 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
-          appointmentId: 3,
+          appointmentIds: [3],
         }),
       }),
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      appointmentId: 3,
-      status: "CANCELLED",
+      cancelledAppointments: [
+        {
+          appointmentId: 3,
+          status: "CANCELLED",
+        },
+      ],
     });
   });
 
   it("returns 200 and surfaces sync warnings when Google deletion fails", async () => {
     cancelAppointmentMock.mockResolvedValueOnce({
-      appointmentId: 3,
-      status: "CANCELLED",
-      syncReason: "CALENDAR_DELETE_FAILED",
+      cancelledAppointments: [
+        {
+          appointmentId: 3,
+          status: "CANCELLED",
+          syncReason: "CALENDAR_DELETE_FAILED",
+        },
+      ],
     });
 
     const { POST } = await import("@/app/api/cancelar/route");
@@ -48,16 +60,20 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
-          appointmentId: 3,
+          appointmentIds: [3],
         }),
       }),
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      appointmentId: 3,
-      status: "CANCELLED",
-      syncReason: "CALENDAR_DELETE_FAILED",
+      cancelledAppointments: [
+        {
+          appointmentId: 3,
+          status: "CANCELLED",
+          syncReason: "CALENDAR_DELETE_FAILED",
+        },
+      ],
     });
   });
 
@@ -70,7 +86,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
-          appointmentId: 3,
+          appointmentIds: [3],
         }),
       }),
     );
@@ -91,7 +107,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
-          appointmentId: 0,
+          appointmentIds: [],
         }),
       }),
     );
@@ -112,7 +128,7 @@ describe("POST /api/cancelar", () => {
         method: "POST",
         body: JSON.stringify({
           phone: "5512345678",
-          appointmentId: 3,
+          appointmentIds: [3],
         }),
       }),
     );

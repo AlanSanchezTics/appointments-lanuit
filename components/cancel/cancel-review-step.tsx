@@ -10,24 +10,30 @@ import {
 import type { AppLanguage } from "@/lib/i18n/config";
 
 type CancelReviewStepProps = {
-  appointment: CancelableAppointment;
+  appointments: CancelableAppointment[];
+  selectedAppointmentIds: number[];
   cancelError: string | null;
   isCancelling: boolean;
   language: AppLanguage;
   onCancel: () => void;
   onReset: () => void;
+  onToggleAppointmentSelection: (appointmentId: number) => void;
   t: TFunction;
 };
 
 export function CancelReviewStep({
-  appointment,
+  appointments,
+  selectedAppointmentIds,
   cancelError,
   isCancelling,
   language,
   onCancel,
   onReset,
+  onToggleAppointmentSelection,
   t,
 }: CancelReviewStepProps) {
+  const displayName = appointments[0]?.name ?? "";
+
   return (
     <div className="space-y-8">
       <header className="space-y-4">
@@ -37,49 +43,49 @@ export function CancelReviewStep({
         <h2 className="font-[family-name:var(--font-display)] text-[2.08rem] font-semibold leading-[1.02] tracking-[-0.04em] mb-1.25">
           {t("cancel.confirmTitle")}
         </h2>
-        <p className="text-[var(--muted)]">{t("cancel.confirmIntro")}</p>
         <div className="h-1 w-full rounded-full bg-[rgba(43,36,33,0.06)]">
           <div className="h-full w-2/3 rounded-full bg-[var(--accent)]" />
         </div>
       </header>
 
-      <section className="rounded-[2rem] border border-[var(--border)] bg-white/80 p-6 shadow-[var(--shadow-soft)]">
-        <dl className="space-y-5">
-          <div>
-            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-              {t("cancel.name")}
-            </dt>
-            <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
-              {appointment.name}
-            </dd>
-          </div>
-          <div className="border-t border-[var(--border)] pt-5">
-            <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-              {t("cancel.date")}
-            </dt>
-            <dd className="mt-1 text-[1.2rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
-              {formatLongDate(appointment.date, language)}
-            </dd>
-          </div>
-          <div className="grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-5">
-            <div>
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                {t("cancel.time")}
-              </dt>
-              <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
-                {formatTimeSlotLabel(appointment.timeSlot, language)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--accent-dark)]">
-                {t("cancel.phone")}
-              </dt>
-              <dd className="mt-1 text-[1.02rem] font-semibold tracking-[-0.02em]">
-                {formatPhoneForDisplay(appointment.phone)}
-              </dd>
-            </div>
-          </div>
-        </dl>
+      <section className="space-y-4 rounded-[1.15rem] border border-[rgba(194,165,138,0.42)] bg-[rgba(243,229,214,0.55)] p-5">
+        <p className="text-sm font-semibold text-[var(--accent-dark)]">
+          {t("cancel.helloName", { name: displayName })}
+        </p>
+        <p className="text-xs text-[var(--muted)]">
+          {t("cancel.confirmDetailsSubtitle")}
+        </p>
+        <div className="space-y-3">
+          {appointments.map((appointment) => {
+            const isSelected = selectedAppointmentIds.includes(
+              appointment.appointmentId,
+            );
+
+            return (
+              <button
+                key={appointment.appointmentId}
+                className={`w-full rounded-[0.95rem] border px-4 py-3 text-left transition ${
+                  isSelected
+                    ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] shadow-[0_0_0_1px_rgba(228,159,83,0.16)]"
+                    : "border-[rgba(43,36,33,0.12)] bg-white/80"
+                }`}
+                onClick={() =>
+                  onToggleAppointmentSelection(appointment.appointmentId)
+                }
+                type="button"
+              >
+                <div className="space-y-1">
+                  <p className="text-[0.95rem] font-semibold leading-tight text-[var(--foreground)]">
+                    {formatLongDate(appointment.date, language)}
+                  </p>
+                  <p className="text-[0.92rem] font-medium text-[var(--muted)]">
+                    {formatTimeSlotLabel(appointment.timeSlot, language)}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       {cancelError ? (

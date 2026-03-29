@@ -1,9 +1,10 @@
+import { deleteCalendarEvent } from "@/lib/calendar/google";
 import { listBookableMonths } from "@/lib/active-months/service";
 import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
 import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
-import { findConfirmedFutureAppointmentByIdForUpdate } from "@/lib/db/appointments";
-import { deleteCalendarEvent } from "@/lib/calendar/google";
+import { findConfirmedFutureAppointmentsByIdsForUpdate } from "@/lib/db/appointments";
+import type { PersistedAppointment } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
 import { cancelSchema } from "@/lib/validation/cancel";
 
@@ -11,47 +12,70 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
   const input = cancelSchema.parse(rawInput);
   const currentDate = getCurrentDateKey(now);
   const activeMonths = await listBookableMonths(now);
-  const appointment = await prisma.$transaction(async (tx) => {
-    let lockedAppointment = null;
+  const selectedIds = Array.from(new Set(input.appointmentIds));
+
+  const appointments = await prisma.$transaction(async (tx) => {
+    const lockedAppointments: PersistedAppointment[] = [];
 
     for (const month of activeMonths) {
       const { monthStart, monthEndExclusive } = getMonthRange(month);
-
-      lockedAppointment = await findConfirmedFutureAppointmentByIdForUpdate(
+      const monthAppointments = await findConfirmedFutureAppointmentsByIdsForUpdate(
         tx,
-        input.appointmentId,
+        selectedIds,
         input.phone,
         currentDate,
         monthStart,
         monthEndExclusive,
       );
-
-      if (lockedAppointment) {
-        break;
-      }
+      lockedAppointments.push(...monthAppointments);
     }
 
-    if (!lockedAppointment) {
+    const appointmentById = new Map(
+      lockedAppointments.map((appointment) => [appointment.id, appointment]),
+    );
+    const resolvedAppointments = selectedIds.map((id) => appointmentById.get(id));
+
+    if (resolvedAppointments.some((appointment) => !appointment)) {
       throw new Error("APPOINTMENT_NOT_FOUND");
     }
 
-    if (!isWebCancellationWindowAllowed(lockedAppointment, now)) {
+    const eligibleAppointments = resolvedAppointments as typeof lockedAppointments;
+    if (
+      eligibleAppointments.some(
+        (appointment) => !isWebCancellationWindowAllowed(appointment, now),
+      )
+    ) {
       throw new Error(APPOINTMENT_IS_COMING_SOON);
     }
 
-    await tx.appointment.update({
+    await tx.appointment.updateMany({
       where: {
-        id: lockedAppointment.id,
+        id: {
+          in: eligibleAppointments.map((appointment) => appointment.id),
+        },
       },
       data: {
         status: "CANCELLED",
       },
     });
 
-    return lockedAppointment;
+    return eligibleAppointments;
   });
 
-  if (appointment.googleEventId) {
+  const cancelledAppointments: Array<{
+    appointmentId: number;
+    status: "CANCELLED";
+    syncReason?: "CALENDAR_DELETE_FAILED";
+  }> = [];
+  for (const appointment of appointments) {
+    if (!appointment.googleEventId) {
+      cancelledAppointments.push({
+        appointmentId: appointment.id,
+        status: "CANCELLED" as const,
+      });
+      continue;
+    }
+
     try {
       await deleteCalendarEvent(appointment.googleEventId);
 
@@ -63,18 +87,21 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
           googleEventId: null,
         },
       });
+      cancelledAppointments.push({
+        appointmentId: appointment.id,
+        status: "CANCELLED" as const,
+      });
     } catch {
-      return {
+      cancelledAppointments.push({
         appointmentId: appointment.id,
         status: "CANCELLED" as const,
         syncReason: "CALENDAR_DELETE_FAILED" as const,
-      };
+      });
     }
   }
 
   return {
-    appointmentId: appointment.id,
-    status: "CANCELLED" as const,
+    cancelledAppointments,
   };
 }
 

@@ -48,14 +48,18 @@ integrationSuite("cancelAppointment integration", () => {
     const result = await cancelAppointment(
       {
         phone: "5512345678",
-        appointmentId: appointment.id,
+        appointmentIds: [appointment.id],
       },
       new Date("2026-03-03T12:00:00.000Z"),
     );
 
     expect(result).toEqual({
-      appointmentId: appointment.id,
-      status: "CANCELLED",
+      cancelledAppointments: [
+        {
+          appointmentId: appointment.id,
+          status: "CANCELLED",
+        },
+      ],
     });
 
     const refreshed = await prisma.appointment.findUniqueOrThrow({
@@ -91,15 +95,19 @@ integrationSuite("cancelAppointment integration", () => {
     const result = await cancelAppointment(
       {
         phone: "5512345678",
-        appointmentId: appointment.id,
+        appointmentIds: [appointment.id],
       },
       new Date("2026-03-03T12:00:00.000Z"),
     );
 
     expect(result).toEqual({
-      appointmentId: appointment.id,
-      status: "CANCELLED",
-      syncReason: "CALENDAR_DELETE_FAILED",
+      cancelledAppointments: [
+        {
+          appointmentId: appointment.id,
+          status: "CANCELLED",
+          syncReason: "CALENDAR_DELETE_FAILED",
+        },
+      ],
     });
 
     const refreshed = await prisma.appointment.findUniqueOrThrow({
@@ -133,7 +141,7 @@ integrationSuite("cancelAppointment integration", () => {
       cancelAppointment(
         {
           phone: "5512345678",
-          appointmentId: appointment.id,
+          appointmentIds: [appointment.id],
         },
         new Date("2026-03-03T12:00:00.000Z"),
       ),

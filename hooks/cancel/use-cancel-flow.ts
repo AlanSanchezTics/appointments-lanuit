@@ -11,9 +11,8 @@ import type {
 export function useCancelFlow() {
   const [step, setStep] = useState<CancellationStep>("lookup");
   const [phone, setPhone] = useState("");
-  const [appointment, setAppointment] = useState<CancelableAppointment | null>(
-    null,
-  );
+  const [appointments, setAppointments] = useState<CancelableAppointment[]>([]);
+  const [selectedAppointmentIds, setSelectedAppointmentIds] = useState<number[]>([]);
   const [lookupErrorCode, setLookupErrorCode] = useState<string | null>(null);
   const [cancelErrorCode, setCancelErrorCode] = useState<string | null>(null);
   const [isSearching, startSearchTransition] = useTransition();
@@ -34,7 +33,8 @@ export function useCancelFlow() {
     startSearchTransition(async () => {
       try {
         const result = await lookupCancelableAppointment(normalizedPhone);
-        setAppointment(result);
+        setAppointments(result.appointments);
+        setSelectedAppointmentIds([]);
         setStep("review");
       } catch (error) {
         setLookupErrorCode(
@@ -45,7 +45,8 @@ export function useCancelFlow() {
   }
 
   function handleCancel() {
-    if (!appointment) {
+    if (selectedAppointmentIds.length === 0) {
+      setCancelErrorCode("CANCEL_SELECTION_REQUIRED");
       return;
     }
 
@@ -54,8 +55,8 @@ export function useCancelFlow() {
 
       try {
         await submitCancellation({
-          phone: appointment.phone,
-          appointmentId: appointment.appointmentId,
+          phone: phone.replace(/\D/g, ""),
+          appointmentIds: selectedAppointmentIds,
         });
         setStep("success");
       } catch (error) {
@@ -68,16 +69,27 @@ export function useCancelFlow() {
 
   function handleReset() {
     setStep("lookup");
-    setAppointment(null);
+    setAppointments([]);
+    setSelectedAppointmentIds([]);
     setLookupErrorCode(null);
     setCancelErrorCode(null);
     setPhone("");
   }
 
+  function toggleAppointmentSelection(appointmentId: number) {
+    setCancelErrorCode(null);
+    setSelectedAppointmentIds((current) =>
+      current.includes(appointmentId)
+        ? current.filter((id) => id !== appointmentId)
+        : [...current, appointmentId],
+    );
+  }
+
   return {
     step,
     phone,
-    appointment,
+    appointments,
+    selectedAppointmentIds,
     lookupErrorCode,
     cancelErrorCode,
     isSearching,
@@ -86,6 +98,6 @@ export function useCancelFlow() {
     handleLookup,
     handleCancel,
     handleReset,
+    toggleAppointmentSelection,
   };
 }
-

@@ -158,20 +158,28 @@ test("booking can be cancelled through the public endpoints", async ({ request }
 
   expect(lookupResponse.status()).toBe(200);
   const lookupPayload = (await lookupResponse.json()) as {
-    appointmentId: number;
+    appointments: Array<{ appointmentId: number }>;
   };
+  const appointmentId = lookupPayload.appointments[0]?.appointmentId;
+  if (!appointmentId) {
+    throw new Error("No cancelable appointments returned by lookup");
+  }
 
   const cancellationResponse = await request.post("/api/cancelar", {
     data: {
       phone: appointment.phone,
-      appointmentId: lookupPayload.appointmentId,
+      appointmentIds: [appointmentId],
     },
   });
 
   expect(cancellationResponse.status()).toBe(200);
   await expect(cancellationResponse.json()).resolves.toEqual({
-    appointmentId: expect.any(Number),
-    status: "CANCELLED",
+    cancelledAppointments: [
+      {
+        appointmentId: expect.any(Number),
+        status: "CANCELLED",
+      },
+    ],
   });
 });
 
@@ -189,6 +197,7 @@ test("user completes cancellation wizard in three steps", async ({
 
   await expect(page.getByRole("heading", { name: /Confirmar Cancelaci.n/i })).toBeVisible();
   await expect(page.getByRole("button", { name: "Volver" })).toBeVisible();
+  await page.getByRole("button", { name: /E2E Wizard Cancel/i }).click();
 
   await page.getByRole("button", { name: "Cancelar cita" }).click();
   await expect(

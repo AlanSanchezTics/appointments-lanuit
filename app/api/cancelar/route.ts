@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
       phone: string;
-      appointmentId: number;
+      appointmentIds: number[];
     };
 
     const response = await cancelAppointment(payload);

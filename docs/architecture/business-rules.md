@@ -114,9 +114,11 @@ Business behavior is defined by:
   - In the future (not past date).
   - Inside an active month.
   - At least 24 hours away from the current local time.
+- Cancellation lookup by phone must return all future appointments that satisfy those conditions so the user can choose one or more to cancel.
+- Cancellation execution in public flow must allow cancelling one or multiple selected appointments in the same request.
 
 - Cancellation effects:
-  - Appointment state changes to `CANCELLED`.
+  - Each selected appointment state changes to `CANCELLED`.
   - Released slot becomes available again under normal availability rules.
 
 - Not allowed:

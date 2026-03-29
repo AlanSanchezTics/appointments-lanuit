@@ -11,7 +11,13 @@ export const cancelLookupSchema = z.object({
 
 export const cancelSchema = z.object({
   phone: phoneSchema,
-  appointmentId: z.number().int().positive(),
+  appointmentIds: z
+    .array(z.number().int().positive())
+    .min(1, "VALIDATION_APPOINTMENT_IDS_REQUIRED")
+    .refine(
+      (values) => new Set(values).size === values.length,
+      "VALIDATION_APPOINTMENT_IDS_DUPLICATED",
+    ),
 });
 
 export type CancelLookupInput = z.infer<typeof cancelLookupSchema>;

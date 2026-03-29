@@ -23,12 +23,24 @@ describe("cancel wizard", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        appointmentId: 9,
-        name: "Ana Garcia",
-        phone: "5512345678",
-        date: "2026-03-18",
-        timeSlot: "13:00",
-        status: "CONFIRMED",
+        appointments: [
+          {
+            appointmentId: 9,
+            name: "Ana Garcia",
+            phone: "5512345678",
+            date: "2026-03-18",
+            timeSlot: "13:00",
+            status: "CONFIRMED",
+          },
+          {
+            appointmentId: 10,
+            name: "Ana Garcia",
+            phone: "5512345678",
+            date: "2026-03-24",
+            timeSlot: "10:00",
+            status: "CONFIRMED",
+          },
+        ],
       }),
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -41,7 +53,14 @@ describe("cancel wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
     expect(await screen.findByRole("heading", { name: "Confirmar Cancelación" })).toBeInTheDocument();
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hola Ana Garcia" })).toBeInTheDocument();
+    expect(
+      screen.getByText("A continuación los detalle de tu(s) cita(s)"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/18 de marzo de 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/24 de marzo de 2026/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Fecha:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Hora:/)).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Cancelar cita" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
@@ -55,21 +74,65 @@ describe("cancel wizard", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          appointmentId: 5,
-          name: "Ana Garcia",
-          phone: "5512345678",
-          date: "2026-03-18",
-          timeSlot: "13:00",
-          status: "CONFIRMED",
+          appointments: [
+            {
+              appointmentId: 5,
+              name: "Ana Garcia",
+              phone: "5512345678",
+              date: "2026-03-18",
+              timeSlot: "13:00",
+              status: "CONFIRMED",
+            },
+          ],
         }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          appointmentId: 5,
-          status: "CANCELLED",
+          cancelledAppointments: [
+            {
+              appointmentId: 5,
+              status: "CANCELLED",
+            },
+          ],
         }),
       });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<CancelForm />);
+
+    fireEvent.change(screen.getByLabelText("Teléfono"), {
+      target: { value: "5512345678" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
+    await screen.findByRole("heading", { name: "Confirmar Cancelación" });
+    fireEvent.click(screen.getByRole("button", { name: /18 de marzo de 2026/i }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Tu cita ha sido cancelada con éxito",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("requires selecting at least one appointment before cancelling", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        appointments: [
+          {
+            appointmentId: 9,
+            name: "Ana Garcia",
+            phone: "5512345678",
+            date: "2026-03-18",
+            timeSlot: "13:00",
+            status: "CONFIRMED",
+          },
+        ],
+      }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(<CancelForm />);
@@ -83,9 +146,7 @@ describe("cancel wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
 
     expect(
-      await screen.findByRole("heading", {
-        name: "Tu cita ha sido cancelada con éxito",
-      }),
+      await screen.findByText("Selecciona al menos una cita para cancelar."),
     ).toBeInTheDocument();
   });
 });

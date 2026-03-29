@@ -213,7 +213,9 @@ export function BookingWizardStep1({
                   {t("booking.time")}
                 </dt>
                 <dd className="mt-1 text-[0.97rem] font-semibold text-[var(--foreground)]">
-                  {draft.timeSlot ? formatTimeSlotLabel(draft.timeSlot, language) : "-"}
+                  {draft.timeSlot
+                    ? formatTimeSlotLabel(draft.timeSlot, language)
+                    : "-"}
                 </dd>
               </div>
             </div>
@@ -222,7 +224,7 @@ export function BookingWizardStep1({
       ) : null}
 
       {showRescheduleSelection ? (
-        <section className="space-y-4 rounded-[1.15rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] p-5">
+        <section className="space-y-4 rounded-[1.15rem] border border-[var(--warning-soft)] bg-[rgba(243,229,214,0.55)] p-5">
           <p className="text-sm font-semibold text-[var(--accent-dark)]">
             {t("booking.rescheduleSelectionTitle")}
           </p>
@@ -234,20 +236,22 @@ export function BookingWizardStep1({
           <div className="space-y-3">
             {rescheduleOptions.map((option) => {
               const isSelected =
-                !isBookingAsNewAppointment
-                && selectedRescheduleAppointmentId === option.appointmentId;
+                !isBookingAsNewAppointment &&
+                selectedRescheduleAppointmentId === option.appointmentId;
 
               return (
                 <button
                   key={option.appointmentId}
                   className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                     isSelected
-                      ? "border-[var(--accent)] bg-white"
+                      ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)]"
                       : "border-[var(--border)] bg-white/80"
-                }`}
-                onClick={() => onSelectRescheduleAppointment(option.appointmentId)}
-                type="button"
-              >
+                  }`}
+                  onClick={() =>
+                    onSelectRescheduleAppointment(option.appointmentId)
+                  }
+                  type="button"
+                >
                   <p className="text-sm font-semibold text-[var(--foreground)]">
                     {formatLongDate(option.date, language)}
                   </p>
@@ -270,7 +274,7 @@ export function BookingWizardStep1({
               <button
                 className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                   isBookingAsNewAppointment
-                    ? "border-[var(--accent)] bg-white text-[var(--accent-dark)]"
+                    ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
                     : "border-[var(--border)] bg-white/80 text-[var(--foreground)]"
                 }`}
                 onClick={onChooseBookAsNewAppointment}
@@ -335,7 +339,9 @@ export function BookingWizardStep1({
                 id="booking-phone"
                 className="w-full rounded-full border border-[var(--border)] bg-white px-6 py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
                 inputMode="numeric"
-                onChange={(event) => onDraftChange({ phone: event.target.value })}
+                onChange={(event) =>
+                  onDraftChange({ phone: event.target.value })
+                }
                 placeholder={t("booking.phonePlaceholder")}
                 value={draft.phone}
               />

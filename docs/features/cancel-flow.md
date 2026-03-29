@@ -22,12 +22,12 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 ## High-Level Flow
 1. Usuario abre `/cancelar`.
 2. En el paso 1, captura teléfono y solicita búsqueda.
-3. Backend busca una cita cancelable con reglas de elegibilidad.
-4. Si hay coincidencia, UI muestra detalle de cita y opción de confirmación.
-5. Usuario confirma cancelación.
-6. Backend cambia estado de la cita a `CANCELLED`.
-7. Backend intenta eliminar el evento espejo en Google Calendar (si aplica).
-8. UI muestra éxito y el horario queda disponible nuevamente en el flujo de reserva.
+3. Backend busca citas cancelables con reglas de elegibilidad.
+4. Si hay coincidencias, UI muestra lista de citas futuras cancelables y permite seleccionar una o varias.
+5. Usuario confirma cancelación sobre la selección.
+6. Backend cambia estado de cada cita seleccionada a `CANCELLED`.
+7. Backend intenta eliminar el evento espejo en Google Calendar para cada cita seleccionada (si aplica).
+8. UI muestra éxito y los horarios cancelados quedan disponibles nuevamente en el flujo de reserva.
 
 ## Step-by-Step Flow
 1. Entrada al flujo
@@ -42,23 +42,23 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Busca cita `CONFIRMED` futura dentro de meses activos.
 - Evalúa restricción de 24 horas mínimas.
 - Resultado:
-- Si cumple: retorna `appointmentId`, nombre, teléfono, fecha, hora y estatus `CONFIRMED`.
+- Si cumple: retorna `appointments[]` con `appointmentId`, nombre, teléfono, fecha, hora y estatus `CONFIRMED`.
 - Si no cumple: retorna error estable y UI no avanza al paso de confirmación.
 
 3. Revisión y confirmación
-- Trigger: cita elegible encontrada.
-- UI: muestra datos de la cita y acciones `Cancelar cita` y `Regresar al inicio`.
+- Trigger: una o más citas elegibles encontradas.
+- UI: muestra lista de citas y permite seleccionar una o varias; acciones `Cancelar cita` y `Regresar al inicio`.
 - Usuario confirma la cancelación.
 
 4. Ejecución de cancelación
-- Trigger: solicitud de cancelación con `appointmentId` y `phone`.
+- Trigger: solicitud de cancelación con `appointmentIds[]` y `phone`.
 - Backend:
-- Ubica cita objetivo bajo condiciones del flujo de cancelación.
-- Cambia estado de la cita a `CANCELLED`.
-- Intenta eliminar evento en Google Calendar si la cita tenía `google_event_id`.
+- Ubica cada cita seleccionada bajo condiciones del flujo de cancelación.
+- Cambia estado de cada cita seleccionada a `CANCELLED`.
+- Intenta eliminar evento en Google Calendar para cada cita con `google_event_id`.
 - Resultado:
-- Cancelación persistida en sistema fuente de verdad.
-- Si falla eliminación en Calendar, la cancelación se mantiene y se reporta `syncReason`.
+- Cancelaciones persistidas en sistema fuente de verdad.
+- Si falla eliminación en Calendar para una cita, esa cancelación se mantiene y se reporta `syncReason` en esa cita del resultado.
 
 5. Resultado final
 - Trigger: respuesta exitosa de cancelación.
@@ -75,14 +75,14 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Debe pertenecer a un mes activo.
 - Debe cumplir ventana mínima de 24 horas para cancelación web.
 - Confirmación de cancelación:
-- Debe corresponder al `appointmentId` y teléfono de una cita elegible dentro del flujo.
+- Debe corresponder a una selección no vacía de `appointmentIds` y al teléfono de citas elegibles dentro del flujo.
 - Error handling:
 - Backend devuelve `errorCode` estable.
 - Frontend traduce `errorCode` según idioma activo.
 
 ## State Changes
 - Estado inicial cancelable: `CONFIRMED`.
-- Transición principal: `CONFIRMED -> CANCELLED`.
+- Transición principal: `CONFIRMED -> CANCELLED` por cada cita seleccionada.
 - Post-condición:
 - Citas en `CANCELLED` no deben bloquear disponibilidad.
 - El historial de la cita cancelada se conserva.
@@ -93,6 +93,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Cita dentro de las próximas 24 horas: rechazo de cancelación web.
 - Cita fuera de meses activos o no futura: no elegible para el flujo.
 - Cita ya no cancelable al confirmar (cambio concurrente de estado o datos): `APPOINTMENT_NOT_FOUND`.
+- Selección vacía en paso de revisión: UI impide continuar y solicita elegir al menos una cita.
 - Falla al eliminar evento en Google Calendar:
 - Cancelación en sistema principal permanece exitosa.
 - Respuesta puede incluir `syncReason` para seguimiento operativo.
@@ -108,6 +109,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Usuario intenta cancelar cita en umbral cercano de tiempo y queda fuera de la regla de 24h.
 - Cita existe pero mes quedó inactivo: flujo la trata como no elegible.
 - Cita ya fue cancelada por otro intento antes de confirmar acción en UI.
+- El usuario selecciona varias citas y solo una deja de ser elegible antes de confirmar: la operación completa se rechaza para mantener consistencia de selección.
 - Falla de red después de que backend canceló: UI puede no mostrar éxito inmediato aunque la cancelación ya exista.
 - Falla de integración externa (Calendar) posterior a cancelación confirmada en DB.
 
@@ -116,4 +118,5 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - En el flujo actual, esta regla se valida en dos puntos:
   - Durante la búsqueda (`/api/cancelar/buscar`) para decidir si la UI puede avanzar al paso de confirmación.
   - Durante la ejecución (`/api/cancelar`) para evitar que una cita pase a no elegible por cambio de tiempo entre búsqueda y confirmación.
+- El contrato de cancelación pública soporta selección múltiple: lookup retorna `appointments[]` y confirmación recibe `appointmentIds[]`.
 - El código de error para la regla de 24 horas es `APPOINTMENT_IS_COMING_SOON`.

@@ -18,7 +18,8 @@ export function CancelForm() {
   const {
     step,
     phone,
-    appointment,
+    appointments,
+    selectedAppointmentIds,
     lookupErrorCode,
     cancelErrorCode,
     isSearching,
@@ -27,6 +28,7 @@ export function CancelForm() {
     handleLookup,
     handleCancel,
     handleReset,
+    toggleAppointmentSelection,
   } = useCancelFlow();
 
   const lookupError = lookupErrorCode
@@ -36,7 +38,9 @@ export function CancelForm() {
     : null;
 
   const cancelError = cancelErrorCode
-    ? translateApiError(t, cancelErrorCode)
+    ? cancelErrorCode === "CANCEL_SELECTION_REQUIRED"
+      ? t("cancel.selectionRequired")
+      : translateApiError(t, cancelErrorCode)
     : null;
 
   return (
@@ -53,14 +57,16 @@ export function CancelForm() {
           />
         ) : null}
 
-        {step === "review" && appointment ? (
+        {step === "review" && appointments.length > 0 ? (
           <CancelReviewStep
-            appointment={appointment}
+            appointments={appointments}
+            selectedAppointmentIds={selectedAppointmentIds}
             cancelError={cancelError}
             isCancelling={isCancelling}
             language={language}
             onCancel={handleCancel}
             onReset={handleReset}
+            onToggleAppointmentSelection={toggleAppointmentSelection}
             t={t}
           />
         ) : null}

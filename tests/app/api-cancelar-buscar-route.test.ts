@@ -13,12 +13,24 @@ describe("POST /api/cancelar/buscar", () => {
 
   it("returns 200 with appointment details", async () => {
     findCancelableAppointmentMock.mockResolvedValueOnce({
-      appointmentId: 10,
-      name: "Ana Garcia",
-      phone: "5512345678",
-      date: "2026-03-18",
-      timeSlot: "13:00",
-      status: "CONFIRMED",
+      appointments: [
+        {
+          appointmentId: 10,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-18",
+          timeSlot: "13:00",
+          status: "CONFIRMED",
+        },
+        {
+          appointmentId: 11,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-26",
+          timeSlot: "10:00",
+          status: "CONFIRMED",
+        },
+      ],
     });
 
     const { POST } = await import("@/app/api/cancelar/buscar/route");
@@ -33,12 +45,24 @@ describe("POST /api/cancelar/buscar", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      appointmentId: 10,
-      name: "Ana Garcia",
-      phone: "5512345678",
-      date: "2026-03-18",
-      timeSlot: "13:00",
-      status: "CONFIRMED",
+      appointments: [
+        {
+          appointmentId: 10,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-18",
+          timeSlot: "13:00",
+          status: "CONFIRMED",
+        },
+        {
+          appointmentId: 11,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-26",
+          timeSlot: "10:00",
+          status: "CONFIRMED",
+        },
+      ],
     });
   });
 

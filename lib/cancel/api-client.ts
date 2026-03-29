@@ -1,5 +1,5 @@
 import type {
-  CancelableAppointment,
+  CancelableAppointmentLookupResult,
   CancellationResult,
 } from "@/lib/cancel/types";
 
@@ -21,7 +21,8 @@ export async function lookupCancelableAppointment(phone: string) {
     body: JSON.stringify({ phone }),
   });
 
-  const payload = (await response.json()) as CancelableAppointment & ApiErrorPayload;
+  const payload = (await response.json()) as CancelableAppointmentLookupResult &
+    ApiErrorPayload;
 
   if (!response.ok) {
     throw new Error(toErrorCode(payload));
@@ -32,7 +33,7 @@ export async function lookupCancelableAppointment(phone: string) {
 
 export async function submitCancellation(input: {
   phone: string;
-  appointmentId: number;
+  appointmentIds: number[];
 }) {
   const response = await fetch("/api/cancelar", {
     method: "POST",
@@ -50,4 +51,3 @@ export async function submitCancellation(input: {
 
   return payload;
 }
-

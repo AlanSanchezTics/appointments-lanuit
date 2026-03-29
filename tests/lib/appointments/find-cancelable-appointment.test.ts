@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const findConfirmedFutureAppointmentByPhoneInMonthMock = vi.fn();
+const listConfirmedFutureAppointmentsByPhoneInMonthMock = vi.fn();
 const listBookableMonthsMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
-  findConfirmedFutureAppointmentByPhoneInMonth: findConfirmedFutureAppointmentByPhoneInMonthMock,
+  listConfirmedFutureAppointmentsByPhoneInMonth:
+    listConfirmedFutureAppointmentsByPhoneInMonthMock,
 }));
 
 vi.mock("@/lib/active-months/service", () => ({
@@ -18,15 +19,26 @@ describe("findCancelableAppointment", () => {
 
   it("returns the next confirmed appointment in active month", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce({
-      id: 12,
-      name: "Ana Garcia",
-      phone: "5512345678",
-      date: "2026-03-18",
-      timeSlot: "13:00",
-      status: "CONFIRMED",
-      googleEventId: "google-id",
-    });
+    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
+      {
+        id: 12,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        date: "2026-03-18",
+        timeSlot: "13:00",
+        status: "CONFIRMED",
+        googleEventId: "google-id",
+      },
+      {
+        id: 13,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        date: "2026-03-28",
+        timeSlot: "10:00",
+        status: "CONFIRMED",
+        googleEventId: "google-id-2",
+      },
+    ]);
 
     const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
     const result = await findCancelableAppointment(
@@ -36,25 +48,37 @@ describe("findCancelableAppointment", () => {
       new Date("2026-03-12T12:00:00.000Z"),
     );
 
-    expect(findConfirmedFutureAppointmentByPhoneInMonthMock).toHaveBeenCalledWith(
+    expect(listConfirmedFutureAppointmentsByPhoneInMonthMock).toHaveBeenCalledWith(
       "5512345678",
       "2026-03-12",
       "2026-03-01",
       "2026-04-01",
     );
     expect(result).toEqual({
-      appointmentId: 12,
-      name: "Ana Garcia",
-      phone: "5512345678",
-      date: "2026-03-18",
-      timeSlot: "13:00",
-      status: "CONFIRMED",
+      appointments: [
+        {
+          appointmentId: 12,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-18",
+          timeSlot: "13:00",
+          status: "CONFIRMED",
+        },
+        {
+          appointmentId: 13,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-28",
+          timeSlot: "10:00",
+          status: "CONFIRMED",
+        },
+      ],
     });
   });
 
   it("throws APPOINTMENT_NOT_FOUND when there is no confirmed appointment", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce(null);
+    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([]);
 
     const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
 
@@ -70,15 +94,17 @@ describe("findCancelableAppointment", () => {
 
   it("throws APPOINTMENT_IS_COMING_SOON when appointment is inside 24-hour window", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    findConfirmedFutureAppointmentByPhoneInMonthMock.mockResolvedValueOnce({
-      id: 12,
-      name: "Ana Garcia",
-      phone: "5512345678",
-      date: "2026-03-12",
-      timeSlot: "13:00",
-      status: "CONFIRMED",
-      googleEventId: "google-id",
-    });
+    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
+      {
+        id: 12,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        date: "2026-03-12",
+        timeSlot: "13:00",
+        status: "CONFIRMED",
+        googleEventId: "google-id",
+      },
+    ]);
 
     const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
 

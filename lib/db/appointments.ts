@@ -156,6 +156,38 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
   return record ? mapAppointment(record) : null;
 }
 
+export async function listConfirmedFutureAppointmentsByPhoneInMonth(
+  phone: string,
+  dateFloor: string,
+  monthStart: string,
+  monthEndExclusive: string,
+) {
+  const records = await prisma.appointment.findMany({
+    where: {
+      client: {
+        phone,
+      },
+      status: "CONFIRMED",
+      date: {
+        gt: new Date(`${dateFloor}T00:00:00.000Z`),
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+    include: {
+      client: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+  return records.map(mapAppointment);
+}
+
 export async function findActiveAppointmentByPhoneForUpdate(
   tx: Prisma.TransactionClient,
   phone: string,
@@ -253,6 +285,57 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
     googleEventId: record.google_event_id,
     clientId: record.client_id,
   } satisfies PersistedAppointment;
+}
+
+export async function findConfirmedFutureAppointmentsByIdsForUpdate(
+  tx: Prisma.TransactionClient,
+  appointmentIds: number[],
+  phone: string,
+  dateFloor: string,
+  monthStart: string,
+  monthEndExclusive: string,
+) {
+  if (appointmentIds.length === 0) {
+    return [];
+  }
+
+  const ids = Prisma.join(appointmentIds);
+  const records = await tx.$queryRaw<
+    Array<{
+      id: number;
+      client_id: number;
+      name: string;
+      phone: string;
+      date: Date;
+      time_slot: Date;
+      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      google_event_id: string | null;
+    }>
+  >`
+    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    FROM appointments a
+    INNER JOIN clients c
+      ON c.id = a.client_id
+    WHERE a.id IN (${ids})
+      AND c.phone = ${phone}
+      AND a.status = 'CONFIRMED'
+      AND a.date > ${dateFloor}
+      AND a.date >= ${monthStart}
+      AND a.date < ${monthEndExclusive}
+    ORDER BY a.date ASC, a.time_slot ASC
+    FOR UPDATE
+  `;
+
+  return records.map((record) => ({
+    id: record.id,
+    name: record.name,
+    phone: record.phone,
+    date: dateToDateKey(record.date),
+    timeSlot: timeToTimeSlotKey(record.time_slot),
+    status: record.status,
+    googleEventId: record.google_event_id,
+    clientId: record.client_id,
+  })) satisfies PersistedAppointment[];
 }
 
 export async function listMonthAppointments(monthStart: string, monthEndExclusive: string) {

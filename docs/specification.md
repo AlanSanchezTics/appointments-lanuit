@@ -207,21 +207,21 @@ La plantilla se mantiene con `es` como fallback y la propiedad del texto final e
 ## 8. Flujo de Cancelación
 
 1. Usuario ingresa teléfono.
-2. Sistema busca cita cancelable con estas condiciones simultáneas:
+2. Sistema busca citas cancelables con estas condiciones simultáneas:
    - Estatus `CONFIRMED`.
    - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
    - Dentro de un mes `ACTIVE` en `active_months`.
    - La cita debe estar al menos a 24 horas de distancia; si faltan menos de 24 horas, no se permite cancelación por este medio.
-3. Si existe coincidencia, se muestran detalles de la cita y acciones:
-   - `Cancelar cita`.
+3. Si existen coincidencias, se muestra la lista de citas futuras cancelables vinculadas al teléfono para que el cliente elija una o varias.
+   - `Cancelar cita` (sobre la selección).
    - `Regresar al inicio`.
-4. Usuario confirma cancelación.
+4. Usuario confirma cancelación de la selección.
 5. Backend:
-   - Cambia estado a `CANCELLED`.
-   - Elimina evento en Google Calendar (si existe `google_event_id`).
+   - Cambia estado a `CANCELLED` para cada cita seleccionada.
+   - Elimina evento en Google Calendar por cada cita seleccionada que tenga `google_event_id`.
 6. UI muestra el mensaje final:
    - `Tu cita ha sido cancelada con exito`.
-7. El horario vuelve a estar disponible automáticamente.
+7. Todos los horarios cancelados vuelven a estar disponibles automáticamente.
 
 Notas de contrato:
 

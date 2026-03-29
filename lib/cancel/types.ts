@@ -10,8 +10,13 @@ export type CancelableAppointment = {
 };
 
 export type CancellationResult = {
-  appointmentId: number;
-  status: "CANCELLED";
-  syncReason?: "CALENDAR_DELETE_FAILED";
+  cancelledAppointments: Array<{
+    appointmentId: number;
+    status: "CANCELLED";
+    syncReason?: "CALENDAR_DELETE_FAILED";
+  }>;
 };
 
+export type CancelableAppointmentLookupResult = {
+  appointments: CancelableAppointment[];
+};
