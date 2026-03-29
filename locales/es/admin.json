@@ -57,8 +57,20 @@
     },
     "dailyOccupancy": {
       "title": "Ocupación del día",
+      "titleForMonday": "Ocupación para el Lunes",
       "scheduledToday_one": "{{count}} cita agendada para el día de hoy",
       "scheduledToday_other": "{{count}} citas agendadas para el día de hoy"
+    },
+    "todayAgenda": {
+      "title": "Agenda de Hoy",
+      "titleForMonday": "Agenda para el Lunes",
+      "empty": "No hay citas activas agendadas para hoy.",
+      "monthLinkAriaLabel": "Ir al detalle del mes actual",
+      "status": {
+        "ready": "Listo",
+        "inProgress": "En curso",
+        "pending": "Pendiente"
+      }
     },
     "metrics": {
       "appointmentsToday": "Citas hoy",

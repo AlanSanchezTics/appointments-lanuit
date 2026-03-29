@@ -188,6 +188,27 @@ Business behavior is defined by:
     - progress bar tied to percentage,
     - informational line `N appointments scheduled for today` with `InfoCircle` icon.
   - Visible copy is frontend-resolved via `react-i18next`.
+  - Title resolution:
+    - Monday-Friday: `Ocupación del día`,
+    - Saturday/Sunday: `Ocupación para el Lunes` when the visible occupancy is aligned to Monday context.
+
+- Today-agenda widget policy:
+  - Dashboard includes a timeline block for active appointments of a `targetDate`.
+  - `targetDate` resolution:
+    - Monday-Friday: `currentDate`,
+    - Saturday/Sunday: next Monday.
+  - Widget title resolution:
+    - Monday-Friday: `Today's Agenda`,
+    - Saturday/Sunday: `Agenda for Monday` (localized).
+  - Header includes a navigation icon that links to `/admin/months/[currentMonth]`.
+  - Source includes only active statuses (`CONFIRMED`, `SYNC_FAILED`) ordered by `timeSlot` ascending.
+  - Each row renders `timeSlot`, customer `name`, and `phone`.
+  - UI operational status is derived per appointment using current local business time (`America/Mexico_City`) and 3-hour duration:
+    - `READY`: `now >= start + 3h`,
+    - `IN_PROGRESS`: `start <= now < start + 3h`,
+    - `PENDING`: `now < start`.
+  - `IN_PROGRESS` status tag must blink unless `prefers-reduced-motion` disables animation.
+  - When no active appointments exist for current day, widget renders an empty informational state.
 
 ## Admin Months Catalog Rules
 

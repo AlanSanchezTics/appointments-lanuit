@@ -5,15 +5,12 @@ import { auth } from "@/auth";
 import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 import { BusiestDayCard } from "@/components/admin/ui/BusiestDayCard";
 import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
-import { AdminIcon } from "@/components/admin/ui/AdminIcon";
-import { Card } from "@/components/admin/ui/Card";
 import { DailyOccupancyCard } from "@/components/admin/ui/DailyOccupancyCard";
 import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
-import { ListItem } from "@/components/admin/ui/ListItem";
-import { MetricCard } from "@/components/admin/ui/MetricCard";
+import { TodayAgendaTimelineCard } from "@/components/admin/ui/TodayAgendaTimelineCard";
 import { WeeklyOccupancyCard } from "@/components/admin/ui/WeeklyOccupancyCard";
-import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { getAdminDashboardWeeklyOccupancy } from "@/lib/admin/dashboard/service";
+import { getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -30,9 +27,20 @@ export default async function AdminDashboardPage() {
     session.user?.name?.trim().split(/\s+/)[0] ??
     t("dashboard.hero.fallbackName", { ns: "admin" });
   const weeklyOccupancy = await getAdminDashboardWeeklyOccupancy();
+  const currentMonth = getCurrentMonthKey();
   const hasWeeklyAppointments = weeklyOccupancy.days.some(
     (day) => day.occupiedSlots > 0,
   );
+  const agendaTitleKey =
+    weeklyOccupancy.todayAgendaTargetDate ===
+    weeklyOccupancy.dailyOccupancy.date
+      ? "dashboard.todayAgenda.title"
+      : "dashboard.todayAgenda.titleForMonday";
+  const dailyOccupancyTitleKey =
+    weeklyOccupancy.todayAgendaTargetDate ===
+    weeklyOccupancy.dailyOccupancy.date
+      ? "dashboard.dailyOccupancy.title"
+      : "dashboard.dailyOccupancy.titleForMonday";
 
   return (
     <AdminLayout>
@@ -73,72 +81,30 @@ export default async function AdminDashboardPage() {
 
         <DailyOccupancyCard
           data={weeklyOccupancy.dailyOccupancy}
-          title={t("dashboard.dailyOccupancy.title", { ns: "admin" })}
+          title={t(dailyOccupancyTitleKey, { ns: "admin" })}
           scheduledTodayLabel={t("dashboard.dailyOccupancy.scheduledToday", {
             ns: "admin",
             count: weeklyOccupancy.dailyOccupancy.occupiedAppointments,
           })}
         />
 
-        <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-          <MetricCard
-            icon={<AdminIcon icon={adminIcons.appointmentsToday} />}
-            label={t("dashboard.metrics.appointmentsToday", { ns: "admin" })}
-            value="--"
-          />
-          <MetricCard
-            icon={<AdminIcon icon={adminIcons.pending} />}
-            label={t("dashboard.metrics.pending", { ns: "admin" })}
-            value="--"
-          />
-          <MetricCard
-            icon={<AdminIcon icon={adminIcons.syncFailed} />}
-            label={t("dashboard.metrics.syncFailed", { ns: "admin" })}
-            value="--"
-            className="col-span-2 md:col-span-1"
-          />
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <Card>
-            <h2 className="mb-4 text-lg font-bold text-[var(--admin-text-primary)]">
-              {t("dashboard.navigation.title", { ns: "admin" })}
-            </h2>
-            <div className="space-y-3">
-              <ListItem
-                icon={<AdminIcon icon={adminIcons.monthsManagement} />}
-                title={t("dashboard.navigation.monthsManagement", {
-                  ns: "admin",
-                })}
-                href="/admin/months"
-                rightContent={
-                  <AdminIcon icon={adminIcons.chevronRight} tone="secondary" />
-                }
-              />
-              <ListItem
-                icon={<AdminIcon icon={adminIcons.dailyAppointments} />}
-                title={t("dashboard.navigation.dailyAppointments", {
-                  ns: "admin",
-                })}
-              />
-              <ListItem
-                icon={<AdminIcon icon={adminIcons.syncRetries} />}
-                title={t("dashboard.navigation.syncRetries", { ns: "admin" })}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="mb-4 text-lg font-bold text-[var(--admin-text-primary)]">
-              {t("dashboard.upcoming.title", { ns: "admin" })}
-            </h2>
-            <ul className="space-y-2 text-sm text-[var(--admin-text-secondary)]">
-              <li>{t("dashboard.upcoming.reports", { ns: "admin" })}</li>
-              <li>{t("dashboard.upcoming.audit", { ns: "admin" })}</li>
-              <li>{t("dashboard.upcoming.settings", { ns: "admin" })}</li>
-            </ul>
-          </Card>
-        </section>
+        <TodayAgendaTimelineCard
+          language={language}
+          title={t(agendaTitleKey, { ns: "admin" })}
+          emptyLabel={t("dashboard.todayAgenda.empty", { ns: "admin" })}
+          readyLabel={t("dashboard.todayAgenda.status.ready", { ns: "admin" })}
+          inProgressLabel={t("dashboard.todayAgenda.status.inProgress", {
+            ns: "admin",
+          })}
+          pendingLabel={t("dashboard.todayAgenda.status.pending", {
+            ns: "admin",
+          })}
+          items={weeklyOccupancy.todayAgenda}
+          monthHref={`/admin/months/${currentMonth}`}
+          monthLinkAriaLabel={t("dashboard.todayAgenda.monthLinkAriaLabel", {
+            ns: "admin",
+          })}
+        />
       </ContentWrapper>
     </AdminLayout>
   );

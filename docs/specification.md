@@ -472,6 +472,7 @@ Reglas obligatorias:
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación semanal`.
 - La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación del día`.
+- La parte superior del dashboard debe incluir un bloque `Agenda de Hoy` en formato línea de tiempo.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
   - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
@@ -504,13 +505,36 @@ Reglas obligatorias:
   - en empate de ocupación, debe elegirse el primer día en orden semanal (`lunes` a `viernes`).
   - si la semana actual no tiene citas activas, el bloque no debe renderizarse.
 - Tarjeta `Ocupación del día`:
-  - muestra título `Ocupación del día`,
+  - muestra título:
+    - `Ocupación del día` en lunes-viernes,
+    - `Ocupación para el Lunes` en sábado/domingo (cuando el dato visible corresponde al lunes),
   - muestra porcentaje de ocupación de hoy,
   - muestra barra de progreso horizontal asociada al porcentaje,
   - debajo de la barra muestra texto `N citas agendadas para hoy` acompañado por icono `InfoCircle`.
   - cálculo:
     - `% ocupación hoy = citas activas de hoy / 3 * 100` (redondeado entero, máximo visual 100%),
     - `citas activas de hoy` incluye estados `CONFIRMED`, `SYNC_FAILED`.
+- Bloque `Agenda de Hoy`:
+  - muestra título:
+    - `Agenda de Hoy` en lunes-viernes,
+    - `Agenda para el Lunes` en sábado/domingo,
+  - incluye icono en el encabezado como enlace a `/admin/months/[currentMonth]`,
+  - lista las citas activas del día de referencia en orden ascendente por `timeSlot`,
+  - día de referencia:
+    - lunes a viernes: el día actual,
+    - sábado o domingo: el siguiente lunes.
+  - cada item incluye:
+    - hora (`HH:mm` + `AM/PM`),
+    - nombre del cliente,
+    - teléfono formateado,
+    - tag de estado operativo.
+  - estados del tag:
+    - `Listo`: la cita ya finalizó,
+    - `En curso`: la cita está dentro de su ventana de atención,
+    - `Pendiente`: la cita aún no inicia.
+  - para el estado `En curso`, la tag debe usar animación de parpadeo.
+  - la lógica de estado usa duración operativa de 3 horas por cita.
+  - si no hay citas activas para hoy, muestra estado vacío informativo.
 
 ### 15.2 Flujo de autenticación admin
 

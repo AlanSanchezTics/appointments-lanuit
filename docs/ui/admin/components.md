@@ -306,7 +306,9 @@ Mostrar la ocupación operativa del día actual en dashboard admin.
 
 ### Structure
 
-- título `Ocupación del día`
+- título contextual:
+  - `Ocupación del día` en lunes-viernes
+  - `Ocupación para el Lunes` en sábado/domingo
 - porcentaje de ocupación
 - barra de progreso horizontal
 - texto informativo `N citas agendadas para hoy` + icono `InfoCircle`
@@ -335,6 +337,55 @@ El agente debe:
 El agente no debe:
 
 - usar datos de citas canceladas para el porcentaje
+
+---
+
+## Component: TodayAgendaTimelineCard
+
+### Purpose
+
+Mostrar la agenda operativa del día actual como línea de tiempo dentro del dashboard admin.
+
+### Structure
+
+- título contextual:
+  - `Agenda de Hoy` en lunes-viernes
+  - `Agenda para el Lunes` en sábado/domingo
+- icono de navegación en encabezado con enlace a `/admin/months/[currentMonth]`
+- listado vertical de filas de cita
+- cada fila incluye:
+  - bloque de hora (`HH:mm` + `AM/PM`)
+  - nombre del cliente
+  - teléfono
+  - tag de estado (`Listo`, `En curso`, `Pendiente`)
+
+### Style
+
+- contenedor base: `Card`
+- filas internas con `surface`, borde redondeado y separación vertical
+- separador vertical entre columna de hora y datos del cliente
+- fila `En curso` con acento lateral izquierdo
+- tag `En curso` con animación `blink`
+
+### Usage
+
+Uso:
+
+- bloque superior del dashboard `/admin`, debajo de `DailyOccupancyCard`
+
+### Rules
+
+El agente debe:
+
+- usar citas activas del día (`CONFIRMED`, `SYNC_FAILED`) ordenadas por hora
+- resolver día de referencia: actual en lunes-viernes, siguiente lunes en sábado/domingo
+- calcular estado operativo local por cita (`Listo`, `En curso`, `Pendiente`)
+- desactivar animaciones en `prefers-reduced-motion`
+- resolver copy visible vía `react-i18next`
+
+El agente no debe:
+
+- incluir citas canceladas en la agenda del día
 
 ---
 

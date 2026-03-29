@@ -37,9 +37,17 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - subtítulo de contexto operativo.
      - no se renderiza cuando la semana actual no tiene citas activas.
    - el dashboard incluye tarjeta `Ocupación del día` con:
+     - título contextual (`Ocupación del día` o `Ocupación para el Lunes` en fin de semana),
      - porcentaje de ocupación del día actual,
      - barra de progreso,
      - texto `N citas agendadas para hoy` acompañado de icono informativo.
+   - el dashboard incluye bloque `Agenda de Hoy` en formato timeline con:
+     - título `Agenda de Hoy` o `Agenda para el Lunes` si hoy es sábado/domingo,
+     - icono en encabezado con enlace a `/admin/months/[currentMonth]`,
+     - lista de citas activas del día de referencia (`hora`, `nombre`, `teléfono`),
+     - en sábado/domingo usa como referencia el lunes siguiente,
+     - tag de estado por cita (`Listo`, `En curso`, `Pendiente`),
+     - animación de parpadeo para la tag `En curso`.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),
    - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),

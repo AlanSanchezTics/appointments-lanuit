@@ -1,7 +1,8 @@
 import type { AppointmentStatus } from "@prisma/client";
 
 import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
-import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
+import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
+import { listActiveAppointmentsByDate } from "@/lib/db/admin-appointments";
 import { prisma } from "@/lib/db/prisma";
 
 import type { WeeklyOccupancySummary } from "./types";
@@ -32,12 +33,61 @@ function getCurrentWeekMondayKey(currentDate: string) {
   return toDateKey(monday);
 }
 
+function getAgendaTargetDateKey(currentDateKey: string) {
+  const currentDate = parseDateKeyToUtcDate(currentDateKey);
+  const dayOfWeek = currentDate.getUTCDay();
+
+  if (dayOfWeek === 6) {
+    return toDateKey(addUtcDays(currentDate, 2));
+  }
+
+  if (dayOfWeek === 0) {
+    return toDateKey(addUtcDays(currentDate, 1));
+  }
+
+  return currentDateKey;
+}
+
 function percent(value: number, total: number) {
   if (total === 0) {
     return 0;
   }
 
   return Math.round((value / total) * 100);
+}
+
+function toMinutes(timeSlot: string) {
+  const [hour, minute] = timeSlot.split(":").map(Number);
+  return (hour * 60) + minute;
+}
+
+function resolveAgendaStatus(
+  appointmentDateKey: string,
+  timeSlot: string,
+  currentDateKey: string,
+  currentTimeSlot: string,
+) {
+  if (appointmentDateKey > currentDateKey) {
+    return "PENDING" as const;
+  }
+
+  if (appointmentDateKey < currentDateKey) {
+    return "READY" as const;
+  }
+
+  const startMinutes = toMinutes(timeSlot);
+  const endMinutes = startMinutes + 180;
+  const currentMinutes = toMinutes(currentTimeSlot);
+
+  if (currentMinutes >= endMinutes) {
+    return "READY" as const;
+  }
+
+  if (currentMinutes >= startMinutes) {
+    return "IN_PROGRESS" as const;
+  }
+
+  return "PENDING" as const;
 }
 
 async function groupActiveAppointmentsByDate(startDateKey: string, endDateExclusiveKey: string) {
@@ -69,15 +119,18 @@ export async function getAdminDashboardWeeklyOccupancy(
   now = new Date(),
 ): Promise<WeeklyOccupancySummary> {
   const currentDateKey = getCurrentDateKey(now);
+  const agendaTargetDateKey = getAgendaTargetDateKey(currentDateKey);
+  const currentTimeKey = getCurrentTimeKey(now);
   const currentMondayKey = getCurrentWeekMondayKey(currentDateKey);
   const previousMondayKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentMondayKey), -7));
   const nextMondayKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentMondayKey), 7));
   const currentWeekDays = getBusinessWeekDays(currentMondayKey);
   const previousWeekDays = getBusinessWeekDays(previousMondayKey);
 
-  const [currentWeekCounts, previousWeekCounts] = await Promise.all([
+  const [currentWeekCounts, previousWeekCounts, todayAppointments] = await Promise.all([
     groupActiveAppointmentsByDate(currentMondayKey, nextMondayKey),
     groupActiveAppointmentsByDate(previousMondayKey, currentMondayKey),
+    listActiveAppointmentsByDate(agendaTargetDateKey),
   ]);
 
   const days = currentWeekDays.map((date) => {
@@ -99,7 +152,19 @@ export async function getAdminDashboardWeeklyOccupancy(
   const previousWeekOccupancyPercent = percent(previousWeekOccupiedTotal, WEEK_CAPACITY);
   const busiestDay = days.reduce((currentMax, day) =>
     day.occupiedSlots > currentMax.occupiedSlots ? day : currentMax);
-  const todayOccupiedAppointments = currentWeekCounts.get(currentDateKey) ?? 0;
+  const todayAgenda = todayAppointments.map((appointment) => ({
+    appointmentId: appointment.id,
+    timeSlot: appointment.timeSlot,
+    name: appointment.name,
+    phone: appointment.phone,
+    status: resolveAgendaStatus(
+      appointment.date,
+      appointment.timeSlot,
+      currentDateKey,
+      currentTimeKey,
+    ),
+  }));
+  const todayOccupiedAppointments = todayAgenda.length;
 
   return {
     days,
@@ -113,6 +178,8 @@ export async function getAdminDashboardWeeklyOccupancy(
         percent(todayOccupiedAppointments, MAX_APPOINTMENTS_PER_DAY),
       ),
     },
+    todayAgendaTargetDate: agendaTargetDateKey,
+    todayAgenda,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,
     deltaPercentPoints: currentWeekOccupancyPercent - previousWeekOccupancyPercent,

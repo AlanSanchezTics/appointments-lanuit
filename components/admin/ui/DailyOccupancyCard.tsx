@@ -33,11 +33,11 @@ export function DailyOccupancyCard({
         />
       </div>
 
-      <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--admin-text-primary)]">
+      <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--muted)]!">
         <AdminIcon
           icon={adminIcons.info}
           tone="primary"
-          className="text-[13px]"
+          className="text-[13px] text-[var(--muted)]!"
         />
         {scheduledTodayLabel}
       </p>

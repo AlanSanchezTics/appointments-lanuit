@@ -57,8 +57,20 @@
     },
     "dailyOccupancy": {
       "title": "Today's occupancy",
+      "titleForMonday": "Occupancy for Monday",
       "scheduledToday_one": "{{count}} appointment scheduled for today",
       "scheduledToday_other": "{{count}} appointments scheduled for today"
+    },
+    "todayAgenda": {
+      "title": "Today's Agenda",
+      "titleForMonday": "Agenda for Monday",
+      "empty": "There are no active appointments scheduled for today.",
+      "monthLinkAriaLabel": "Go to current month detail",
+      "status": {
+        "ready": "Ready",
+        "inProgress": "In progress",
+        "pending": "Pending"
+      }
     },
     "metrics": {
       "appointmentsToday": "Appointments today",
