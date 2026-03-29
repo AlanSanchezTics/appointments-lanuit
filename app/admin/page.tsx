@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { AdminLayout } from "@/components/admin/layout/AdminLayout";
+import { BusiestDayCard } from "@/components/admin/ui/BusiestDayCard";
 import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { Card } from "@/components/admin/ui/Card";
@@ -24,9 +25,13 @@ export default async function AdminDashboardPage() {
     redirect("/admin/login");
   }
 
-  const firstName = session.user?.name?.trim().split(/\s+/)[0]
-    ?? t("dashboard.hero.fallbackName", { ns: "admin" });
+  const firstName =
+    session.user?.name?.trim().split(/\s+/)[0] ??
+    t("dashboard.hero.fallbackName", { ns: "admin" });
   const weeklyOccupancy = await getAdminDashboardWeeklyOccupancy();
+  const hasWeeklyAppointments = weeklyOccupancy.days.some(
+    (day) => day.occupiedSlots > 0,
+  );
 
   return (
     <AdminLayout>
@@ -34,22 +39,36 @@ export default async function AdminDashboardPage() {
         <DashboardGreetingCard
           language={language}
           dateTemplate={t("dashboard.hero.dateLabel", { ns: "admin" })}
-          greeting={t("dashboard.hero.greeting", { ns: "admin", name: firstName })}
+          greeting={t("dashboard.hero.greeting", {
+            ns: "admin",
+            name: firstName,
+          })}
         />
 
         <WeeklyOccupancyCard
           language={language}
           data={weeklyOccupancy}
           title={t("dashboard.weeklyOccupancy.title", { ns: "admin" })}
-          moreLabel={t("dashboard.weeklyOccupancy.more", { ns: "admin" })}
-          lessLabel={t("dashboard.weeklyOccupancy.less", { ns: "admin" })}
-          similarLabel={t("dashboard.weeklyOccupancy.similar", { ns: "admin" })}
-          versusLabel={t("dashboard.weeklyOccupancy.versusPreviousWeek", { ns: "admin" })}
-          dayAppointmentsTooltip={t("dashboard.weeklyOccupancy.dayAppointmentsTooltip", {
+          versusLabel={t("dashboard.weeklyOccupancy.versusPreviousWeek", {
             ns: "admin",
-            count: "{{count}}",
           })}
+          dayAppointmentsTooltip={t(
+            "dashboard.weeklyOccupancy.dayAppointmentsTooltip",
+            {
+              ns: "admin",
+              count: "{{count}}",
+            },
+          )}
         />
+
+        {hasWeeklyAppointments ? (
+          <BusiestDayCard
+            language={language}
+            day={weeklyOccupancy.busiestDay}
+            title={t("dashboard.busiestDay.title", { ns: "admin" })}
+            subtitle={t("dashboard.busiestDay.subtitle", { ns: "admin" })}
+          />
+        ) : null}
 
         <section className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard
@@ -78,13 +97,19 @@ export default async function AdminDashboardPage() {
             <div className="space-y-3">
               <ListItem
                 icon={<AdminIcon icon={adminIcons.monthsManagement} />}
-                title={t("dashboard.navigation.monthsManagement", { ns: "admin" })}
+                title={t("dashboard.navigation.monthsManagement", {
+                  ns: "admin",
+                })}
                 href="/admin/months"
-                rightContent={<AdminIcon icon={adminIcons.chevronRight} tone="secondary" />}
+                rightContent={
+                  <AdminIcon icon={adminIcons.chevronRight} tone="secondary" />
+                }
               />
               <ListItem
                 icon={<AdminIcon icon={adminIcons.dailyAppointments} />}
-                title={t("dashboard.navigation.dailyAppointments", { ns: "admin" })}
+                title={t("dashboard.navigation.dailyAppointments", {
+                  ns: "admin",
+                })}
               />
               <ListItem
                 icon={<AdminIcon icon={adminIcons.syncRetries} />}

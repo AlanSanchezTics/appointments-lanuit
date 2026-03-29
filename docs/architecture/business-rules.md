@@ -170,6 +170,14 @@ Business behavior is defined by:
   - Week boundaries and weekday resolution must use `America/Mexico_City`.
   - All visible copy in the widget must be resolved in frontend via `react-i18next`.
 
+- Busiest-day widget policy:
+  - Dashboard includes a highlighted block showing the busiest operational weekday for the current business week.
+  - Source is derived from the same Monday-Friday weekly occupancy dataset.
+  - Busiest day is the weekday with highest active appointments count (`CONFIRMED`, `SYNC_FAILED`).
+  - Tie-break rule: pick the earliest weekday in the week order (`Monday` to `Friday`).
+  - Widget renders localized weekday name and localized supporting copy via `react-i18next`.
+  - If the current week has no active appointments, widget is hidden.
+
 ## Admin Months Catalog Rules
 
 - Scope:

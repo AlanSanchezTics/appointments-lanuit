@@ -257,6 +257,47 @@ El agente no debe:
 
 ---
 
+## Component: BusiestDayCard
+
+### Purpose
+
+Destacar el día de mayor demanda operativa dentro de la semana actual en el dashboard admin.
+
+### Structure
+
+- título superior en uppercase (`Día más ocupado`)
+- nombre del día con mayor ocupación
+- subtítulo de apoyo (`Máxima demanda de citas`)
+- icono estrella en contenedor circular lateral
+
+### Style
+
+- bloque destacado con fondo `accent`
+- tipografía principal en blanco con alto contraste
+- subtítulo y título auxiliar en variantes de blanco con opacidad
+- borde redondeado (`radius-md`) y sombra ligera
+
+### Usage
+
+Uso:
+
+- bloque superior del dashboard `/admin`, debajo de `WeeklyOccupancyCard`
+
+### Rules
+
+El agente debe:
+
+- usar el dataset semanal lunes-viernes para derivar el día más ocupado
+- aplicar desempate por primer día en orden semanal (`lunes` a `viernes`)
+- resolver copy visible vía `react-i18next`
+- ocultar el bloque cuando la semana no tenga citas activas
+
+El agente no debe:
+
+- calcular el día más ocupado sobre fines de semana
+
+---
+
 ## Component: ListItem
 
 ### Purpose

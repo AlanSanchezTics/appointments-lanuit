@@ -36,19 +36,14 @@ function getWeekdayLabel(date: string, language: AppLanguage) {
     .toUpperCase();
 }
 
-function getDeltaLabel(
-  deltaPercentPoints: number,
-  moreLabel: string,
-  lessLabel: string,
-  similarLabel: string,
-) {
+function getDeltaLabel(deltaPercentPoints: number) {
   const absolute = Math.abs(deltaPercentPoints);
 
   if (deltaPercentPoints === 0) {
-    return `${absolute}% ${similarLabel}`;
+    return `${absolute}%`;
   }
 
-  return `${absolute}% ${deltaPercentPoints > 0 ? moreLabel : lessLabel}`;
+  return `${absolute}%`;
 }
 
 function getDeltaIconClassName(deltaPercentPoints: number) {
@@ -83,33 +78,26 @@ export function WeeklyOccupancyCard({
   language,
   data,
   title,
-  moreLabel,
-  lessLabel,
-  similarLabel,
   versusLabel,
   dayAppointmentsTooltip,
 }: WeeklyOccupancyCardProps) {
-  const deltaLabel = getDeltaLabel(
-    data.deltaPercentPoints,
-    moreLabel,
-    lessLabel,
-    similarLabel,
-  );
+  const deltaLabel = getDeltaLabel(data.deltaPercentPoints);
   const deltaIcon = getDeltaIcon(data.deltaPercentPoints);
   const deltaIconClassName = getDeltaIconClassName(data.deltaPercentPoints);
 
   return (
     <Card className="mb-6">
-      <h2 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--admin-text-secondary)]">
-        {title}
-      </h2>
-
-      <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--admin-inactive-bg)] px-3 py-1.5 text-[var(--admin-text-primary)]">
-        <AdminIcon icon={deltaIcon} className={deltaIconClassName} />
-        <p className="text-sm font-extrabold leading-none">{deltaLabel}</p>
-        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--admin-text-secondary)]">
-          {versusLabel}
-        </span>
+      <div className="flex justify-between items-center">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--admin-text-secondary)]">
+          {title}
+        </h2>
+        <div className="inline-flex items-center gap-1 rounded-full bg-[var(--admin-inactive-bg)] px-3 py-1.5 text-[var(--admin-text-primary)]">
+          <AdminIcon icon={deltaIcon} className={deltaIconClassName} />
+          <p className="text-sm font-extrabold leading-none">{deltaLabel}</p>
+          <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--admin-text-secondary)]">
+            {versusLabel}
+          </span>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-5 gap-2">

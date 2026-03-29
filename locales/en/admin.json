@@ -51,6 +51,10 @@
       "versusPreviousWeek": "Vs last week",
       "dayAppointmentsTooltip": "{{count}} appointments"
     },
+    "busiestDay": {
+      "title": "Busiest day",
+      "subtitle": "Highest appointment demand"
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",

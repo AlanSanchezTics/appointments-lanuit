@@ -470,6 +470,7 @@ Reglas obligatorias:
 ### 15.1.2 Dashboard (`/admin`) – bloque de ocupación semanal
 
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación semanal`.
+- La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
   - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
@@ -494,6 +495,13 @@ Reglas obligatorias:
     - `delta = 0`: `MinusCircle` gris.
 - Contrato i18n:
   - título, badge y etiquetas semánticas (`más|menos|similar`) se resuelven por `react-i18next` en `admin`.
+- Bloque `Día más ocupado`:
+  - muestra título `Día más ocupado`,
+  - muestra el nombre del día (lunes-viernes) con mayor número de citas activas de la semana actual,
+  - muestra subtítulo `Máxima demanda de citas`,
+  - usa iconografía de estrella en contenedor circular.
+  - en empate de ocupación, debe elegirse el primer día en orden semanal (`lunes` a `viernes`).
+  - si la semana actual no tiene citas activas, el bloque no debe renderizarse.
 
 ### 15.2 Flujo de autenticación admin
 

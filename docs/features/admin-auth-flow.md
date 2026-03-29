@@ -32,6 +32,10 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - el dashboard incluye tarjeta `Ocupación semanal` con:
      - 5 barras (`lunes` a `viernes`) para ocupación diaria de la semana actual,
      - indicador `N% más|menos|similar` contra la semana anterior.
+   - el dashboard incluye bloque destacado `Día más ocupado` con:
+     - nombre del día con mayor demanda en la semana actual,
+     - subtítulo de contexto operativo.
+     - no se renderiza cuando la semana actual no tiene citas activas.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),
    - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),

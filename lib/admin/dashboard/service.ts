@@ -97,9 +97,12 @@ export async function getAdminDashboardWeeklyOccupancy(
   );
   const currentWeekOccupancyPercent = percent(currentWeekOccupiedTotal, WEEK_CAPACITY);
   const previousWeekOccupancyPercent = percent(previousWeekOccupiedTotal, WEEK_CAPACITY);
+  const busiestDay = days.reduce((currentMax, day) =>
+    day.occupiedSlots > currentMax.occupiedSlots ? day : currentMax);
 
   return {
     days,
+    busiestDay,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,
     deltaPercentPoints: currentWeekOccupancyPercent - previousWeekOccupancyPercent,

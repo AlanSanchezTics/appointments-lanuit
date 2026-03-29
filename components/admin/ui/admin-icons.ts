@@ -23,7 +23,6 @@ import {
   faTableColumns,
   faXmark,
   faPen,
-  faCircleCheck as fasCircleCheck,
   faCircleXmark as fasCircleXmark,
   faCheck as fasCheck,
   faCalendarDays as fasCalendarDays,
@@ -33,6 +32,7 @@ import {
   faCircleArrowUp,
   faCircleArrowDown,
   faCircleMinus,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -86,4 +86,5 @@ export const adminIcons = {
   trendUp: faCircleArrowUp,
   trendDown: faCircleArrowDown,
   trendNeutral: faCircleMinus,
+  busiestDay: faStar,
 } as const;
