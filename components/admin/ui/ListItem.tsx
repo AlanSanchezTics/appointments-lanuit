@@ -6,6 +6,7 @@ import Link from "next/link";
 export interface ListItemProps {
   icon: React.ReactNode;
   title: string;
+  subtitle?: string;
   onClick?: () => void;
   href?: string;
   disabled?: boolean;
@@ -16,6 +17,7 @@ export interface ListItemProps {
 export function ListItem({
   icon,
   title,
+  subtitle,
   onClick,
   href,
   disabled = false,
@@ -27,9 +29,16 @@ export function ListItem({
     <>
       <div className="flex items-center gap-3">
         <div className="text-[var(--admin-accent)]">{icon}</div>
-        <span className="text-[14px] font-bold text-[var(--admin-text-primary)]">
-          {title}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[14px] font-bold text-[var(--admin-text-primary)]">
+            {title}
+          </span>
+          {subtitle ? (
+            <span className="text-xs font-medium text-[var(--admin-text-secondary)]">
+              {subtitle}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <span className="text-[var(--admin-text-secondary)]">

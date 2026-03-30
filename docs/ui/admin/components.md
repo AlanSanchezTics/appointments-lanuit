@@ -441,6 +441,7 @@ Representar un elemento navegable o accionable dentro de un listado operativo.
 
 - icono a la izquierda (vía `AdminIcon`)
 - título principal
+- subtítulo opcional para contexto secundario (ej. teléfono)
 - indicador o contenido secundario a la derecha
 - soporta `href` para navegación declarativa y `onClick` para interacción controlada
 

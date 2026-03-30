@@ -23,6 +23,7 @@
     "sectionTitle": {
       "dashboard": "Dashboard",
       "months": "Months",
+      "clients": "Clients",
       "default": "Admin panel"
     }
   },
@@ -91,6 +92,88 @@
       "reports": "Operational reports",
       "audit": "Change audit",
       "settings": "Panel settings"
+    }
+  },
+  "clients": {
+    "catalog": {
+      "metrics": {
+        "totalClients": "Clients",
+        "withFutureAppointments": "With future",
+        "withoutFutureAppointments": "Without future"
+      },
+      "filters": {
+        "queryLabel": "Search",
+        "queryPlaceholder": "Ex. Mariana Valenzuela",
+        "statusLabel": "Status",
+        "sortLabel": "Sort",
+        "apply": "Apply filters",
+        "statusOptions": {
+          "ALL": "All",
+          "WITH_FUTURE_APPOINTMENTS": "With future appointments",
+          "WITHOUT_FUTURE_APPOINTMENTS": "Without future appointments"
+        },
+        "sortOptions": {
+          "RECENT": "Most recent",
+          "NAME_ASC": "Name A-Z",
+          "NAME_DESC": "Name Z-A"
+        }
+      },
+      "list": {
+        "title": "Clients list",
+        "total_one": "{{count}} rec.",
+        "total_other": "{{count}} rec.",
+        "empty": "There are no clients for the selected filters.",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {{page}} of {{totalPages}}",
+        "futureBadge": "Future"
+      },
+      "errors": {
+        "loadFailed": "Unable to load clients catalog.",
+        "retry": "Retry"
+      }
+    },
+    "detail": {
+      "actions": {
+        "back": "Back to catalog",
+        "edit": "Edit client"
+      },
+      "summary": {
+        "totalAppointments": "Total appointments",
+        "activeAppointments": "Active",
+        "cancelledAppointments": "Cancelled",
+        "futureAppointments": "Future"
+      },
+      "timeline": {
+        "title": "Appointment history",
+        "empty": "This client has no appointments yet."
+      },
+      "errors": {
+        "loadFailed": "Unable to load client detail.",
+        "retry": "Retry"
+      },
+      "notifications": {
+        "updateLoading": "Updating client...",
+        "updateSuccess": "Client updated",
+        "updateError": "Unable to update client.",
+        "errors": {
+          "notFound": "Selected client was not found.",
+          "validation": "Check the name and try again.",
+          "unknown": "An unexpected error occurred."
+        }
+      }
+    },
+    "editModal": {
+      "title": "Edit client",
+      "close": "Close client edit",
+      "nameLabel": "Name",
+      "namePlaceholder": "Full name",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "errors": {
+        "nameTooShort": "Name must contain at least 3 characters."
+      }
     }
   },
   "monthsCatalog": {

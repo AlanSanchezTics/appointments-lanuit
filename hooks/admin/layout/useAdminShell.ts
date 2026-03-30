@@ -30,6 +30,10 @@ function resolveSectionTitleKey(pathname: string) {
     return "header.sectionTitle.months";
   }
 
+  if (pathname === "/admin/clients" || pathname.startsWith("/admin/clients/")) {
+    return "header.sectionTitle.clients";
+  }
+
   return "header.sectionTitle.default";
 }
 

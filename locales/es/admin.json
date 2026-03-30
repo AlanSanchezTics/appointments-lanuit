@@ -23,6 +23,7 @@
     "sectionTitle": {
       "dashboard": "Dashboard",
       "months": "Meses",
+      "clients": "Clientes",
       "default": "Panel administrativo"
     }
   },
@@ -91,6 +92,88 @@
       "reports": "Reportes operativos",
       "audit": "Auditoría de cambios",
       "settings": "Configuración del panel"
+    }
+  },
+  "clients": {
+    "catalog": {
+      "metrics": {
+        "totalClients": "Clientes",
+        "withFutureAppointments": "Con futuras",
+        "withoutFutureAppointments": "Sin futuras"
+      },
+      "filters": {
+        "queryLabel": "Buscar",
+        "queryPlaceholder": "Ej. Mariana Valenzuela",
+        "statusLabel": "Estado",
+        "sortLabel": "Orden",
+        "apply": "Aplicar filtros",
+        "statusOptions": {
+          "ALL": "Todos",
+          "WITH_FUTURE_APPOINTMENTS": "Con citas futuras",
+          "WITHOUT_FUTURE_APPOINTMENTS": "Sin citas futuras"
+        },
+        "sortOptions": {
+          "RECENT": "Más recientes",
+          "NAME_ASC": "Nombre A-Z",
+          "NAME_DESC": "Nombre Z-A"
+        }
+      },
+      "list": {
+        "title": "Listado de clientes",
+        "total_one": "{{count}} reg.",
+        "total_other": "{{count}} reg.",
+        "empty": "No hay clientes para los filtros seleccionados.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {{page}} de {{totalPages}}",
+        "futureBadge": "Futura"
+      },
+      "errors": {
+        "loadFailed": "No se pudo cargar el catálogo de clientes.",
+        "retry": "Reintentar"
+      }
+    },
+    "detail": {
+      "actions": {
+        "back": "Volver al catálogo",
+        "edit": "Editar cliente"
+      },
+      "summary": {
+        "totalAppointments": "Total de citas",
+        "activeAppointments": "Activas",
+        "cancelledAppointments": "Canceladas",
+        "futureAppointments": "Futuras"
+      },
+      "timeline": {
+        "title": "Historial de citas",
+        "empty": "Este cliente aún no tiene citas registradas."
+      },
+      "errors": {
+        "loadFailed": "No se pudo cargar el detalle del cliente.",
+        "retry": "Reintentar"
+      },
+      "notifications": {
+        "updateLoading": "Actualizando cliente...",
+        "updateSuccess": "Cliente actualizado",
+        "updateError": "No se pudo actualizar el cliente.",
+        "errors": {
+          "notFound": "No se encontró el cliente seleccionado.",
+          "validation": "Verifica el nombre e intenta nuevamente.",
+          "unknown": "Ocurrió un error inesperado."
+        }
+      }
+    },
+    "editModal": {
+      "title": "Editar cliente",
+      "close": "Cerrar edición de cliente",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "Nombre completo",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "cancel": "Cancelar",
+      "errors": {
+        "nameTooShort": "El nombre debe tener al menos 3 caracteres."
+      }
     }
   },
   "monthsCatalog": {

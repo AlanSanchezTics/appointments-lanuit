@@ -34,7 +34,7 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     id: "clients",
     labelKey: "sidebar.clients",
     icon: adminIcons.clients,
-    disabled: true,
-    matchMode: "exact",
+    href: "/admin/clients",
+    matchMode: "prefix",
   },
 ];

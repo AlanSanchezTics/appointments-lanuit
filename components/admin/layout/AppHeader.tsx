@@ -20,6 +20,10 @@ function resolveHeaderIcon(sectionTitleKey: string) {
     return adminIcons.monthsManagement;
   }
 
+  if (sectionTitleKey === "header.sectionTitle.clients") {
+    return adminIcons.clients;
+  }
+
   return adminIcons.menu;
 }
 
