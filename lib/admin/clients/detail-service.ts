@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import {
-  ACTIVE_APPOINTMENT_STATUSES,
   dateToDateKey,
+  isActiveAppointment,
+  isFutureActiveAppointment,
   timeToTimeSlotKey,
 } from "@/lib/admin/clients/helpers";
 import type { AdminClientDetailResponse } from "@/lib/admin/clients/types";
@@ -49,18 +50,22 @@ export async function getAdminClientDetail(
 
   const nextFutureActiveAppointment = [...client.appointments]
     .filter((appointment) =>
-      ACTIVE_APPOINTMENT_STATUSES.includes(appointment.status)
-      && appointment.date.getTime() > currentDateValue.getTime(),
-    )
+      isFutureActiveAppointment({
+        status: appointment.status,
+        date: appointment.date,
+        currentDateValue,
+      }))
     .sort((left, right) => {
-      const leftDateTime = `${dateToDateKey(left.date)}T${timeToTimeSlotKey(left.timeSlot)}:00`;
-      const rightDateTime = `${dateToDateKey(right.date)}T${timeToTimeSlotKey(right.timeSlot)}:00`;
+      const byDate = left.date.getTime() - right.date.getTime();
+      if (byDate !== 0) {
+        return byDate;
+      }
 
-      return leftDateTime.localeCompare(rightDateTime);
+      return left.timeSlot.getTime() - right.timeSlot.getTime();
     })[0];
 
   const activeAppointments = client.appointments.filter((appointment) =>
-    ACTIVE_APPOINTMENT_STATUSES.includes(appointment.status),
+    isActiveAppointment(appointment.status),
   );
   const cancelledAppointments = client.appointments.filter(
     (appointment) => appointment.status === "CANCELLED",

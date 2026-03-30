@@ -4,33 +4,13 @@ import type {
   SearchAdminClientsInput,
   SearchAdminClientsResponse,
 } from "@/lib/admin/clients/types";
-import { rankClient } from "@/lib/admin/clients/helpers";
+import { buildClientSearchWhere, rankClient } from "@/lib/admin/clients/helpers";
 
 export async function searchAdminClients(
   input: SearchAdminClientsInput,
 ): Promise<SearchAdminClientsResponse> {
-  const normalizedPhoneQuery = input.query.replace(/\D/g, "");
-  const hasPhoneQuery = normalizedPhoneQuery.length > 0;
-
   const rows = await prisma.client.findMany({
-    where: {
-      OR: [
-        {
-          name: {
-            contains: input.query,
-          },
-        },
-        ...(hasPhoneQuery
-          ? [
-              {
-                phone: {
-                  contains: normalizedPhoneQuery,
-                },
-              },
-            ]
-          : []),
-      ],
-    },
+    where: buildClientSearchWhere(input.query),
     select: {
       id: true,
       name: true,

@@ -1,42 +1,15 @@
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import {
-  ACTIVE_APPOINTMENT_STATUSES,
+  buildClientSearchWhere,
   dateToDateKey,
+  getFutureActiveAppointmentsWhere,
   timeToTimeSlotKey,
 } from "@/lib/admin/clients/helpers";
 import type {
   AdminClientsCatalogQuery,
   AdminClientsCatalogResponse,
 } from "@/lib/admin/clients/types";
-
-function buildQueryWhere(query: string) {
-  const normalizedQuery = query.trim();
-  const normalizedPhoneQuery = normalizedQuery.replace(/\D/g, "");
-
-  if (!normalizedQuery) {
-    return {};
-  }
-
-  return {
-    OR: [
-      {
-        name: {
-          contains: normalizedQuery,
-        },
-      },
-      ...(normalizedPhoneQuery.length > 0
-        ? [
-            {
-              phone: {
-                contains: normalizedPhoneQuery,
-              },
-            },
-          ]
-        : []),
-    ],
-  };
-}
 
 function resolveCatalogOrderBy(sort: AdminClientsCatalogQuery["sort"]) {
   if (sort === "NAME_ASC") {
@@ -55,15 +28,8 @@ export async function getAdminClientsCatalog(
   now = new Date(),
 ): Promise<AdminClientsCatalogResponse> {
   const currentDate = getCurrentDateKey(now);
-  const queryWhere = buildQueryWhere(filters.query);
-  const futureActiveAppointmentsWhere = {
-    status: {
-      in: ACTIVE_APPOINTMENT_STATUSES,
-    },
-    date: {
-      gt: new Date(`${currentDate}T00:00:00.000Z`),
-    },
-  };
+  const queryWhere = buildClientSearchWhere(filters.query);
+  const futureActiveAppointmentsWhere = getFutureActiveAppointmentsWhere(currentDate);
 
   const listWhere = {
     ...queryWhere,
