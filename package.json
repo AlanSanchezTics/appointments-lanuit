@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "admin:create": "tsx scripts/create-admin-user.ts",
-    "locks:cleanup": "node --env-file=.env scripts/cleanup-reservation-locks.mjs",
+    "locks:cleanup": "node --env-file-if-exists=.env scripts/cleanup-reservation-locks.mjs",
     "months:reconcile": "node --env-file=.env scripts/reconcile-active-months.mjs",
     "calendar:smoke": "node --env-file=.env scripts/google-calendar-smoke.mjs",
     "prisma:generate": "prisma generate",
