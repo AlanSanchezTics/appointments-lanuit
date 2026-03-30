@@ -33,6 +33,9 @@ import {
   updateBlockedSlotReasonById,
 } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
+import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+
+type BaseTimeSlot = (typeof BASE_TIME_SLOTS)[number];
 
 function getMonthBounds(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -55,10 +58,10 @@ function getMonthDays(month: string) {
   });
 }
 
-function buildBlockableDays(params: {
+function buildBlockableDays<T extends string>(params: {
   month: string;
   now: Date;
-  baseSlots: readonly string[];
+  baseSlots: readonly T[];
   occupiedByDate: Map<string, string[]>;
   lockByDate: Map<string, string[]>;
   blockedByDate: Map<string, string[]>;
@@ -112,6 +115,14 @@ function assertBlockedSlotIsEditable(date: string, timeSlot: string, now: Date) 
   if (!isFutureDateTime(date, timeSlot, now)) {
     throw new Error("BLOCKED_SLOT_NOT_EDITABLE");
   }
+}
+
+function toBaseTimeSlot(timeSlot: string): BaseTimeSlot {
+  if (BASE_TIME_SLOTS.includes(timeSlot as BaseTimeSlot)) {
+    return timeSlot as BaseTimeSlot;
+  }
+
+  throw new Error("SLOT_NOT_AVAILABLE");
 }
 
 export async function getAdminBlockableSlots(
@@ -185,6 +196,7 @@ export async function createAdminBlockedSlots(
   }
 
   const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+  const baseSlotsSet = new Set<string>(baseSlots);
 
   if (!isWeekdayBookingDate(input.date)) {
     throw new Error("DATE_NOT_OPERATIONAL");
@@ -195,7 +207,7 @@ export async function createAdminBlockedSlots(
   }
 
   for (const slot of input.slots) {
-    if (!baseSlots.includes(slot)) {
+    if (!baseSlotsSet.has(slot)) {
       throw new Error("SLOT_NOT_AVAILABLE");
     }
 
@@ -288,7 +300,7 @@ export async function updateAdminBlockedSlot(
     month: input.month,
     blockedSlotId: input.blockedSlotId,
     date: result.date,
-    timeSlot: result.timeSlot,
+    timeSlot: toBaseTimeSlot(result.timeSlot),
     reason: input.reason,
   };
 }

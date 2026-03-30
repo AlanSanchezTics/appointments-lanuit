@@ -85,7 +85,10 @@ export function isWeekdayBookingDate(date: string) {
   return day >= 1 && day <= 5;
 }
 
-export function getAvailableStartSlots(baseSlots: readonly string[], occupiedSlots: string[]) {
+export function getAvailableStartSlots<T extends string>(
+  baseSlots: readonly T[],
+  occupiedSlots: string[],
+) {
   if (occupiedSlots.length >= MAX_APPOINTMENTS_PER_DAY) {
     return [];
   }
@@ -99,8 +102,8 @@ export function getAvailableStartSlots(baseSlots: readonly string[], occupiedSlo
   });
 }
 
-export function getAvailableStartSlotsWithManualBlocks(
-  baseSlots: readonly string[],
+export function getAvailableStartSlotsWithManualBlocks<T extends string>(
+  baseSlots: readonly T[],
   directionalOccupiedSlots: string[],
   manualBlockedSlots: string[],
 ) {

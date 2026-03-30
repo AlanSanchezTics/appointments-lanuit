@@ -66,7 +66,6 @@ export default async function AdminDashboardPage() {
             "dashboard.weeklyOccupancy.dayAppointmentsTooltip",
             {
               ns: "admin",
-              count: "{{count}}",
             },
           )}
         />

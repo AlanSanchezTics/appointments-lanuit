@@ -1,4 +1,4 @@
-import type { ActiveMonthStatus, AppointmentStatus } from "@prisma/client";
+import type { AppointmentStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import type { ActiveMonthStatus } from "@/lib/admin/months/types";
