@@ -17,6 +17,8 @@ class InactiveAdminSigninError extends CredentialsSignin {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
+  // Required behind reverse proxies/load balancers so Auth.js accepts the forwarded host.
+  trustHost: true,
   session: {
     strategy: "jwt",
   },
