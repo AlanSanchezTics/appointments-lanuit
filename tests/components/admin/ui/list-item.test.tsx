@@ -16,4 +16,16 @@ describe("admin ListItem", () => {
     const link = screen.getByRole("link", { name: /meses/i });
     expect(link).toHaveAttribute("href", "/admin/months");
   });
+
+  it("renders optional subtitle when provided", () => {
+    render(
+      <ListItem
+        icon={<span aria-hidden>i</span>}
+        title="Ana Pérez"
+        subtitle="(55) 1234 5678"
+      />,
+    );
+
+    expect(screen.getByText("(55) 1234 5678")).toBeInTheDocument();
+  });
 });

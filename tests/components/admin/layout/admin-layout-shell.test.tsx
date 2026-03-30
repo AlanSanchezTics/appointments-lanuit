@@ -48,6 +48,24 @@ describe("admin layout shell", () => {
     );
   });
 
+  it("marks clients item active for client detail paths", () => {
+    pathnameMock = "/admin/clients/42";
+
+    render(
+      <AdminLayout>
+        <div>content</div>
+      </AdminLayout>,
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Clientes" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar-item-clients")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
   it("opens mobile drawer from header menu", () => {
     pathnameMock = "/admin";
 

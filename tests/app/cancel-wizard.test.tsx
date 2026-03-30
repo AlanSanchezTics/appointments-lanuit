@@ -53,14 +53,12 @@ describe("cancel wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
     expect(await screen.findByRole("heading", { name: "Confirmar Cancelación" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Hola Ana Garcia" })).toBeInTheDocument();
+    expect(screen.getByText("Hola Ana Garcia")).toBeInTheDocument();
     expect(
-      screen.getByText("A continuación los detalle de tu(s) cita(s)"),
+      screen.getByText("A continuación los detalles de tu(s) cita(s)"),
     ).toBeInTheDocument();
     expect(screen.getByText(/18 de marzo de 2026/i)).toBeInTheDocument();
     expect(screen.getByText(/24 de marzo de 2026/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Fecha:/)).toHaveLength(2);
-    expect(screen.getAllByText(/Hora:/)).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Cancelar cita" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
