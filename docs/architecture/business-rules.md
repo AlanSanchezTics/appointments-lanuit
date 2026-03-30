@@ -262,6 +262,60 @@ Business behavior is defined by:
   - UI labels and statuses are frontend-resolved via `react-i18next`.
   - API returns structural data and stable machine-readable errors only.
 
+## Admin Clients Catalog Rules
+
+- Scope:
+  - Applies to admin clients catalog contracts:
+    - `GET /api/admin/clients/catalog`
+    - `GET /api/admin/clients/[clientId]`
+    - `PATCH /api/admin/clients/[clientId]`
+
+- Query/filter policy (`GET /api/admin/clients/catalog`):
+  - `query` is optional and matches by `name` or normalized `phone` partial.
+  - `status` allows:
+    - `ALL`
+    - `WITH_FUTURE_APPOINTMENTS`
+    - `WITHOUT_FUTURE_APPOINTMENTS`
+  - `sort` allows:
+    - `RECENT`
+    - `NAME_ASC`
+    - `NAME_DESC`
+  - `page` is 1-based and must be positive integer.
+  - `pageSize` must be positive integer within configured maximum.
+
+- Future-appointment semantics:
+  - Future appointment means `date > currentDate` in `America/Mexico_City`.
+  - Active statuses considered for future filters/metrics are `CONFIRMED` and `SYNC_FAILED`.
+
+- Catalog response policy:
+  - Returns stable `filters`, `metrics`, `pagination`, `clients[]`, and `currentDate`.
+  - `metrics` include:
+    - `totalClients`
+    - `withFutureAppointments`
+    - `withoutFutureAppointments`
+  - Each catalog row includes identity and operational summary:
+    - `clientId`, `name`, `phone`, timestamps
+    - appointment aggregates and next/last appointment references.
+
+- Detail policy (`GET /api/admin/clients/[clientId]`):
+  - Requires valid numeric `clientId`.
+  - If the client does not exist, returns `CLIENT_NOT_FOUND` (`404`).
+  - Response includes:
+    - client identity block,
+    - summary metrics (`total`, `active`, `cancelled`, `futureActive`, next/last appointment),
+    - chronological appointments list.
+
+- Update policy (`PATCH /api/admin/clients/[clientId]`):
+  - Requires valid numeric `clientId`.
+  - Supports updating canonical client name.
+  - Name must satisfy domain identity validation (minimum length).
+  - If client does not exist, returns `CLIENT_NOT_FOUND` (`404`).
+
+- Auth and error semantics:
+  - Endpoints require admin session.
+  - Missing session returns `ADMIN_UNAUTHORIZED` (`401`).
+  - Validation failures return stable machine-readable `errorCode`.
+
 ## Admin Month Detail Rules
 
 - Scope:

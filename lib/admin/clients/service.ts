@@ -4,22 +4,7 @@ import type {
   SearchAdminClientsInput,
   SearchAdminClientsResponse,
 } from "@/lib/admin/clients/types";
-
-function rankClient(query: string, client: { name: string; phone: string }) {
-  const lowerQuery = query.toLowerCase();
-  const lowerName = client.name.toLowerCase();
-  const normalizedPhoneQuery = query.replace(/\D/g, "");
-
-  if (lowerName.startsWith(lowerQuery) || client.phone.startsWith(normalizedPhoneQuery)) {
-    return 0;
-  }
-
-  if (lowerName.includes(lowerQuery) || client.phone.includes(normalizedPhoneQuery)) {
-    return 1;
-  }
-
-  return 2;
-}
+import { rankClient } from "@/lib/admin/clients/helpers";
 
 export async function searchAdminClients(
   input: SearchAdminClientsInput,
