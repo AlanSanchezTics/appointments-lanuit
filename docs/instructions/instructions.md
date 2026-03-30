@@ -123,7 +123,7 @@ npm run calendar:smoke
 4. Ejecutar cleanup operativo (programado o manual):
 
 ```bash
-npm run locks:cleanup -- --older-than-days=7 --batch=5000
+npm run locks:cleanup -- --batch=5000
 ```
 
 ## Fase 4: cleanup técnico

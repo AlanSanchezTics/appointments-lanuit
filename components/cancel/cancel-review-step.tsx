@@ -1,7 +1,6 @@
 import type { TFunction } from "i18next";
 
 import { Button } from "@/components/ui/public/button";
-import { formatPhoneForDisplay } from "@/lib/cancel/formatters";
 import type { CancelableAppointment } from "@/lib/cancel/types";
 import {
   formatLongDate,
