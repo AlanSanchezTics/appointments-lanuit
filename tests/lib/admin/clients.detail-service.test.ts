@@ -29,6 +29,7 @@ describe("admin client detail service", () => {
       id: 12,
       name: "Ana Garcia",
       phone: "5512345678",
+      isLoyal: true,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-03-20T00:00:00.000Z"),
       appointments: [
@@ -53,6 +54,7 @@ describe("admin client detail service", () => {
       clientId: 12,
       name: "Ana Garcia",
       phone: "5512345678",
+      isLoyal: true,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-03-20T00:00:00.000Z",
     });

@@ -35,6 +35,7 @@ describe("admin client update service", () => {
       id: 5,
       name: "Ana Garcia",
       phone: "5512345678",
+      isLoyal: false,
       updatedAt: new Date("2026-03-21T12:00:00.000Z"),
     });
 
@@ -53,6 +54,7 @@ describe("admin client update service", () => {
         id: true,
         name: true,
         phone: true,
+        isLoyal: true,
         updatedAt: true,
       },
     });
@@ -61,6 +63,48 @@ describe("admin client update service", () => {
       clientId: 5,
       name: "Ana Garcia",
       phone: "5512345678",
+      isLoyal: false,
+      updatedAt: "2026-03-21T12:00:00.000Z",
+    });
+  });
+
+  it("updates client loyalty flag without changing name", async () => {
+    const { updateAdminClient } = await import("@/lib/admin/clients/update-service");
+
+    clientFindUniqueMock.mockResolvedValueOnce({ id: 8 });
+    clientUpdateMock.mockResolvedValueOnce({
+      id: 8,
+      name: "Ana Garcia",
+      phone: "5512345678",
+      isLoyal: true,
+      updatedAt: new Date("2026-03-21T12:00:00.000Z"),
+    });
+
+    const response = await updateAdminClient(8, {
+      isLoyal: true,
+    });
+
+    expect(clientUpdateMock).toHaveBeenCalledWith({
+      where: {
+        id: 8,
+      },
+      data: {
+        isLoyal: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        isLoyal: true,
+        updatedAt: true,
+      },
+    });
+
+    expect(response).toEqual({
+      clientId: 8,
+      name: "Ana Garcia",
+      phone: "5512345678",
+      isLoyal: true,
       updatedAt: "2026-03-21T12:00:00.000Z",
     });
   });

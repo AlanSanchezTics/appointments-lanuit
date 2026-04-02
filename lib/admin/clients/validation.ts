@@ -47,7 +47,15 @@ const CATALOG_QUERY_SCHEMA = z.object({
 });
 
 const UPDATE_CLIENT_SCHEMA = z.object({
-  name: z.string().trim().min(3, "CLIENT_NAME_TOO_SHORT").max(100, "CLIENT_NAME_TOO_LONG"),
+  name: z
+    .string()
+    .trim()
+    .min(3, "CLIENT_NAME_TOO_SHORT")
+    .max(100, "CLIENT_NAME_TOO_LONG")
+    .optional(),
+  isLoyal: z.boolean().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: "VALIDATION_ERROR",
 });
 
 function parseNumber(rawValue: string | null, options: {
@@ -163,8 +171,5 @@ export function parseUpdateAdminClientPayload(
   payload: unknown,
 ): UpdateAdminClientPayload {
   const parsed = UPDATE_CLIENT_SCHEMA.parse(payload);
-
-  return {
-    name: parsed.name,
-  };
+  return parsed;
 }

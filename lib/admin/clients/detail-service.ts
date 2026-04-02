@@ -23,6 +23,7 @@ export async function getAdminClientDetail(
       id: true,
       name: true,
       phone: true,
+      isLoyal: true,
       createdAt: true,
       updatedAt: true,
       appointments: {
@@ -79,6 +80,7 @@ export async function getAdminClientDetail(
       clientId: client.id,
       name: client.name,
       phone: client.phone,
+      isLoyal: client.isLoyal,
       createdAt: client.createdAt.toISOString(),
       updatedAt: client.updatedAt.toISOString(),
     },

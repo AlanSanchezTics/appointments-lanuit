@@ -6,7 +6,10 @@ import {
   fetchAdminClientDetail,
   updateAdminClientName,
 } from "@/lib/admin/clients/api-client";
-import type { AdminClientDetailResponse } from "@/lib/admin/clients/types";
+import type {
+  AdminClientDetailResponse,
+  UpdateAdminClientPayload,
+} from "@/lib/admin/clients/types";
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 
@@ -35,16 +38,30 @@ export function useClientDetail({ clientId, initialData }: UseClientDetailInput)
     }
   }, [clientId]);
 
-  const updateName = useCallback(async (name: string) => {
+  const updateClient = useCallback(async (payload: UpdateAdminClientPayload) => {
     setIsUpdating(true);
 
     try {
-      await updateAdminClientName(clientId, { name });
+      await updateAdminClientName(clientId, payload);
       await refresh();
     } finally {
       setIsUpdating(false);
     }
   }, [clientId, refresh]);
+
+  const updateName = useCallback(
+    async (name: string) => {
+      await updateClient({ name });
+    },
+    [updateClient],
+  );
+
+  const updateLoyalty = useCallback(
+    async (isLoyal: boolean) => {
+      await updateClient({ isLoyal });
+    },
+    [updateClient],
+  );
 
   useEffect(() => {
     setData(initialData);
@@ -58,5 +75,6 @@ export function useClientDetail({ clientId, initialData }: UseClientDetailInput)
     refresh,
     retry: refresh,
     updateName,
+    updateLoyalty,
   };
 }

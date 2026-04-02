@@ -40,10 +40,14 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
         totalClients={data.metrics.totalClients}
         withFutureAppointments={data.metrics.withFutureAppointments}
         withoutFutureAppointments={data.metrics.withoutFutureAppointments}
+        loyalClients={data.metrics.loyalClients}
+        loyalClientsPercentage={data.metrics.loyalClientsPercentage}
         labels={{
           totalClients: t("clients.catalog.metrics.totalClients"),
           withFutureAppointments: t("clients.catalog.metrics.withFutureAppointments"),
           withoutFutureAppointments: t("clients.catalog.metrics.withoutFutureAppointments"),
+          loyalClients: t("clients.catalog.metrics.loyalClients"),
+          loyalClientsPercentage: t("clients.catalog.metrics.loyalClientsPercentage"),
         }}
       />
 
@@ -68,6 +72,7 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
             WITHOUT_FUTURE_APPOINTMENTS: t(
               "clients.catalog.filters.statusOptions.WITHOUT_FUTURE_APPOINTMENTS",
             ),
+            LOYAL: t("clients.catalog.filters.statusOptions.LOYAL"),
           },
           sortOptions: {
             RECENT: t("clients.catalog.filters.sortOptions.RECENT"),
@@ -112,6 +117,7 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
             totalPages: data.pagination.totalPages,
           }),
           futureBadge: t("clients.catalog.list.futureBadge"),
+          loyalBadge: t("clients.catalog.list.loyalBadge"),
           appointmentsCount: (count: number) =>
             t("clients.catalog.list.appointmentsCount", { count }),
         }}

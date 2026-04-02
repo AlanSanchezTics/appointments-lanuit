@@ -27,6 +27,7 @@ describe("admin clients catalog service", () => {
     clientCountMock
       .mockResolvedValueOnce(10)
       .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(0)
       .mockResolvedValueOnce(2);
 
     clientFindManyMock.mockResolvedValueOnce([
@@ -34,6 +35,7 @@ describe("admin clients catalog service", () => {
         id: 1,
         name: "Ana Garcia",
         phone: "5512345678",
+        isLoyal: false,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: new Date("2026-03-20T00:00:00.000Z"),
         _count: {
@@ -45,6 +47,7 @@ describe("admin clients catalog service", () => {
         id: 2,
         name: "Maria Ruiz",
         phone: "5599887766",
+        isLoyal: false,
         createdAt: new Date("2026-01-02T00:00:00.000Z"),
         updatedAt: new Date("2026-03-18T00:00:00.000Z"),
         _count: {
@@ -77,6 +80,8 @@ describe("admin clients catalog service", () => {
       totalClients: 10,
       withFutureAppointments: 4,
       withoutFutureAppointments: 6,
+      loyalClients: 0,
+      loyalClientsPercentage: 0,
     });
 
     expect(result.pagination).toEqual({
@@ -91,6 +96,7 @@ describe("admin clients catalog service", () => {
         clientId: 1,
         name: "Ana Garcia",
         phone: "5512345678",
+        isLoyal: false,
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-03-20T00:00:00.000Z",
         totalAppointments: 3,
@@ -103,6 +109,7 @@ describe("admin clients catalog service", () => {
         clientId: 2,
         name: "Maria Ruiz",
         phone: "5599887766",
+        isLoyal: false,
         createdAt: "2026-01-02T00:00:00.000Z",
         updatedAt: "2026-03-18T00:00:00.000Z",
         totalAppointments: 1,
@@ -119,6 +126,58 @@ describe("admin clients catalog service", () => {
         take: 20,
       }),
     );
+  });
+
+  it("applies LOYAL filter in catalog query and computes loyalty metrics", async () => {
+    const { getAdminClientsCatalog } = await import("@/lib/admin/clients/catalog-service");
+
+    clientCountMock
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(1);
+    clientFindManyMock.mockResolvedValueOnce([
+      {
+        id: 7,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        isLoyal: true,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-03-20T00:00:00.000Z"),
+        _count: {
+          appointments: 3,
+        },
+        appointments: [],
+      },
+    ]);
+    appointmentFindManyMock.mockResolvedValueOnce([]);
+
+    const result = await getAdminClientsCatalog(
+      {
+        query: "",
+        status: "LOYAL",
+        sort: "RECENT",
+        page: 1,
+        pageSize: 20,
+      },
+      new Date("2026-03-21T12:00:00.000Z"),
+    );
+
+    expect(clientFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isLoyal: true,
+        }),
+      }),
+    );
+
+    expect(result.metrics).toEqual({
+      totalClients: 4,
+      withFutureAppointments: 4,
+      withoutFutureAppointments: 0,
+      loyalClients: 2,
+      loyalClientsPercentage: 50,
+    });
   });
 
   it("applies WITH_FUTURE_APPOINTMENTS filter in catalog query", async () => {

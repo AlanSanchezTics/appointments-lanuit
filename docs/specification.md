@@ -282,6 +282,7 @@ Tabla: clients
 - id (PK)
 - name VARCHAR(100)
 - phone VARCHAR(10) UNIQUE
+- is_loyal BOOLEAN NOT NULL DEFAULT false
 - created_at DATETIME
 - updated_at DATETIME
 
@@ -775,10 +776,11 @@ Flujo UI: Catálogo de clientes admin (`/admin/clients`)
 1. Admin navega desde sidebar (`Clients`) al catálogo.
 2. Página server valida sesión y resuelve filtros iniciales (`query/status/sort/page/pageSize`).
 3. UI renderiza:
-   - métricas de clientes (`total`, `con futuras`, `sin futuras`),
+   - métricas de clientes (`total`, `con futuras`, `sin futuras`, `clientes fieles`, `% fidelidad`),
    - panel de filtros,
    - listado paginado,
-   - tag por cliente con cantidad de citas acumuladas.
+   - tag por cliente con cantidad de citas acumuladas,
+   - tag de fidelidad para clientes marcados como fieles.
    - las métricas se mantienen como snapshot analítico global durante cambios de filtros.
 4. Cambios de filtros/página (reactivo, sin botón `Aplicar filtros`):
    - actualizan query params en URL,
@@ -792,15 +794,17 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
 
 1. Página server valida sesión y `clientId`; si no existe retorna `notFound`.
 2. UI muestra ficha del cliente, resumen de citas y timeline.
-3. Acción `Editar cliente` abre modal para actualizar `name`.
-4. Validación local del modal:
+3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
+4. Acción `Editar cliente` abre modal para actualizar `name`.
+5. Validación local del modal:
    - `name` requerido,
    - largo mínimo `3`.
-5. Guardar edición:
+6. Guardar edición:
    - ejecuta `PATCH /api/admin/clients/[clientId]`,
    - usa `sileo.promise` para notificaciones `loading/success/error`,
    - en éxito cierra modal y refresca detalle.
-6. Textos UX del módulo se resuelven por `react-i18next` (es/en).
+7. Cambios de fidelidad también usan `sileo.promise` para notificaciones `loading/success/error`.
+8. Textos UX del módulo se resuelven por `react-i18next` (es/en).
 
 Contrato API:
 
@@ -808,7 +812,7 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/clients/search?query=<text>&limit=<n>`
-  - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
+  - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
@@ -851,7 +855,7 @@ Contrato API:
     - `limit` opcional, entero en rango permitido.
   - `GET /api/admin/clients/catalog`:
     - `query` opcional (búsqueda por nombre o teléfono parcial),
-    - `status` permitido: `ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS`,
+    - `status` permitido: `ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL`,
     - `sort` permitido: `RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC`,
     - `page` entero positivo (base 1),
     - `pageSize` entero positivo en rango permitido.
@@ -860,8 +864,9 @@ Contrato API:
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `PATCH /api/admin/clients/[clientId]`:
     - `clientId` numérico positivo,
-    - payload `{ name }`,
-    - `name` requerido y con mínimo de 3 caracteres,
+    - payload parcial `{ name?, isLoyal? }`,
+    - el payload no puede venir vacío,
+    - `name`, cuando se envía, requiere mínimo de 3 caracteres,
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
@@ -924,16 +929,16 @@ Contrato API:
 - Success `GET /api/admin/clients/catalog` (`200`):
   - `{ filters, metrics, pagination, clients[], currentDate }`
   - `filters`: `{ query, status, sort, page, pageSize }`
-  - `metrics`: `{ totalClients, withFutureAppointments, withoutFutureAppointments }`
+  - `metrics`: `{ totalClients, withFutureAppointments, withoutFutureAppointments, loyalClients, loyalClientsPercentage }`
   - `pagination`: `{ page, pageSize, total, totalPages }`
-  - `clients[]`: `{ clientId, name, phone, createdAt, updatedAt, totalAppointments, hasFutureActiveAppointments, lastAppointmentDate, nextAppointmentDate, nextAppointmentTimeSlot }`
+  - `clients[]`: `{ clientId, name, phone, isLoyal, createdAt, updatedAt, totalAppointments, hasFutureActiveAppointments, lastAppointmentDate, nextAppointmentDate, nextAppointmentTimeSlot }`
 - Success `GET /api/admin/clients/[clientId]` (`200`):
   - `{ client, summary, appointments[], currentDate }`
-  - `client`: `{ clientId, name, phone, createdAt, updatedAt }`
+  - `client`: `{ clientId, name, phone, isLoyal, createdAt, updatedAt }`
   - `summary`: `{ totalAppointments, activeAppointments, cancelledAppointments, futureActiveAppointments, lastAppointmentDate, nextAppointmentDate, nextAppointmentTimeSlot }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status }`
 - Success `PATCH /api/admin/clients/[clientId]` (`200`):
-  - `{ clientId, name, phone, updatedAt }`
+  - `{ clientId, name, phone, isLoyal, updatedAt }`
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`

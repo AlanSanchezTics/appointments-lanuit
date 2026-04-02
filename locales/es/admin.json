@@ -99,7 +99,9 @@
       "metrics": {
         "totalClients": "Clientes",
         "withFutureAppointments": "Con futuras",
-        "withoutFutureAppointments": "Sin futuras"
+        "withoutFutureAppointments": "Sin futuras",
+        "loyalClients": "Clientes fieles",
+        "loyalClientsPercentage": "% fidelidad"
       },
       "filters": {
         "queryLabel": "Buscar",
@@ -109,7 +111,8 @@
         "statusOptions": {
           "ALL": "Todos",
           "WITH_FUTURE_APPOINTMENTS": "Con citas futuras",
-          "WITHOUT_FUTURE_APPOINTMENTS": "Sin citas futuras"
+          "WITHOUT_FUTURE_APPOINTMENTS": "Sin citas futuras",
+          "LOYAL": "Solo clientes fieles"
         },
         "sortOptions": {
           "RECENT": "Más recientes",
@@ -127,6 +130,7 @@
         "next": "Siguiente",
         "page": "Página {{page}} de {{totalPages}}",
         "futureBadge": "Futura",
+        "loyalBadge": "Fiel",
         "appointmentsCount_one": "{{count}} cita",
         "appointmentsCount_other": "{{count}} citas"
       },
@@ -150,6 +154,15 @@
         "title": "Historial de citas",
         "empty": "Este cliente aún no tiene citas registradas."
       },
+      "loyalty": {
+        "title": "Cliente fiel",
+        "description": "Marca manual para identificar clientas con preferencia o recurrencia.",
+        "enabled": "Sí",
+        "disabled": "No",
+        "toggleLabel": "Cambiar estado de cliente fiel",
+        "enableAction": "Marcar como cliente fiel",
+        "disableAction": "Quitar marca de cliente fiel"
+      },
       "errors": {
         "loadFailed": "No se pudo cargar el detalle del cliente.",
         "retry": "Reintentar"
@@ -158,6 +171,9 @@
         "updateLoading": "Actualizando cliente...",
         "updateSuccess": "Cliente actualizado",
         "updateError": "No se pudo actualizar el cliente.",
+        "loyaltyUpdateLoading": "Actualizando cliente fiel...",
+        "loyaltyUpdateSuccess": "Estado de cliente fiel actualizado",
+        "loyaltyUpdateError": "No se pudo actualizar el estado de cliente fiel.",
         "errors": {
           "notFound": "No se encontró el cliente seleccionado.",
           "validation": "Verifica el nombre e intenta nuevamente.",

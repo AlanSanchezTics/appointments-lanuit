@@ -19,6 +19,7 @@ export const ADMIN_CLIENT_CATALOG_STATUS_VALUES = [
   "ALL",
   "WITH_FUTURE_APPOINTMENTS",
   "WITHOUT_FUTURE_APPOINTMENTS",
+  "LOYAL",
 ] as const;
 
 export const ADMIN_CLIENT_CATALOG_SORT_VALUES = [
@@ -43,6 +44,7 @@ export type AdminClientCatalogItem = {
   clientId: number;
   name: string;
   phone: string;
+  isLoyal: boolean;
   createdAt: string;
   updatedAt: string;
   totalAppointments: number;
@@ -58,6 +60,8 @@ export type AdminClientsCatalogResponse = {
     totalClients: number;
     withFutureAppointments: number;
     withoutFutureAppointments: number;
+    loyalClients: number;
+    loyalClientsPercentage: number;
   };
   pagination: {
     page: number;
@@ -81,6 +85,7 @@ export type AdminClientDetailResponse = {
     clientId: number;
     name: string;
     phone: string;
+    isLoyal: boolean;
     createdAt: string;
     updatedAt: string;
   };
@@ -98,12 +103,14 @@ export type AdminClientDetailResponse = {
 };
 
 export type UpdateAdminClientPayload = {
-  name: string;
+  name?: string;
+  isLoyal?: boolean;
 };
 
 export type UpdateAdminClientResponse = {
   clientId: number;
   name: string;
   phone: string;
+  isLoyal: boolean;
   updatedAt: string;
 };

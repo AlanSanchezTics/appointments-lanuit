@@ -45,6 +45,8 @@ describe("GET /api/admin/clients/catalog", () => {
         totalClients: 2,
         withFutureAppointments: 1,
         withoutFutureAppointments: 1,
+        loyalClients: 0,
+        loyalClientsPercentage: 0,
       },
       pagination: {
         page: 1,
@@ -76,6 +78,8 @@ describe("GET /api/admin/clients/catalog", () => {
         totalClients: 2,
         withFutureAppointments: 1,
         withoutFutureAppointments: 1,
+        loyalClients: 0,
+        loyalClientsPercentage: 0,
       },
       pagination: {
         page: 1,

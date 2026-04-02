@@ -72,6 +72,20 @@ describe("admin clients validation", () => {
     });
   });
 
+  it("parses clients catalog query with loyal filter", () => {
+    const params = new URLSearchParams({
+      status: "loyal",
+    });
+
+    expect(parseAdminClientsCatalogQuery(params)).toEqual({
+      query: "",
+      status: "LOYAL",
+      sort: "RECENT",
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
   it("parses clients catalog query with sort by appointments", () => {
     const params = new URLSearchParams({
       sort: "appointments_desc",
@@ -118,9 +132,26 @@ describe("admin clients validation", () => {
     });
   });
 
+  it("parses update client payload with loyal flag only", () => {
+    expect(parseUpdateAdminClientPayload({ isLoyal: true })).toEqual({
+      isLoyal: true,
+    });
+  });
+
+  it("parses update client payload with both fields", () => {
+    expect(parseUpdateAdminClientPayload({ name: "Ana López", isLoyal: false })).toEqual({
+      name: "Ana López",
+      isLoyal: false,
+    });
+  });
+
   it("rejects update client payload when name is too short", () => {
     expect(() => parseUpdateAdminClientPayload({ name: "An" })).toThrow(
       "CLIENT_NAME_TOO_SHORT",
     );
+  });
+
+  it("rejects empty update client payload", () => {
+    expect(() => parseUpdateAdminClientPayload({})).toThrow("VALIDATION_ERROR");
   });
 });

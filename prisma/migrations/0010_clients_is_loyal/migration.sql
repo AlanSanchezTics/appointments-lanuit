@@ -1,0 +1,2 @@
+ALTER TABLE `clients`
+  ADD COLUMN `is_loyal` TINYINT(1) NOT NULL DEFAULT 0 AFTER `phone`;

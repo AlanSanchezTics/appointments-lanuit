@@ -5,6 +5,7 @@ import type {
   AdminClientsCatalogQuery,
   AdminClientsCatalogResponse,
   SearchAdminClientsResponse,
+  UpdateAdminClientPayload,
   UpdateAdminClientResponse,
 } from "@/lib/admin/clients/types";
 
@@ -90,7 +91,7 @@ export async function fetchAdminClientDetail(
 
 export async function updateAdminClientName(
   clientId: number,
-  payload: { name: string },
+  payload: UpdateAdminClientPayload,
 ): Promise<UpdateAdminClientResponse> {
   const response = await fetch(`/api/admin/clients/${clientId}`, {
     method: "PATCH",

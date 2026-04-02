@@ -8,10 +8,14 @@ type ClientsMetricsGridProps = {
   totalClients: number;
   withFutureAppointments: number;
   withoutFutureAppointments: number;
+  loyalClients: number;
+  loyalClientsPercentage: number;
   labels: {
     totalClients: string;
     withFutureAppointments: string;
     withoutFutureAppointments: string;
+    loyalClients: string;
+    loyalClientsPercentage: string;
   };
 };
 
@@ -19,10 +23,12 @@ export function ClientsMetricsGrid({
   totalClients,
   withFutureAppointments,
   withoutFutureAppointments,
+  loyalClients,
+  loyalClientsPercentage,
   labels,
 }: ClientsMetricsGridProps) {
   return (
-    <section className="grid grid-cols-3 gap-3">
+    <section className="grid grid-cols-2 gap-3">
       <MetricCard
         icon={<AdminIcon icon={adminIcons.clientsAnalytics} />}
         label={labels.totalClients}
@@ -40,6 +46,18 @@ export function ClientsMetricsGrid({
         label={labels.withoutFutureAppointments}
         value={withoutFutureAppointments}
         className="min-h-[112px] p-3"
+      />
+      <MetricCard
+        icon={<AdminIcon icon={adminIcons.busiestDay} tone="secondary" />}
+        label={labels.loyalClients}
+        value={loyalClients}
+        className="min-h-[112px] p-3"
+      />
+      <MetricCard
+        icon={<AdminIcon icon={adminIcons.trendUp} />}
+        label={labels.loyalClientsPercentage}
+        value={`${loyalClientsPercentage}%`}
+        className="col-span-2 min-h-[112px] p-3"
       />
     </section>
   );

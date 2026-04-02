@@ -40,10 +40,11 @@ function resolveUpdateErrorKey(errorCode: string) {
 export function ClientDetailView({ clientId, initialData }: ClientDetailViewProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveAppLanguage(i18n.resolvedLanguage ?? "es");
-  const { data, isLoading, isUpdating, errorCode, retry, updateName } = useClientDetail({
-    clientId,
-    initialData,
-  });
+  const { data, isLoading, isUpdating, errorCode, retry, updateName, updateLoyalty } =
+    useClientDetail({
+      clientId,
+      initialData,
+    });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const labels = useMemo(
@@ -56,6 +57,12 @@ export function ClientDetailView({ clientId, initialData }: ClientDetailViewProp
       emptyTimeline: t("clients.detail.timeline.empty"),
       editCta: t("clients.detail.actions.edit"),
       back: t("clients.detail.actions.back"),
+      loyaltyTitle: t("clients.detail.loyalty.title"),
+      loyaltyDescription: t("clients.detail.loyalty.description"),
+      loyaltyEnabled: t("clients.detail.loyalty.enabled"),
+      loyaltyDisabled: t("clients.detail.loyalty.disabled"),
+      loyaltyEnableAction: t("clients.detail.loyalty.enableAction"),
+      loyaltyDisableAction: t("clients.detail.loyalty.disableAction"),
     }),
     [t],
   );
@@ -85,6 +92,29 @@ export function ClientDetailView({ clientId, initialData }: ClientDetailViewProp
     }
   }
 
+  async function handleToggleLoyalty(nextIsLoyal: boolean) {
+    try {
+      await sileo.promise(updateLoyalty(nextIsLoyal), {
+        loading: {
+          title: t("clients.detail.notifications.loyaltyUpdateLoading"),
+        },
+        success: {
+          title: t("clients.detail.notifications.loyaltyUpdateSuccess"),
+        },
+        error: (error: unknown) => {
+          const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+          return {
+            title: t("clients.detail.notifications.loyaltyUpdateError"),
+            description: t(resolveUpdateErrorKey(code)),
+          };
+        },
+      });
+    } catch {
+      // handled by toast notification
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center justify-between">
@@ -101,14 +131,48 @@ export function ClientDetailView({ clientId, initialData }: ClientDetailViewProp
       </section>
 
       <Card>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <h1 className="text-xl font-bold text-[var(--admin-text-primary)]">
             {data.client.name}
           </h1>
           <p className="text-sm font-medium text-[var(--admin-text-secondary)]">
             {formatPhoneForDisplay(data.client.phone)}
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={[
+                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
+                data.client.isLoyal
+                  ? "bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] text-[var(--admin-accent)]"
+                  : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)]",
+              ].join(" ")}
+            >
+              {data.client.isLoyal ? labels.loyaltyEnabled : labels.loyaltyDisabled}
+            </span>
+          </div>
         </div>
+      </Card>
+
+      <Card className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold text-[var(--admin-text-primary)]">
+            {labels.loyaltyTitle}
+          </h2>
+          <p className="text-sm text-[var(--admin-text-secondary)]">
+            {labels.loyaltyDescription}
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant={data.client.isLoyal ? "secondary" : "primary"}
+          onClick={() => void handleToggleLoyalty(!data.client.isLoyal)}
+          disabled={isUpdating || isLoading}
+          aria-pressed={data.client.isLoyal}
+          fullWidth
+        >
+          {data.client.isLoyal ? labels.loyaltyDisableAction : labels.loyaltyEnableAction}
+        </Button>
       </Card>
 
       <section className="grid grid-cols-2 gap-3">

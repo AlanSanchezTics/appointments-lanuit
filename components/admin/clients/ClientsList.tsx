@@ -20,6 +20,7 @@ type ClientsListProps = {
     previous: string;
     page: string;
     futureBadge: string;
+    loyalBadge: string;
     appointmentsCount: (count: number) => string;
   };
   onOpenClient: (clientId: number) => void;
@@ -74,6 +75,11 @@ export function ClientsList({
                   <span className="rounded-full bg-[var(--admin-inactive-bg)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-text-secondary)]">
                     {labels.appointmentsCount(client.totalAppointments)}
                   </span>
+                  {client.isLoyal ? (
+                    <span className="rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-accent)]">
+                      {labels.loyalBadge}
+                    </span>
+                  ) : null}
                   {client.hasFutureActiveAppointments ? (
                     <span className="rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-accent)]">
                       {labels.futureBadge}

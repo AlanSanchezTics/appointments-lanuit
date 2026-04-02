@@ -23,6 +23,8 @@ const initialData: AdminClientsCatalogResponse = {
     totalClients: 2,
     withFutureAppointments: 1,
     withoutFutureAppointments: 1,
+    loyalClients: 1,
+    loyalClientsPercentage: 50,
   },
   pagination: {
     page: 2,
@@ -39,6 +41,7 @@ const initialData: AdminClientsCatalogResponse = {
       updatedAt: "2026-03-02T00:00:00.000Z",
       totalAppointments: 3,
       hasFutureActiveAppointments: true,
+      isLoyal: true,
       lastAppointmentDate: "2026-03-20",
       nextAppointmentDate: "2026-04-01",
       nextAppointmentTimeSlot: "09:00",
@@ -86,6 +89,9 @@ describe("ClientsCatalogView", () => {
     expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
     expect(screen.getByText("Futura")).toBeInTheDocument();
     expect(screen.getByText("3 citas")).toBeInTheDocument();
+    expect(screen.getByText("Fiel")).toBeInTheDocument();
+    expect(screen.getByText("Clientes fieles")).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Aplicar filtros/i })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Buscar"), {
@@ -98,6 +104,11 @@ describe("ClientsCatalogView", () => {
       target: { value: "WITHOUT_FUTURE_APPOINTMENTS" },
     });
     expect(updateStatusMock).toHaveBeenCalledWith("WITHOUT_FUTURE_APPOINTMENTS");
+
+    fireEvent.change(screen.getByLabelText("Estado"), {
+      target: { value: "LOYAL" },
+    });
+    expect(updateStatusMock).toHaveBeenCalledWith("LOYAL");
 
     fireEvent.change(screen.getByLabelText("Orden"), {
       target: { value: "APPOINTMENTS_DESC" },

@@ -27,12 +27,14 @@ export async function updateAdminClient(
       id: clientId,
     },
     data: {
-      name: payload.name,
+      ...(payload.name !== undefined ? { name: payload.name } : {}),
+      ...(payload.isLoyal !== undefined ? { isLoyal: payload.isLoyal } : {}),
     },
     select: {
       id: true,
       name: true,
       phone: true,
+      isLoyal: true,
       updatedAt: true,
     },
   });
@@ -41,6 +43,7 @@ export async function updateAdminClient(
     clientId: updatedClient.id,
     name: updatedClient.name,
     phone: updatedClient.phone,
+    isLoyal: updatedClient.isLoyal,
     updatedAt: updatedClient.updatedAt.toISOString(),
   };
 }

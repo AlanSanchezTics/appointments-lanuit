@@ -30,6 +30,7 @@ Business behavior is defined by:
 - Customer
   - Identified by phone number.
   - Has one canonical name associated with that phone.
+  - May be flagged as loyal for admin catalog and detail views.
 
 - Appointment
   - Represents a scheduled service at a date and time slot.
@@ -276,6 +277,7 @@ Business behavior is defined by:
     - `ALL`
     - `WITH_FUTURE_APPOINTMENTS`
     - `WITHOUT_FUTURE_APPOINTMENTS`
+    - `LOYAL`
   - `sort` allows:
     - `RECENT`
     - `NAME_ASC`
@@ -294,22 +296,28 @@ Business behavior is defined by:
     - `totalClients`
     - `withFutureAppointments`
     - `withoutFutureAppointments`
+    - `loyalClients`
+    - `loyalClientsPercentage`
+  - `loyalClientsPercentage` is computed as `round(loyalClients / totalClients * 100)`.
+  - If `totalClients = 0`, `loyalClientsPercentage` must be `0`.
   - Each catalog row includes identity and operational summary:
-    - `clientId`, `name`, `phone`, timestamps
+    - `clientId`, `name`, `phone`, loyalty flag, timestamps
     - appointment aggregates and next/last appointment references.
 
 - Detail policy (`GET /api/admin/clients/[clientId]`):
   - Requires valid numeric `clientId`.
   - If the client does not exist, returns `CLIENT_NOT_FOUND` (`404`).
   - Response includes:
-    - client identity block,
+    - client identity block including loyalty flag,
     - summary metrics (`total`, `active`, `cancelled`, `futureActive`, next/last appointment),
     - chronological appointments list.
 
 - Update policy (`PATCH /api/admin/clients/[clientId]`):
   - Requires valid numeric `clientId`.
-  - Supports updating canonical client name.
+  - Supports partial updates for canonical client name and loyalty flag.
+  - Loyalty flag is a manual admin segmentation marker stored in `clients.is_loyal`.
   - Name must satisfy domain identity validation (minimum length).
+  - Empty payloads are rejected.
   - If client does not exist, returns `CLIENT_NOT_FOUND` (`404`).
 
 - Auth and error semantics:

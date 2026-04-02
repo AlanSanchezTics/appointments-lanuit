@@ -48,6 +48,7 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
         clientId: 42,
         name: "Ana",
         phone: "5512345678",
+        isLoyal: true,
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-03-20T00:00:00.000Z",
       },
@@ -105,6 +106,7 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
       clientId: 42,
       name: "Ana Garcia",
       phone: "5512345678",
+      isLoyal: true,
       updatedAt: "2026-03-21T12:00:00.000Z",
     });
 
@@ -117,6 +119,7 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
         },
         body: JSON.stringify({
           name: "Ana Garcia",
+          isLoyal: true,
         }),
       }),
       {
@@ -129,6 +132,33 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
     expect(response.status).toBe(200);
     expect(updateAdminClientMock).toHaveBeenCalledWith(42, {
       name: "Ana Garcia",
+      isLoyal: true,
+    });
+  });
+
+  it("returns 400 when PATCH payload is empty", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+
+    const { PATCH } = await import("@/app/api/admin/clients/[clientId]/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/clients/42", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      }),
+      {
+        params: Promise.resolve({
+          clientId: "42",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "VALIDATION_ERROR",
+      error: "VALIDATION_ERROR",
     });
   });
 

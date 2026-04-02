@@ -52,6 +52,8 @@ describe("admin clients page", () => {
         totalClients: 0,
         withFutureAppointments: 0,
         withoutFutureAppointments: 0,
+        loyalClients: 0,
+        loyalClientsPercentage: 0,
       },
       pagination: {
         page: 1,

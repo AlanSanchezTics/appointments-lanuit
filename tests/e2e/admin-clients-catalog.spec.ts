@@ -215,7 +215,7 @@ e2eSuite("admin clients catalog e2e", () => {
     await prisma.$disconnect();
   });
 
-  test("allows filtering clients, opening detail and editing name", async ({ page }) => {
+  test("allows filtering clients, opening detail, editing name and marking loyal", async ({ page }) => {
     await page.goto("/admin/login");
     await page.locator("#admin-username").fill(E2E_ADMIN_USERNAME);
     await page.locator("#admin-password").fill(E2E_ADMIN_PASSWORD);
@@ -237,6 +237,19 @@ e2eSuite("admin clients catalog e2e", () => {
     await expect(page).toHaveURL(/\/admin\/clients\/\d+$/);
     await expect(page.getByRole("heading", { name: targetClientName })).toBeVisible();
 
+    const loyalToggleResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/admin/clients/") &&
+        response.request().method() === "PATCH" &&
+        response.status() === 200,
+    );
+
+    await page.getByRole("button", { name: /Marcar como cliente fiel|Mark as loyal client/i }).click();
+    await loyalToggleResponsePromise;
+    await expect(
+      page.getByRole("button", { name: /Quitar marca de cliente fiel|Remove loyal client flag/i }),
+    ).toBeVisible();
+
     await page.getByRole("button", { name: /Editar cliente|Edit client/i }).click();
     await page.getByLabel(/Nombre|Name/i).fill(updatedClientName);
 
@@ -251,5 +264,15 @@ e2eSuite("admin clients catalog e2e", () => {
     await updateResponsePromise;
 
     await expect(page.getByRole("heading", { name: updatedClientName })).toBeVisible();
+
+    await page.getByRole("link", { name: /Volver al catálogo|Back to catalog/i }).click();
+    await expect(page).toHaveURL(/\/admin\/clients$/);
+
+    await page.getByLabel(/Buscar|Search/i).fill("E2E");
+    await page.getByLabel(/Estado|Status/i).selectOption("LOYAL");
+
+    await expect(page.getByText(/Fiel|Loyal/i)).toBeVisible();
+    await expect(page.getByText(updatedClientName, { exact: true })).toBeVisible();
+    await expect(page.getByText(/E2E Sin Futura/)).toHaveCount(0);
   });
 });

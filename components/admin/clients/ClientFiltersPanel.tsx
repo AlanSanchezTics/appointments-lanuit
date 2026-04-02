@@ -50,6 +50,10 @@ export function ClientFiltersPanel({
       value: "WITHOUT_FUTURE_APPOINTMENTS",
       label: labels.statusOptions.WITHOUT_FUTURE_APPOINTMENTS,
     },
+    {
+      value: "LOYAL",
+      label: labels.statusOptions.LOYAL,
+    },
   ];
 
   const sortOptions: SelectOption[] = [

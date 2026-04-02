@@ -54,51 +54,64 @@ export async function getAdminClientsCatalog(
           },
         }
       : {}),
+    ...(filters.status === "LOYAL"
+      ? {
+          isLoyal: true,
+        }
+      : {}),
   };
 
-  const [totalClients, withFutureAppointments, totalFiltered, rows] = await Promise.all([
-    prisma.client.count({
-      where: queryWhere,
-    }),
-    prisma.client.count({
-      where: {
-        ...queryWhere,
-        appointments: {
-          some: futureActiveAppointmentsWhere,
-        },
-      },
-    }),
-    prisma.client.count({
-      where: listWhere,
-    }),
-    prisma.client.findMany({
-      where: listWhere,
-      skip: (filters.page - 1) * filters.pageSize,
-      take: filters.pageSize,
-      orderBy: resolveCatalogOrderBy(filters.sort),
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            appointments: true,
+  const [totalClients, withFutureAppointments, loyalClients, totalFiltered, rows] =
+    await Promise.all([
+      prisma.client.count({
+        where: queryWhere,
+      }),
+      prisma.client.count({
+        where: {
+          ...queryWhere,
+          appointments: {
+            some: futureActiveAppointmentsWhere,
           },
         },
-        appointments: {
-          select: {
-            date: true,
-          },
-          orderBy: {
-            date: "desc",
-          },
-          take: 1,
+      }),
+      prisma.client.count({
+        where: {
+          ...queryWhere,
+          isLoyal: true,
         },
-      },
-    }),
-  ]);
+      }),
+      prisma.client.count({
+        where: listWhere,
+      }),
+      prisma.client.findMany({
+        where: listWhere,
+        skip: (filters.page - 1) * filters.pageSize,
+        take: filters.pageSize,
+        orderBy: resolveCatalogOrderBy(filters.sort),
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          isLoyal: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              appointments: true,
+            },
+          },
+          appointments: {
+            select: {
+              date: true,
+            },
+            orderBy: {
+              date: "desc",
+            },
+            take: 1,
+          },
+        },
+      }),
+    ]);
 
   const clientIds = rows.map((row) => row.id);
   const futureAppointmentsByClient = new Map<number, { date: Date; timeSlot: Date }>();
@@ -145,6 +158,9 @@ export async function getAdminClientsCatalog(
       totalClients,
       withFutureAppointments,
       withoutFutureAppointments: Math.max(0, totalClients - withFutureAppointments),
+      loyalClients,
+      loyalClientsPercentage:
+        totalClients === 0 ? 0 : Math.round((loyalClients / totalClients) * 100),
     },
     pagination: {
       page: filters.page,
@@ -156,6 +172,7 @@ export async function getAdminClientsCatalog(
       clientId: row.id,
       name: row.name,
       phone: row.phone,
+      isLoyal: row.isLoyal,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       totalAppointments: row._count.appointments,

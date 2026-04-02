@@ -26,6 +26,7 @@ const initialData: AdminClientDetailResponse = {
     clientId: 42,
     name: "Ana Pérez",
     phone: "5512345678",
+    isLoyal: false,
     createdAt: "2026-02-01T00:00:00.000Z",
     updatedAt: "2026-03-29T00:00:00.000Z",
   },
@@ -64,12 +65,15 @@ describe("ClientDetailView", () => {
       refresh: vi.fn(),
       retry: vi.fn(),
       updateName: vi.fn(),
+      updateLoyalty: vi.fn(),
     });
 
     render(<ClientDetailView clientId={42} initialData={initialData} />);
 
     expect(screen.getByRole("heading", { name: "Ana Pérez" })).toBeInTheDocument();
     expect(screen.getByText("Historial de citas")).toBeInTheDocument();
+    expect(screen.getByText("Cliente fiel")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Marcar como cliente fiel" })).toBeInTheDocument();
     expect(screen.getByText("Total de citas")).toBeInTheDocument();
     expect(screen.getByText("Activas")).toBeInTheDocument();
     expect(screen.getByText("Canceladas")).toBeInTheDocument();
@@ -88,6 +92,7 @@ describe("ClientDetailView", () => {
       refresh: vi.fn(),
       retry: vi.fn(),
       updateName: updateNameMock,
+      updateLoyalty: vi.fn(),
     });
 
     render(<ClientDetailView clientId={42} initialData={initialData} />);
@@ -100,6 +105,30 @@ describe("ClientDetailView", () => {
 
     await waitFor(() => {
       expect(updateNameMock).toHaveBeenCalledWith("Ana María Pérez");
+      expect(promiseMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("submits loyal toggle through sileo promise", async () => {
+    const updateLoyaltyMock = vi.fn().mockResolvedValue(undefined);
+
+    useClientDetailMock.mockReturnValue({
+      data: initialData,
+      isLoading: false,
+      isUpdating: false,
+      errorCode: null,
+      refresh: vi.fn(),
+      retry: vi.fn(),
+      updateName: vi.fn(),
+      updateLoyalty: updateLoyaltyMock,
+    });
+
+    render(<ClientDetailView clientId={42} initialData={initialData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Marcar como cliente fiel" }));
+
+    await waitFor(() => {
+      expect(updateLoyaltyMock).toHaveBeenCalledWith(true);
       expect(promiseMock).toHaveBeenCalledTimes(1);
     });
   });

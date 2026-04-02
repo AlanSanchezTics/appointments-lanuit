@@ -99,7 +99,9 @@
       "metrics": {
         "totalClients": "Clients",
         "withFutureAppointments": "With future",
-        "withoutFutureAppointments": "Without future"
+        "withoutFutureAppointments": "Without future",
+        "loyalClients": "Loyal clients",
+        "loyalClientsPercentage": "Loyalty %"
       },
       "filters": {
         "queryLabel": "Search",
@@ -109,7 +111,8 @@
         "statusOptions": {
           "ALL": "All",
           "WITH_FUTURE_APPOINTMENTS": "With future appointments",
-          "WITHOUT_FUTURE_APPOINTMENTS": "Without future appointments"
+          "WITHOUT_FUTURE_APPOINTMENTS": "Without future appointments",
+          "LOYAL": "Loyal clients only"
         },
         "sortOptions": {
           "RECENT": "Most recent",
@@ -127,6 +130,7 @@
         "next": "Next",
         "page": "Page {{page}} of {{totalPages}}",
         "futureBadge": "Future",
+        "loyalBadge": "Loyal",
         "appointmentsCount_one": "{{count}} appointment",
         "appointmentsCount_other": "{{count}} appointments"
       },
@@ -150,6 +154,15 @@
         "title": "Appointment history",
         "empty": "This client has no appointments yet."
       },
+      "loyalty": {
+        "title": "Loyal client",
+        "description": "Manual flag used to identify clients with recurring preference.",
+        "enabled": "Yes",
+        "disabled": "No",
+        "toggleLabel": "Change loyal client status",
+        "enableAction": "Mark as loyal client",
+        "disableAction": "Remove loyal client flag"
+      },
       "errors": {
         "loadFailed": "Unable to load client detail.",
         "retry": "Retry"
@@ -158,6 +171,9 @@
         "updateLoading": "Updating client...",
         "updateSuccess": "Client updated",
         "updateError": "Unable to update client.",
+        "loyaltyUpdateLoading": "Updating loyal client status...",
+        "loyaltyUpdateSuccess": "Loyal client status updated",
+        "loyaltyUpdateError": "Unable to update loyal client status.",
         "errors": {
           "notFound": "Selected client was not found.",
           "validation": "Check the name and try again.",
