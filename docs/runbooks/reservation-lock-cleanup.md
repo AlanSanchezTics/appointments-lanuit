@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Controlar el crecimiento de `reservation_locks` sin cron interno, usando limpieza profunda manual por lotes.
+Eliminar locks expirados de `reservation_locks` usando limpieza por lotes, apta para ejecución programada frecuente (por ejemplo, cada minuto).
 
 ## Política
 
@@ -11,24 +11,24 @@ Controlar el crecimiento de `reservation_locks` sin cron interno, usando limpiez
 - `POST /api/reservar/confirm` ejecuta cleanup de expirados antes de validar lock.
 - `GET /api/availability/[month]` solo filtra vigentes (`expires_at > now`).
 
-2. Limpieza profunda manual:
-- Cadencia recomendada: 1 vez por semana.
-- Retención recomendada: conservar locks expirados de los últimos 7 días.
-- Ejecutar ad-hoc si `reservation_locks` supera 100,000 filas.
+2. Limpieza operativa programada:
+- Cadencia recomendada: cada minuto vía cron externo.
+- El script elimina todos los locks con `expires_at <= cutoff` (donde `cutoff` es la hora de inicio de ejecución).
+- Usar `batch` para controlar el tamaño de cada borrado.
 
 ## Comando
 
 ```bash
-npm run locks:cleanup -- --older-than-days=7 --batch=5000
+npm run locks:cleanup -- --batch=5000
 ```
 
 ## Verificación rápida
 
 1. Contar filas antes y después.
-2. Verificar que los locks vigentes no fueron eliminados.
-3. Revisar salida JSON del comando (`deleted`, `olderThanDays`, `batchSize`).
+2. Verificar que los locks vigentes (`expires_at > cutoff`) no fueron eliminados.
+3. Revisar salida JSON del comando (`deleted`, `batchSize`, `cutoff`).
 
 ## Rollback
 
-No aplica rollback lógico; los locks eliminados están expirados.
+No aplica rollback lógico; los locks eliminados están expirados al momento del `cutoff` de ejecución.
 Si se detecta borrado indebido, detener ejecuciones manuales y revisar parámetros usados.

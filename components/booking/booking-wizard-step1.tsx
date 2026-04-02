@@ -293,7 +293,7 @@ export function BookingWizardStep1({
             {t("booking.selectTime")}
           </p>
           <div
-            className={`grid ${(selectedDay?.slots && selectedDay?.slots.length) > 3 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
+            className={`grid ${(selectedDay?.slots?.length ?? 0) > 3 ? "grid-cols-2" : "grid-cols-1"} gap-4`}
           >
             {(selectedDay?.slots ?? []).map((slot) => {
               const isSelected = draft.timeSlot === slot;

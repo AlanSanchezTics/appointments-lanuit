@@ -53,7 +53,13 @@ export function Modal({ isOpen, title, closeLabel, onClose, children }: ModalPro
         return;
       }
 
-      const focusable = findFocusableElements(container);
+      const activeContainer = containerRef.current;
+
+      if (!activeContainer) {
+        return;
+      }
+
+      const focusable = findFocusableElements(activeContainer);
 
       if (focusable.length === 0) {
         return;

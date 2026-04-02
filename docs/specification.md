@@ -252,6 +252,7 @@ Locking temporal adicional:
 - Tabla `reservation_locks` para bloquear slot durante el paso de confirmación.
 - `TTL` fijo de 10 minutos por lock.
 - Sin cron obligatorio: cleanup lazy en endpoints de lock/confirm y filtro por `expires_at > now` en disponibilidad.
+- Opcionalmente puede ejecutarse un cron externo frecuente para borrar locks expirados (`expires_at <= now`) por lotes.
 
 Orden de confirmación:
 

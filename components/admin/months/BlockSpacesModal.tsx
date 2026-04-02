@@ -8,10 +8,11 @@ import { BottomSheetModal } from "@/components/admin/ui/BottomSheetModal";
 import { Button } from "@/components/admin/ui/Button";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
-import { DIRECTIONAL_SLOT_PAIRS } from "@/lib/constants/slots";
+import { BASE_TIME_SLOTS, DIRECTIONAL_SLOT_PAIRS } from "@/lib/constants/slots";
 import { formatTimeSlotLabel, parseDateOnly } from "@/lib/datetime/mexico-city";
 
 type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
+type TimeSlot = (typeof BASE_TIME_SLOTS)[number];
 
 type BlockSpacesModalProps = {
   isOpen: boolean;
@@ -19,11 +20,11 @@ type BlockSpacesModalProps = {
   isSubmitting: boolean;
   isReadyToSubmit: boolean;
   errorCode: string | null;
-  days: Array<{ date: string; slots: string[] }>;
+  days: Array<{ date: string; slots: TimeSlot[] }>;
   selectedDate: string | null;
   currentDate: string;
-  selectedDaySlots: string[];
-  selectedSlots: string[];
+  selectedDaySlots: TimeSlot[];
+  selectedSlots: TimeSlot[];
   areAllSelectedForDay: boolean;
   reason: BlockReason;
   allowBlockView: boolean;
@@ -31,8 +32,8 @@ type BlockSpacesModalProps = {
   onClose: () => void;
   onRetry: () => void;
   onSelectDate: (date: string) => void;
-  onToggleSlot: (slot: string) => void;
-  onToggleBlockSlots: (slots: string[]) => void;
+  onToggleSlot: (slot: TimeSlot) => void;
+  onToggleBlockSlots: (slots: TimeSlot[]) => void;
   onSelectAllSlots: () => void;
   onClearSelectedSlots: () => void;
   onReasonChange: (reason: BlockReason) => void;
@@ -104,7 +105,7 @@ export function BlockSpacesModal({
     () =>
       DIRECTIONAL_SLOT_PAIRS.map(([start, end]) => ({
         id: `${start}-${end}`,
-        slots: [start, end] as string[],
+        slots: [start, end] as TimeSlot[],
         startSlot: start,
         endSlot: end,
       })).filter((block) =>
@@ -276,7 +277,7 @@ export function BlockSpacesModal({
                         <AdminIcon
                           icon={adminIcons.blockSchedule}
                           tone={isSelected ? "primary" : "secondary"}
-                          className={isSelected ? "text-white" : null}
+                          className={isSelected ? "text-white" : undefined}
                         />
                       </span>
                       <span
@@ -320,7 +321,7 @@ export function BlockSpacesModal({
                         <AdminIcon
                           icon={adminIcons.blockSchedule}
                           tone={isSelected ? "primary" : "secondary"}
-                          className={isSelected ? "text-white" : null}
+                          className={isSelected ? "text-white" : undefined}
                         />
                       </span>
                       <span

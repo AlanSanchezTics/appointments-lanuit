@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { AppointmentStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 
@@ -20,11 +20,21 @@ function timeToTimeSlotKey(value: Date) {
   return value.toISOString().slice(11, 16);
 }
 
+function toActiveAppointmentStatus(
+  status: AppointmentStatus,
+): PersistedAdminAgendaAppointment["status"] {
+  if (status === "CONFIRMED" || status === "SYNC_FAILED") {
+    return status;
+  }
+
+  throw new Error("APPOINTMENT_NOT_ACTIVE");
+}
+
 function mapAgendaAppointment(row: {
   id: number;
   date: Date;
   timeSlot: Date;
-  status: "CONFIRMED" | "SYNC_FAILED";
+  status: AppointmentStatus;
   googleEventId: string | null;
   client: {
     name: string;
@@ -35,7 +45,7 @@ function mapAgendaAppointment(row: {
     id: row.id,
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
-    status: row.status,
+    status: toActiveAppointmentStatus(row.status),
     name: row.client.name,
     phone: row.client.phone,
     googleEventId: row.googleEventId,

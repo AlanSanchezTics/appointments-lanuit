@@ -10,16 +10,7 @@ function getArg(name, fallback) {
   return arg.slice(name.length + 3);
 }
 
-function getCutoffDate(days) {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-}
-
-const olderThanDays = Number(getArg("older-than-days", "7"));
 const batchSize = Number(getArg("batch", "5000"));
-
-if (!Number.isFinite(olderThanDays) || olderThanDays < 1) {
-  throw new Error("INVALID_OLDER_THAN_DAYS");
-}
 
 if (!Number.isFinite(batchSize) || batchSize < 1) {
   throw new Error("INVALID_BATCH_SIZE");
@@ -28,14 +19,14 @@ if (!Number.isFinite(batchSize) || batchSize < 1) {
 const prisma = new PrismaClient();
 
 async function main() {
-  const cutoff = getCutoffDate(olderThanDays);
+  const cutoff = new Date();
   let deleted = 0;
 
   while (true) {
     const rows = await prisma.reservationLock.findMany({
       where: {
         expiresAt: {
-          lt: cutoff,
+          lte: cutoff,
         },
       },
       orderBy: {
@@ -71,8 +62,8 @@ async function main() {
     JSON.stringify(
       {
         deleted,
-        olderThanDays,
         batchSize,
+        cutoff: cutoff.toISOString(),
       },
       null,
       2,

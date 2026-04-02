@@ -148,7 +148,7 @@ function buildCalendarCells(
     { length: firstWeekday },
     (_, index) => ({
       key: `leading-${index}`,
-      day: null as number | null,
+      day: null as MonthDetailCalendarDay | null,
     }),
   );
 
@@ -937,10 +937,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
               );
             }
 
-            const isActionableDay = !cell.day.isWeekend;
+            const day = cell.day;
+            const isActionableDay = !day.isWeekend;
             const dayToneClasses = getToneClasses(
-              cell.day.tone,
-              cell.day.date === data.currentDate,
+              day.tone,
+              day.date === data.currentDate,
             );
 
             return (
@@ -949,31 +950,30 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                 key={cell.key}
                 disabled={!isActionableDay}
                 className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-lg border border-transparent text-sm font-semibold ${dayToneClasses} disabled:cursor-not-allowed disabled:opacity-75`}
-                title={cell.day.date}
+                title={day.date}
                 onClick={() => {
                   if (!isActionableDay) {
                     return;
                   }
 
-                  void dayAgendaModal.open(cell.day.date);
+                  void dayAgendaModal.open(day.date);
                 }}
                 aria-label={t("monthsDetail.dayModal.title", {
-                  date: dayLabelFormatter.format(parseDateOnly(cell.day.date)),
+                  date: dayLabelFormatter.format(parseDateOnly(day.date)),
                 })}
               >
-                <span>{cell.day.day}</span>
-                {cell.day.appointmentsCount &&
-                cell.day.appointmentsCount > 0 ? (
+                <span>{day.day}</span>
+                {day.appointmentsCount && day.appointmentsCount > 0 ? (
                   <span
                     className="mt-0.5 flex items-center justify-center gap-0.5"
                     aria-hidden
                   >
                     {Array.from({
-                      length: Math.min(cell.day.appointmentsCount, 6),
+                      length: Math.min(day.appointmentsCount, 6),
                     }).map((_, index) => (
                       <span
-                        key={`${cell.day.date}-dot-${index}`}
-                        data-testid={`${cell.day.date}-appointment-dot`}
+                        key={`${day.date}-dot-${index}`}
+                        data-testid={`${day.date}-appointment-dot`}
                         className="h-1.5 w-1.5 rounded-full bg-current"
                       />
                     ))}
@@ -1089,7 +1089,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
               <AdminIcon
                 icon={adminIcons.monthDetailAvailable}
                 tone={slotModeDraft === "BLOCK_MODE" ? "primary" : "secondary"}
-                className={slotModeDraft === "BLOCK_MODE" ? "text-white" : null}
+                className={
+                  slotModeDraft === "BLOCK_MODE" ? "text-white" : undefined
+                }
               />
             </button>
             <button
@@ -1112,7 +1114,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                   slotModeDraft === "SECOND_ONLY_MODE" ? "primary" : "secondary"
                 }
                 className={
-                  slotModeDraft === "SECOND_ONLY_MODE" ? "text-white" : null
+                  slotModeDraft === "SECOND_ONLY_MODE"
+                    ? "text-white"
+                    : undefined
                 }
               />
             </button>

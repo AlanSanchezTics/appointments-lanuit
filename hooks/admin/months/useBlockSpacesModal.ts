@@ -7,9 +7,11 @@ import {
   fetchAdminBlockableSlots,
 } from "@/lib/admin/blocked-spaces/api-client";
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
+import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 
 type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
 type SlotViewMode = "hour" | "block";
+type TimeSlot = (typeof BASE_TIME_SLOTS)[number];
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 
@@ -18,16 +20,16 @@ export function useBlockSpacesModal(month: string) {
   const [isLoadingDays, setIsLoadingDays] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [days, setDays] = useState<Array<{ date: string; slots: string[] }>>([]);
+  const [days, setDays] = useState<Array<{ date: string; slots: TimeSlot[] }>>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [reason, setReason] = useState<BlockReason>("DESCANSO");
   const [slotViewMode, setSlotViewMode] = useState<SlotViewMode>("hour");
   const abortRef = useRef<AbortController | null>(null);
 
   const selectedDaySlots = useMemo(() => {
     if (!selectedDate) {
-      return [] as string[];
+      return [] as TimeSlot[];
     }
 
     return days.find((day) => day.date === selectedDate)?.slots ?? [];
@@ -101,7 +103,7 @@ export function useBlockSpacesModal(month: string) {
     setSelectedSlots([]);
   }, []);
 
-  const toggleSlot = useCallback((slot: string) => {
+  const toggleSlot = useCallback((slot: TimeSlot) => {
     setSelectedSlots((current) => {
       if (current.includes(slot)) {
         return current.filter((item) => item !== slot);
@@ -111,7 +113,7 @@ export function useBlockSpacesModal(month: string) {
     });
   }, []);
 
-  const toggleBlockSlots = useCallback((slots: string[]) => {
+  const toggleBlockSlots = useCallback((slots: TimeSlot[]) => {
     setSelectedSlots((current) => {
       const hasAllSlots = slots.every((slot) => current.includes(slot));
 

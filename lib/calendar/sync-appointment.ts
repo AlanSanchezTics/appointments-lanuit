@@ -1,12 +1,19 @@
 import { GoogleCalendarConfigError, createCalendarEvent } from "@/lib/calendar/google";
 import { prisma } from "@/lib/db/prisma";
 
+type SyncAppointmentToCalendarResult =
+  | { status: "CONFIRMED" }
+  | {
+      status: "SYNC_FAILED";
+      reason: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";
+    };
+
 export async function syncAppointmentToCalendar(input: {
   appointmentId: number;
   name: string;
   date: string;
   timeSlot: string;
-}) {
+}): Promise<SyncAppointmentToCalendarResult> {
   try {
     const googleEventId = await createCalendarEvent(input);
 
