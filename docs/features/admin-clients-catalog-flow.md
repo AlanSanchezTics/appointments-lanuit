@@ -51,10 +51,12 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 3. Acción `Volver al catálogo` regresa a `/admin/clients`.
 4. Acción `Editar cliente` abre modal de edición.
 
-## Flujo principal UI: edición de nombre
+## Flujo principal UI: edición de cliente (nombre + teléfono)
 
 1. Admin abre modal `Editar cliente`.
-2. Form valida nombre mínimo (`>= 3` caracteres).
+2. Form valida:
+   - nombre mínimo (`>= 3` caracteres),
+   - teléfono nacional válido (10 dígitos; se permite captura con separadores y se normaliza).
 3. Al guardar:
    - dispara `PATCH /api/admin/clients/[clientId]`,
    - muestra notificación con `sileo.promise` (`loading/success/error`),
@@ -102,13 +104,15 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 
 ## Flujo principal: actualización de cliente
 
-1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, isLoyal? }`.
+1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, phone?, isLoyal? }`.
 2. Backend valida sesión y `clientId`.
 3. Backend valida payload:
    - no puede estar vacío,
-   - `name` (si viene) debe cumplir mínimo de longitud.
-4. Backend actualiza los campos enviados (`name` y/o `isLoyal`).
-5. Backend responde payload actualizado `{ clientId, name, phone, isLoyal, updatedAt }`.
+   - `name` (si viene) debe cumplir mínimo de longitud,
+   - `phone` (si viene) debe normalizarse a 10 dígitos válidos.
+4. Backend actualiza los campos enviados (`name` y/o `phone` y/o `isLoyal`).
+5. Si `phone` colisiona con otro cliente, backend responde `CLIENT_PHONE_ALREADY_EXISTS`.
+6. Backend responde payload actualizado `{ clientId, name, phone, isLoyal, updatedAt }`.
 
 ## Reglas de negocio aplicables
 
@@ -124,5 +128,6 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 - Sesión faltante: `401 ADMIN_UNAUTHORIZED`.
 - `clientId` inválido: `400 CLIENT_ID_INVALID`.
 - Cliente no encontrado: `404 CLIENT_NOT_FOUND`.
-- Payload inválido (`name` corto o payload vacío): `400 VALIDATION_ERROR`.
+- Payload inválido (`name` corto, `phone` inválido o payload vacío): `400 VALIDATION_ERROR`.
+- Colisión de teléfono canónico: `400 CLIENT_PHONE_ALREADY_EXISTS`.
 - Error de red/UI en catálogo o detalle: bloque de error local con `Reintentar`.

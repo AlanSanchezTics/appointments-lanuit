@@ -11,35 +11,49 @@ type EditClientModalProps = {
   isOpen: boolean;
   isSubmitting: boolean;
   initialName: string;
+  initialPhone: string;
   labels: {
     title: string;
     close: string;
     nameLabel: string;
     namePlaceholder: string;
+    phoneLabel: string;
+    phonePlaceholder: string;
     save: string;
     saving: string;
     cancel: string;
     nameTooShort: string;
+    phoneInvalid: string;
   };
   onClose: () => void;
-  onSubmit: (name: string) => Promise<void>;
+  onSubmit: (payload: { name: string; phone: string }) => Promise<void>;
 };
 
 export function EditClientModal({
   isOpen,
   isSubmitting,
   initialName,
+  initialPhone,
   labels,
   onClose,
   onSubmit,
 }: EditClientModalProps) {
-  const { name, setName, fieldError, reset, validate } = useEditClientForm(initialName);
+  const {
+    name,
+    setName,
+    phone,
+    setPhone,
+    fieldError,
+    reset,
+    validate,
+    getSanitizedPayload,
+  } = useEditClientForm(initialName, initialPhone);
 
   useEffect(() => {
     if (isOpen) {
-      reset(initialName);
+      reset(initialName, initialPhone);
     }
-  }, [initialName, isOpen, reset]);
+  }, [initialName, initialPhone, isOpen, reset]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +62,7 @@ export function EditClientModal({
       return;
     }
 
-    await onSubmit(name.trim());
+    await onSubmit(getSanitizedPayload());
   }
 
   return (
@@ -66,7 +80,20 @@ export function EditClientModal({
           onChange={(event) => setName(event.target.value)}
           placeholder={labels.namePlaceholder}
           disabled={isSubmitting}
-          error={fieldError ? labels.nameTooShort : null}
+          error={fieldError.name ? labels.nameTooShort : null}
+          className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
+        />
+
+        <Input
+          id="edit-client-phone"
+          label={labels.phoneLabel}
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          placeholder={labels.phonePlaceholder}
+          disabled={isSubmitting}
+          inputMode="numeric"
+          autoComplete="tel-national"
+          error={fieldError.phone ? labels.phoneInvalid : null}
           className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
         />
 

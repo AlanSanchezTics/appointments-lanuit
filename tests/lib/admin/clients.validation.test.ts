@@ -145,9 +145,21 @@ describe("admin clients validation", () => {
     });
   });
 
+  it("parses update client payload with normalized phone", () => {
+    expect(parseUpdateAdminClientPayload({ phone: "322 123 4567" })).toEqual({
+      phone: "3221234567",
+    });
+  });
+
   it("rejects update client payload when name is too short", () => {
     expect(() => parseUpdateAdminClientPayload({ name: "An" })).toThrow(
       "CLIENT_NAME_TOO_SHORT",
+    );
+  });
+
+  it("rejects update client payload when phone is invalid", () => {
+    expect(() => parseUpdateAdminClientPayload({ phone: "32212345" })).toThrow(
+      "VALIDATION_PHONE_INVALID",
     );
   });
 

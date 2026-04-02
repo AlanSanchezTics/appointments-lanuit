@@ -89,7 +89,7 @@ export async function fetchAdminClientDetail(
   return response.json() as Promise<AdminClientDetailResponse>;
 }
 
-export async function updateAdminClientName(
+export async function updateAdminClient(
   clientId: number,
   payload: UpdateAdminClientPayload,
 ): Promise<UpdateAdminClientResponse> {

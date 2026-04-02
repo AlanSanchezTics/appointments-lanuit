@@ -796,10 +796,11 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
 2. UI muestra ficha del cliente, resumen de citas (`total`, `pasadas`, `futuras`) y timeline.
    - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
-4. Acción `Editar cliente` abre modal para actualizar `name`.
+4. Acción `Editar cliente` abre modal para actualizar `name` y `phone`.
 5. Validación local del modal:
    - `name` requerido,
    - largo mínimo `3`.
+   - `phone` requerido en formato nacional de 10 dígitos (se normaliza removiendo separadores).
 6. Guardar edición:
    - ejecuta `PATCH /api/admin/clients/[clientId]`,
    - usa `sileo.promise` para notificaciones `loading/success/error`,
@@ -865,9 +866,11 @@ Contrato API:
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `PATCH /api/admin/clients/[clientId]`:
     - `clientId` numérico positivo,
-    - payload parcial `{ name?, isLoyal? }`,
+    - payload parcial `{ name?, phone?, isLoyal? }`,
     - el payload no puede venir vacío,
     - `name`, cuando se envía, requiere mínimo de 3 caracteres,
+    - `phone`, cuando se envía, se normaliza a 10 dígitos,
+    - `phone` no puede colisionar con otro cliente (`CLIENT_PHONE_ALREADY_EXISTS`, `400`),
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,

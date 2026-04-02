@@ -70,7 +70,7 @@ describe("ClientDetailView", () => {
       errorCode: null,
       refresh: vi.fn(),
       retry: vi.fn(),
-      updateName: vi.fn(),
+      updateClientIdentity: vi.fn(),
       updateLoyalty: vi.fn(),
     });
 
@@ -98,7 +98,7 @@ describe("ClientDetailView", () => {
   });
 
   it("submits edit flow through sileo promise", async () => {
-    const updateNameMock = vi.fn().mockResolvedValue(undefined);
+    const updateClientIdentityMock = vi.fn().mockResolvedValue(undefined);
 
     useClientDetailMock.mockReturnValue({
       data: initialData,
@@ -107,7 +107,7 @@ describe("ClientDetailView", () => {
       errorCode: null,
       refresh: vi.fn(),
       retry: vi.fn(),
-      updateName: updateNameMock,
+      updateClientIdentity: updateClientIdentityMock,
       updateLoyalty: vi.fn(),
     });
 
@@ -117,10 +117,16 @@ describe("ClientDetailView", () => {
     fireEvent.change(screen.getByLabelText("Nombre"), {
       target: { value: "Ana María Pérez" },
     });
+    fireEvent.change(screen.getByLabelText("Teléfono"), {
+      target: { value: "5512345678" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     await waitFor(() => {
-      expect(updateNameMock).toHaveBeenCalledWith("Ana María Pérez");
+      expect(updateClientIdentityMock).toHaveBeenCalledWith({
+        name: "Ana María Pérez",
+        phone: "5512345678",
+      });
       expect(promiseMock).toHaveBeenCalledTimes(1);
     });
   });
@@ -135,7 +141,7 @@ describe("ClientDetailView", () => {
       errorCode: null,
       refresh: vi.fn(),
       retry: vi.fn(),
-      updateName: vi.fn(),
+      updateClientIdentity: vi.fn(),
       updateLoyalty: updateLoyaltyMock,
     });
 

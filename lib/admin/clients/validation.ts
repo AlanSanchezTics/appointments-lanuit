@@ -53,6 +53,11 @@ const UPDATE_CLIENT_SCHEMA = z.object({
     .min(3, "CLIENT_NAME_TOO_SHORT")
     .max(100, "CLIENT_NAME_TOO_LONG")
     .optional(),
+  phone: z
+    .string()
+    .transform((value) => value.replace(/\D/g, ""))
+    .refine((value) => /^[0-9]{10}$/.test(value), "VALIDATION_PHONE_INVALID")
+    .optional(),
   isLoyal: z.boolean().optional(),
 }).refine((value) => Object.keys(value).length > 0, {
   message: "VALIDATION_ERROR",

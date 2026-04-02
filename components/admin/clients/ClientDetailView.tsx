@@ -35,9 +35,14 @@ function resolveUpdateErrorKey(errorCode: string) {
 
   if (
     errorCode === "VALIDATION_ERROR" ||
-    errorCode === "CLIENT_NAME_TOO_SHORT"
+    errorCode === "CLIENT_NAME_TOO_SHORT" ||
+    errorCode === "VALIDATION_PHONE_INVALID"
   ) {
     return "clients.detail.notifications.errors.validation";
+  }
+
+  if (errorCode === "CLIENT_PHONE_ALREADY_EXISTS") {
+    return "clients.detail.notifications.errors.phoneAlreadyExists";
   }
 
   return "clients.detail.notifications.errors.unknown";
@@ -55,7 +60,7 @@ export function ClientDetailView({
     isUpdating,
     errorCode,
     retry,
-    updateName,
+    updateClientIdentity,
     updateLoyalty,
   } = useClientDetail({
     clientId,
@@ -80,9 +85,9 @@ export function ClientDetailView({
     [t],
   );
 
-  async function handleUpdateName(name: string) {
+  async function handleUpdateIdentity(payload: { name: string; phone: string }) {
     try {
-      await sileo.promise(updateName(name), {
+      await sileo.promise(updateClientIdentity(payload), {
         loading: {
           title: t("clients.detail.notifications.updateLoading"),
         },
@@ -319,17 +324,21 @@ export function ClientDetailView({
         isOpen={isEditModalOpen}
         isSubmitting={isUpdating || isLoading}
         initialName={data.client.name}
+        initialPhone={data.client.phone}
         onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleUpdateName}
+        onSubmit={handleUpdateIdentity}
         labels={{
           title: t("clients.editModal.title"),
           close: t("clients.editModal.close"),
           nameLabel: t("clients.editModal.nameLabel"),
           namePlaceholder: t("clients.editModal.namePlaceholder"),
+          phoneLabel: t("clients.editModal.phoneLabel"),
+          phonePlaceholder: t("clients.editModal.phonePlaceholder"),
           save: t("clients.editModal.save"),
           saving: t("clients.editModal.saving"),
           cancel: t("clients.editModal.cancel"),
           nameTooShort: t("clients.editModal.errors.nameTooShort"),
+          phoneInvalid: t("clients.editModal.errors.phoneInvalid"),
         }}
       />
     </main>

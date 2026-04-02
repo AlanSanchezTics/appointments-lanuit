@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   fetchAdminClientDetail,
-  updateAdminClientName,
+  updateAdminClient,
 } from "@/lib/admin/clients/api-client";
 import type {
   AdminClientDetailResponse,
@@ -42,16 +42,16 @@ export function useClientDetail({ clientId, initialData }: UseClientDetailInput)
     setIsUpdating(true);
 
     try {
-      await updateAdminClientName(clientId, payload);
+      await updateAdminClient(clientId, payload);
       await refresh();
     } finally {
       setIsUpdating(false);
     }
   }, [clientId, refresh]);
 
-  const updateName = useCallback(
-    async (name: string) => {
-      await updateClient({ name });
+  const updateClientIdentity = useCallback(
+    async (payload: { name: string; phone: string }) => {
+      await updateClient(payload);
     },
     [updateClient],
   );
@@ -74,7 +74,7 @@ export function useClientDetail({ clientId, initialData }: UseClientDetailInput)
     errorCode,
     refresh,
     retry: refresh,
-    updateName,
+    updateClientIdentity,
     updateLoyalty,
   };
 }

@@ -177,7 +177,8 @@
         "loyaltyUpdateError": "Unable to update loyal client status.",
         "errors": {
           "notFound": "Selected client was not found.",
-          "validation": "Check the name and try again.",
+          "validation": "Check the name and phone, then try again.",
+          "phoneAlreadyExists": "This phone is already assigned to another client.",
           "unknown": "An unexpected error occurred."
         }
       }
@@ -187,11 +188,14 @@
       "close": "Close client edit",
       "nameLabel": "Name",
       "namePlaceholder": "Full name",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "322 123 4567",
       "save": "Save",
       "saving": "Saving...",
       "cancel": "Cancel",
       "errors": {
-        "nameTooShort": "Name must contain at least 3 characters."
+        "nameTooShort": "Name must contain at least 3 characters.",
+        "phoneInvalid": "Phone must contain 10 digits."
       }
     }
   },
