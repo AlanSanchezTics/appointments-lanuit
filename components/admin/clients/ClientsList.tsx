@@ -20,6 +20,7 @@ type ClientsListProps = {
     previous: string;
     page: string;
     futureBadge: string;
+    appointmentsCount: (count: number) => string;
   };
   onOpenClient: (clientId: number) => void;
   onNextPage: () => void;
@@ -59,13 +60,20 @@ export function ClientsList({
               key={client.clientId}
               icon={
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--admin-inactive-bg)]">
-                  <AdminIcon icon={adminIcons.clients} tone="secondary" />
+                  <AdminIcon
+                    icon={adminIcons.clients}
+                    tone="accent"
+                    size="lg"
+                  />
                 </span>
               }
               title={client.name}
               subtitle={formatPhoneForDisplay(client.phone)}
               rightContent={
                 <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-[var(--admin-inactive-bg)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-text-secondary)]">
+                    {labels.appointmentsCount(client.totalAppointments)}
+                  </span>
                   {client.hasFutureActiveAppointments ? (
                     <span className="rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-accent)]">
                       {labels.futureBadge}

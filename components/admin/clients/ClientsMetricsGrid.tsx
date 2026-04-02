@@ -24,7 +24,7 @@ export function ClientsMetricsGrid({
   return (
     <section className="grid grid-cols-3 gap-3">
       <MetricCard
-        icon={<AdminIcon icon={adminIcons.clients} />}
+        icon={<AdminIcon icon={adminIcons.clientsAnalytics} />}
         label={labels.totalClients}
         value={totalClients}
         className="min-h-[112px] p-3"

@@ -72,6 +72,20 @@ describe("admin clients validation", () => {
     });
   });
 
+  it("parses clients catalog query with sort by appointments", () => {
+    const params = new URLSearchParams({
+      sort: "appointments_desc",
+    });
+
+    expect(parseAdminClientsCatalogQuery(params)).toEqual({
+      query: "",
+      status: "ALL",
+      sort: "APPOINTMENTS_DESC",
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
   it("rejects invalid clients catalog page", () => {
     const params = new URLSearchParams({
       page: "0",

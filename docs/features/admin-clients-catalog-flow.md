@@ -27,10 +27,14 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 3. Vista cliente muestra:
    - métricas (`total`, `con futuras`, `sin futuras`),
    - panel de filtros (`query`, `status`, `sort`),
-   - listado paginado.
-4. Al aplicar filtros o paginar:
+   - listado paginado,
+   - tag por cliente con total de citas históricas.
+   - las métricas se mantienen estables como analítica global durante el uso de filtros.
+4. Al cambiar cualquier filtro (`query`, `status`, `sort`) o al paginar:
    - se actualizan query params de la URL,
    - se refresca el catálogo vía `GET /api/admin/clients/catalog`.
+   - no existe botón de confirmación (`Aplicar filtros`); el comportamiento es reactivo.
+   - `query` aplica debounce corto para evitar una petición por cada tecla.
 5. Si no hay resultados, se muestra estado vacío.
 6. Si falla la carga, se muestra bloque de error con acción `Reintentar`.
 7. Al tocar un cliente, navega a `/admin/clients/[clientId]`.
@@ -63,7 +67,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 3. Backend valida query params:
    - `query` opcional,
    - `status`: `ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS`,
-   - `sort`: `RECENT|NAME_ASC|NAME_DESC`,
+   - `sort`: `RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC`,
    - `page` y `pageSize` positivos en rango permitido.
 4. Backend calcula y responde:
    - `filters`,

@@ -280,6 +280,7 @@ Business behavior is defined by:
     - `RECENT`
     - `NAME_ASC`
     - `NAME_DESC`
+    - `APPOINTMENTS_DESC`
   - `page` is 1-based and must be positive integer.
   - `pageSize` must be positive integer within configured maximum.
 

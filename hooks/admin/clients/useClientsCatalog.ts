@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { fetchAdminClientsCatalog } from "@/lib/admin/clients/api-client";
 import type {
@@ -19,7 +19,8 @@ const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 export function useClientsCatalog({ initialData }: UseClientsCatalogInput) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const [data, setData] = useState<AdminClientsCatalogResponse>(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,11 @@ export function useClientsCatalog({ initialData }: UseClientsCatalogInput) {
     page: number;
     pageSize: number;
   }) => {
-    const params = new URLSearchParams(searchParams.toString());
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
 
     if (nextFilters.query.trim().length > 0) {
       params.set("query", nextFilters.query.trim());
@@ -47,8 +52,11 @@ export function useClientsCatalog({ initialData }: UseClientsCatalogInput) {
     params.set("page", String(nextFilters.page));
     params.set("pageSize", String(nextFilters.pageSize));
 
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams]);
+    const nextQuery = params.toString();
+    const nextUrl = nextQuery.length > 0 ? `${pathname}?${nextQuery}` : pathname;
+
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [pathname]);
 
   const loadCatalog = useCallback(async (nextFilters: {
     query: string;
@@ -57,20 +65,41 @@ export function useClientsCatalog({ initialData }: UseClientsCatalogInput) {
     page: number;
     pageSize: number;
   }) => {
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsLoading(true);
     setErrorCode(null);
 
     try {
-      const response = await fetchAdminClientsCatalog(nextFilters);
-      setData(response);
+      const response = await fetchAdminClientsCatalog({
+        ...nextFilters,
+        signal: controller.signal,
+      });
+
+      if (requestId === requestIdRef.current) {
+        setData((previous) => ({
+          ...response,
+          // Keep analytics stable while interacting with filters.
+          metrics: previous.metrics,
+        }));
+      }
     } catch (error) {
       if (error instanceof Error && error.message === "AbortError") {
         return;
       }
 
-      setErrorCode(error instanceof Error ? error.message : DEFAULT_ERROR_CODE);
+      if (requestId === requestIdRef.current) {
+        setErrorCode(error instanceof Error ? error.message : DEFAULT_ERROR_CODE);
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -132,6 +161,10 @@ export function useClientsCatalog({ initialData }: UseClientsCatalogInput) {
   useEffect(() => {
     setData(initialData);
   }, [initialData]);
+
+  useEffect(() => () => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   return {
     data,

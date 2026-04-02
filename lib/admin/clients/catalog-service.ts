@@ -12,6 +12,13 @@ import type {
 } from "@/lib/admin/clients/types";
 
 function resolveCatalogOrderBy(sort: AdminClientsCatalogQuery["sort"]) {
+  if (sort === "APPOINTMENTS_DESC") {
+    return [
+      { appointments: { _count: "desc" as const } },
+      { updatedAt: "desc" as const },
+    ];
+  }
+
   if (sort === "NAME_ASC") {
     return [{ name: "asc" as const }, { updatedAt: "desc" as const }];
   }

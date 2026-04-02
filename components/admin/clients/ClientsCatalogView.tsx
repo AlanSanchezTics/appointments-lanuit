@@ -60,7 +60,6 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
           queryPlaceholder: t("clients.catalog.filters.queryPlaceholder"),
           statusLabel: t("clients.catalog.filters.statusLabel"),
           sortLabel: t("clients.catalog.filters.sortLabel"),
-          apply: t("clients.catalog.filters.apply"),
           statusOptions: {
             ALL: t("clients.catalog.filters.statusOptions.ALL"),
             WITH_FUTURE_APPOINTMENTS: t(
@@ -74,6 +73,7 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
             RECENT: t("clients.catalog.filters.sortOptions.RECENT"),
             NAME_ASC: t("clients.catalog.filters.sortOptions.NAME_ASC"),
             NAME_DESC: t("clients.catalog.filters.sortOptions.NAME_DESC"),
+            APPOINTMENTS_DESC: t("clients.catalog.filters.sortOptions.APPOINTMENTS_DESC"),
           },
         }}
       />
@@ -112,6 +112,8 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
             totalPages: data.pagination.totalPages,
           }),
           futureBadge: t("clients.catalog.list.futureBadge"),
+          appointmentsCount: (count: number) =>
+            t("clients.catalog.list.appointmentsCount", { count }),
         }}
       />
     </main>

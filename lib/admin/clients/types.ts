@@ -25,6 +25,7 @@ export const ADMIN_CLIENT_CATALOG_SORT_VALUES = [
   "RECENT",
   "NAME_ASC",
   "NAME_DESC",
+  "APPOINTMENTS_DESC",
 ] as const;
 
 export type AdminClientCatalogStatus = (typeof ADMIN_CLIENT_CATALOG_STATUS_VALUES)[number];

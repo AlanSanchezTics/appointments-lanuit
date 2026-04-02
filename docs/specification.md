@@ -777,10 +777,13 @@ Flujo UI: Catálogo de clientes admin (`/admin/clients`)
 3. UI renderiza:
    - métricas de clientes (`total`, `con futuras`, `sin futuras`),
    - panel de filtros,
-   - listado paginado.
-4. Cambios de filtros/página:
+   - listado paginado,
+   - tag por cliente con cantidad de citas acumuladas.
+   - las métricas se mantienen como snapshot analítico global durante cambios de filtros.
+4. Cambios de filtros/página (reactivo, sin botón `Aplicar filtros`):
    - actualizan query params en URL,
    - refrescan datos vía `GET /api/admin/clients/catalog`.
+   - el campo `query` usa debounce corto para reducir requests por tecla.
 5. Si falla la carga, UI muestra estado de error con acción `Reintentar`.
 6. Si no hay resultados para filtros, UI muestra estado vacío.
 7. Seleccionar cliente navega a `/admin/clients/[clientId]`.
@@ -805,7 +808,7 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/clients/search?query=<text>&limit=<n>`
-  - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS&sort=RECENT|NAME_ASC|NAME_DESC&page=<n>&pageSize=<n>`
+  - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
@@ -849,7 +852,7 @@ Contrato API:
   - `GET /api/admin/clients/catalog`:
     - `query` opcional (búsqueda por nombre o teléfono parcial),
     - `status` permitido: `ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS`,
-    - `sort` permitido: `RECENT|NAME_ASC|NAME_DESC`,
+    - `sort` permitido: `RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC`,
     - `page` entero positivo (base 1),
     - `pageSize` entero positivo en rango permitido.
   - `GET /api/admin/clients/[clientId]`:

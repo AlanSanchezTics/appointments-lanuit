@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ClientsCatalogView } from "@/components/admin/clients/ClientsCatalogView";
 import { useClientsCatalog } from "@/hooks/admin/clients/useClientsCatalog";
@@ -50,6 +50,11 @@ const initialData: AdminClientsCatalogResponse = {
 describe("ClientsCatalogView", () => {
   beforeEach(() => {
     useClientsCatalogMock.mockReset();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renders catalog blocks and delegates filter/list actions", () => {
@@ -80,11 +85,13 @@ describe("ClientsCatalogView", () => {
     expect(screen.getByText("Listado de clientes")).toBeInTheDocument();
     expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
     expect(screen.getByText("Futura")).toBeInTheDocument();
+    expect(screen.getByText("3 citas")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Aplicar filtros/i })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Buscar"), {
       target: { value: "Ana" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+    vi.advanceTimersByTime(350);
     expect(applyQueryMock).toHaveBeenCalledWith("Ana");
 
     fireEvent.change(screen.getByLabelText("Estado"), {
@@ -93,9 +100,9 @@ describe("ClientsCatalogView", () => {
     expect(updateStatusMock).toHaveBeenCalledWith("WITHOUT_FUTURE_APPOINTMENTS");
 
     fireEvent.change(screen.getByLabelText("Orden"), {
-      target: { value: "NAME_ASC" },
+      target: { value: "APPOINTMENTS_DESC" },
     });
-    expect(updateSortMock).toHaveBeenCalledWith("NAME_ASC");
+    expect(updateSortMock).toHaveBeenCalledWith("APPOINTMENTS_DESC");
 
     fireEvent.click(screen.getByText("Ana Pérez"));
     expect(goToClientMock).toHaveBeenCalledWith(42);

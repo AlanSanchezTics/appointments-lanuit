@@ -106,7 +106,6 @@
         "queryPlaceholder": "Ej. Mariana Valenzuela",
         "statusLabel": "Estado",
         "sortLabel": "Orden",
-        "apply": "Aplicar filtros",
         "statusOptions": {
           "ALL": "Todos",
           "WITH_FUTURE_APPOINTMENTS": "Con citas futuras",
@@ -115,7 +114,8 @@
         "sortOptions": {
           "RECENT": "Más recientes",
           "NAME_ASC": "Nombre A-Z",
-          "NAME_DESC": "Nombre Z-A"
+          "NAME_DESC": "Nombre Z-A",
+          "APPOINTMENTS_DESC": "Más citas"
         }
       },
       "list": {
@@ -126,7 +126,9 @@
         "previous": "Anterior",
         "next": "Siguiente",
         "page": "Página {{page}} de {{totalPages}}",
-        "futureBadge": "Futura"
+        "futureBadge": "Futura",
+        "appointmentsCount_one": "{{count}} cita",
+        "appointmentsCount_other": "{{count}} citas"
       },
       "errors": {
         "loadFailed": "No se pudo cargar el catálogo de clientes.",

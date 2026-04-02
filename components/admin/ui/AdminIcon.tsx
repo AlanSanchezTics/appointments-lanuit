@@ -1,6 +1,8 @@
 import type { IconProp, SizeProp } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import { adminIcons } from "@/components/admin/ui/admin-icons";
+
 const toneClassName = {
   accent: "text-[var(--admin-accent)]",
   secondary: "text-[var(--admin-text-secondary)]",

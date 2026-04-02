@@ -155,4 +155,32 @@ describe("admin clients catalog service", () => {
       }),
     );
   });
+
+  it("applies APPOINTMENTS_DESC order in catalog query", async () => {
+    const { getAdminClientsCatalog } = await import("@/lib/admin/clients/catalog-service");
+
+    clientCountMock
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(2);
+    clientFindManyMock.mockResolvedValueOnce([]);
+    appointmentFindManyMock.mockResolvedValueOnce([]);
+
+    await getAdminClientsCatalog(
+      {
+        query: "",
+        status: "ALL",
+        sort: "APPOINTMENTS_DESC",
+        page: 1,
+        pageSize: 10,
+      },
+      new Date("2026-03-21T12:00:00.000Z"),
+    );
+
+    expect(clientFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ appointments: { _count: "desc" } }, { updatedAt: "desc" }],
+      }),
+    );
+  });
 });

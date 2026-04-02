@@ -106,7 +106,6 @@
         "queryPlaceholder": "Ex. Mariana Valenzuela",
         "statusLabel": "Status",
         "sortLabel": "Sort",
-        "apply": "Apply filters",
         "statusOptions": {
           "ALL": "All",
           "WITH_FUTURE_APPOINTMENTS": "With future appointments",
@@ -115,7 +114,8 @@
         "sortOptions": {
           "RECENT": "Most recent",
           "NAME_ASC": "Name A-Z",
-          "NAME_DESC": "Name Z-A"
+          "NAME_DESC": "Name Z-A",
+          "APPOINTMENTS_DESC": "Most appointments"
         }
       },
       "list": {
@@ -126,7 +126,9 @@
         "previous": "Previous",
         "next": "Next",
         "page": "Page {{page}} of {{totalPages}}",
-        "futureBadge": "Future"
+        "futureBadge": "Future",
+        "appointmentsCount_one": "{{count}} appointment",
+        "appointmentsCount_other": "{{count}} appointments"
       },
       "errors": {
         "loadFailed": "Unable to load clients catalog.",

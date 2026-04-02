@@ -1,9 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-
-import { Button } from "@/components/admin/ui/Button";
 import { Select, type SelectOption } from "@/components/admin/ui/Select";
+import { useClientFiltersQuery } from "@/hooks/admin/clients/useClientFiltersQuery";
 import type {
   AdminClientCatalogSort,
   AdminClientCatalogStatus,
@@ -19,7 +17,6 @@ type ClientFiltersPanelProps = {
     queryPlaceholder: string;
     statusLabel: string;
     sortLabel: string;
-    apply: string;
     statusOptions: Record<AdminClientCatalogStatus, string>;
     sortOptions: Record<AdminClientCatalogSort, string>;
   };
@@ -38,11 +35,10 @@ export function ClientFiltersPanel({
   onStatusChange,
   onSortChange,
 }: ClientFiltersPanelProps) {
-  const [draftQuery, setDraftQuery] = useState(query);
-
-  useEffect(() => {
-    setDraftQuery(query);
-  }, [query]);
+  const { draftQuery, handleQueryChange } = useClientFiltersQuery({
+    query,
+    onQueryChange: onApplyQuery,
+  });
 
   const statusOptions: SelectOption[] = [
     { value: "ALL", label: labels.statusOptions.ALL },
@@ -60,16 +56,12 @@ export function ClientFiltersPanel({
     { value: "RECENT", label: labels.sortOptions.RECENT },
     { value: "NAME_ASC", label: labels.sortOptions.NAME_ASC },
     { value: "NAME_DESC", label: labels.sortOptions.NAME_DESC },
+    { value: "APPOINTMENTS_DESC", label: labels.sortOptions.APPOINTMENTS_DESC },
   ];
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onApplyQuery(draftQuery);
-  }
 
   return (
     <section className="rounded-xl bg-[var(--admin-inactive-bg)] p-4">
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-4">
         <div className="space-y-1">
           <label
             htmlFor="clients-catalog-search"
@@ -80,10 +72,9 @@ export function ClientFiltersPanel({
           <input
             id="clients-catalog-search"
             value={draftQuery}
-            onChange={(event) => setDraftQuery(event.target.value)}
+            onChange={(event) => handleQueryChange(event.target.value)}
             placeholder={labels.queryPlaceholder}
             className="h-11 w-full rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 text-sm text-[var(--admin-text-primary)] outline-none transition focus:border-[var(--admin-accent)]"
-            disabled={isLoading}
           />
         </div>
 
@@ -122,11 +113,7 @@ export function ClientFiltersPanel({
             />
           </div>
         </div>
-
-        <Button type="submit" fullWidth disabled={isLoading}>
-          {labels.apply}
-        </Button>
-      </form>
+      </div>
     </section>
   );
 }
