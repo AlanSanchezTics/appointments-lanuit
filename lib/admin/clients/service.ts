@@ -13,6 +13,7 @@ export async function searchAdminClients(
     where: buildClientSearchWhere(input.query),
     select: {
       id: true,
+      clientNumber: true,
       name: true,
       phone: true,
       updatedAt: true,
@@ -37,6 +38,7 @@ export async function searchAdminClients(
     .slice(0, input.limit)
     .map((row) => ({
       clientId: row.id,
+      clientNumber: row.clientNumber,
       name: row.name,
       phone: row.phone,
     } satisfies AdminClientSearchItem));

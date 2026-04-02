@@ -35,6 +35,7 @@ const initialData: AdminClientsCatalogResponse = {
   clients: [
     {
       clientId: 42,
+      clientNumber: 1001,
       name: "Ana Pérez",
       phone: "5512345678",
       createdAt: "2026-03-01T00:00:00.000Z",

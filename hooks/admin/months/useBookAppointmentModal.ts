@@ -9,7 +9,10 @@ import type {
 } from "@/lib/admin/appointments/types";
 import { fetchAdminBlockableSlots } from "@/lib/admin/blocked-spaces/api-client";
 import type { AdminBlockableDay } from "@/lib/admin/blocked-spaces/types";
-import { searchAdminClientsByQuery } from "@/lib/admin/clients/api-client";
+import {
+  fetchNextAdminClientNumber,
+  searchAdminClientsByQuery,
+} from "@/lib/admin/clients/api-client";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
 import type { BaseTimeSlot } from "@/lib/constants/slots";
 
@@ -42,9 +45,12 @@ export function useBookAppointmentModal(month: string) {
   const [selectedClient, setSelectedClient] = useState<AdminClientSearchItem | null>(null);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientNumber, setNewClientNumber] = useState("");
+  const [hasInitializedClientNumberSuggestion, setHasInitializedClientNumberSuggestion] = useState(false);
   const [successResult, setSuccessResult] = useState<AdminCreateAppointmentResponse | null>(null);
   const abortDaysRef = useRef<AbortController | null>(null);
   const abortClientSearchRef = useRef<AbortController | null>(null);
+  const abortClientNumberRef = useRef<AbortController | null>(null);
 
   const selectedDaySlots = useMemo(() => {
     if (!selectedDate) {
@@ -82,6 +88,8 @@ export function useBookAppointmentModal(month: string) {
     setSelectedClient(null);
     setNewClientName("");
     setNewClientPhone("");
+    setNewClientNumber("");
+    setHasInitializedClientNumberSuggestion(false);
     setFieldErrors((current) => ({
       ...current,
       client: undefined,
@@ -166,6 +174,8 @@ export function useBookAppointmentModal(month: string) {
     abortDaysRef.current = null;
     abortClientSearchRef.current?.abort();
     abortClientSearchRef.current = null;
+    abortClientNumberRef.current?.abort();
+    abortClientNumberRef.current = null;
     setIsOpen(false);
     setIsLoadingDays(false);
     setIsSubmitting(false);
@@ -181,6 +191,8 @@ export function useBookAppointmentModal(month: string) {
     setSelectedClient(null);
     setNewClientName("");
     setNewClientPhone("");
+    setNewClientNumber("");
+    setHasInitializedClientNumberSuggestion(false);
     setSuccessResult(null);
   }, [isSubmitting]);
 
@@ -265,6 +277,43 @@ export function useBookAppointmentModal(month: string) {
     };
   }, [clientMode, isOpen, searchQuery]);
 
+  useEffect(() => {
+    if (!isOpen || clientMode !== "new") {
+      abortClientNumberRef.current?.abort();
+      return;
+    }
+
+    if (newClientNumber.trim().length > 0 || hasInitializedClientNumberSuggestion) {
+      return;
+    }
+
+    const controller = new AbortController();
+    abortClientNumberRef.current?.abort();
+    abortClientNumberRef.current = controller;
+
+    void fetchNextAdminClientNumber(controller.signal)
+      .then((nextClientNumber) => {
+        setNewClientNumber(String(nextClientNumber));
+        setHasInitializedClientNumberSuggestion(true);
+      })
+      .catch((error) => {
+        if (error instanceof Error && error.message === "AbortError") {
+          return;
+        }
+
+        setErrorCode(error instanceof Error ? error.message : DEFAULT_ERROR_CODE);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    clientMode,
+    hasInitializedClientNumberSuggestion,
+    isOpen,
+    newClientNumber,
+  ]);
+
   const validate = useCallback((): FieldErrors => {
     const nextErrors: FieldErrors = {};
 
@@ -288,10 +337,25 @@ export function useBookAppointmentModal(month: string) {
       if (newClientPhone.trim().length === 0) {
         nextErrors.phone = "VALIDATION_PHONE_INVALID";
       }
+
+      if (
+        newClientNumber.trim().length > 0
+        && !/^[1-9]\d*$/.test(newClientNumber.trim())
+      ) {
+        nextErrors.client = "CLIENT_NUMBER_INVALID";
+      }
     }
 
     return nextErrors;
-  }, [clientMode, newClientName, newClientPhone, selectedClient, selectedDate, selectedTimeSlot]);
+  }, [
+    clientMode,
+    newClientName,
+    newClientNumber,
+    newClientPhone,
+    selectedClient,
+    selectedDate,
+    selectedTimeSlot,
+  ]);
 
   const submit = useCallback(async () => {
     if (isSubmitting || successResult) {
@@ -324,6 +388,9 @@ export function useBookAppointmentModal(month: string) {
             client: {
               name: newClientName.trim(),
               phone: newClientPhone.trim(),
+              ...(newClientNumber.trim().length > 0
+                ? { clientNumber: Number(newClientNumber.trim()) }
+                : {}),
             },
           };
 
@@ -344,6 +411,7 @@ export function useBookAppointmentModal(month: string) {
     isSubmitting,
     month,
     newClientName,
+    newClientNumber,
     newClientPhone,
     selectedClient,
     selectedDate,
@@ -370,6 +438,7 @@ export function useBookAppointmentModal(month: string) {
     selectedClient,
     newClientName,
     newClientPhone,
+    newClientNumber,
     successResult,
     open,
     close,
@@ -396,6 +465,13 @@ export function useBookAppointmentModal(month: string) {
       setFieldErrors((current) => ({
         ...current,
         phone: undefined,
+      }));
+    },
+    setNewClientNumber: (value: string) => {
+      setNewClientNumber(value);
+      setFieldErrors((current) => ({
+        ...current,
+        client: undefined,
       }));
     },
     refreshAvailability,

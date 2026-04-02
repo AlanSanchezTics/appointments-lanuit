@@ -90,6 +90,7 @@ export async function getAdminClientsCatalog(
         orderBy: resolveCatalogOrderBy(filters.sort),
         select: {
           id: true,
+          clientNumber: true,
           name: true,
           phone: true,
           isLoyal: true,
@@ -174,6 +175,7 @@ export async function getAdminClientsCatalog(
     },
     clients: rows.map((row) => ({
       clientId: row.id,
+      clientNumber: row.clientNumber,
       name: row.name,
       phone: row.phone,
       isLoyal: row.isLoyal,

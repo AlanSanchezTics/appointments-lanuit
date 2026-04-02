@@ -33,6 +33,7 @@ describe("admin client update service", () => {
     clientFindUniqueMock.mockResolvedValueOnce({ id: 5 });
     clientUpdateMock.mockResolvedValueOnce({
       id: 5,
+      clientNumber: 1001,
       name: "Ana Garcia",
       phone: "5512345678",
       isLoyal: false,
@@ -52,6 +53,7 @@ describe("admin client update service", () => {
       },
       select: {
         id: true,
+        clientNumber: true,
         name: true,
         phone: true,
         isLoyal: true,
@@ -61,6 +63,7 @@ describe("admin client update service", () => {
 
     expect(response).toEqual({
       clientId: 5,
+      clientNumber: 1001,
       name: "Ana Garcia",
       phone: "5512345678",
       isLoyal: false,
@@ -74,6 +77,7 @@ describe("admin client update service", () => {
     clientFindUniqueMock.mockResolvedValueOnce({ id: 8 });
     clientUpdateMock.mockResolvedValueOnce({
       id: 8,
+      clientNumber: 1002,
       name: "Ana Garcia",
       phone: "5512345678",
       isLoyal: true,
@@ -93,6 +97,7 @@ describe("admin client update service", () => {
       },
       select: {
         id: true,
+        clientNumber: true,
         name: true,
         phone: true,
         isLoyal: true,
@@ -102,6 +107,7 @@ describe("admin client update service", () => {
 
     expect(response).toEqual({
       clientId: 8,
+      clientNumber: 1002,
       name: "Ana Garcia",
       phone: "5512345678",
       isLoyal: true,
@@ -115,6 +121,7 @@ describe("admin client update service", () => {
     clientFindUniqueMock.mockResolvedValueOnce({ id: 12 });
     clientUpdateMock.mockResolvedValueOnce({
       id: 12,
+      clientNumber: 1003,
       name: "Ana Garcia",
       phone: "3221234567",
       isLoyal: false,
@@ -134,6 +141,7 @@ describe("admin client update service", () => {
       },
       select: {
         id: true,
+        clientNumber: true,
         name: true,
         phone: true,
         isLoyal: true,
@@ -143,6 +151,7 @@ describe("admin client update service", () => {
 
     expect(response).toEqual({
       clientId: 12,
+      clientNumber: 1003,
       name: "Ana Garcia",
       phone: "3221234567",
       isLoyal: false,

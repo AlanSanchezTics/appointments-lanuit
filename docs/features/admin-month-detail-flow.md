@@ -45,7 +45,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - selector de horarios disponibles por día,
    - selector de cliente con dos modalidades:
      - cliente existente por búsqueda remota,
-     - alta inline de cliente nuevo (nombre + teléfono),
+     - alta inline de cliente nuevo (nombre + teléfono + `client_number` sugerido editable),
    - CTA `Agendar cita` para ejecutar alta en backend.
 14. Al confirmar `Agendar cita`:
    - backend crea la cita y ejecuta sync de calendario según reglas de dominio,
@@ -142,18 +142,23 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Endpoint de búsqueda de clientes:
   - `GET /api/admin/clients/search?query=<texto>&limit=<n>`
   - requiere sesión admin (`401 ADMIN_UNAUTHORIZED`).
-  - responde `{ query, total, clients[] }` con `clients[] = { clientId, name, phone }`.
+  - responde `{ query, total, clients[] }` con `clients[] = { clientId, clientNumber, name, phone }`.
+- Endpoint de sugerencia de número de cliente:
+  - `GET /api/admin/clients/next-number`
+  - requiere sesión admin (`401 ADMIN_UNAUTHORIZED`).
+  - responde `{ nextClientNumber }`.
 - Endpoint de creación de cita desde admin:
   - `POST /api/admin/months/[month]/appointments`
   - requiere sesión admin (`401 ADMIN_UNAUTHORIZED`).
   - soporta payload con cliente existente:
     - `{ date, timeSlot, clientId }`
   - soporta payload con alta inline de cliente:
-    - `{ date, timeSlot, client: { name, phone } }`
+    - `{ date, timeSlot, client: { name, phone, clientNumber? } }`
   - reglas de dominio aplicadas:
     - `month` registrado y `ACTIVE`,
     - disponibilidad del slot (ocupación + locks + bloqueos manuales + reglas direccionales),
     - permite múltiples citas activas futuras para el mismo cliente/teléfono cuando agenda admin,
-    - validaciones de identidad por teléfono/nombre.
+    - validaciones de identidad por teléfono/nombre,
+    - `clientNumber` opcional; si se omite, backend asigna automáticamente el siguiente disponible.
   - respuesta exitosa (`201`):
     - `{ appointmentId, date, timeSlot, status, client, syncReason? }`

@@ -22,7 +22,8 @@ const findManyMock = vi.fn();
 const findFirstMock = vi.fn();
 const updateMock = vi.fn();
 const createMock = vi.fn();
-const clientUpsertMock = vi.fn();
+const clientCreateMock = vi.fn();
+const clientAggregateMock = vi.fn();
 const clientFindUniqueMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
@@ -77,20 +78,24 @@ describe("bookAppointment", () => {
           create: createMock,
         },
         client: {
-          upsert: clientUpsertMock,
+          create: clientCreateMock,
+          aggregate: clientAggregateMock,
           findUnique: clientFindUniqueMock,
         },
       }),
     );
     findManyMock.mockResolvedValue([]);
+    clientFindUniqueMock.mockResolvedValue(null);
   });
 
   it("creates a new appointment even when there is historical cancellation on the same slot", async () => {
-    clientUpsertMock.mockResolvedValueOnce({
+    clientCreateMock.mockResolvedValueOnce({
       id: 21,
+      clientNumber: 1,
       name: "Bety Ruiz",
       phone: "5512345679",
     });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
     createMock.mockResolvedValueOnce({ id: 42, client: { name: "Bety Ruiz" } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
@@ -156,11 +161,13 @@ describe("bookAppointment", () => {
   });
 
   it("keeps successful booking flow with calendar sync and whatsapp payload", async () => {
-    clientUpsertMock.mockResolvedValueOnce({
+    clientCreateMock.mockResolvedValueOnce({
       id: 33,
+      clientNumber: 1,
       name: "Ana Lopez",
       phone: "5512345678",
     });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
     createMock.mockResolvedValueOnce({ id: 77, client: { name: "Ana Lopez" } });
     syncAppointmentToCalendarMock.mockResolvedValueOnce({
       status: "SYNC_FAILED",
@@ -207,11 +214,13 @@ describe("bookAppointment", () => {
       lockToken: "lock-123",
       expiresAt: "2026-03-03T12:10:00.000Z",
     });
-    clientUpsertMock.mockResolvedValueOnce({
+    clientCreateMock.mockResolvedValueOnce({
       id: 12,
+      clientNumber: 1,
       name: "Ana Lopez",
       phone: "5512345678",
     });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
     createMock.mockResolvedValueOnce({ id: 13, client: { name: "Ana Lopez" } });
 
     const { confirmAppointmentWithLock } = await import(
@@ -303,11 +312,13 @@ describe("bookAppointment", () => {
         },
       ])
       .mockResolvedValueOnce([]);
-    clientUpsertMock.mockResolvedValueOnce({
+    clientCreateMock.mockResolvedValueOnce({
       id: 44,
+      clientNumber: 2,
       name: "Ana Lopez",
       phone: "5512345678",
     });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 1 } });
     createMock.mockResolvedValueOnce({ id: 91, client: { name: "Ana Lopez" } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
@@ -330,11 +341,13 @@ describe("bookAppointment", () => {
     findManyMock
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
-    clientUpsertMock.mockResolvedValueOnce({
+    clientCreateMock.mockResolvedValueOnce({
       id: 55,
+      clientNumber: 3,
       name: "Ana Lopez",
       phone: "5512345678",
     });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 2 } });
     createMock.mockResolvedValueOnce({ id: 88, client: { name: "Ana Lopez" } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");

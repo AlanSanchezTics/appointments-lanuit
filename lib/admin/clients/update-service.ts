@@ -26,6 +26,7 @@ export async function updateAdminClient(
 
   let updatedClient: {
     id: number;
+    clientNumber: number;
     name: string;
     phone: string;
     isLoyal: boolean;
@@ -44,6 +45,7 @@ export async function updateAdminClient(
       },
       select: {
         id: true,
+        clientNumber: true,
         name: true,
         phone: true,
         isLoyal: true,
@@ -66,6 +68,7 @@ export async function updateAdminClient(
 
   return {
     clientId: updatedClient.id,
+    clientNumber: updatedClient.clientNumber,
     name: updatedClient.name,
     phone: updatedClient.phone,
     isLoyal: updatedClient.isLoyal,

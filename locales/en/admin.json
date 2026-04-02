@@ -144,6 +144,9 @@
         "back": "Back to catalog",
         "edit": "Edit client"
       },
+      "identity": {
+        "clientNumber": "Client number"
+      },
       "summary": {
         "totalAppointments": "Total appointments",
         "pastAppointments": "Past",
@@ -451,12 +454,14 @@
       "placeholders": {
         "searchClient": "Ex. Mariana Valenzuela",
         "newClientName": "Full name",
-        "newClientPhone": "Phone"
+        "newClientPhone": "Phone",
+        "newClientNumber": "Client number"
       },
       "errors": {
         "dateRequired": "Select a day to continue.",
         "timeRequired": "Select a time slot to continue.",
         "clientRequired": "Select an existing client.",
+        "clientNumberInvalid": "Enter a valid client number.",
         "nameRequired": "Name must have at least 3 characters.",
         "phoneRequired": "Enter a valid phone number.",
         "api": {
@@ -494,7 +499,8 @@
           "date": "Date",
           "time": "Time",
           "client": "Client",
-          "phone": "Phone"
+          "phone": "Phone",
+          "clientNumber": "Client number"
         }
       }
     },

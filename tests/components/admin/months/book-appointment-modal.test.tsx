@@ -31,6 +31,7 @@ describe("BookAppointmentModal", () => {
         selectedClient={null}
         newClientName="Maria Perez"
         newClientPhone="5511112233"
+        newClientNumber="1001"
         successResult={null}
         onClose={vi.fn()}
         onSelectDate={vi.fn()}
@@ -40,6 +41,7 @@ describe("BookAppointmentModal", () => {
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
+        onNewClientNumberChange={vi.fn()}
         onSubmit={onSubmit}
         onBackFromSuccess={vi.fn()}
       />,
@@ -71,6 +73,7 @@ describe("BookAppointmentModal", () => {
         selectedClient={null}
         newClientName=""
         newClientPhone=""
+        newClientNumber=""
         successResult={{
           appointmentId: 1,
           date: "2026-03-13",
@@ -78,6 +81,7 @@ describe("BookAppointmentModal", () => {
           status: "CONFIRMED",
           client: {
             clientId: 1,
+            clientNumber: 1001,
             name: "Ana Garcia",
             phone: "5512345678",
           },
@@ -90,6 +94,7 @@ describe("BookAppointmentModal", () => {
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
+        onNewClientNumberChange={vi.fn()}
         onSubmit={vi.fn()}
         onBackFromSuccess={onBackFromSuccess}
       />,
@@ -120,6 +125,7 @@ describe("BookAppointmentModal", () => {
         selectedClient={null}
         newClientName=""
         newClientPhone=""
+        newClientNumber=""
         successResult={null}
         onClose={vi.fn()}
         onSelectDate={vi.fn()}
@@ -129,6 +135,7 @@ describe("BookAppointmentModal", () => {
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
+        onNewClientNumberChange={vi.fn()}
         onSubmit={vi.fn()}
         onBackFromSuccess={vi.fn()}
       />,

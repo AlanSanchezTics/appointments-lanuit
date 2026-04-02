@@ -29,6 +29,7 @@ Business behavior is defined by:
 
 - Customer
   - Identified by phone number.
+  - Has a unique incremental `client_number` assigned at creation time.
   - Has one canonical name associated with that phone.
   - May be flagged as loyal for admin catalog and detail views.
 
@@ -92,6 +93,9 @@ Business behavior is defined by:
   - Name must be at least 3 characters.
   - Customer is resolved by phone.
   - A phone cannot map to multiple names.
+  - New customers always receive a unique positive `client_number`.
+  - Public booking assigns `client_number` automatically from the next available value.
+  - Admin inline booking may provide a manual `client_number`; if omitted, system auto-assigns.
 
 - Public booking exclusivity per phone:
   - In public booking flow, a phone can hold multiple active future appointments within the same target month only when every pair remains at least 15 calendar days apart.

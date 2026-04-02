@@ -144,6 +144,9 @@
         "back": "Volver al catálogo",
         "edit": "Editar cliente"
       },
+      "identity": {
+        "clientNumber": "Número de cliente"
+      },
       "summary": {
         "totalAppointments": "Total de citas",
         "pastAppointments": "Pasadas",
@@ -451,12 +454,14 @@
       "placeholders": {
         "searchClient": "Ej. Mariana Valenzuela",
         "newClientName": "Nombre completo",
-        "newClientPhone": "Teléfono"
+        "newClientPhone": "Teléfono",
+        "newClientNumber": "Número de cliente"
       },
       "errors": {
         "dateRequired": "Selecciona un día para continuar.",
         "timeRequired": "Selecciona un horario para continuar.",
         "clientRequired": "Selecciona un cliente existente.",
+        "clientNumberInvalid": "Ingresa un número de cliente válido.",
         "nameRequired": "El nombre debe tener al menos 3 caracteres.",
         "phoneRequired": "Ingresa un teléfono válido.",
         "api": {
@@ -494,7 +499,8 @@
           "date": "Fecha",
           "time": "Hora",
           "client": "Cliente",
-          "phone": "Teléfono"
+          "phone": "Teléfono",
+          "clientNumber": "Número de cliente"
         }
       }
     },

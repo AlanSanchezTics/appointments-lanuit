@@ -51,6 +51,7 @@ type BookAppointmentModalProps = {
   selectedClient: AdminClientSearchItem | null;
   newClientName: string;
   newClientPhone: string;
+  newClientNumber: string;
   successResult: AdminCreateAppointmentResponse | null;
   onClose: () => void;
   onSelectDate: (date: string) => void;
@@ -60,6 +61,7 @@ type BookAppointmentModalProps = {
   onSelectClient: (client: AdminClientSearchItem) => void;
   onNewClientNameChange: (name: string) => void;
   onNewClientPhoneChange: (phone: string) => void;
+  onNewClientNumberChange: (clientNumber: string) => void;
   onSubmit: () => void;
   onBackFromSuccess: () => void;
 };
@@ -86,6 +88,7 @@ export function BookAppointmentModal({
   selectedClient,
   newClientName,
   newClientPhone,
+  newClientNumber,
   successResult,
   onClose,
   onSelectDate,
@@ -95,6 +98,7 @@ export function BookAppointmentModal({
   onSelectClient,
   onNewClientNameChange,
   onNewClientPhoneChange,
+  onNewClientNumberChange,
   onSubmit,
   onBackFromSuccess,
 }: BookAppointmentModalProps) {
@@ -116,7 +120,7 @@ export function BookAppointmentModal({
     ? t("monthsDetail.bookModal.actions.submitting")
     : t("monthsDetail.bookModal.actions.submit");
   const selectedClientLabel = selectedClient
-    ? `${selectedClient.name} · ${formatPhoneForDisplay(selectedClient.phone)}`
+    ? `${selectedClient.name} · #${selectedClient.clientNumber} · ${formatPhoneForDisplay(selectedClient.phone)}`
     : t("monthsDetail.bookModal.placeholders.searchClient");
 
   useEffect(() => {
@@ -256,6 +260,7 @@ export function BookAppointmentModal({
                   </p>
                 </div>
               </div>
+
             </div>
           </section>
           <div className="space-y-3">
@@ -498,7 +503,7 @@ export function BookAppointmentModal({
                                 <p
                                   className={`text-sm ${selectedClient?.clientId === client.clientId ? "text-white/90" : "text-[var(--admin-text-secondary)]"}`}
                                 >
-                                  {formatPhoneForDisplay(client.phone)}
+                                  #{client.clientNumber} · {formatPhoneForDisplay(client.phone)}
                                 </p>
                               </button>
                             ))}
@@ -511,7 +516,9 @@ export function BookAppointmentModal({
 
                 {fieldErrors.client ? (
                   <p className="text-sm text-red-700">
-                    {t("monthsDetail.bookModal.errors.clientRequired")}
+                    {fieldErrors.client === "CLIENT_NUMBER_INVALID"
+                      ? t("monthsDetail.bookModal.errors.clientNumberInvalid")
+                      : t("monthsDetail.bookModal.errors.clientRequired")}
                   </p>
                 ) : null}
               </div>
@@ -550,6 +557,25 @@ export function BookAppointmentModal({
                   error={
                     fieldErrors.phone
                       ? t("monthsDetail.bookModal.errors.phoneRequired")
+                      : null
+                  }
+                />
+                <Input
+                  id="admin-book-new-client-number"
+                  value={newClientNumber}
+                  onChange={(event) =>
+                    onNewClientNumberChange(event.target.value.replace(/\D/g, ""))
+                  }
+                  label={t("monthsDetail.bookModal.placeholders.newClientNumber")}
+                  placeholder={t(
+                    "monthsDetail.bookModal.placeholders.newClientNumber",
+                  )}
+                  inputMode="numeric"
+                  disabled={isSubmitting}
+                  icon={<AdminIcon icon={adminIcons.client} tone="secondary" />}
+                  error={
+                    fieldErrors.client === "CLIENT_NUMBER_INVALID"
+                      ? t("monthsDetail.bookModal.errors.clientNumberInvalid")
                       : null
                   }
                 />

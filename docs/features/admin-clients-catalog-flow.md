@@ -16,6 +16,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
   - `GET /admin/clients`
   - `GET /admin/clients/[clientId]`
 - Endpoints cubiertos:
+  - `GET /api/admin/clients/next-number`
   - `GET /api/admin/clients/catalog`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
@@ -28,6 +29,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
    - métricas (`total`, `con futuras`, `sin futuras`, `clientes fieles`),
    - panel de filtros (`query`, `status`, `sort`),
    - listado paginado,
+   - número de cliente (`client_number`) visible por fila,
    - tag por cliente con total de citas confirmadas.
    - indicador de `Cliente fiel` en filas marcadas.
    - las métricas se mantienen estables como analítica global durante el uso de filtros.
@@ -44,7 +46,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 
 1. Página server valida sesión y `clientId`; si no existe cliente, responde `notFound`.
 2. Vista detalle muestra:
-   - identidad (nombre + teléfono),
+   - identidad (`client_number` + nombre + teléfono),
    - estado de fidelidad (`Cliente fiel`: activo/inactivo),
    - resumen de citas (`total`, `pasadas`, `futuras`) contabilizando solo citas `CONFIRMED`,
    - timeline de citas.
@@ -87,7 +89,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
    - `filters`,
    - `metrics` (`totalClients`, `withFutureAppointments`, `withoutFutureAppointments`, `loyalClients`, `loyalClientsPercentage`),
    - `pagination`,
-   - `clients[]` con resumen operativo por cliente,
+   - `clients[]` con resumen operativo por cliente (incluye `clientNumber`),
    - `currentDate` (zona `America/Mexico_City`).
 5. Si `status = LOYAL`, la lista retorna solo clientes con `isLoyal = true`.
 
@@ -97,7 +99,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 2. Backend valida sesión y `clientId` numérico positivo.
 3. Backend consulta cliente y citas asociadas.
 4. Backend responde:
-   - bloque `client` (incluye `isLoyal`),
+   - bloque `client` (incluye `clientNumber` e `isLoyal`),
    - bloque `summary`,
    - `appointments[]` cronológico,
    - `currentDate`.
@@ -112,11 +114,12 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
    - `phone` (si viene) debe normalizarse a 10 dígitos válidos.
 4. Backend actualiza los campos enviados (`name` y/o `phone` y/o `isLoyal`).
 5. Si `phone` colisiona con otro cliente, backend responde `CLIENT_PHONE_ALREADY_EXISTS`.
-6. Backend responde payload actualizado `{ clientId, name, phone, isLoyal, updatedAt }`.
+6. Backend responde payload actualizado `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`.
 
 ## Reglas de negocio aplicables
 
 - Cliente se identifica por `phone` (canónico por fila en `clients`).
+- Cliente tiene `client_number` único e incremental (se permiten huecos).
 - Fidelidad es una marca administrativa manual persistida en `clients.is_loyal`.
 - Cita futura para filtros de catálogo: `date > currentDate`.
 - Estados activos para reglas de citas futuras: `CONFIRMED`, `SYNC_FAILED`.

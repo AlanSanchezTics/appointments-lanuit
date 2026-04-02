@@ -52,6 +52,7 @@ describe("POST /api/admin/months/[month]/appointments", () => {
       status: "CONFIRMED",
       client: {
         clientId: 1,
+        clientNumber: 1001,
         name: "Ana Garcia",
         phone: "5512345678",
       },
@@ -94,6 +95,7 @@ describe("POST /api/admin/months/[month]/appointments", () => {
       syncReason: "CALENDAR_NOT_CONFIGURED",
       client: {
         clientId: 44,
+        clientNumber: 1002,
         name: "Maria Perez",
         phone: "5511112233",
       },

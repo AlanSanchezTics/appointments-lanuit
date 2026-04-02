@@ -77,6 +77,11 @@ const CREATE_APPOINTMENT_SCHEMA = z
       .object({
         name: z.string(),
         phone: z.string(),
+        clientNumber: z
+          .number()
+          .int("CLIENT_NUMBER_INVALID")
+          .positive("CLIENT_NUMBER_INVALID")
+          .optional(),
       })
       .optional(),
   })
@@ -117,6 +122,7 @@ export function parseAdminCreateAppointmentPayload(payload: unknown): AdminCreat
     client: {
       name: parsed.client.name,
       phone: parsed.client.phone,
+      clientNumber: parsed.client.clientNumber,
     },
   };
 }

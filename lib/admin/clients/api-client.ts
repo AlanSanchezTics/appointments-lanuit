@@ -110,3 +110,23 @@ export async function updateAdminClient(
 
   return response.json() as Promise<UpdateAdminClientResponse>;
 }
+
+export async function fetchNextAdminClientNumber(
+  signal?: AbortSignal,
+): Promise<number> {
+  const response = await fetch("/api/admin/clients/next-number", {
+    method: "GET",
+    cache: "no-store",
+    signal,
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { errorCode?: string }
+      | null;
+    throw new Error(payload?.errorCode ?? "UNKNOWN_ERROR");
+  }
+
+  const payload = (await response.json()) as { nextClientNumber: number };
+  return payload.nextClientNumber;
+}

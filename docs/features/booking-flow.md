@@ -34,6 +34,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 7. Si la nueva fecha cumple separación mínima de 15 días naturales con todas sus citas activas del mes, esa vista muestra separador `O` y botón `Agendar como nueva cita`.
 8. Si la nueva fecha no cumple separación mínima de 15 días naturales con alguna cita activa, el cliente debe seleccionar cuál cita reagendar al nuevo `date + timeSlot` para continuar en autoservicio.
 9. Si el cliente no existe, la UI solicita nombre y continúa con el mismo lock activo.
+   - al confirmar, backend crea cliente con `client_number` único asignado automáticamente.
 10. Al seleccionar cita a reagendar o al elegir `Agendar como nueva cita`, UI avanza a confirmación.
 11. Usuario confirma la cita; backend confirma de forma atómica usando `lock_token`.
 12. Tras commit, se intenta crear evento en Google Calendar.
@@ -96,6 +97,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - valida disponibilidad final bajo bloqueo,
   - si llega `appointmentIdToReschedule`, reprograma esa cita,
   - si no llega `appointmentIdToReschedule`, resuelve cliente por teléfono (reutiliza o crea) e inserta cita `CONFIRMED`,
+  - si crea cliente nuevo, asigna `client_number` único (incremental con huecos permitidos),
   - elimina lock consumido,
   - `COMMIT`.
 - Resultado: cita creada o reprogramada en DB.
@@ -137,6 +139,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
   - Un teléfono no puede asociarse a nombres distintos.
+- Número de cliente:
+  - Se asigna automáticamente para cliente nuevo durante confirmación exitosa.
+  - Debe ser único y entero positivo.
 - Lock temporal:
   - Requerido para confirmar.
   - Debe estar vigente y corresponder a `date/timeSlot/phone` de la confirmación.

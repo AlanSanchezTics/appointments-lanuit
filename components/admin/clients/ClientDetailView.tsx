@@ -81,6 +81,7 @@ export function ClientDetailView({
       loyaltyEnabled: t("clients.detail.loyalty.enabled"),
       loyaltyDisabled: t("clients.detail.loyalty.disabled"),
       loyaltyToggleLabel: t("clients.detail.loyalty.toggleLabel"),
+      clientNumber: t("clients.detail.identity.clientNumber"),
     }),
     [t],
   );
@@ -184,6 +185,9 @@ export function ClientDetailView({
               <AdminIcon icon={adminIcons.phone} tone="secondary" />
             </span>
             {formatPhoneForDisplay(data.client.phone)}
+          </p>
+          <p className="text-sm font-semibold text-[var(--admin-text-secondary)]">
+            {labels.clientNumber}: #{data.client.clientNumber}
           </p>
         </div>
       </Card>

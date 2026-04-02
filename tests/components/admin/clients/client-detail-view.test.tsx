@@ -24,6 +24,7 @@ const useClientDetailMock = vi.mocked(useClientDetail);
 const initialData: AdminClientDetailResponse = {
   client: {
     clientId: 42,
+    clientNumber: 1001,
     name: "Ana Pérez",
     phone: "5512345678",
     isLoyal: false,
@@ -82,6 +83,7 @@ describe("ClientDetailView", () => {
     expect(
       screen.getByRole("switch", { name: "Cambiar estado de cliente fiel" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Número de cliente: #1001")).toBeInTheDocument();
     expect(screen.getByText("Total de citas")).toBeInTheDocument();
     expect(screen.getByText("Pasadas")).toBeInTheDocument();
     expect(screen.getByText("Futuras")).toBeInTheDocument();

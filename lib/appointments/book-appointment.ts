@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
+import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
 import {
   bookingSchema,
   confirmBookingWithLockSchema,
@@ -114,15 +115,23 @@ async function resolveClientInTransaction(
   const normalizedName = input.name?.trim();
 
   if (normalizedName) {
-    const client = await tx.client.upsert({
+    const existingClient = await tx.client.findUnique({
       where: {
         phone: input.phone,
       },
-      create: {
-        phone: input.phone,
-        name: normalizedName,
-      },
-      update: {},
+    });
+
+    if (existingClient) {
+      if (existingClient.name !== normalizedName) {
+        throw new Error("CLIENT_NAME_MISMATCH");
+      }
+
+      return existingClient;
+    }
+
+    const client = await createClientWithUniqueClientNumber(tx, {
+      phone: input.phone,
+      name: normalizedName,
     });
 
     if (client.name !== normalizedName) {

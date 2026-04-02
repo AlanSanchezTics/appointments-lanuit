@@ -65,7 +65,7 @@ export function ClientsList({
                 </span>
               }
               title={client.name}
-              subtitle={formatPhoneForDisplay(client.phone)}
+              subtitle={`#${client.clientNumber} · ${formatPhoneForDisplay(client.phone)}`}
               rightContent={
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-[var(--admin-inactive-bg)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-text-secondary)]">

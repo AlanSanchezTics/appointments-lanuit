@@ -35,6 +35,7 @@ import { prisma } from "@/lib/db/prisma";
 import { validateBookingRules, bookingSchema } from "@/lib/validation/appointment";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
+import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
 
 function getMonthRange(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -64,6 +65,7 @@ async function resolveClientForCreate(
       },
       select: {
         id: true,
+        clientNumber: true,
         name: true,
         phone: true,
       },
@@ -83,20 +85,22 @@ async function resolveClientForCreate(
     timeSlot: input.timeSlot,
   });
 
-  const client = await tx.client.upsert({
+  const existingClient = await tx.client.findUnique({
     where: {
       phone: parsed.phone,
     },
-    create: {
-      phone: parsed.phone,
-      name: parsed.name,
-    },
-    update: {},
     select: {
       id: true,
+      clientNumber: true,
       name: true,
       phone: true,
     },
+  });
+
+  const client = existingClient ?? await createClientWithUniqueClientNumber(tx, {
+    phone: parsed.phone,
+    name: parsed.name,
+    preferredClientNumber: input.client.clientNumber,
   });
 
   if (client.name !== parsed.name) {
@@ -241,6 +245,7 @@ export async function createAdminAppointment(
     syncReason,
     client: {
       clientId: created.client.id,
+      clientNumber: created.client.clientNumber,
       name: created.client.name,
       phone: created.client.phone,
     },

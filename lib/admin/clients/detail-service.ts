@@ -21,6 +21,7 @@ export async function getAdminClientDetail(
     },
     select: {
       id: true,
+      clientNumber: true,
       name: true,
       phone: true,
       isLoyal: true,
@@ -78,6 +79,7 @@ export async function getAdminClientDetail(
   return {
     client: {
       clientId: client.id,
+      clientNumber: client.clientNumber,
       name: client.name,
       phone: client.phone,
       isLoyal: client.isLoyal,

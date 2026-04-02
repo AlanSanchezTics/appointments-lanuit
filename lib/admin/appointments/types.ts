@@ -50,6 +50,7 @@ export type AdminCancelAppointmentResponse = {
 export type AdminCreateAppointmentClientInput = {
   name: string;
   phone: string;
+  clientNumber?: number;
 };
 
 export type AdminCreateAppointmentPayload =
@@ -75,6 +76,7 @@ export type AdminCreateAppointmentResponse = {
   status: "CONFIRMED" | "SYNC_FAILED";
   client: {
     clientId: number;
+    clientNumber: number;
     name: string;
     phone: string;
   };

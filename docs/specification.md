@@ -104,6 +104,9 @@ Regla direccional formal:
 - Nombre mínimo: 3 caracteres.
 - El cliente se identifica por teléfono.
 - Un teléfono no puede estar asociado a más de un nombre.
+- Cada cliente tiene `client_number` único (entero positivo) asignado al momento de creación.
+- En flujo público, `client_number` se asigna automáticamente con el siguiente número disponible.
+- En flujo admin, para cliente nuevo inline, se sugiere el siguiente número disponible y se permite override manual antes de guardar.
 
 ---
 
@@ -149,6 +152,7 @@ No existe estado PENDING persistente.
    - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
    - Valida disponibilidad.
    - Resuelve cliente por teléfono (reutiliza si existe, crea si no existe).
+   - Si crea cliente nuevo, asigna `client_number` automáticamente (único e incremental con huecos permitidos).
    - Si se envía `appointmentIdToReschedule`, reprograma esa cita del cliente al nuevo `date + timeSlot`.
    - Si no se envía `appointmentIdToReschedule`, inserta cita `CONFIRMED` ligada a `client_id`.
    - Elimina lock temporal consumido.
@@ -280,6 +284,7 @@ Histórico de cancelaciones:
 Tabla: clients
 
 - id (PK)
+- client_number INT UNIQUE
 - name VARCHAR(100)
 - phone VARCHAR(10) UNIQUE
 - is_loyal BOOLEAN NOT NULL DEFAULT false
@@ -702,6 +707,7 @@ Flujo UI:
      - seleccionar día,
      - seleccionar horario,
      - seleccionar cliente existente o alta inline de cliente nuevo,
+     - para cliente nuevo inline, sugerir `client_number` y permitir edición manual opcional,
      - confirmar `Agendar cita`.
    - Al completar `Agendar cita`, UI muestra vista local de éxito en el mismo modal con acción `Volver` (cerrar modal + refrescar detalle mensual).
    - Debajo de `Agendar nueva cita` se muestra CTA secundaria `Bloquear espacios`.
@@ -779,6 +785,7 @@ Flujo UI: Catálogo de clientes admin (`/admin/clients`)
    - métricas de clientes (`total`, `con futuras`, `sin futuras`, `clientes fieles`),
    - panel de filtros,
    - listado paginado,
+   - número de cliente visible por fila (`client_number`),
    - tag por cliente con cantidad de citas acumuladas,
    - tag de fidelidad para clientes marcados como fieles.
    - las métricas se mantienen como snapshot analítico global durante cambios de filtros.
@@ -794,6 +801,7 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
 
 1. Página server valida sesión y `clientId`; si no existe retorna `notFound`.
 2. UI muestra ficha del cliente, resumen de citas (`total`, `pasadas`, `futuras`) y timeline.
+   - ficha incluye `client_number`.
    - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
 4. Acción `Editar cliente` abre modal para actualizar `name` y `phone`.
@@ -814,6 +822,7 @@ Contrato API:
   - `GET /api/admin/months/catalog?year=YYYY&status=ALL|ACTIVE|INACTIVE`
   - `POST /api/admin/months`
   - `GET /api/admin/clients/search?query=<text>&limit=<n>`
+  - `GET /api/admin/clients/next-number`
   - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
@@ -855,6 +864,8 @@ Contrato API:
   - `GET /api/admin/clients/search`:
     - `query` obligatorio (mínimo 2 caracteres),
     - `limit` opcional, entero en rango permitido.
+  - `GET /api/admin/clients/next-number`:
+    - retorna `{ nextClientNumber }` como siguiente número sugerido disponible.
   - `GET /api/admin/clients/catalog`:
     - `query` opcional (búsqueda por nombre o teléfono parcial),
     - `status` permitido: `ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL`,
@@ -874,13 +885,14 @@ Contrato API:
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
-    - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone } }`,
+    - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone, clientNumber? } }`,
     - exactamente una modalidad de cliente por request,
     - `month` debe existir y estar `ACTIVE`,
     - aplica invariantes de disponibilidad (weekday, slot válido por modalidad, slot futuro, conflictos por lock/ocupación/bloqueo manual y reglas direccionales),
     - permite múltiples citas activas futuras para el mismo cliente/teléfono cuando la creación la realiza admin,
     - `clientId` debe existir en modalidad de cliente existente,
-    - en modalidad inline, nombre/teléfono deben cumplir validaciones de identidad del dominio.
+    - en modalidad inline, nombre/teléfono deben cumplir validaciones de identidad del dominio,
+    - `clientNumber`, cuando se envía, debe ser entero positivo y único.
   - `GET /api/admin/months/[month]/blockable-slots`:
     - `month` válido y registrado,
     - si `date` se envía, debe cumplir formato `YYYY-MM-DD` y pertenecer al `month`,

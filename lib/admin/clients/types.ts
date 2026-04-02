@@ -1,5 +1,6 @@
 export type AdminClientSearchItem = {
   clientId: number;
+  clientNumber: number;
   name: string;
   phone: string;
 };
@@ -42,6 +43,7 @@ export type AdminClientsCatalogQuery = {
 
 export type AdminClientCatalogItem = {
   clientId: number;
+  clientNumber: number;
   name: string;
   phone: string;
   isLoyal: boolean;
@@ -83,6 +85,7 @@ export type AdminClientDetailAppointmentItem = {
 export type AdminClientDetailResponse = {
   client: {
     clientId: number;
+    clientNumber: number;
     name: string;
     phone: string;
     isLoyal: boolean;
@@ -110,6 +113,7 @@ export type UpdateAdminClientPayload = {
 
 export type UpdateAdminClientResponse = {
   clientId: number;
+  clientNumber: number;
   name: string;
   phone: string;
   isLoyal: boolean;

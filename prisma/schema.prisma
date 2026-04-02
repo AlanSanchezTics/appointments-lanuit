@@ -53,6 +53,7 @@ model Appointment {
 
 model Client {
   id           Int           @id @default(autoincrement())
+  clientNumber Int           @unique @map("client_number")
   name         String        @db.VarChar(100)
   phone        String        @unique @db.VarChar(10)
   isLoyal      Boolean       @default(false) @map("is_loyal")
