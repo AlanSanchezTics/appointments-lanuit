@@ -117,6 +117,10 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
   - `low` cuando hay `1`,
   - `full` cuando hay `0`,
   - `weekend` en sábado/domingo.
+- Semáforo UI del calendario:
+  - disponibilidad alta (`available`) usa fondo azul y texto azul,
+  - disponibilidad nula por citas agendadas (`full` con cupo cubierto por citas) usa fondo verde y texto verde,
+  - disponibilidad nula por espacios bloqueados (`full` con slots bloqueados) y fines de semana (`weekend`) usa fondo gris y texto gris.
 
 ## Flujos alternos
 

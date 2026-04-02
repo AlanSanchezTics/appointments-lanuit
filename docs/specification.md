@@ -684,10 +684,10 @@ Flujo UI:
      - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
      - al terminar la operación, la agenda del día se refresca para reflejar el resultado persistido.
    - Semántica de color del calendario:
-     - verde (`availableSpaces >= 2`),
+     - azul (`availableSpaces >= 2`),
      - amarillo (`availableSpaces = 1`),
-     - rojo (`availableSpaces = 0`),
-     - gris en fines de semana (no operativos).
+     - verde cuando no hay disponibilidad por citas agendadas (`availableSpaces = 0` con cupo cubierto por citas),
+     - gris cuando no hay disponibilidad por espacios bloqueados y en fines de semana (no operativos).
    - A la derecha del encabezado del mes existe botón de acción `Modalidad` que abre `BottomSheetModal` únicamente cuando `isPastMonth=false`.
    - En meses pasados (`isPastMonth=true`) el botón `Modalidad` no se renderiza.
    - En el modal de modalidad:

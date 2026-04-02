@@ -30,7 +30,10 @@ import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { useBookAppointmentModal } from "@/hooks/admin/months/useBookAppointmentModal";
 import { useShareMonthAgenda } from "@/hooks/admin/months/useShareMonthAgenda";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import {
+  BASE_TIME_SLOTS,
+  MAX_APPOINTMENTS_PER_DAY,
+} from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
@@ -108,23 +111,27 @@ function resolveDayModalCancelErrorDescriptionKey(errorCode: string) {
   }
 }
 
-function getToneClasses(
-  tone: MonthDetailCalendarDay["tone"],
-  isCurrentDay: boolean,
-) {
+function getToneClasses(day: MonthDetailCalendarDay, isCurrentDay: boolean) {
   if (isCurrentDay) {
     return "bg-[color-mix(in_srgb,var(--admin-primary)_20%,white)] text-[var(--admin-accent)]";
   }
 
-  switch (tone) {
+  switch (day.tone) {
     case "available":
-      return "bg-[var(--admin-availability-high)] text-[var(--admin-success-text)]";
+      return "bg-[var(--admin-availability-high)] text-[#096ab5]";
     case "low":
       return "bg-[var(--admin-availability-low)] text-[#5b4600]";
-    case "full":
-      return "bg-[var(--admin-availability-full)] text-[#7f1d1d]";
+    case "full": {
+      const hasAppointments = (day.appointmentsCount ?? 0) > 1;
+
+      if (hasAppointments) {
+        return "bg-[var(--admin-availability-full)] text-[#065f46]";
+      }
+
+      return "bg-[var(--admin-availability-weekend)] text-[#6b7280]";
+    }
     case "weekend":
-      return "bg-[var(--admin-availability-weekend)] text-[rgba(107,114,128,0.85)]";
+      return "bg-[var(--admin-availability-weekend)] text-[#6b7280]";
     default:
       return "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)]";
   }
@@ -752,8 +759,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     data.monthStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
   const monthStatusToggleClassName =
     data.monthStatus === "ACTIVE"
-      ? "h-12 border-transparent bg-[var(--admin-availability-full)]! text-[#7f1d1d]! hover:brightness-95 focus-visible:outline-[#7f1d1d]"
-      : "h-12 border-transparent bg-[var(--admin-availability-high)]! text-[var(--admin-success-text)]! hover:brightness-95 focus-visible:outline-[var(--admin-success-text)]";
+      ? "h-12 border-transparent bg-[rgba(239,68,68,0.18)]! text-[rgb(127,29,29)]! hover:brightness-95 focus-visible:outline-[rgb(127,29,29)]"
+      : "h-12 border-transparent bg-[var(--admin-success-bg)]! text-[var(--admin-success-text)]! hover:brightness-95 focus-visible:outline-[var(--admin-success-text)]";
   const monthStatusToggleText =
     data.monthStatus === "ACTIVE"
       ? t("monthsDetail.monthStatus.actions.deactivate")
@@ -940,7 +947,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             const day = cell.day;
             const isActionableDay = !day.isWeekend;
             const dayToneClasses = getToneClasses(
-              day.tone,
+              day,
               day.date === data.currentDate,
             );
 

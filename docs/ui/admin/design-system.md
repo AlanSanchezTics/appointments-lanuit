@@ -360,10 +360,10 @@ Excepción documentada:
   - tarjeta de saturación (porcentaje + barra),
   - calendario mensual de 7 columnas.
 - Semántica de color para disponibilidad diaria:
-  - alta (`availableSpaces >= 2`) -> `availability-high`,
+  - alta (`availableSpaces >= 2`) -> `availability-high` (azul),
   - baja (`availableSpaces = 1`) -> `availability-low`,
-  - sin espacios (`availableSpaces = 0`) -> `availability-full`,
-  - fin de semana no operativo -> `availability-weekend`.
+  - sin espacios por citas agendadas (`availableSpaces = 0` y cupo lleno por citas) -> `availability-full` (verde),
+  - sin espacios por bloqueos manuales o fin de semana no operativo -> `availability-weekend` (gris).
 
 ---
 

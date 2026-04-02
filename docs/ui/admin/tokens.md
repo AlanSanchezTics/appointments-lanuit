@@ -62,17 +62,17 @@ No deben usarse en:
 
 ### Availability (Month Detail)
 
-- `availability-high`: `rgb(195 236 215)`
+- `availability-high`: `rgb(192 226 251)`
   - día con disponibilidad alta (`availableSpaces >= 2`)
 
 - `availability-low`: `rgb(251 233 162)`
   - día con disponibilidad baja (`availableSpaces = 1`)
 
-- `availability-full`: `rgb(254 226 226)`
-  - día sin disponibilidad (`availableSpaces = 0`)
+- `availability-full`: `rgb(195 236 215)`
+  - día sin disponibilidad por citas agendadas (`availableSpaces = 0` y ocupación por citas)
 
 - `availability-weekend`: `rgb(228 226 222 / 0.5)`
-  - fin de semana no operativo
+  - fin de semana no operativo y día sin disponibilidad por espacios bloqueados
 
 ### Text
 
