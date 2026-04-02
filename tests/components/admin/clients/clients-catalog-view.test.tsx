@@ -87,11 +87,9 @@ describe("ClientsCatalogView", () => {
 
     expect(screen.getByText("Listado de clientes")).toBeInTheDocument();
     expect(screen.getByText("Ana Pérez")).toBeInTheDocument();
-    expect(screen.getByText("Futura")).toBeInTheDocument();
     expect(screen.getByText("3 citas")).toBeInTheDocument();
     expect(screen.getByText("Fiel")).toBeInTheDocument();
     expect(screen.getByText("Clientes fieles")).toBeInTheDocument();
-    expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Aplicar filtros/i })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Buscar"), {

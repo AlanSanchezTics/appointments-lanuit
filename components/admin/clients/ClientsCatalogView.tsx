@@ -41,13 +41,11 @@ export function ClientsCatalogView({ initialData }: ClientsCatalogViewProps) {
         withFutureAppointments={data.metrics.withFutureAppointments}
         withoutFutureAppointments={data.metrics.withoutFutureAppointments}
         loyalClients={data.metrics.loyalClients}
-        loyalClientsPercentage={data.metrics.loyalClientsPercentage}
         labels={{
           totalClients: t("clients.catalog.metrics.totalClients"),
           withFutureAppointments: t("clients.catalog.metrics.withFutureAppointments"),
           withoutFutureAppointments: t("clients.catalog.metrics.withoutFutureAppointments"),
           loyalClients: t("clients.catalog.metrics.loyalClients"),
-          loyalClientsPercentage: t("clients.catalog.metrics.loyalClientsPercentage"),
         }}
       />
 

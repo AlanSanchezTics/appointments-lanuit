@@ -12,7 +12,10 @@ import { Card } from "@/components/admin/ui/Card";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useClientDetail } from "@/hooks/admin/clients/useClientDetail";
 import { formatPhoneForDisplay } from "@/lib/booking/formatters";
-import { formatLongDate, formatTimeSlotLabel } from "@/lib/datetime/mexico-city";
+import {
+  formatLongDate,
+  formatTimeSlotLabel,
+} from "@/lib/datetime/mexico-city";
 import type { AdminClientDetailResponse } from "@/lib/admin/clients/types";
 import type { AppLanguage } from "@/lib/i18n/config";
 
@@ -30,39 +33,49 @@ function resolveUpdateErrorKey(errorCode: string) {
     return "clients.detail.notifications.errors.notFound";
   }
 
-  if (errorCode === "VALIDATION_ERROR" || errorCode === "CLIENT_NAME_TOO_SHORT") {
+  if (
+    errorCode === "VALIDATION_ERROR" ||
+    errorCode === "CLIENT_NAME_TOO_SHORT"
+  ) {
     return "clients.detail.notifications.errors.validation";
   }
 
   return "clients.detail.notifications.errors.unknown";
 }
 
-export function ClientDetailView({ clientId, initialData }: ClientDetailViewProps) {
+export function ClientDetailView({
+  clientId,
+  initialData,
+}: ClientDetailViewProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveAppLanguage(i18n.resolvedLanguage ?? "es");
-  const { data, isLoading, isUpdating, errorCode, retry, updateName, updateLoyalty } =
-    useClientDetail({
-      clientId,
-      initialData,
-    });
+  const {
+    data,
+    isLoading,
+    isUpdating,
+    errorCode,
+    retry,
+    updateName,
+    updateLoyalty,
+  } = useClientDetail({
+    clientId,
+    initialData,
+  });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const labels = useMemo(
     () => ({
       total: t("clients.detail.summary.totalAppointments"),
-      active: t("clients.detail.summary.activeAppointments"),
-      cancelled: t("clients.detail.summary.cancelledAppointments"),
+      past: t("clients.detail.summary.pastAppointments"),
       future: t("clients.detail.summary.futureAppointments"),
       timeline: t("clients.detail.timeline.title"),
       emptyTimeline: t("clients.detail.timeline.empty"),
       editCta: t("clients.detail.actions.edit"),
       back: t("clients.detail.actions.back"),
       loyaltyTitle: t("clients.detail.loyalty.title"),
-      loyaltyDescription: t("clients.detail.loyalty.description"),
       loyaltyEnabled: t("clients.detail.loyalty.enabled"),
       loyaltyDisabled: t("clients.detail.loyalty.disabled"),
-      loyaltyEnableAction: t("clients.detail.loyalty.enableAction"),
-      loyaltyDisableAction: t("clients.detail.loyalty.disableAction"),
+      loyaltyToggleLabel: t("clients.detail.loyalty.toggleLabel"),
     }),
     [t],
   );
@@ -115,6 +128,25 @@ export function ClientDetailView({ clientId, initialData }: ClientDetailViewProp
     }
   }
 
+  const appointmentsMetrics = useMemo(() => {
+    const confirmedAppointments = data.appointments.filter(
+      (appointment) => appointment.status === "CONFIRMED",
+    );
+
+    const pastAppointments = confirmedAppointments.filter(
+      (appointment) => appointment.date < data.currentDate,
+    ).length;
+    const futureAppointments = confirmedAppointments.filter(
+      (appointment) => appointment.date > data.currentDate,
+    ).length;
+
+    return {
+      totalAppointments: confirmedAppointments.length,
+      pastAppointments,
+      futureAppointments,
+    };
+  }, [data.appointments, data.currentDate]);
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center justify-between">
@@ -125,114 +157,163 @@ export function ClientDetailView({ clientId, initialData }: ClientDetailViewProp
           <AdminIcon icon={adminIcons.back} tone="secondary" />
           {labels.back}
         </Link>
-        <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(true)}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setIsEditModalOpen(true)}
+        >
           {labels.editCta}
         </Button>
       </section>
 
-      <Card>
+      <Card className="space-y-4 py-6 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--admin-inactive-bg)] mb-0.5">
+          <AdminIcon icon={adminIcons.client} tone="accent" size="3x" />
+        </div>
         <div className="space-y-2">
-          <h1 className="text-xl font-bold text-[var(--admin-text-primary)]">
+          <h1 className="text-2xl font-bold text-[var(--admin-text-primary)] mb-0.5">
             {data.client.name}
           </h1>
-          <p className="text-sm font-medium text-[var(--admin-text-secondary)]">
+          <p className="text-base font-medium text-[var(--admin-text-secondary)] inline-flex items-center">
+            <span className="mr-1 inline-flex" aria-hidden>
+              <AdminIcon icon={adminIcons.phone} tone="secondary" />
+            </span>
             {formatPhoneForDisplay(data.client.phone)}
           </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={[
-                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
-                data.client.isLoyal
-                  ? "bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] text-[var(--admin-accent)]"
-                  : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-secondary)]",
-              ].join(" ")}
-            >
-              {data.client.isLoyal ? labels.loyaltyEnabled : labels.loyaltyDisabled}
-            </span>
-          </div>
         </div>
       </Card>
 
-      <Card className="space-y-3">
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-[var(--admin-text-primary)]">
+      <Card className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AdminIcon icon={adminIcons.busiestDay} tone="accent" />
+          <span className="text-base font-bold text-[var(--admin-text-primary)]">
             {labels.loyaltyTitle}
-          </h2>
-          <p className="text-sm text-[var(--admin-text-secondary)]">
-            {labels.loyaltyDescription}
-          </p>
+          </span>
         </div>
-
-        <Button
+        <button
           type="button"
-          variant={data.client.isLoyal ? "secondary" : "primary"}
           onClick={() => void handleToggleLoyalty(!data.client.isLoyal)}
           disabled={isUpdating || isLoading}
-          aria-pressed={data.client.isLoyal}
-          fullWidth
+          role="switch"
+          aria-checked={data.client.isLoyal}
+          aria-label={labels.loyaltyToggleLabel}
+          className={[
+            "relative inline-flex h-6 w-11 items-center rounded-full border transition",
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+            data.client.isLoyal
+              ? "border-[var(--admin-accent)] bg-[var(--admin-accent)]"
+              : "border-[var(--admin-border)] bg-[var(--admin-inactive-bg)]",
+          ].join(" ")}
         >
-          {data.client.isLoyal ? labels.loyaltyDisableAction : labels.loyaltyEnableAction}
-        </Button>
+          <span
+            className={[
+              "inline-block h-4 w-4 rounded-full bg-white shadow-sm transition",
+              data.client.isLoyal ? "translate-x-6" : "translate-x-1",
+            ].join(" ")}
+          />
+        </button>
       </Card>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-3 gap-3">
         <Card className="space-y-1">
-          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">{labels.total}</p>
-          <p className="text-lg font-bold text-[var(--admin-text-primary)]">{data.summary.totalAppointments}</p>
+          <div className="text-xl text-[var(--admin-accent)] text-center">
+            <AdminIcon icon={adminIcons.appointmentsToday} tone="accent" />
+          </div>
+          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)] text-center">
+            {labels.total}
+          </p>
+          <p className="text-lg font-bold text-[var(--admin-text-primary)] text-center">
+            {appointmentsMetrics.totalAppointments}
+          </p>
         </Card>
         <Card className="space-y-1">
-          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">{labels.active}</p>
-          <p className="text-lg font-bold text-[var(--admin-text-primary)]">{data.summary.activeAppointments}</p>
+          <div className="text-xl text-[var(--admin-accent)] text-center">
+            <AdminIcon icon={adminIcons.pastAppointments} tone="accent" />
+          </div>
+          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)] text-center">
+            {labels.past}
+          </p>
+          <p className="text-lg font-bold text-[var(--admin-text-primary)] text-center">
+            {appointmentsMetrics.pastAppointments}
+          </p>
         </Card>
         <Card className="space-y-1">
-          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">{labels.cancelled}</p>
-          <p className="text-lg font-bold text-[var(--admin-text-primary)]">{data.summary.cancelledAppointments}</p>
-        </Card>
-        <Card className="space-y-1">
-          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">{labels.future}</p>
-          <p className="text-lg font-bold text-[var(--admin-text-primary)]">{data.summary.futureActiveAppointments}</p>
+          <div className="text-xl text-[var(--admin-accent)] text-center">
+            <AdminIcon icon={adminIcons.futureAppointments} tone="accent" />
+          </div>
+          <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)] text-center">
+            {labels.future}
+          </p>
+          <p className="text-lg font-bold text-[var(--admin-text-primary)] text-center">
+            {appointmentsMetrics.futureAppointments}
+          </p>
         </Card>
       </section>
 
-      <Card className="space-y-3">
-        <h2 className="text-lg font-bold text-[var(--admin-text-primary)]">{labels.timeline}</h2>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xl font-bold text-[var(--admin-text-primary)]">
+            {labels.timeline}
+          </h2>
+        </div>
 
         {errorCode ? (
-          <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3">
+          <Card>
             <p className="text-sm font-medium text-[var(--admin-text-primary)]">
               {t("clients.detail.errors.loadFailed")}
             </p>
-            <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">{errorCode}</p>
+            <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+              {errorCode}
+            </p>
             <div className="mt-3">
               <Button type="button" variant="secondary" onClick={retry}>
                 {t("clients.detail.errors.retry")}
               </Button>
             </div>
-          </div>
+          </Card>
         ) : null}
 
         {!errorCode && data.appointments.length === 0 ? (
-          <p className="text-sm text-[var(--admin-text-secondary)]">{labels.emptyTimeline}</p>
+          <Card className="border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] py-10 text-center">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--admin-inactive-bg)]">
+              <AdminIcon
+                icon={adminIcons.syncFailed}
+                tone="secondary"
+                size="lg"
+              />
+            </div>
+            <p className="text-base font-medium text-[var(--admin-text-secondary)]">
+              {labels.emptyTimeline}
+            </p>
+          </Card>
         ) : null}
 
         {!errorCode && data.appointments.length > 0 ? (
           <div className="space-y-2">
             {data.appointments.map((appointment) => (
-              <div
+              <Card
                 key={appointment.appointmentId}
-                className="rounded-xl border border-[var(--admin-border)] px-3 py-2"
+                className={`flex items-center justify-between ${appointment.date < data.currentDate ? "opacity-50" : ""}`}
               >
-                <p className="text-sm font-semibold text-[var(--admin-text-primary)]">
-                  {formatLongDate(appointment.date, language)}
-                </p>
-                <p className="text-xs text-[var(--admin-text-secondary)]">
-                  {formatTimeSlotLabel(appointment.timeSlot, language)} · {appointment.status}
-                </p>
-              </div>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--admin-text-primary)]">
+                    {formatLongDate(appointment.date, language)}
+                  </p>
+                  <p className="text-xs text-[var(--admin-text-secondary)]">
+                    {formatTimeSlotLabel(appointment.timeSlot, language)}
+                  </p>
+                </div>
+                {appointment.status === "CANCELLED" ? (
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--error)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--error)]">
+                    {"Cancelada"}
+                  </span>
+                ) : null}
+              </Card>
             ))}
           </div>
         ) : null}
-      </Card>
+      </section>
 
       <EditClientModal
         isOpen={isEditModalOpen}

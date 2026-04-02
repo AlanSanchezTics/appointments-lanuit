@@ -776,7 +776,7 @@ Flujo UI: Catálogo de clientes admin (`/admin/clients`)
 1. Admin navega desde sidebar (`Clients`) al catálogo.
 2. Página server valida sesión y resuelve filtros iniciales (`query/status/sort/page/pageSize`).
 3. UI renderiza:
-   - métricas de clientes (`total`, `con futuras`, `sin futuras`, `clientes fieles`, `% fidelidad`),
+   - métricas de clientes (`total`, `con futuras`, `sin futuras`, `clientes fieles`),
    - panel de filtros,
    - listado paginado,
    - tag por cliente con cantidad de citas acumuladas,
@@ -793,7 +793,8 @@ Flujo UI: Catálogo de clientes admin (`/admin/clients`)
 Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
 
 1. Página server valida sesión y `clientId`; si no existe retorna `notFound`.
-2. UI muestra ficha del cliente, resumen de citas y timeline.
+2. UI muestra ficha del cliente, resumen de citas (`total`, `pasadas`, `futuras`) y timeline.
+   - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
 4. Acción `Editar cliente` abre modal para actualizar `name`.
 5. Validación local del modal:
@@ -932,6 +933,7 @@ Contrato API:
   - `metrics`: `{ totalClients, withFutureAppointments, withoutFutureAppointments, loyalClients, loyalClientsPercentage }`
   - `pagination`: `{ page, pageSize, total, totalPages }`
   - `clients[]`: `{ clientId, name, phone, isLoyal, createdAt, updatedAt, totalAppointments, hasFutureActiveAppointments, lastAppointmentDate, nextAppointmentDate, nextAppointmentTimeSlot }`
+  - `totalAppointments` en catálogo cuenta únicamente citas `CONFIRMED`.
 - Success `GET /api/admin/clients/[clientId]` (`200`):
   - `{ client, summary, appointments[], currentDate }`
   - `client`: `{ clientId, name, phone, isLoyal, createdAt, updatedAt }`

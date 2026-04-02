@@ -124,6 +124,17 @@ describe("admin clients catalog service", () => {
       expect.objectContaining({
         skip: 0,
         take: 20,
+        select: expect.objectContaining({
+          _count: {
+            select: {
+              appointments: {
+                where: {
+                  status: "CONFIRMED",
+                },
+              },
+            },
+          },
+        }),
       }),
     );
   });

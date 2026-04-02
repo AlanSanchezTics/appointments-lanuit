@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ClientDetailView } from "@/components/admin/clients/ClientDetailView";
@@ -46,6 +46,12 @@ const initialData: AdminClientDetailResponse = {
       timeSlot: "09:00",
       status: "CONFIRMED",
     },
+    {
+      appointmentId: 101,
+      date: "2026-04-02",
+      timeSlot: "10:00",
+      status: "CANCELLED",
+    },
   ],
   currentDate: "2026-03-29",
 };
@@ -73,11 +79,21 @@ describe("ClientDetailView", () => {
     expect(screen.getByRole("heading", { name: "Ana Pérez" })).toBeInTheDocument();
     expect(screen.getByText("Historial de citas")).toBeInTheDocument();
     expect(screen.getByText("Cliente fiel")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Marcar como cliente fiel" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("switch", { name: "Cambiar estado de cliente fiel" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Total de citas")).toBeInTheDocument();
-    expect(screen.getByText("Activas")).toBeInTheDocument();
-    expect(screen.getByText("Canceladas")).toBeInTheDocument();
+    expect(screen.getByText("Pasadas")).toBeInTheDocument();
     expect(screen.getByText("Futuras")).toBeInTheDocument();
+    expect(
+      within(screen.getByText("Total de citas").closest("div") as HTMLElement).getByText("1"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByText("Pasadas").closest("div") as HTMLElement).getByText("1"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByText("Futuras").closest("div") as HTMLElement).getByText("0"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Editar cliente" })).toBeInTheDocument();
   });
 
@@ -125,7 +141,7 @@ describe("ClientDetailView", () => {
 
     render(<ClientDetailView clientId={42} initialData={initialData} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Marcar como cliente fiel" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Cambiar estado de cliente fiel" }));
 
     await waitFor(() => {
       expect(updateLoyaltyMock).toHaveBeenCalledWith(true);

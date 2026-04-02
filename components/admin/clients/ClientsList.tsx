@@ -61,11 +61,7 @@ export function ClientsList({
               key={client.clientId}
               icon={
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--admin-inactive-bg)]">
-                  <AdminIcon
-                    icon={adminIcons.clients}
-                    tone="accent"
-                    size="lg"
-                  />
+                  <AdminIcon icon={adminIcons.client} tone="accent" size="lg" />
                 </span>
               }
               title={client.name}
@@ -78,11 +74,6 @@ export function ClientsList({
                   {client.isLoyal ? (
                     <span className="rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-accent)]">
                       {labels.loyalBadge}
-                    </span>
-                  ) : null}
-                  {client.hasFutureActiveAppointments ? (
-                    <span className="rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_18%,white)] px-2 py-1 text-[10px] font-semibold uppercase text-[var(--admin-accent)]">
-                      {labels.futureBadge}
                     </span>
                   ) : null}
                   <AdminIcon icon={adminIcons.chevronRight} tone="secondary" />

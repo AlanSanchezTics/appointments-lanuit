@@ -302,7 +302,8 @@ Business behavior is defined by:
   - If `totalClients = 0`, `loyalClientsPercentage` must be `0`.
   - Each catalog row includes identity and operational summary:
     - `clientId`, `name`, `phone`, loyalty flag, timestamps
-    - appointment aggregates and next/last appointment references.
+    - `totalAppointments` counts only appointments in `CONFIRMED` status.
+    - next/last appointment references.
 
 - Detail policy (`GET /api/admin/clients/[clientId]`):
   - Requires valid numeric `clientId`.
@@ -311,6 +312,7 @@ Business behavior is defined by:
     - client identity block including loyalty flag,
     - summary metrics (`total`, `active`, `cancelled`, `futureActive`, next/last appointment),
     - chronological appointments list.
+  - Detail UI metrics (`total`, `past`, `future`) must count only appointments in `CONFIRMED` status.
 
 - Update policy (`PATCH /api/admin/clients/[clientId]`):
   - Requires valid numeric `clientId`.

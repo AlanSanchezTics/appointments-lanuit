@@ -97,7 +97,11 @@ export async function getAdminClientsCatalog(
           updatedAt: true,
           _count: {
             select: {
-              appointments: true,
+              appointments: {
+                where: {
+                  status: "CONFIRMED",
+                },
+              },
             },
           },
           appointments: {

@@ -146,6 +146,7 @@
       },
       "summary": {
         "totalAppointments": "Total appointments",
+        "pastAppointments": "Past",
         "activeAppointments": "Active",
         "cancelledAppointments": "Cancelled",
         "futureAppointments": "Future"

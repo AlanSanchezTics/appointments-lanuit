@@ -25,10 +25,10 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 1. Admin ingresa a `/admin/clients` desde sidebar (`Clients`).
 2. Página server valida sesión y precarga catálogo con filtros iniciales.
 3. Vista cliente muestra:
-   - métricas (`total`, `con futuras`, `sin futuras`, `clientes fieles`, `% fidelidad`),
+   - métricas (`total`, `con futuras`, `sin futuras`, `clientes fieles`),
    - panel de filtros (`query`, `status`, `sort`),
    - listado paginado,
-   - tag por cliente con total de citas históricas.
+   - tag por cliente con total de citas confirmadas.
    - indicador de `Cliente fiel` en filas marcadas.
    - las métricas se mantienen estables como analítica global durante el uso de filtros.
 4. Al cambiar cualquier filtro (`query`, `status`, `sort`) o al paginar:
@@ -46,7 +46,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 2. Vista detalle muestra:
    - identidad (nombre + teléfono),
    - estado de fidelidad (`Cliente fiel`: activo/inactivo),
-   - resumen de citas (`total`, `activas`, `canceladas`, `futuras`),
+   - resumen de citas (`total`, `pasadas`, `futuras`) contabilizando solo citas `CONFIRMED`,
    - timeline de citas.
 3. Acción `Volver al catálogo` regresa a `/admin/clients`.
 4. Acción `Editar cliente` abre modal de edición.
