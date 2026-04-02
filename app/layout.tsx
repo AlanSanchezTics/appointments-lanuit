@@ -4,6 +4,7 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { cookies } from "next/headers";
 import { Montserrat } from "next/font/google";
 
+import Favicon from "@/assets/images/favicon.png";
 import { GlobalLanguageFab } from "@/components/i18n/global-language-fab";
 import { I18nProvider } from "@/components/i18n/i18n-provider";
 import { resolveServerLanguage } from "@/lib/i18n/language";
@@ -25,6 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("metadata.title"),
     description: t("metadata.description"),
+    icons: {
+      icon: Favicon.src,
+    },
   };
 }
 
