@@ -76,6 +76,34 @@
         "pending": "Pendiente"
       }
     },
+    "pendingAppointments": {
+      "title": "Pendientes de confirmación",
+      "count_one": "{{count}} cita pendiente",
+      "count_other": "{{count}} citas pendientes",
+      "empty": "No hay citas pendientes de confirmación.",
+      "labels": {
+        "phone": "Teléfono",
+        "clientNumber": "Número de clienta",
+        "dateTime": "Fecha y hora"
+      },
+      "actions": {
+        "confirm": "Confirmar",
+        "reject": "Rechazar"
+      },
+      "notifications": {
+        "confirmLoading": "Confirmando cita...",
+        "confirmSuccess": "Cita confirmada",
+        "rejectLoading": "Rechazando cita...",
+        "rejectSuccess": "Cita rechazada",
+        "errorTitle": "No se pudo actualizar la cita",
+        "errors": {
+          "notFound": "La cita ya no está disponible.",
+          "invalidTransition": "La cita ya no está en estado pendiente.",
+          "unauthorized": "Tu sesión administrativa expiró.",
+          "unknown": "Ocurrió un error inesperado."
+        }
+      }
+    },
     "metrics": {
       "appointmentsToday": "Citas hoy",
       "pending": "Pendientes",

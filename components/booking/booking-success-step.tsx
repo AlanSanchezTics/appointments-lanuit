@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
+import { BookingPendingConfirmationStep } from "@/components/booking/booking-confirm-step";
 import { Button } from "@/components/ui/public/button";
 import { useBookingSuccess } from "@/hooks/booking/use-booking-success";
 import { formatPhoneForDisplay } from "@/lib/booking/formatters";
@@ -38,6 +39,17 @@ export function BookingSuccessStep({
     translate: (key, options) => t(key, options) as string,
     onWhatsAppRedirect,
   });
+  const isPending = success.status === "PENDING";
+
+  if (isPending) {
+    return (
+      <BookingPendingConfirmationStep
+        draft={draft}
+        onSendReceipt={handleWhatsAppClick}
+        onBack={onBack}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col space-y-7">

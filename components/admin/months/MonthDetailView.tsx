@@ -30,10 +30,7 @@ import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { useBookAppointmentModal } from "@/hooks/admin/months/useBookAppointmentModal";
 import { useShareMonthAgenda } from "@/hooks/admin/months/useShareMonthAgenda";
-import {
-  BASE_TIME_SLOTS,
-  MAX_APPOINTMENTS_PER_DAY,
-} from "@/lib/constants/slots";
+import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
 import { useMonthDetail } from "@/hooks/admin/months/useMonthDetail";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";

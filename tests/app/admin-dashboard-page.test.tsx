@@ -7,6 +7,7 @@ import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { Card } from "@/components/admin/ui/Card";
 import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
+import { PendingAppointmentsCard } from "@/components/admin/ui/PendingAppointmentsCard";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 
 vi.mock("next/navigation", () => ({
@@ -21,6 +22,12 @@ vi.mock("@/hooks/admin/useAdminAuth", () => ({
   useAdminAuth: () => ({
     logout: vi.fn(),
   }),
+}));
+
+vi.mock("sileo", () => ({
+  sileo: {
+    promise: vi.fn(async (promise: Promise<unknown>) => promise),
+  },
 }));
 
 describe("admin dashboard page", () => {
@@ -42,6 +49,19 @@ describe("admin dashboard page", () => {
           <Card>
             <h2>Próximas secciones</h2>
           </Card>
+          <PendingAppointmentsCard
+            language="es"
+            items={[
+              {
+                appointmentId: 91,
+                clientNumber: 1234,
+                date: "2026-03-31",
+                timeSlot: "09:00",
+                name: "Ana Garcia",
+                phone: "5512345678",
+              },
+            ]}
+          />
         </ContentWrapper>
       </AdminLayout>,
     );
@@ -55,6 +75,9 @@ describe("admin dashboard page", () => {
     expect(screen.getByTestId("sidebar-item-clients")).toBeInTheDocument();
     expect(screen.getByText("Navegación")).toBeInTheDocument();
     expect(screen.getByText("Próximas secciones")).toBeInTheDocument();
+    expect(screen.getByText("Pendientes de confirmación")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rechazar" })).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="calendar-day"]')).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="calendar-days"]')).toBeInTheDocument();
   });

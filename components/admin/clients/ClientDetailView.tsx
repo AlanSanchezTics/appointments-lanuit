@@ -153,6 +153,15 @@ export function ClientDetailView({
     };
   }, [data.appointments, data.currentDate]);
 
+  const timelineAppointments = useMemo(
+    () =>
+      data.appointments.filter(
+        (appointment) =>
+          appointment.status !== "PENDING" && appointment.status !== "REJECTED",
+      ),
+    [data.appointments],
+  );
+
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
       <section className="flex items-center justify-between">
@@ -283,7 +292,7 @@ export function ClientDetailView({
           </Card>
         ) : null}
 
-        {!errorCode && data.appointments.length === 0 ? (
+        {!errorCode && timelineAppointments.length === 0 ? (
           <Card className="border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] py-10 text-center">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--admin-inactive-bg)]">
               <AdminIcon
@@ -298,9 +307,9 @@ export function ClientDetailView({
           </Card>
         ) : null}
 
-        {!errorCode && data.appointments.length > 0 ? (
+        {!errorCode && timelineAppointments.length > 0 ? (
           <div className="space-y-2">
-            {data.appointments.map((appointment) => (
+            {timelineAppointments.map((appointment) => (
               <Card
                 key={appointment.appointmentId}
                 className={`flex items-center justify-between ${appointment.date < data.currentDate ? "opacity-50" : ""}`}

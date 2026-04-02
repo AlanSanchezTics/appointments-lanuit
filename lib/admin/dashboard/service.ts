@@ -1,5 +1,6 @@
 import type { AppointmentStatus } from "@prisma/client";
 
+import type { AdminPendingAppointmentItem } from "@/lib/admin/appointments/types";
 import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listActiveAppointmentsByDate } from "@/lib/db/admin-appointments";
@@ -112,6 +113,40 @@ async function groupActiveAppointmentsByDate(startDateKey: string, endDateExclus
   return new Map(rows.map((row) => [toDateKey(row.date), row._count._all]));
 }
 
+async function listPendingAppointments(): Promise<AdminPendingAppointmentItem[]> {
+  const rows = await prisma.appointment.findMany({
+    where: {
+      status: "PENDING",
+    },
+    select: {
+      id: true,
+      date: true,
+      timeSlot: true,
+      client: {
+        select: {
+          clientNumber: true,
+          name: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: [
+      { date: "asc" },
+      { timeSlot: "asc" },
+      { createdAt: "asc" },
+    ],
+  });
+
+  return rows.map((row) => ({
+    appointmentId: row.id,
+    clientNumber: row.client.clientNumber,
+    date: toDateKey(row.date),
+    timeSlot: row.timeSlot.toISOString().slice(11, 16),
+    name: row.client.name,
+    phone: row.client.phone,
+  }));
+}
+
 function getBusinessWeekDays(mondayKey: string) {
   const monday = parseDateKeyToUtcDate(mondayKey);
   return Array.from({ length: 5 }, (_, index) => toDateKey(addUtcDays(monday, index)));
@@ -130,10 +165,11 @@ export async function getAdminDashboardWeeklyOccupancy(
   const currentWeekDays = getBusinessWeekDays(currentMondayKey);
   const previousWeekDays = getBusinessWeekDays(previousMondayKey);
 
-  const [currentWeekCounts, previousWeekCounts, todayAppointments, dailyTip] = await Promise.all([
+  const [currentWeekCounts, previousWeekCounts, todayAppointments, pendingAppointments, dailyTip] = await Promise.all([
     groupActiveAppointmentsByDate(currentMondayKey, nextMondayKey),
     groupActiveAppointmentsByDate(previousMondayKey, currentMondayKey),
     listActiveAppointmentsByDate(agendaTargetDateKey),
+    listPendingAppointments(),
     getDailyTipSelection(language, now),
   ]);
 
@@ -184,6 +220,7 @@ export async function getAdminDashboardWeeklyOccupancy(
     },
     todayAgendaTargetDate: agendaTargetDateKey,
     todayAgenda,
+    pendingAppointments,
     dailyTip,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,

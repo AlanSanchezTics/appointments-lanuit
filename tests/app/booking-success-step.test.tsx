@@ -64,4 +64,65 @@ describe("booking success step", () => {
       screen.getByRole("button", { name: "Enviar confirmación por WhatsApp" }),
     ).toBeInTheDocument();
   });
+
+  it("renders the pending confirmation screen and redirects through the receipt CTA", async () => {
+    const onWhatsAppRedirect = vi.fn();
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-2",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: true,
+      clientName: "Ana Garcia",
+    });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-18",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        onWhatsAppRedirect={onWhatsAppRedirect}
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
+        submitBooking={async () => ({
+          appointmentId: 2,
+          status: "PENDING",
+          whatsappPhone: "5215512345678",
+          whatsappData: {
+            name: "Ana Garcia",
+            date: "2026-03-18",
+            timeSlot: "09:00",
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Confirmar Detalles");
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /Ya estamos casi listas/i,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/Tu cita ya se encuentra pre-registrada\./i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Enviar comprobante" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Volver" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
+
+    expect(onWhatsAppRedirect).toHaveBeenCalledWith(
+      expect.stringContaining("Adjunto%20el%20comprobante%20de%20dep%C3%B3sito"),
+    );
+  });
 });

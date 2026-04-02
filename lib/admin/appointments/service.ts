@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { createCalendarEvent, deleteCalendarEvent, GoogleCalendarConfigError } from "@/lib/calendar/google";
 import type {
+  AdminAppointmentTransitionResponse,
   AdminCancelAppointmentPayload,
   AdminCancelAppointmentResponse,
   AdminCreateAppointmentPayload,
@@ -451,4 +452,71 @@ export async function cancelAdminAppointment(
     appointmentId: appointment.id,
     status: "CANCELLED",
   };
+}
+
+async function transitionPendingAppointment(
+  tx: Prisma.TransactionClient,
+  input: {
+    appointmentId: number;
+    nextStatus: "CONFIRMED" | "REJECTED";
+  },
+): Promise<AdminAppointmentTransitionResponse> {
+  const current = await tx.appointment.findUnique({
+    where: {
+      id: input.appointmentId,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!current) {
+    throw new Error("APPOINTMENT_NOT_FOUND");
+  }
+
+  if (current.status !== "PENDING") {
+    throw new Error("APPOINTMENT_STATUS_INVALID_TRANSITION");
+  }
+
+  const updated = await tx.appointment.updateMany({
+    where: {
+      id: input.appointmentId,
+      status: "PENDING",
+    },
+    data: {
+      status: input.nextStatus,
+    },
+  });
+
+  if (updated.count === 0) {
+    throw new Error("APPOINTMENT_STATUS_INVALID_TRANSITION");
+  }
+
+  return {
+    appointmentId: input.appointmentId,
+    status: input.nextStatus,
+  };
+}
+
+export async function confirmPendingAppointment(
+  appointmentId: number,
+): Promise<AdminAppointmentTransitionResponse> {
+  return prisma.$transaction(async (tx) =>
+    transitionPendingAppointment(tx, {
+      appointmentId,
+      nextStatus: "CONFIRMED",
+    }),
+  );
+}
+
+export async function rejectPendingAppointment(
+  appointmentId: number,
+): Promise<AdminAppointmentTransitionResponse> {
+  return prisma.$transaction(async (tx) =>
+    transitionPendingAppointment(tx, {
+      appointmentId,
+      nextStatus: "REJECTED",
+    }),
+  );
 }

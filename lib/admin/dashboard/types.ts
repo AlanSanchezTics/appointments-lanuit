@@ -1,3 +1,5 @@
+import type { AdminPendingAppointmentItem } from "@/lib/admin/appointments/types";
+
 export interface WeeklyOccupancyDay {
   date: string;
   occupiedSlots: number;
@@ -33,6 +35,7 @@ export interface WeeklyOccupancySummary {
   };
   todayAgendaTargetDate: string;
   todayAgenda: TodayAgendaItem[];
+  pendingAppointments: AdminPendingAppointmentItem[];
   dailyTip: DailyTip;
   currentWeekOccupancyPercent: number;
   previousWeekOccupancyPercent: number;

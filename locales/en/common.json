@@ -72,6 +72,10 @@
     "successTitle": "Your appointment was successfully booked",
     "confirmSuccessTitle": "All set, {{name}}!",
     "confirmSuccessBody": "Your appointment has been successfully scheduled.",
+    "pendingTitle": "We're almost there",
+    "pendingDescription": "Your appointment has already been pre-registered.\nTo finish scheduling your appointment, you need to send the deposit receipt via WhatsApp to reserve the spot.\nOnce we receive your receipt, we'll confirm your appointment.",
+    "pendingSendReceipt": "Send receipt",
+    "pendingBack": "Back",
     "thanks": "Thank you",
     "syncFailedInfo": "Your booking was saved. Calendar sync will complete later.",
     "sendWhatsapp": "Send WhatsApp confirmation",
@@ -115,6 +119,7 @@
     "phone": "Phone"
   },
   "whatsapp": {
-    "messageTemplate": "Hi Pau ✨\nthis is {{name}} ✌️.\nI already booked for {{date}} at {{time}} 🗓️.\nThank you very much and have a great day 😊."
+    "messageTemplate": "Hi Pau ✨\nthis is {{name}} ✌️.\nI already booked for {{date}} at {{time}} 🗓️.\nThank you very much and have a great day 😊.",
+    "pendingMessageTemplate": "Hi Pau ✨\nI'm {{name}} ✌️.\nI'm interested in booking you for {{date}} at {{time}} 🗓️.\nI'm attaching the deposit receipt to confirm my appointment.\nThanks!"
   }
 }

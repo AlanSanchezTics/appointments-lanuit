@@ -431,6 +431,80 @@ El agente no debe:
 
 ---
 
+## Component: PendingAppointmentsCard
+
+### Purpose
+
+Mostrar en el dashboard principal del admin la cola de citas `PENDING` que requieren revisión manual.
+
+### Structure
+
+- contenedor base: `Card`
+- encabezado con icono contextual de pendientes
+- subtítulo con conteo de citas pendientes
+- estado vacío cuando no hay citas por revisar
+- listado de tarjetas por cita pendiente
+- acciones por elemento:
+  - `Confirmar`
+  - `Rechazar`
+
+### Data / Props Contract
+
+- `language: AppLanguage`
+- `items: AdminPendingAppointmentItem[]`
+
+Cada elemento de `items` debe proporcionar, como mínimo:
+
+- `appointmentId`
+- `name`
+- `phone`
+- `clientNumber`
+- `date`
+- `timeSlot`
+
+### Style
+
+- usa el contenedor `Card` existente
+- cada cita se presenta en una tarjeta interna con borde suave, sombra ligera y separación vertical consistente
+- acciones apiladas en mobile y en dos columnas a partir de `sm`
+- iconografía outline vía `AdminIcon`
+
+### Usage
+
+Uso:
+
+- bloque del dashboard `/admin` orientado a revisión operativa de citas pendientes
+
+### Rules
+
+El agente debe:
+
+- mostrar únicamente citas pendientes de confirmación
+- permitir transiciones `PENDING -> CONFIRMED` y `PENDING -> REJECTED`
+- usar feedback operativo con `sileo.promise` y textos resueltos vía `react-i18next`
+- refrescar el dashboard al finalizar una transición exitosa
+- mantener el bloque usable en desktop y mobile sin agregar estados visuales nuevos al sistema
+
+El agente no debe:
+
+- introducir edición manual del contenido de la cita desde este bloque
+- mezclar esta tarjeta con el flujo de detalle mensual
+- agregar variantes nuevas de `Button`, `Card` o tokens visuales para resolver este caso
+
+### Implementation Notes
+
+- componente reusable ubicado en `components/admin/ui/PendingAppointmentsCard.tsx`
+- integra endpoints admin para confirmar/rechazar citas pendientes
+- usa estilos y tokens ya existentes del sistema admin
+
+### Documentation Note
+
+- No requiere cambios adicionales en `docs/ui/admin/design-system.md`
+- No requiere cambios adicionales en `docs/ui/admin/tokens.md`
+- `docs/features/admin-month-detail-flow.md` no aplica a este bloque y permanece sin cambios
+
+---
+
 ## Component: ListItem
 
 ### Purpose

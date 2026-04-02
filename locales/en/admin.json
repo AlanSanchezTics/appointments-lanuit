@@ -76,6 +76,34 @@
         "pending": "Pending"
       }
     },
+    "pendingAppointments": {
+      "title": "Pending confirmation",
+      "count_one": "{{count}} pending appointment",
+      "count_other": "{{count}} pending appointments",
+      "empty": "There are no appointments pending confirmation.",
+      "labels": {
+        "phone": "Phone",
+        "clientNumber": "Client number",
+        "dateTime": "Date and time"
+      },
+      "actions": {
+        "confirm": "Confirm",
+        "reject": "Reject"
+      },
+      "notifications": {
+        "confirmLoading": "Confirming appointment...",
+        "confirmSuccess": "Appointment confirmed",
+        "rejectLoading": "Rejecting appointment...",
+        "rejectSuccess": "Appointment rejected",
+        "errorTitle": "Could not update the appointment",
+        "errors": {
+          "notFound": "The appointment is no longer available.",
+          "invalidTransition": "The appointment is no longer pending.",
+          "unauthorized": "Your admin session has expired.",
+          "unknown": "An unexpected error occurred."
+        }
+      }
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",

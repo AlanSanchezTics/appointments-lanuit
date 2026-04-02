@@ -1,7 +1,7 @@
 # Booking Flow
 
 ## Purpose
-Describir de forma estructurada el flujo end-to-end de reserva de citas, desde la entrada al mes activo hasta la confirmación final en UI, incluyendo validaciones, estados, control de concurrencia y efectos del sistema.
+Describir de forma estructurada el flujo end-to-end de reserva de citas, desde la entrada al mes activo hasta la confirmación final en UI, incluyendo validaciones, estados, control de concurrencia, flujo de pendientes para clientas no fieles y efectos del sistema.
 
 ## Actors
 - Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y decide si envía confirmación por WhatsApp.
@@ -21,6 +21,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - El teléfono se valida/persiste normalizado a 10 dígitos.
 - Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`) si la separación entre citas activas del mismo mes es de al menos 15 días naturales.
 - Un mismo teléfono puede tener citas activas futuras en meses distintos.
+- El flujo público distingue entre clienta fiel y no fiel:
+  - clienta fiel: la cita se confirma de forma inmediata,
+  - clienta no fiel: la cita se registra inicialmente como `PENDING`.
 
 ## High-Level Flow
 1. Usuario entra a `/`:
@@ -96,7 +99,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - valida lock vigente por `lock_token`, fecha, horario y teléfono,
   - valida disponibilidad final bajo bloqueo,
   - si llega `appointmentIdToReschedule`, reprograma esa cita,
-  - si no llega `appointmentIdToReschedule`, resuelve cliente por teléfono (reutiliza o crea) e inserta cita `CONFIRMED`,
+  - si no llega `appointmentIdToReschedule`, resuelve cliente por teléfono (reutiliza o crea) e inserta cita con estado inicial según lealtad del cliente:
+    - clienta fiel: `CONFIRMED`,
+    - clienta no fiel: `PENDING`,
   - si crea cliente nuevo, asigna `client_number` único (incremental con huecos permitidos),
   - elimina lock consumido,
   - `COMMIT`.
@@ -104,14 +109,17 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 8. Sincronización externa
 - Trigger: confirmación exitosa en DB.
-- Comportamiento: intenta crear evento en Google Calendar.
+- Comportamiento: intenta crear evento en Google Calendar solo cuando la cita quedó `CONFIRMED`.
 - Resultado:
   - éxito: cita permanece `CONFIRMED`,
   - falla: cita cambia a `SYNC_FAILED` y sigue contando como activa para conflictos.
+  - `PENDING` no crea evento en Calendar hasta que un admin la confirme.
 
 9. Éxito en UI + WhatsApp
 - Trigger: respuesta de confirmación.
-- Comportamiento: UI muestra pantalla de éxito local y CTA explícito para abrir `wa.me` con mensaje codificado.
+- Comportamiento:
+  - si la cita quedó `CONFIRMED`, UI muestra pantalla de éxito local y CTA explícito para abrir `wa.me` con mensaje codificado de confirmación;
+  - si la cita quedó `PENDING`, UI muestra `Ya estamos casi listas`, explica que la cita quedó pre-registrada y muestra CTA principal `Enviar comprobante` y CTA secundaria `Volver`.
 - Resultado: envío por WhatsApp depende de acción explícita del usuario.
 
 10. Abandono o expiración
@@ -145,12 +153,17 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Lock temporal:
   - Requerido para confirmar.
   - Debe estar vigente y corresponder a `date/timeSlot/phone` de la confirmación.
+- Estado de cita:
+  - Una cita confirmada por clienta fiel queda en `CONFIRMED`.
+  - Una cita nueva de clienta no fiel queda en `PENDING`.
+  - `PENDING` no cuenta como cita activa ni bloquea disponibilidad.
 
 ## State Changes
 - Appointment:
-  - Creación de reserva exitosa: `CONFIRMED`.
+  - Creación de reserva exitosa: `CONFIRMED` para clienta fiel, `PENDING` para clienta no fiel.
   - Falla de sincronización con Calendar después de crear cita: `SYNC_FAILED`.
   - `CANCELLED` existe en el dominio pero pertenece al flujo de cancelación.
+  - `REJECTED` representa una cita pendiente que fue descartada manualmente o por expiración de 36 horas.
 - Reservation Lock:
   - Creación al `check + lock`.
   - Consumo/eliminación al confirmar cita exitosamente.
@@ -166,6 +179,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Validación de payload inválida: error de validación.
 - Endpoint legacy `POST /api/reservar`: respuesta `410` (deprecado).
 - Falla de Calendar: no revierte la cita; devuelve estado `SYNC_FAILED`.
+- Cita pendiente sin resolución manual dentro de 36 horas: se considera rechazada y deja de estar disponible para confirmación.
 
 ## Concurrency Considerations
 - Modelo aplicado: `first-commit-wins`.
@@ -183,6 +197,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - El día queda sin slots por combinación de citas activas + locks + regla direccional.
 - Reintentos tras error de conflicto requieren refrescar disponibilidad y re-seleccionar slot.
 - Re-reserva de un slot previamente cancelado genera una nueva cita (histórico preservado).
+- Una cita `PENDING` no participa en la lógica de ocupación hasta que sea confirmada.
 
 ## Observations
 - El contrato funcional define 4 vistas del flujo de reserva (entrada de mes + 3 vistas del wizard), pero el etiquetado visual interno del wizard muestra una progresión `step1Of2`/`step2Of2` y luego éxito. No hay contradicción funcional, pero sí diferencia de nomenclatura de pasos.

@@ -112,11 +112,13 @@ Regla direccional formal:
 
 ## 6. Estados de Cita
 
+- PENDING
 - CONFIRMED
+- REJECTED
 - CANCELLED
 - SYNC_FAILED
 
-No existe estado PENDING persistente.
+`PENDING` representa una cita pre-registrada que requiere revisión manual; si no se confirma ni rechaza en 36 horas, el sistema la marca como `REJECTED` automáticamente.
 
 ---
 
@@ -154,12 +156,17 @@ No existe estado PENDING persistente.
    - Resuelve cliente por teléfono (reutiliza si existe, crea si no existe).
    - Si crea cliente nuevo, asigna `client_number` automáticamente (único e incremental con huecos permitidos).
    - Si se envía `appointmentIdToReschedule`, reprograma esa cita del cliente al nuevo `date + timeSlot`.
-   - Si no se envía `appointmentIdToReschedule`, inserta cita `CONFIRMED` ligada a `client_id`.
+   - Si no se envía `appointmentIdToReschedule`, inserta cita ligada a `client_id` con estado inicial según lealtad del cliente:
+     - clienta fiel: `CONFIRMED`,
+     - clienta no fiel: `PENDING`.
    - Elimina lock temporal consumido.
    - Commit.
-8. Crea evento en Google Calendar.
+8. Si la cita quedó `CONFIRMED`, crea evento en Google Calendar.
 9. UI muestra pantalla local de éxito (paso 3 del wizard).
-10. Usuario ejecuta acción explícita `Enviar confirmación por WhatsApp` para abrir `wa.me` con mensaje codificado.
+   - Si la cita quedó `PENDING`, la UI muestra el mensaje `Ya estamos casi listas` con la explicación de que la cita quedó pre-registrada y requiere envío del comprobante por WhatsApp para terminar de agendar.
+10. Usuario ejecuta acción explícita:
+    - `Enviar confirmación por WhatsApp` cuando la cita quedó `CONFIRMED`,
+    - `Enviar comprobante` cuando la cita quedó `PENDING`.
     - El frontend compone el texto final localizado.
     - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
@@ -180,7 +187,9 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
   - Entrada del mes (`/citas/YYYY-MM`): branding + CTA principal `Agendar cita` + CTA secundaria `Cancelar cita`.
   - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
   - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
-  - Paso 3 (`/citas/YYYY-MM/booking`): éxito local con CTA explícito para abrir WhatsApp.
+  - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
+    - Para clienta fiel: CTA explícito para abrir WhatsApp y enviar confirmación.
+    - Para clienta no fiel: CTA principal `Enviar comprobante` y CTA secundario `Volver`.
 - El flujo de `/booking` usa transición horizontal entre pasos:
   - avance: slide hacia la izquierda,
   - retroceso: slide hacia la derecha.
@@ -196,7 +205,7 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
   - estados de foco visibles,
   - errores inline por campo/contexto.
 
-Mensaje base:
+Mensaje base para cita `CONFIRMED`:
 
     Hola Pau ✨
     soy {Nombre} ✌️.
@@ -207,6 +216,14 @@ Mensaje base:
 
 El mensaje debe codificarse usando encodeURIComponent.
 La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
+
+Mensaje base para cita `PENDING`:
+
+    Hola Pau ✨
+    Soy {Nombre} ✌️.
+    Me interesa agendarte para el día {Día de la semana}, {Día} de {Mes} del {Año} a las {Hora} 🗓️.
+    Adjunto el comprobante de depósito para confirmar mi cita.
+    ¡Gracias!
 
 ---
 
@@ -275,7 +292,7 @@ Histórico de cancelaciones:
 
 - Re-reservar un slot previamente cancelado crea una nueva fila.
 - Las filas CANCELLED se conservan como historial.
-- La disponibilidad y conflictos se calculan solo sobre estados activos (CONFIRMED, SYNC_FAILED).
+- La disponibilidad y conflictos se calculan solo sobre estados activos (CONFIRMED, SYNC_FAILED); `PENDING` y `REJECTED` no bloquean ocupación.
 
 ---
 
@@ -297,7 +314,7 @@ Tabla: appointments
 - client_id (FK -> clients.id)
 - date DATE
 - time_slot TIME
-- status ENUM('CONFIRMED','CANCELLED','SYNC_FAILED')
+- status ENUM('PENDING','CONFIRMED','REJECTED','CANCELLED','SYNC_FAILED')
 - google_event_id VARCHAR(255)
 - created_at DATETIME
 - updated_at DATETIME
@@ -480,6 +497,7 @@ Reglas obligatorias:
 - La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación del día`.
 - La parte superior del dashboard debe incluir un bloque `Agenda de Hoy` en formato línea de tiempo.
+- La parte superior del dashboard debe incluir un bloque `Pendientes de confirmación`.
 - La parte superior del dashboard debe incluir una tarjeta `Tip del día`.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
@@ -543,6 +561,13 @@ Reglas obligatorias:
   - para el estado `En curso`, la tag debe usar animación de parpadeo.
   - la lógica de estado usa duración operativa de 3 horas por cita.
   - si no hay citas activas para hoy, muestra estado vacío informativo.
+- Bloque `Pendientes de confirmación`:
+  - muestra las citas con estado `PENDING`,
+  - por cada cita muestra nombre de la clienta, teléfono, número de clienta, fecha y hora,
+  - permite acciones directas para `Confirmar` y `Rechazar`,
+  - la acción `Confirmar` transiciona la cita a `CONFIRMED`,
+  - la acción `Rechazar` transiciona la cita a `REJECTED`,
+  - el bloque solo lista citas aún no resueltas manualmente.
 - Tarjeta `Tip del día`:
   - muestra título `Tip del día`,
   - muestra un tip operativo diario resuelto desde catálogo CSV en `assets/`,
@@ -803,6 +828,7 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
 2. UI muestra ficha del cliente, resumen de citas (`total`, `pasadas`, `futuras`) y timeline.
    - ficha incluye `client_number`.
    - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
+   - El timeline no debe listar citas con estado `PENDING` ni `REJECTED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
 4. Acción `Editar cliente` abre modal para actualizar `name` y `phone`.
 5. Validación local del modal:
@@ -836,6 +862,8 @@ Contrato API:
   - `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]`
   - `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]`
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`
+  - `POST /api/admin/appointments/[appointmentId]/confirm`
+  - `POST /api/admin/appointments/[appointmentId]/reject`
   - `POST /api/admin/appointments/[appointmentId]/cancel`
 - Auth:
   - requiere sesión admin válida.
@@ -921,6 +949,12 @@ Contrato API:
     - cita activa debe existir dentro del `month`,
     - la cita origen debe ser futura; si ya pasó responde `APPOINTMENT_NOT_EDITABLE` (`409`),
     - destino debe cumplir reglas de disponibilidad (weekday, slot válido, no pasado, sin conflicto/lock).
+  - `POST /api/admin/appointments/[appointmentId]/confirm`:
+    - `appointmentId` válido (>0),
+    - solo permite transicionar una cita `PENDING` a `CONFIRMED`.
+  - `POST /api/admin/appointments/[appointmentId]/reject`:
+    - `appointmentId` válido (>0),
+    - solo permite transicionar una cita `PENDING` a `REJECTED`.
   - `POST /api/admin/appointments/[appointmentId]/cancel`:
     - payload `{ month }`,
     - cancelación admin aplica override (sin restricción web de 24h ni restricción de cita pasada/futura),
@@ -985,5 +1019,9 @@ Contrato API:
   - `{ month, blockedSlotId, status: "DELETED" }`
 - Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
   - `{ appointmentId, date, timeSlot, status, syncReason? }`
+- Success `POST /api/admin/appointments/[appointmentId]/confirm` (`200`):
+  - `{ appointmentId, status: "CONFIRMED" }`
+- Success `POST /api/admin/appointments/[appointmentId]/reject` (`200`):
+  - `{ appointmentId, status: "REJECTED" }`
 - Success `POST /api/admin/appointments/[appointmentId]/cancel` (`200`):
   - `{ appointmentId, status: "CANCELLED", syncReason? }`

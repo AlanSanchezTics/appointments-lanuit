@@ -72,6 +72,10 @@
     "successTitle": "Tu cita ha sido agendada exitosamente",
     "confirmSuccessTitle": "¡Todo listo, {{name}}!",
     "confirmSuccessBody": "Tu cita ha sido agendada con éxito.",
+    "pendingTitle": "Ya estamos casi listas",
+    "pendingDescription": "Tu cita ya se encuentra pre-registrada.\nPara terminar de agendar tu cita, es necesario que envíes a whatsapp el comprobante de deposito para reservar el espacio.\nUna vez que recibamos tu comprobante, confirmaremos tu cita.",
+    "pendingSendReceipt": "Enviar comprobante",
+    "pendingBack": "Volver",
     "thanks": "Muchas gracias",
     "syncFailedInfo": "La reserva quedo registrada. La sincronizacion con calendario se completara despues.",
     "sendWhatsapp": "Enviar confirmación por WhatsApp",
@@ -115,6 +119,7 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}} 🗓️.\nMuchas gracias y bonito día 😊."
+    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}} 🗓️.\nMuchas gracias y bonito día 😊.",
+    "pendingMessageTemplate": "Hola Pau ✨\nSoy {{name}} ✌️.\nMe interesa agendarte para el día {{date}} a las {{time}} 🗓️.\nAdjunto el comprobante de depósito para confirmar mi cita.\n¡Gracias!"
   }
 }

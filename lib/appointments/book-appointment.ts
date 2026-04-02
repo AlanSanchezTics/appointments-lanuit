@@ -24,6 +24,7 @@ import {
 import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
 const MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS = 15;
+type AppointmentCreationStatus = "CONFIRMED" | "PENDING";
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
@@ -156,7 +157,13 @@ async function resolveClientInTransaction(
 
 async function createAppointmentInTransaction(
   tx: Prisma.TransactionClient,
-  input: { phone: string; date: string; timeSlot: string; name?: string },
+  input: {
+    phone: string;
+    date: string;
+    timeSlot: string;
+    name?: string;
+    status?: AppointmentCreationStatus;
+  },
   baseSlots: readonly string[],
   now: Date,
 ) {
@@ -200,18 +207,21 @@ async function createAppointmentInTransaction(
     phone: input.phone,
     name: input.name,
   });
+  const status: AppointmentCreationStatus =
+    input.status ?? (client.isLoyal ? "CONFIRMED" : "PENDING");
 
   return tx.appointment.create({
     data: {
       clientId: client.id,
       date: new Date(`${input.date}T00:00:00.000Z`),
       timeSlot: timeSlotToDate(input.timeSlot),
-      status: "CONFIRMED",
+      status,
     },
     include: {
       client: {
         select: {
           name: true,
+          isLoyal: true,
         },
       },
     },
@@ -327,12 +337,26 @@ async function rescheduleAppointmentInTransaction(
   };
 }
 
-async function finalizeAppointment(input: {
+async function finalizeCreatedAppointment(input: {
   appointmentId: number;
   date: string;
   name: string;
   timeSlot: string;
+  status: AppointmentCreationStatus;
 }) {
+  if (input.status === "PENDING") {
+    return {
+      appointmentId: input.appointmentId,
+      status: "PENDING" as const,
+      whatsappPhone: getWhatsappPhone(),
+      whatsappData: {
+        name: input.name,
+        date: input.date,
+        timeSlot: input.timeSlot,
+      },
+    };
+  }
+
   const syncResult = await syncAppointmentToCalendar(input);
 
   return {
@@ -424,17 +448,26 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
     await acquireBookingLocks(tx, input.date, input.phone);
 
     try {
-      return createAppointmentInTransaction(tx, input, baseSlots, now);
+      return createAppointmentInTransaction(
+        tx,
+        {
+          ...input,
+          status: "CONFIRMED",
+        },
+        baseSlots,
+        now,
+      );
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
   });
 
-  return finalizeAppointment({
+  return finalizeCreatedAppointment({
     appointmentId: appointment.id,
     date: input.date,
     name: appointment.client.name,
     timeSlot: input.timeSlot,
+    status: "CONFIRMED",
   });
 }
 
@@ -510,6 +543,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         type: "created" as const,
         appointmentId: created.id,
         name: created.client.name,
+        status: created.status as AppointmentCreationStatus,
       };
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
@@ -526,10 +560,11 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
     });
   }
 
-  return finalizeAppointment({
+  return finalizeCreatedAppointment({
     appointmentId: result.appointmentId,
     date: input.date,
     name: result.name,
     timeSlot: input.timeSlot,
+    status: result.status,
   });
 }

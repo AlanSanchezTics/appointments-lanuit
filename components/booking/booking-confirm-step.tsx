@@ -24,6 +24,12 @@ type BookingConfirmStepProps = {
   onConfirm: () => void;
 };
 
+type BookingPendingConfirmationStepProps = {
+  draft: BookingDraft;
+  onSendReceipt: () => void;
+  onBack: () => void;
+};
+
 export function BookingConfirmStep({
   draft,
   errorMessage,
@@ -143,6 +149,96 @@ export function BookingConfirmStep({
   );
 }
 
+export function BookingPendingConfirmationStep({
+  draft,
+  onSendReceipt,
+  onBack,
+}: BookingPendingConfirmationStepProps) {
+  const { i18n, t } = useTranslation("common");
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+
+  return (
+    <div className="flex h-full flex-col space-y-7">
+      <div className="flex flex-col items-center pt-1 text-center relative">
+        <span className="absolute right-4 top-0 h-3.5 w-3.5 rounded-full bg-[rgba(222,195,121,0.9)]" />
+        <span className="absolute left-10 top-18 h-5 w-5 rounded-full bg-[rgba(228,159,83,0.12)]" />
+        <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[rgba(228,159,83,0.12)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full text-white bg-[var(--accent)]">
+            <BigClockIcon />
+          </div>
+        </div>
+
+        <h2 className="font-[family-name:var(--font-display)] text-[2rem] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+          {t("booking.pendingTitle")}
+        </h2>
+        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[var(--muted)]">
+          {t("booking.pendingDescription")}
+        </p>
+      </div>
+
+      <section className="rounded-[1.15rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_8px_24px_rgba(99,93,90,0.08)]">
+        <dl className="space-y-4 text-sm">
+          <div className="border-b border-[var(--border)] pb-3 mb-5">
+            <dt className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
+              {t("booking.name")}
+            </dt>
+            <dd className="mt-1 text-base font-semibold text-[var(--foreground)]">
+              {draft.name}
+            </dd>
+          </div>
+          <div className="flex items-start gap-3">
+            <CalendarIcon />
+            <div>
+              <p className="text-xs text-[var(--muted)]">{t("booking.date")}</p>
+              <p className="font-semibold text-[var(--foreground)]">
+                {formatLongDate(draft.date ?? "", language)}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <ClockIcon />
+            <div>
+              <p className="text-xs text-[var(--muted)]">{t("booking.time")}</p>
+              <p className="font-semibold text-[var(--foreground)]">
+                {formatTimeSlotLabel(draft.timeSlot ?? "09:00", language)}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <PhoneIcon />
+            <div>
+              <p className="text-xs text-[var(--muted)]">
+                {t("booking.phone")}
+              </p>
+              <p className="font-semibold text-[var(--foreground)]">
+                {formatPhoneForDisplay(draft.phone)}
+              </p>
+            </div>
+          </div>
+        </dl>
+      </section>
+
+      <div className="mt-auto space-y-4 pt-2">
+        <Button
+          className="w-full min-h-14 py-4 text-[1rem] font-bold"
+          onClick={onSendReceipt}
+          type="button"
+        >
+          {t("booking.pendingSendReceipt")}
+        </Button>
+        <Button
+          className="w-full min-h-14 py-4 text-[1rem] font-bold"
+          onClick={onBack}
+          type="button"
+          variant="ghost"
+        >
+          {t("booking.pendingBack")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CheckCircleIcon() {
   return (
     <svg
@@ -160,6 +256,58 @@ function CheckCircleIcon() {
         strokeWidth="1.8"
       />
     </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]">
+      <svg
+        aria-hidden="true"
+        fill="none"
+        height="18"
+        viewBox="0 0 20 20"
+        width="18"
+      >
+        <rect
+          height="13"
+          rx="3"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          width="14"
+          x="3"
+          y="4"
+        />
+        <path
+          d="M6.5 2.75V5.5M13.5 2.75V5.5M3 8.5H17"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.6"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]">
+      <svg
+        aria-hidden="true"
+        fill="none"
+        height="18"
+        viewBox="0 0 24 24"
+        width="18"
+      >
+        <path
+          d="M6.2 3.5h2.5l1.2 4-1.8 1.8a14.5 14.5 0 006.7 6.7l1.8-1.8 4 1.2v2.5a2 2 0 01-2.2 2A16.9 16.9 0 013.5 5.7a2 2 0 012-2.2z"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -192,12 +340,35 @@ function PencilIcon() {
 
 function ClockIcon() {
   return (
+    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]">
+      <svg
+        aria-hidden="true"
+        fill="none"
+        height="18"
+        viewBox="0 0 24 24"
+        width="18"
+      >
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+        <path
+          d="M12 8v4l2.75 1.5"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function BigClockIcon() {
+  return (
     <svg
       aria-hidden="true"
       fill="none"
-      height="18"
+      height="48"
       viewBox="0 0 24 24"
-      width="18"
+      width="48"
     >
       <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
       <path

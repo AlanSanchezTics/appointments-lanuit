@@ -83,7 +83,9 @@ test("booking flow renders a local success step before WhatsApp", async ({ page,
   await expect(confirmHeading).toBeVisible();
   await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
-  const whatsappButton = page.getByRole("button", { name: /WhatsApp/i });
+  const whatsappButton = page
+    .getByRole("button", { name: /Enviar comprobante|WhatsApp/i })
+    .first();
   await expect(whatsappButton).toBeVisible();
   await whatsappButton.click();
   await expect(page).toHaveURL(/https:\/\/wa\.me\//);

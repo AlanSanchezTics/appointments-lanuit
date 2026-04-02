@@ -11,6 +11,8 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELLED
   SYNC_FAILED
+  PENDING
+  REJECTED
 }
 
 enum ActiveMonthStatus {

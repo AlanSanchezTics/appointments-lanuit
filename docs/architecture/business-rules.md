@@ -35,7 +35,7 @@ Business behavior is defined by:
 
 - Appointment
   - Represents a scheduled service at a date and time slot.
-  - Uses domain states (`CONFIRMED`, `CANCELLED`, `SYNC_FAILED`).
+  - Uses domain states (`PENDING`, `CONFIRMED`, `REJECTED`, `CANCELLED`, `SYNC_FAILED`).
 
 - Reservation Lock
   - Temporary hold used during booking confirmation to prevent concurrent slot capture.
@@ -67,6 +67,7 @@ Business behavior is defined by:
 
 - Active appointment definition
   - States considered active for occupancy/conflict decisions: `CONFIRMED`, `SYNC_FAILED`.
+  - `PENDING` appointments are not active and do not count toward occupancy or conflict decisions.
 
 - Temporary reservation lock
   - A slot can be temporarily held during booking confirmation.
@@ -111,6 +112,13 @@ Business behavior is defined by:
   - Confirmation requires a valid, unexpired lock tied to the selected slot/date/phone.
   - If lock expires or becomes invalid, confirmation is rejected and slot must be reselected.
   - Public confirmation may include `appointmentIdToReschedule`; when present, the selected active future appointment for the same phone/month is rescheduled instead of creating a new record.
+  - Public confirmation without `appointmentIdToReschedule` creates the new appointment in `CONFIRMED` for loyal customers and `PENDING` for non-loyal customers.
+  - `PENDING` appointments do not create a calendar event until they are later confirmed.
+
+- Pending review rules:
+  - `PENDING` appointments await manual review by admin.
+  - Admin may transition `PENDING -> CONFIRMED` or `PENDING -> REJECTED`.
+  - If a `PENDING` appointment remains unresolved for 36 hours, the system marks it as `REJECTED` automatically.
 
 ## Cancellation Rules
 
@@ -315,7 +323,7 @@ Business behavior is defined by:
   - Response includes:
     - client identity block including loyalty flag,
     - summary metrics (`total`, `active`, `cancelled`, `futureActive`, next/last appointment),
-    - chronological appointments list.
+    - chronological appointments list for detail timeline excluding `PENDING` and `REJECTED`.
   - Detail UI metrics (`total`, `past`, `future`) must count only appointments in `CONFIRMED` status.
 
 - Update policy (`PATCH /api/admin/clients/[clientId]`):

@@ -8,6 +8,7 @@ import { ContentWrapper } from "@/components/admin/layout/ContentWrapper";
 import { DailyOccupancyCard } from "@/components/admin/ui/DailyOccupancyCard";
 import { DailyTipCard } from "@/components/admin/ui/DailyTipCard";
 import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
+import { PendingAppointmentsCard } from "@/components/admin/ui/PendingAppointmentsCard";
 import { TodayAgendaTimelineCard } from "@/components/admin/ui/TodayAgendaTimelineCard";
 import { WeeklyOccupancyCard } from "@/components/admin/ui/WeeklyOccupancyCard";
 import { getAdminDashboardWeeklyOccupancy } from "@/lib/admin/dashboard/service";
@@ -106,6 +107,12 @@ export default async function AdminDashboardPage() {
           })}
         />
 
+        {weeklyOccupancy.pendingAppointments.length > 0 && (
+          <PendingAppointmentsCard
+            language={language}
+            items={weeklyOccupancy.pendingAppointments}
+          />
+        )}
         <DailyTipCard
           title={t("dashboard.dailyTip.title", { ns: "admin" })}
           tip={weeklyOccupancy.dailyTip}

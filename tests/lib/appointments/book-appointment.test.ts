@@ -120,6 +120,7 @@ describe("bookAppointment", () => {
         client: {
           select: {
             name: true,
+            isLoyal: true,
           },
         },
       },
@@ -191,6 +192,7 @@ describe("bookAppointment", () => {
       date: "2026-03-04",
       name: "Ana Lopez",
       timeSlot: "09:00",
+      status: "CONFIRMED",
     });
     expect(result).toEqual({
       appointmentId: 77,
@@ -205,7 +207,7 @@ describe("bookAppointment", () => {
     });
   });
 
-  it("confirms a booking only when a valid lock token exists", async () => {
+  it("confirms a booking only when a valid lock token exists for a loyal client", async () => {
     findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
       id: 99,
       date: "2026-03-04",
@@ -214,14 +216,18 @@ describe("bookAppointment", () => {
       lockToken: "lock-123",
       expiresAt: "2026-03-03T12:10:00.000Z",
     });
-    clientCreateMock.mockResolvedValueOnce({
+    clientFindUniqueMock.mockResolvedValueOnce({
       id: 12,
       clientNumber: 1,
       name: "Ana Lopez",
       phone: "5512345678",
+      isLoyal: true,
     });
-    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
-    createMock.mockResolvedValueOnce({ id: 13, client: { name: "Ana Lopez" } });
+    createMock.mockResolvedValueOnce({
+      id: 13,
+      status: "CONFIRMED",
+      client: { name: "Ana Lopez" },
+    });
 
     const { confirmAppointmentWithLock } = await import(
       "@/lib/appointments/book-appointment"
@@ -244,6 +250,62 @@ describe("bookAppointment", () => {
     expect(result).toMatchObject({
       appointmentId: 13,
       status: "CONFIRMED",
+      whatsappPhone: "5215512345678",
+      whatsappData: {
+        name: "Ana Lopez",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+      },
+    });
+  });
+
+  it("creates a pending appointment for a non-loyal client without calendar sync", async () => {
+    findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
+      id: 99,
+      date: "2026-03-04",
+      timeSlot: "09:00",
+      phone: "5512345678",
+      lockToken: "lock-123",
+      expiresAt: "2026-03-03T12:10:00.000Z",
+    });
+    clientFindUniqueMock.mockResolvedValueOnce(null);
+    clientCreateMock.mockResolvedValueOnce({
+      id: 12,
+      clientNumber: 1,
+      name: "Ana Lopez",
+      phone: "5512345678",
+      isLoyal: false,
+    });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
+    createMock.mockResolvedValueOnce({
+      id: 14,
+      status: "PENDING",
+      client: { name: "Ana Lopez" },
+    });
+
+    const { confirmAppointmentWithLock } = await import(
+      "@/lib/appointments/book-appointment"
+    );
+    const result = await confirmAppointmentWithLock(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "09:00",
+        lockToken: "lock-123",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(createCalendarEventMock).not.toHaveBeenCalled();
+    expect(syncAppointmentToCalendarMock).not.toHaveBeenCalled();
+    expect(deleteReservationLockByTokenMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      "lock-123",
+    );
+    expect(result).toMatchObject({
+      appointmentId: 14,
+      status: "PENDING",
       whatsappPhone: "5215512345678",
       whatsappData: {
         name: "Ana Lopez",

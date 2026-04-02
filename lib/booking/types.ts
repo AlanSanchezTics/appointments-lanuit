@@ -21,7 +21,7 @@ export type BookingDraft = {
 
 export type BookingSuccess = {
   appointmentId: number;
-  status: "CONFIRMED" | "SYNC_FAILED";
+  status: "CONFIRMED" | "SYNC_FAILED" | "PENDING";
   syncReason?: string;
   whatsappPhone: string;
   whatsappData: {

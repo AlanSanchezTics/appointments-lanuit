@@ -1,3 +1,4 @@
+import type { AppointmentStatus } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
@@ -8,7 +9,7 @@ export type PersistedAppointment = {
   phone: string;
   date: string;
   timeSlot: string;
-  status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+  status: AppointmentStatus;
   googleEventId: string | null;
   clientId: number;
 };
@@ -38,7 +39,7 @@ function mapAppointment(row: {
   id: number;
   date: Date;
   timeSlot: Date;
-  status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+  status: AppointmentStatus;
   googleEventId: string | null;
   clientId: number;
   client: {
@@ -201,7 +202,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
       phone: string;
       date: Date;
       time_slot: Date;
-      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      status: AppointmentStatus;
       google_event_id: string | null;
     }>
   >`
@@ -251,7 +252,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
       phone: string;
       date: Date;
       time_slot: Date;
-      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      status: AppointmentStatus;
       google_event_id: string | null;
     }>
   >`
@@ -308,7 +309,7 @@ export async function findConfirmedFutureAppointmentsByIdsForUpdate(
       phone: string;
       date: Date;
       time_slot: Date;
-      status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+      status: AppointmentStatus;
       google_event_id: string | null;
     }>
   >`

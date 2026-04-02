@@ -216,4 +216,42 @@ describe("booking wizard", () => {
       screen.getByText("Selecciona una de las opciones disponibles para continuar"),
     ).toBeInTheDocument();
   });
+
+  it("transitions to the pending confirmation screen after a non-loyal booking is confirmed", async () => {
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        month="2026-03"
+        checkClientAndAcquireLock={async () => ({
+          lockToken: "lock-456",
+          expiresAt: "2099-01-01T00:10:00.000Z",
+          clientExists: true,
+          clientName: "Ana Garcia",
+        })}
+        submitBooking={async () => ({
+          appointmentId: 42,
+          status: "PENDING",
+          whatsappPhone: "5215512345678",
+          whatsappData: {
+            name: "Ana Garcia",
+            date: "2026-03-04",
+            timeSlot: "09:00",
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Confirmar Detalles");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /Ya estamos casi listas/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar comprobante" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument();
+  });
 });

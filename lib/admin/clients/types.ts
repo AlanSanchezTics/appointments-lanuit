@@ -1,3 +1,5 @@
+import type { AppointmentStatus } from "@prisma/client";
+
 export type AdminClientSearchItem = {
   clientId: number;
   clientNumber: number;
@@ -79,7 +81,7 @@ export type AdminClientDetailAppointmentItem = {
   appointmentId: number;
   date: string;
   timeSlot: string;
-  status: "CONFIRMED" | "CANCELLED" | "SYNC_FAILED";
+  status: AppointmentStatus;
 };
 
 export type AdminClientDetailResponse = {

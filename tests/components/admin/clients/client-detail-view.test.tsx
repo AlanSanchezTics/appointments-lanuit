@@ -32,7 +32,7 @@ const initialData: AdminClientDetailResponse = {
     updatedAt: "2026-03-29T00:00:00.000Z",
   },
   summary: {
-    totalAppointments: 3,
+    totalAppointments: 5,
     activeAppointments: 2,
     cancelledAppointments: 1,
     futureActiveAppointments: 1,
@@ -52,6 +52,18 @@ const initialData: AdminClientDetailResponse = {
       date: "2026-04-02",
       timeSlot: "10:00",
       status: "CANCELLED",
+    },
+    {
+      appointmentId: 102,
+      date: "2026-04-03",
+      timeSlot: "11:00",
+      status: "PENDING",
+    },
+    {
+      appointmentId: 103,
+      date: "2026-04-04",
+      timeSlot: "12:00",
+      status: "REJECTED",
     },
   ],
   currentDate: "2026-03-29",
@@ -155,5 +167,25 @@ describe("ClientDetailView", () => {
       expect(updateLoyaltyMock).toHaveBeenCalledWith(true);
       expect(promiseMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("does not render pending or rejected appointments in timeline", () => {
+    useClientDetailMock.mockReturnValue({
+      data: initialData,
+      isLoading: false,
+      isUpdating: false,
+      errorCode: null,
+      refresh: vi.fn(),
+      retry: vi.fn(),
+      updateClientIdentity: vi.fn(),
+      updateLoyalty: vi.fn(),
+    });
+
+    render(<ClientDetailView clientId={42} initialData={initialData} />);
+
+    expect(screen.getByText(/09:00/i)).toBeInTheDocument();
+    expect(screen.getByText(/10:00/i)).toBeInTheDocument();
+    expect(screen.queryByText(/11:00/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/12:00/i)).not.toBeInTheDocument();
   });
 });

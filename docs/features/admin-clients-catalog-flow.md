@@ -49,7 +49,7 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
    - identidad (`client_number` + nombre + teléfono),
    - estado de fidelidad (`Cliente fiel`: activo/inactivo),
    - resumen de citas (`total`, `pasadas`, `futuras`) contabilizando solo citas `CONFIRMED`,
-   - timeline de citas.
+   - timeline de citas (excluye `PENDING` y `REJECTED`).
 3. Acción `Volver al catálogo` regresa a `/admin/clients`.
 4. Acción `Editar cliente` abre modal de edición.
 

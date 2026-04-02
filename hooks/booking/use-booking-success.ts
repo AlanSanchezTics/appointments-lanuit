@@ -27,16 +27,24 @@ export function useBookingSuccess({
   onWhatsAppRedirect,
 }: UseBookingSuccessParams) {
   const handleWhatsAppClick = useCallback(() => {
-    const cancelUrl =
-      typeof window === "undefined"
-        ? "/cancelar"
-        : `${window.location.origin}/cancelar`;
-    const message = translate("whatsapp.messageTemplate", {
-      name: success.whatsappData.name,
-      date: formatLongDate(success.whatsappData.date, language),
-      time: formatTimeSlotLabel(success.whatsappData.timeSlot, language),
-      cancelUrl,
-    });
+    const formattedDate = formatLongDate(success.whatsappData.date, language);
+    const formattedTime = formatTimeSlotLabel(success.whatsappData.timeSlot, language);
+    const message =
+      success.status === "PENDING"
+        ? translate("whatsapp.pendingMessageTemplate", {
+            name: success.whatsappData.name,
+            date: formattedDate,
+            time: formattedTime,
+          })
+        : translate("whatsapp.messageTemplate", {
+            name: success.whatsappData.name,
+            date: formattedDate,
+            time: formattedTime,
+            cancelUrl:
+              typeof window === "undefined"
+                ? "/cancelar"
+                : `${window.location.origin}/cancelar`,
+          });
 
     onWhatsAppRedirect(
       buildWhatsappUrlFromMessage({

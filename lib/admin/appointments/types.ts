@@ -10,6 +10,15 @@ export type AdminDayAgendaItem = {
   status: "CONFIRMED" | "SYNC_FAILED";
 };
 
+export type AdminPendingAppointmentItem = {
+  appointmentId: number;
+  clientNumber: number;
+  date: string;
+  timeSlot: string;
+  name: string;
+  phone: string;
+};
+
 export type AdminDayAgendaResponse = {
   month: string;
   date: string;
@@ -45,6 +54,11 @@ export type AdminCancelAppointmentResponse = {
   appointmentId: number;
   status: "CANCELLED";
   syncReason?: "CALENDAR_DELETE_FAILED";
+};
+
+export type AdminAppointmentTransitionResponse = {
+  appointmentId: number;
+  status: "CONFIRMED" | "REJECTED";
 };
 
 export type AdminCreateAppointmentClientInput = {
