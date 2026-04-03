@@ -368,31 +368,33 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const selectedDateLabel = dayAgendaModal.selectedDate
     ? dayLabelFormatter.format(parseDateOnly(dayAgendaModal.selectedDate))
     : "";
+  const dayAgenda = dayAgendaModal.agenda;
   const dayBlockedEntries = useMemo(
     () =>
-      dayAgendaModal.agenda
+      dayAgenda
         ? buildDayBlockedEntries({
-            blockedSlots: dayAgendaModal.agenda.blockedSlots,
+            blockedSlots: dayAgenda.blockedSlots,
             monthBaseSlots,
           })
         : [],
-    [dayAgendaModal.agenda, monthBaseSlots],
+    [dayAgenda, monthBaseSlots],
   );
   const hasFullDayBlockedEntry = dayBlockedEntries.some(
     (entry) => entry.kind === "full-day",
   );
+  const selectedAgendaDate = dayAgendaModal.selectedDate;
   const shouldShowQuickBlockActions =
     !dayAgendaModal.isLoadingAgenda &&
     !dayAgendaModal.agendaErrorCode &&
-    Boolean(dayAgendaModal.agenda) &&
-    Boolean(dayAgendaModal.selectedDate) &&
-    dayAgendaModal.selectedDate >= data.currentDate &&
+    dayAgenda !== null &&
+    selectedAgendaDate !== null &&
+    selectedAgendaDate >= data.currentDate &&
     !hasFullDayBlockedEntry &&
     hasQuickBlockableSlots &&
     !isLoadingQuickBlockableSlots;
   const isDayFullyAvailableForQuickBlock =
-    Boolean(dayAgendaModal.agenda) &&
-    dayAgendaModal.agenda.appointments.length === 0 &&
+    dayAgenda !== null &&
+    dayAgenda.appointments.length === 0 &&
     dayBlockedEntries.length === 0;
   const slotModeHelperKey =
     slotModeDraft === "BLOCK_MODE"
@@ -553,7 +555,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     const selectedDate = dayAgendaModal.selectedDate;
     const canCheckQuickActions =
       dayAgendaModal.isOpen &&
-      Boolean(selectedDate) &&
+      selectedDate !== null &&
       !dayAgendaModal.isLoadingAgenda &&
       !dayAgendaModal.agendaErrorCode &&
       selectedDate >= data.currentDate &&
