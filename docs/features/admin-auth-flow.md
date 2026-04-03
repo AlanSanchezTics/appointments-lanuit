@@ -26,9 +26,11 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
 4. Backend valida credenciales contra `admin_users` usando `password_hash` + `password_salt` + `ADMIN_AUTH_PEPPER`.
 5. Si son válidas y el usuario está `active`, NextAuth crea sesión y redirige al dashboard.
 6. Usuario autenticado accede a `/admin/` dentro del shell admin:
-   - `appHeader` superior minimalista con título de sección + selector de idioma (`es`/`en`),
+   - `appHeader` superior minimalista con título de sección + selector de idioma (`es`/`en`) + botón de buscador global de clientes,
    - `SideBar` principal.
    - en rutas autenticadas del admin no se usa selector flotante tipo FAB.
+   - al accionar el botón del buscador, se abre un modal con la búsqueda global de clientes.
+   - el buscador global permite buscar clientes por nombre o teléfono en todo el shell, usa debounce de `500ms`, muestra hasta 8 resultados y navega al detalle del cliente al seleccionarlo.
    - el dashboard incluye tarjeta `Ocupación semanal` con:
      - 5 barras (`lunes` a `viernes`) para ocupación diaria de la semana actual,
      - indicador `N% más|menos|similar` contra la semana anterior.

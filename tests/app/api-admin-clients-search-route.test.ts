@@ -40,6 +40,7 @@ describe("GET /api/admin/clients/search", () => {
           clientId: 1,
           name: "Ana Garcia",
           phone: "5512345678",
+          isLoyal: true,
         },
       ],
     });
@@ -58,6 +59,7 @@ describe("GET /api/admin/clients/search", () => {
           clientId: 1,
           name: "Ana Garcia",
           phone: "5512345678",
+          isLoyal: true,
         },
       ],
     });

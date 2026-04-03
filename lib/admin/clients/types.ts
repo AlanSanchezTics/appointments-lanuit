@@ -5,6 +5,7 @@ export type AdminClientSearchItem = {
   clientNumber: number;
   name: string;
   phone: string;
+  isLoyal: boolean;
 };
 
 export type SearchAdminClientsInput = {

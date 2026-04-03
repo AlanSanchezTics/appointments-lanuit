@@ -490,6 +490,17 @@ Reglas obligatorias:
   - ejecuta `signOut` de NextAuth y redirige a `/admin/login`.
 - El `appHeader` debe mostrar título de sección resuelto por ruta vía i18n (`react-i18next`), sin breadcrumbs en esta fase.
 - El `appHeader` debe incluir el control de cambio de idioma (`es`/`en`) para rutas admin autenticadas.
+- El `appHeader` debe incluir un buscador global de clientes para todas las rutas autenticadas del admin (`/admin/*` excepto `/admin/login`).
+- El buscador global:
+  - se acciona desde un botón en el extremo derecho del `appHeader`, ubicado a la izquierda del selector de idioma,
+  - se renderiza dentro de un modal del shell admin,
+  - permite buscar por nombre o teléfono,
+  - usa debounce de `500ms`,
+  - consulta `GET /api/admin/clients/search`,
+  - muestra hasta `8` resultados,
+  - al seleccionar un resultado navega a `/admin/clients/[clientId]`,
+  - permite limpiar el término de búsqueda,
+  - muestra estados de `loading`, `empty` y `error` sin abandonar el shell actual.
 
 ### 15.1.2 Dashboard (`/admin`) – bloque de ocupación semanal
 
@@ -953,6 +964,7 @@ Contrato API:
   - `GET /api/admin/clients/search`:
     - `query` obligatorio (mínimo 2 caracteres),
     - `limit` opcional, entero en rango permitido.
+    - respuesta `clients[]` incluye `clientId`, `clientNumber`, `name`, `phone`, `isLoyal`.
   - `GET /api/admin/clients/next-number`:
     - retorna `{ nextClientNumber }` como siguiente número sugerido disponible.
   - `GET /api/admin/clients/catalog`:
@@ -1037,7 +1049,7 @@ Contrato API:
   - `{ createdMonths, skippedMonths, totalCreated, totalSkipped }`
 - Success `GET /api/admin/clients/search` (`200`):
   - `{ query, total, clients[] }`
-  - `clients[]`: `{ clientId, name, phone }`
+  - `clients[]`: `{ clientId, clientNumber, name, phone, isLoyal }`
 - Success `GET /api/admin/clients/catalog` (`200`):
   - `{ filters, metrics, pagination, clients[], currentDate }`
   - `filters`: `{ query, status, sort, page, pageSize }`

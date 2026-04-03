@@ -15,11 +15,13 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 - UI admin:
   - `GET /admin/clients`
   - `GET /admin/clients/[clientId]`
+  - buscador global de clientes en `appHeader` del shell admin para navegación rápida al detalle.
 - Endpoints cubiertos:
   - `GET /api/admin/clients/next-number`
   - `GET /api/admin/clients/catalog`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
+  - `GET /api/admin/clients/search`
 
 ## Flujo principal UI: catálogo (`/admin/clients`)
 
@@ -41,6 +43,17 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 5. Si no hay resultados, se muestra estado vacío.
 6. Si falla la carga, se muestra bloque de error con acción `Reintentar`.
 7. Al tocar un cliente, navega a `/admin/clients/[clientId]`.
+
+## Flujo transversal: buscador global en `appHeader`
+
+1. Admin autenticado usa el buscador global disponible en el `appHeader` de cualquier ruta protegida del admin.
+2. Admin captura un término por nombre o teléfono.
+3. El shell espera `500ms` sin cambios antes de consultar `GET /api/admin/clients/search`.
+4. Si el texto es menor a 2 caracteres, no se realiza búsqueda.
+5. UI muestra hasta 8 resultados con nombre, número de cliente, teléfono y marca de fidelidad cuando aplica.
+6. Si no hay resultados, UI muestra estado vacío.
+7. Si ocurre un error de consulta, UI muestra un estado de error sin salir del shell.
+8. Al seleccionar un resultado, el sistema navega a `/admin/clients/[clientId]` y limpia el estado del buscador.
 
 ## Flujo principal UI: detalle (`/admin/clients/[clientId]`)
 

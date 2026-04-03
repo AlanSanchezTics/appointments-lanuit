@@ -162,6 +162,14 @@ Business behavior is defined by:
   - clears session cookie,
   - invalidates further access to protected admin routes.
 
+- Admin global client search:
+  - The authenticated admin shell exposes a global client search in `appHeader` on every protected `/admin/*` route except login.
+  - Search matches client `name` or normalized `phone` partials.
+  - Client search requests are debounced in the UI to avoid unnecessary database hits.
+  - Search results are limited in the UI to the first 8 matches.
+  - Selecting a search result must navigate to the selected client detail view and reset the search state.
+  - Search results may expose the loyalty flag so the shell can render a loyalty badge without loading the client catalog.
+
 ## Admin Dashboard Rules
 
 - Scope:

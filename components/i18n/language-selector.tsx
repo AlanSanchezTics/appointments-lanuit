@@ -41,12 +41,14 @@ export function LanguageSelector({ variant = "fab" }: LanguageSelectorProps) {
     ? "outline-0 inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 shadow-sm transition"
     : "outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition";
   const triggerButtonClasses = isInline
-    ? "outline-0 inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 text-sm shadow-sm transition ring-1 ring-[var(--admin-primary)]"
+    ? "inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 text-sm shadow-sm transition hover:bg-[var(--admin-inactive-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]"
     : "outline-0 inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-(--border) bg-white px-3 shadow-(--shadow-soft) transition ring-2 ring-[var(--accent)]";
   const containerClasses = isInline
     ? "relative flex items-center"
     : "flex flex-col items-center gap-2";
-  const activeRingClass = isInline ? "ring-2 ring-[var(--admin-primary)]" : "ring-2 ring-[var(--accent)]";
+  const activeRingClass = isInline
+    ? "ring-2 ring-[var(--admin-primary)]"
+    : "ring-2 ring-[var(--accent)]";
 
   return (
     <div className={containerClasses}>

@@ -20,6 +20,19 @@
     "panelLabel": "Admin Panel",
     "title": "La Nuit",
     "logout": "Sign out",
+    "search": {
+      "open": "Open global search",
+      "modalTitle": "Search clients",
+      "modalClose": "Close search",
+      "label": "Search clients",
+      "placeholder": "Search by name or phone",
+      "loading": "loading...",
+      "empty": "No clients were found.",
+      "error": "Unable to load search results.",
+      "clear": "Clear search",
+      "loyalBadge": "Loyal",
+      "resultAriaLabel": "Open detail for {{name}}"
+    },
     "sectionTitle": {
       "dashboard": "Dashboard",
       "months": "Months",

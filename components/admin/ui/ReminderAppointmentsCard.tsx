@@ -15,7 +15,6 @@ import { REQUIRED_TIMEZONE } from "@/lib/constants/slots";
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 
 import { AdminIcon } from "./AdminIcon";
-import { Card } from "./Card";
 import { adminIcons } from "./admin-icons";
 
 type ReminderAppointmentsCardProps = {

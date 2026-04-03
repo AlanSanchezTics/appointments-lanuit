@@ -1052,13 +1052,28 @@ Mostrar el título de sección del módulo admin, el disparador de menú en mobi
 - botón de menú (solo mobile)
 - ícono contextual
 - título de sección resuelto por i18n según ruta activa
-- selector de idioma (`es`/`en`) integrado al extremo derecho del header
+- botón de buscador global a la izquierda del selector de idioma (`es`/`en`)
+- buscador global de clientes dentro de modal del shell, con debounce, estado de carga y resultados
 
 ### Usage
 
 Uso:
 
 - barra superior persistente en rutas autenticadas `/admin/*` (excepto login)
+
+### Rules
+
+El agente debe:
+
+- mantener el buscador global como parte del shell, no como una vista aislada
+- limitar los resultados visibles a un máximo de 8
+- mostrar nombre, número de cliente, teléfono y fidelidad cuando exista
+- limpiar el estado del buscador después de navegar al detalle
+
+El agente no debe:
+
+- mover la lógica de búsqueda a páginas de feature
+- introducir una segunda variante de buscador fuera del shell admin
 
 ---
 

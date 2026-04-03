@@ -16,6 +16,7 @@ export async function searchAdminClients(
       clientNumber: true,
       name: true,
       phone: true,
+      isLoyal: true,
       updatedAt: true,
     },
     take: input.limit * 3,
@@ -41,6 +42,7 @@ export async function searchAdminClients(
       clientNumber: row.clientNumber,
       name: row.name,
       phone: row.phone,
+      isLoyal: row.isLoyal,
     } satisfies AdminClientSearchItem));
 
   return {

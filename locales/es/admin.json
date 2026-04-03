@@ -20,6 +20,19 @@
     "panelLabel": "Panel Administrativo",
     "title": "La Nuit",
     "logout": "Cerrar sesión",
+    "search": {
+      "open": "Abrir buscador global",
+      "modalTitle": "Buscar clientes",
+      "modalClose": "Cerrar buscador",
+      "label": "Buscar clientes",
+      "placeholder": "Buscar por nombre o teléfono",
+      "loading": "Un momento...",
+      "empty": "No se encontraron clientes.",
+      "error": "No se pudo cargar la búsqueda.",
+      "clear": "Limpiar búsqueda",
+      "loyalBadge": "Fiel",
+      "resultAriaLabel": "Abrir detalle de {{name}}"
+    },
     "sectionTitle": {
       "dashboard": "Dashboard",
       "months": "Meses",
