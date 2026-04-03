@@ -2,6 +2,7 @@ import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
 import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
 import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
+import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import {
   getAvailableStartSlotsWithManualBlocks,
   isWeekdayBookingDate,
@@ -69,11 +70,20 @@ export async function getMonthAvailability(month: string, now = new Date()) {
     .map((date) => {
       const occupiedSlots = appointmentsByDate.get(date) ?? [];
       const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
-      const dayBlockedSlots = blockedSlotsByDate.get(date) ?? [];
+      const dayBlockedTimeSlots = blockedSlotsByDate.get(date) ?? [];
+      const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(dayBlockedTimeSlots);
+
+      if (hasFullDayBlock) {
+        return {
+          date,
+          slots: [],
+        };
+      }
+
       const slots = getAvailableStartSlotsWithManualBlocks(
         baseSlots,
         [...occupiedSlots, ...activeLockSlots],
-        dayBlockedSlots,
+        Array.from(blockedSlots),
       )
         .filter((slot) => {
         if (date !== currentDate) {

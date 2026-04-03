@@ -50,6 +50,7 @@ describe("admin blocked spaces validation", () => {
     ).toEqual({
       month: "2026-03",
       date: "2026-03-20",
+      fullDay: false,
       slots: ["09:00", "13:00"],
       reason: "DESCANSO",
     });
@@ -62,6 +63,20 @@ describe("admin blocked spaces validation", () => {
         reason: "DESCANSO",
       }),
     ).toThrow("DUPLICATE_SLOTS");
+
+    expect(
+      parseCreateBlockedSlotsPayload({
+        month: "2026-03",
+        date: "2026-03-20",
+        fullDay: true,
+        reason: "DESCANSO",
+      }),
+    ).toEqual({
+      month: "2026-03",
+      date: "2026-03-20",
+      fullDay: true,
+      reason: "DESCANSO",
+    });
   });
 
   it("parses blocked slot id and mutation payloads", () => {

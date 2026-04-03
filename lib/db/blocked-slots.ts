@@ -125,6 +125,17 @@ export async function deleteBlockedSlotById(
   });
 }
 
+export async function deleteBlockedSlotsByDate(
+  tx: Prisma.TransactionClient,
+  date: string,
+) {
+  await tx.blockedSlot.deleteMany({
+    where: {
+      date: new Date(`${date}T00:00:00.000Z`),
+    },
+  });
+}
+
 export async function createBlockedSlots(
   tx: Prisma.TransactionClient,
   input: {

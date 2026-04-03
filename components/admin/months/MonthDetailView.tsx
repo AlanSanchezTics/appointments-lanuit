@@ -14,6 +14,8 @@ import {
   rescheduleAdminAppointmentById,
 } from "@/lib/admin/appointments/api-client";
 import {
+  createAdminBlockedSlots,
+  fetchAdminBlockableSlots,
   deleteAdminBlockedSlotById,
   updateAdminBlockedSlotById,
 } from "@/lib/admin/blocked-spaces/api-client";
@@ -54,6 +56,21 @@ type MonthDetailViewProps = {
   month: string;
   initialData: MonthDetailResponse;
 };
+
+type DayBlockedEntry =
+  | {
+      kind: "slot";
+      blockedSlotId: number;
+      date: string;
+      timeSlot: string;
+      reason: BlockReason;
+    }
+  | {
+      kind: "full-day";
+      blockedSlotIds: number[];
+      date: string;
+      reason: BlockReason;
+    };
 
 const weekdayOrder = [0, 1, 2, 3, 4, 5, 6];
 
@@ -108,6 +125,25 @@ function resolveDayModalCancelErrorDescriptionKey(errorCode: string) {
   }
 }
 
+function resolveDayModalQuickBlockErrorDescriptionKey(errorCode: string) {
+  switch (errorCode) {
+    case "MONTH_NOT_REGISTERED":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.monthNotFound";
+    case "SLOT_NOT_AVAILABLE":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.slotUnavailable";
+    case "SLOT_LOCKED":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.slotLocked";
+    case "DATE_IN_PAST":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.dateInPast";
+    case "DAY_ALREADY_BLOCKED":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.dayAlreadyBlocked";
+    case "NO_BLOCKABLE_SLOTS":
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.noBlockableSlots";
+    default:
+      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.generic";
+  }
+}
+
 function getToneClasses(day: MonthDetailCalendarDay, isCurrentDay: boolean) {
   if (isCurrentDay) {
     return "bg-[color-mix(in_srgb,var(--admin-primary)_20%,white)] text-[var(--admin-accent)]";
@@ -140,6 +176,76 @@ function toBaseTimeSlot(
   return BASE_TIME_SLOTS.includes(value as (typeof BASE_TIME_SLOTS)[number])
     ? (value as (typeof BASE_TIME_SLOTS)[number])
     : null;
+}
+
+function buildDayBlockedEntries(input: {
+  blockedSlots: Array<{
+    blockedSlotId: number;
+    date: string;
+    timeSlot: string;
+    reason: BlockReason;
+  }>;
+  monthBaseSlots: readonly string[];
+}): DayBlockedEntry[] {
+  const fullDayMarker = input.blockedSlots.find(
+    (blockedSlot) => blockedSlot.timeSlot === "00:00",
+  );
+
+  if (fullDayMarker) {
+    return [
+      {
+        kind: "full-day",
+        blockedSlotIds: [fullDayMarker.blockedSlotId],
+        date: fullDayMarker.date,
+        reason: fullDayMarker.reason,
+      },
+    ];
+  }
+
+  const slotsByTime = new Map<
+    string,
+    {
+      blockedSlotId: number;
+      date: string;
+      timeSlot: string;
+      reason: BlockReason;
+    }
+  >();
+
+  for (const blockedSlot of input.blockedSlots) {
+    slotsByTime.set(blockedSlot.timeSlot.slice(0, 5), blockedSlot);
+  }
+
+  const hasAllBaseSlotsBlocked = input.monthBaseSlots.every((slot) =>
+    slotsByTime.has(slot),
+  );
+
+  if (hasAllBaseSlotsBlocked) {
+    const firstSlot = slotsByTime.get(input.monthBaseSlots[0]);
+
+    if (!firstSlot) {
+      return [];
+    }
+
+    return [
+      {
+        kind: "full-day",
+        blockedSlotIds: input.monthBaseSlots
+          .map((slot) => slotsByTime.get(slot)?.blockedSlotId)
+          .filter((value): value is number => Boolean(value)),
+        date: firstSlot.date,
+        reason: firstSlot.reason,
+      },
+    ];
+  }
+
+  return input.blockedSlots.map((blockedSlot) => ({
+    kind: "slot",
+    blockedSlotId: blockedSlot.blockedSlotId,
+    date: blockedSlot.date,
+    timeSlot: blockedSlot.timeSlot,
+    reason: blockedSlot.reason,
+  }));
 }
 
 function buildCalendarCells(
@@ -196,6 +302,13 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     initialData.slotMode,
   );
   const [isUpdatingMonthStatus, setIsUpdatingMonthStatus] = useState(false);
+  const [hasQuickBlockableSlots, setHasQuickBlockableSlots] = useState(false);
+  const [isLoadingQuickBlockableSlots, setIsLoadingQuickBlockableSlots] =
+    useState(false);
+  const monthBaseSlots = useMemo(
+    () => resolveBaseSlotsByMonthMode(data.slotMode),
+    [data.slotMode],
+  );
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
@@ -255,6 +368,32 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const selectedDateLabel = dayAgendaModal.selectedDate
     ? dayLabelFormatter.format(parseDateOnly(dayAgendaModal.selectedDate))
     : "";
+  const dayBlockedEntries = useMemo(
+    () =>
+      dayAgendaModal.agenda
+        ? buildDayBlockedEntries({
+            blockedSlots: dayAgendaModal.agenda.blockedSlots,
+            monthBaseSlots,
+          })
+        : [],
+    [dayAgendaModal.agenda, monthBaseSlots],
+  );
+  const hasFullDayBlockedEntry = dayBlockedEntries.some(
+    (entry) => entry.kind === "full-day",
+  );
+  const shouldShowQuickBlockActions =
+    !dayAgendaModal.isLoadingAgenda &&
+    !dayAgendaModal.agendaErrorCode &&
+    Boolean(dayAgendaModal.agenda) &&
+    Boolean(dayAgendaModal.selectedDate) &&
+    dayAgendaModal.selectedDate >= data.currentDate &&
+    !hasFullDayBlockedEntry &&
+    hasQuickBlockableSlots &&
+    !isLoadingQuickBlockableSlots;
+  const isDayFullyAvailableForQuickBlock =
+    Boolean(dayAgendaModal.agenda) &&
+    dayAgendaModal.agenda.appointments.length === 0 &&
+    dayBlockedEntries.length === 0;
   const slotModeHelperKey =
     slotModeDraft === "BLOCK_MODE"
       ? "monthsDetail.slotMode.helpers.block"
@@ -367,7 +506,6 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           )
           .map((appointment) => appointment.timeSlot.slice(0, 5));
 
-        const monthBaseSlots = resolveBaseSlotsByMonthMode(data.slotMode);
         const blockedSlots = agendaForEditDate.blockedSlots.map((blockedSlot) =>
           blockedSlot.timeSlot.slice(0, 5),
         );
@@ -390,10 +528,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     };
   }, [
     data.month,
-    data.slotMode,
     dayAgendaModal.agenda,
     dayAgendaModal.editingAppointmentId,
     editDate,
+    monthBaseSlots,
   ]);
 
   useEffect(() => {
@@ -410,6 +548,65 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       setEditTimeSlot(availableEditSlots[0]);
     }
   }, [availableEditSlots, dayAgendaModal.editingAppointmentId, editTimeSlot]);
+
+  useEffect(() => {
+    const selectedDate = dayAgendaModal.selectedDate;
+    const canCheckQuickActions =
+      dayAgendaModal.isOpen &&
+      Boolean(selectedDate) &&
+      !dayAgendaModal.isLoadingAgenda &&
+      !dayAgendaModal.agendaErrorCode &&
+      selectedDate >= data.currentDate &&
+      !hasFullDayBlockedEntry;
+
+    if (!canCheckQuickActions || !selectedDate) {
+      setHasQuickBlockableSlots(false);
+      setIsLoadingQuickBlockableSlots(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingQuickBlockableSlots(true);
+
+    void fetchAdminBlockableSlots(data.month, selectedDate)
+      .then((response) => {
+        if (isCancelled) {
+          return;
+        }
+
+        const targetDay = response.days.find(
+          (day) => day.date === selectedDate,
+        );
+        setHasQuickBlockableSlots(
+          Boolean(targetDay && targetDay.slots.length > 0),
+        );
+      })
+      .catch(() => {
+        if (isCancelled) {
+          return;
+        }
+
+        setHasQuickBlockableSlots(false);
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingQuickBlockableSlots(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    data.currentDate,
+    data.month,
+    dayAgendaModal.agenda,
+    dayAgendaModal.agendaErrorCode,
+    dayAgendaModal.isLoadingAgenda,
+    dayAgendaModal.isOpen,
+    dayAgendaModal.selectedDate,
+    hasFullDayBlockedEntry,
+  ]);
 
   useEffect(() => {
     if (isSlotModeModalOpen) {
@@ -546,13 +743,13 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   }
 
   async function handleDeleteBlockedSlot(input: {
-    blockedSlotId: number;
+    blockedSlotIds: number[];
     reason: BlockReason;
-    timeSlot: string;
+    timeLabel: string;
   }) {
     const confirmed = window.confirm(
       t("monthsDetail.dayModal.blocked.confirmDelete.question", {
-        time: formatTimeSlotLabel(input.timeSlot, language),
+        time: input.timeLabel,
         reason: t(`monthsDetail.blockModal.reasons.${input.reason}`),
       }),
     );
@@ -561,14 +758,18 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       return;
     }
 
-    setProcessingBlockedSlotId(input.blockedSlotId);
+    setProcessingBlockedSlotId(input.blockedSlotIds[0] ?? null);
 
     try {
       await sileo.promise(
-        deleteAdminBlockedSlotById({
-          month: data.month,
-          blockedSlotId: input.blockedSlotId,
-        }),
+        Promise.all(
+          input.blockedSlotIds.map((blockedSlotId) =>
+            deleteAdminBlockedSlotById({
+              month: data.month,
+              blockedSlotId,
+            }),
+          ),
+        ),
         {
           loading: {
             title: t(
@@ -589,6 +790,114 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       await Promise.all([dayAgendaModal.refresh(), refresh()]);
     } finally {
       setProcessingBlockedSlotId(null);
+    }
+  }
+
+  async function handleQuickBlockDay() {
+    const targetDate = dayAgendaModal.selectedDate;
+
+    if (!targetDate) {
+      return;
+    }
+
+    try {
+      await sileo.promise(
+        createAdminBlockedSlots({
+          month: data.month,
+          date: targetDate,
+          fullDay: true,
+          reason: "DESCANSO",
+        }),
+        {
+          loading: {
+            title: t(
+              "monthsDetail.dayModal.quickActions.notifications.blockDayLoading",
+            ),
+          },
+          success: {
+            title: t(
+              "monthsDetail.dayModal.quickActions.notifications.blockDaySuccess",
+            ),
+          },
+          error: (error: unknown) => {
+            const errorCode =
+              error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+            return {
+              title: t(
+                "monthsDetail.dayModal.quickActions.notifications.blockDayError",
+              ),
+              description: t(
+                resolveDayModalQuickBlockErrorDescriptionKey(errorCode),
+              ),
+            };
+          },
+        },
+      );
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    } catch {
+      // handled via toast
+    }
+  }
+
+  async function handleQuickBlockRemainingSpaces() {
+    const targetDate = dayAgendaModal.selectedDate;
+
+    if (!targetDate) {
+      return;
+    }
+
+    try {
+      await sileo.promise(
+        (async () => {
+          const response = await fetchAdminBlockableSlots(
+            data.month,
+            targetDate,
+          );
+          const targetDay = response.days.find(
+            (day) => day.date === targetDate,
+          );
+
+          if (!targetDay || targetDay.slots.length === 0) {
+            throw new Error("NO_BLOCKABLE_SLOTS");
+          }
+
+          return createAdminBlockedSlots({
+            month: data.month,
+            date: targetDate,
+            slots: targetDay.slots,
+            reason: "DESCANSO",
+          });
+        })(),
+        {
+          loading: {
+            title: t(
+              "monthsDetail.dayModal.quickActions.notifications.blockRestLoading",
+            ),
+          },
+          success: {
+            title: t(
+              "monthsDetail.dayModal.quickActions.notifications.blockRestSuccess",
+            ),
+          },
+          error: (error: unknown) => {
+            const errorCode =
+              error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+            return {
+              title: t(
+                "monthsDetail.dayModal.quickActions.notifications.blockRestError",
+              ),
+              description: t(
+                resolveDayModalQuickBlockErrorDescriptionKey(errorCode),
+              ),
+            };
+          },
+        },
+      );
+      await Promise.all([dayAgendaModal.refresh(), refresh()]);
+    } catch {
+      // handled via toast
     }
   }
 
@@ -763,6 +1072,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       ? t("monthsDetail.monthStatus.actions.deactivate")
       : t("monthsDetail.monthStatus.actions.activate");
   const shouldShowActionButtons = !data.isPastMonth;
+  const canSelectFullDay =
+    blockSpacesModal.selectedDaySlots.length === monthBaseSlots.length &&
+    monthBaseSlots.every((slot) =>
+      blockSpacesModal.selectedDaySlots.includes(slot),
+    );
 
   return (
     <main className="mx-auto flex w-full max-w-[412px] flex-col gap-4 px-3 py-4">
@@ -1151,6 +1465,31 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
             {t("monthsDetail.dayModal.sectionTitle")}
           </h3>
+          {shouldShowQuickBlockActions ? (
+            <div className="grid grid-cols-1 gap-2">
+              {isDayFullyAvailableForQuickBlock ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleQuickBlockDay()}
+                >
+                  <AdminIcon icon={adminIcons.blockConfirm} className="mr-1" />
+                  {t("monthsDetail.dayModal.quickActions.blockDay")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleQuickBlockRemainingSpaces()}
+                >
+                  <AdminIcon icon={adminIcons.blockConfirm} className="mr-1" />
+                  {t("monthsDetail.dayModal.quickActions.blockRemaining")}
+                </Button>
+              )}
+            </div>
+          ) : null}
 
           {dayAgendaModal.isLoadingAgenda ? (
             <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
@@ -1182,7 +1521,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           !dayAgendaModal.agendaErrorCode &&
           dayAgendaModal.agenda &&
           dayAgendaModal.agenda.appointments.length === 0 &&
-          dayAgendaModal.agenda.blockedSlots.length === 0 ? (
+          dayBlockedEntries.length === 0 ? (
             <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
               {t("monthsDetail.dayModal.empty")}
             </p>
@@ -1309,41 +1648,46 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                 );
               })}
 
-              {dayAgendaModal.agenda.blockedSlots.length > 0 ? (
+              {dayBlockedEntries.length > 0 ? (
                 <>
                   <h3 className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
                     {t("monthsDetail.dayModal.blocked.sectionTitle")}
                   </h3>
-                  {dayAgendaModal.agenda.blockedSlots.map((blockedSlot) => {
-                    const canEditBlockedSlot = isFutureDateTime(
-                      blockedSlot.date,
-                      blockedSlot.timeSlot.slice(0, 5),
-                    );
+                  {dayBlockedEntries.map((blockedEntry) => {
+                    const isFullDayEntry = blockedEntry.kind === "full-day";
+                    const blockedSlotId = isFullDayEntry
+                      ? (blockedEntry.blockedSlotIds[0] ?? -1)
+                      : blockedEntry.blockedSlotId;
+                    const canEditBlockedSlot =
+                      !isFullDayEntry &&
+                      isFutureDateTime(
+                        blockedEntry.date,
+                        blockedEntry.timeSlot.slice(0, 5),
+                      );
+                    const displayTime = isFullDayEntry
+                      ? t("monthsDetail.dayModal.blocked.fullDayLabel")
+                      : formatTimeSlotLabel(blockedEntry.timeSlot, language);
 
                     return (
                       <article
-                        key={blockedSlot.blockedSlotId}
+                        key={`blocked-${blockedSlotId}`}
                         className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 shadow-sm"
                       >
                         <div className="flex min-h-[72px] items-center gap-3">
                           <span className="w-20 text-left font-bold text-[var(--admin-accent)]">
-                            {formatTimeSlotLabel(
-                              blockedSlot.timeSlot,
-                              language,
-                            )}
+                            {displayTime}
                           </span>
                           <div className="flex-1">
                             <p className="font-semibold text-[var(--admin-text-primary)]">
                               {t(
-                                `monthsDetail.blockModal.reasons.${blockedSlot.reason}`,
+                                `monthsDetail.blockModal.reasons.${blockedEntry.reason}`,
                               )}
                             </p>
                             <p className="text-sm text-[var(--admin-text-secondary)]">
                               {t("monthsDetail.dayModal.blocked.subtitle")}
                             </p>
                           </div>
-                          {processingBlockedSlotId ===
-                          blockedSlot.blockedSlotId ? (
+                          {processingBlockedSlotId === blockedSlotId ? (
                             <div
                               className="inline-flex h-11 w-11 items-center justify-center"
                               role="status"
@@ -1369,8 +1713,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                                 disabled={!canEditBlockedSlot}
                                 onClick={() =>
                                   startEditingBlockedSlot(
-                                    blockedSlot.blockedSlotId,
-                                    blockedSlot.reason,
+                                    blockedSlotId,
+                                    blockedEntry.reason,
                                   )
                                 }
                               >
@@ -1387,9 +1731,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                                 )}
                                 onClick={() =>
                                   void handleDeleteBlockedSlot({
-                                    blockedSlotId: blockedSlot.blockedSlotId,
-                                    reason: blockedSlot.reason,
-                                    timeSlot: blockedSlot.timeSlot,
+                                    blockedSlotIds: isFullDayEntry
+                                      ? blockedEntry.blockedSlotIds
+                                      : [blockedSlotId],
+                                    reason: blockedEntry.reason,
+                                    timeLabel: displayTime,
                                   })
                                 }
                               >
@@ -1402,7 +1748,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                           )}
                         </div>
 
-                        {editingBlockedSlotId === blockedSlot.blockedSlotId ? (
+                        {!isFullDayEntry &&
+                        editingBlockedSlotId === blockedSlotId ? (
                           <div className="mt-3 space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-3">
                             <p className="text-[10px] font-bold uppercase text-[var(--admin-text-secondary)]">
                               {t("monthsDetail.dayModal.blocked.edit.reason")}
@@ -1434,7 +1781,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                                 type="button"
                                 onClick={() =>
                                   void handleUpdateBlockedSlotReason(
-                                    blockedSlot.blockedSlotId,
+                                    blockedSlotId,
                                   )
                                 }
                               >
@@ -1471,6 +1818,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         currentDate={data.currentDate}
         selectedDaySlots={blockSpacesModal.selectedDaySlots}
         selectedSlots={blockSpacesModal.selectedSlots}
+        isFullDaySelected={blockSpacesModal.isFullDaySelected}
+        canSelectFullDay={canSelectFullDay}
         areAllSelectedForDay={blockSpacesModal.areAllSelectedForDay}
         reason={blockSpacesModal.reason}
         allowBlockView={data.slotMode === "BLOCK_MODE"}
@@ -1481,6 +1830,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         onToggleSlot={blockSpacesModal.toggleSlot}
         onToggleBlockSlots={blockSpacesModal.toggleBlockSlots}
         onSelectAllSlots={blockSpacesModal.selectAllSlotsForDay}
+        onSelectFullDay={blockSpacesModal.selectFullDayForDay}
         onClearSelectedSlots={blockSpacesModal.clearSelectedSlots}
         onReasonChange={blockSpacesModal.setReason}
         onSlotViewModeChange={blockSpacesModal.setSlotViewMode}

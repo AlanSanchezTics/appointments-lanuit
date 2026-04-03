@@ -240,6 +240,25 @@ describe("availability service", () => {
     expect(day).toBeUndefined();
   });
 
+  it("hides the full day when full-day marker is persisted", async () => {
+    listMonthAppointmentsMock.mockResolvedValueOnce([]);
+    listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);
+    listMonthBlockedSlotsMock.mockResolvedValueOnce([
+      {
+        id: 400,
+        date: "2026-03-04",
+        timeSlot: "00:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day).toBeUndefined();
+  });
+
   it("limits availability to 10:00, 14:00 and 18:00 in SECOND_ONLY_MODE", async () => {
     listMonthAppointmentsMock.mockResolvedValueOnce([]);
     listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);

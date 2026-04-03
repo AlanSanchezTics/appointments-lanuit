@@ -129,10 +129,38 @@ describe("admin month detail service", () => {
       new Date("2026-03-01T12:00:00.000Z"),
     );
 
-    expect(result.metrics.blockedSpaces).toBe(2);
+    expect(result.metrics.blockedSpaces).toBe(0);
     const day = result.calendarDays.find((entry) => entry.date === "2026-03-03");
-    expect(day?.availableSpaces).toBe(1);
+    expect(day?.availableSpaces).toBe(3);
     expect(day?.appointmentsCount).toBe(0);
-    expect(day?.tone).toBe("low");
+    expect(day?.tone).toBe("available");
+  });
+
+  it("counts full-day blocked marker as 3 blocked spaces", async () => {
+    findRegisteredMonthMock.mockResolvedValueOnce({
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "BLOCK_MODE",
+    });
+    listAppointmentsByMonthMock.mockResolvedValueOnce([]);
+    listMonthBlockedSlotsMock.mockResolvedValueOnce([
+      {
+        id: 1,
+        date: "2026-03-03",
+        timeSlot: "00:00",
+        reason: "DESCANSO",
+        createdByAdminId: 10,
+      },
+    ]);
+
+    const result = await getAdminMonthDetail(
+      "2026-03",
+      new Date("2026-03-01T12:00:00.000Z"),
+    );
+
+    expect(result.metrics.blockedSpaces).toBe(3);
+    const day = result.calendarDays.find((entry) => entry.date === "2026-03-03");
+    expect(day?.availableSpaces).toBe(0);
+    expect(day?.tone).toBe("full");
   });
 });

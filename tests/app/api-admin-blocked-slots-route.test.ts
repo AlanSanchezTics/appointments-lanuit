@@ -42,6 +42,7 @@ describe("POST /api/admin/months/[month]/blocked-slots", () => {
     createAdminBlockedSlotsMock.mockResolvedValueOnce({
       month: "2026-03",
       date: "2026-03-21",
+      fullDay: false,
       reason: "DESCANSO",
       totalCreated: 1,
       blockedSlots: [
@@ -73,6 +74,7 @@ describe("POST /api/admin/months/[month]/blocked-slots", () => {
     expect(createAdminBlockedSlotsMock).toHaveBeenCalledWith({
       month: "2026-03",
       date: "2026-03-21",
+      fullDay: false,
       slots: ["13:00"],
       reason: "DESCANSO",
       createdByAdminId: 7,

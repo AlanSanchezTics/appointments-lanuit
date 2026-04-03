@@ -1,9 +1,11 @@
 import React from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
+type ButtonSize = "sm" | "normal" | "lg";
 
 type ButtonVariantsOptions = {
   variant?: NonNullable<ButtonProps["variant"]>;
+  size?: NonNullable<ButtonProps["size"]>;
   className?: string;
   disabled?: boolean;
   fullWidth?: boolean;
@@ -18,13 +20,20 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     "border border-transparent bg-transparent text-[var(--muted)] hover:text-[var(--foreground)] focus-visible:outline-[var(--accent)]",
 };
 
+const variantSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+  normal: "px-4 py-2 text-sm",
+  lg: "px-4 py-2 text-lg",
+  sm: "px-3 py-1.5 text-sm",
+};
+
 const baseButtonClasses =
-  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-bold tracking-[-0.01em] transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex cursor-pointer items-center justify-center rounded-full font-bold tracking-[-0.01em] transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   fullWidth?: boolean;
   children: React.ReactNode;
+  size?: ButtonSize;
 }
 
 const disabledStyle = "opacity-50 cursor-not-allowed";
@@ -34,8 +43,9 @@ export function buttonVariants({
   className = "",
   disabled = false,
   fullWidth = false,
+  size = "normal",
 }: ButtonVariantsOptions = {}) {
-  return `${baseButtonClasses} ${variantClasses[variant]} ${fullWidth ? "w-full" : ""} ${disabled ? disabledStyle : ""} ${className}`;
+  return `${baseButtonClasses} ${variantClasses[variant]} ${variantSizeClasses[size]} ${fullWidth ? "w-full" : ""} ${disabled ? disabledStyle : ""} ${className}`;
 }
 
 export function Button({
@@ -44,11 +54,18 @@ export function Button({
   disabled = false,
   children,
   className = "",
+  size = "normal",
   ...props
 }: ButtonProps) {
   return (
     <button
-      className={buttonVariants({ variant, className, disabled, fullWidth })}
+      className={buttonVariants({
+        variant,
+        className,
+        disabled,
+        fullWidth,
+        size,
+      })}
       disabled={disabled}
       {...props}
     >

@@ -689,7 +689,10 @@ Flujo UI:
      - calendario operativo mensual.
    - Fórmula de `Disponibles` (métrica mensual):
      - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
-     - `espacios bloqueados` se calcula desde `blocked_slots` (bloqueo manual admin).
+     - `espacios bloqueados` se calcula como unidades de capacidad bloqueada por modalidad:
+       - `BLOCK_MODE`: cada par direccional completo bloqueado (`09:00+10:00`, `13:00+14:00`, `17:00+18:00`) cuenta como `1`.
+       - `SECOND_ONLY_MODE`: cada slot base bloqueado (`10:00`, `14:00`, `18:00`) cuenta como `1`.
+       - bloqueo de día completo cuenta como `3`.
    - En modal de agenda diaria, cada fila de cita muestra:
      - hora,
      - nombre del cliente,
@@ -701,9 +704,14 @@ Flujo UI:
      - hora,
      - motivo (`DESCANSO|PERSONAL|OTRO`),
      - acciones (`Editar motivo`, `Eliminar bloqueo`).
+   - El modal diario incluye acciones rápidas:
+     - `Bloquear día` (bloqueo completo del día en una operación) se muestra solo cuando el día está completamente disponible.
+     - `Bloquear resto de espacios` (bloquea todos los espacios elegibles restantes del día) se muestra cuando el día tiene al menos una cita.
+     - la acción rápida visible se renderiza en tamaño pequeño y se oculta cuando el día queda sin espacios elegibles.
    - Restricción operativa para bloqueos manuales en modal diario:
      - editar motivo solo se permite en slots bloqueados futuros (no pasados).
      - eliminar bloqueo se permite en slots bloqueados pasados y futuros.
+     - cuando el día está bloqueado completo, se presenta como una sola fila y debe poder desbloquearse en una sola acción.
    - En edición de cita del modal diario:
      - al confirmar `Guardar`, el formulario de edición se cierra inmediatamente,
      - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
@@ -760,6 +768,7 @@ Flujo UI:
      - selector de visualización de espacios: `Por hora` y `Por bloque` solo en `Modalidad 1`,
      - en `Modalidad 2` se fuerza visualización `Por hora`,
      - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta representa y selecciona el par direccional completo),
+     - acción `Día completo` para bloquear todo el día en una sola operación,
      - acción masiva `Seleccionar todo` para seleccionar todos los slots bloqueables del día activo,
      - acción `Limpiar selección` para resetear selección del día activo,
      - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`),
@@ -778,7 +787,8 @@ Flujo UI:
      - bloquear día completo => sin slots disponibles.
    - Al confirmar bloqueo:
      - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),
-     - backend crea registro en `blocked_slots` por cada slot seleccionado.
+     - backend crea registro en `blocked_slots` por cada slot seleccionado,
+     - cuando la acción es `Día completo`, backend crea un marcador de bloqueo diario sin generar una fila por cada hora base.
    - Persistencia de vista por bloque:
      - la selección en vista `Por bloque` solo afecta UX; en backend se registran los mismos slots unitarios de siempre.
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
@@ -926,13 +936,14 @@ Contrato API:
     - si `date` se envía, debe cumplir formato `YYYY-MM-DD` y pertenecer al `month`,
     - devuelve días/slots elegibles para bloqueo manual según reglas de disponibilidad admin.
   - `POST /api/admin/months/[month]/blocked-slots`:
-    - payload `{ date, slots[], reason }`,
-    - `slots` no vacío y sin duplicados,
+    - payload por slots `{ date, slots[], reason }` o payload de día completo `{ date, fullDay: true, reason }`,
+    - en payload por slots, `slots` no vacío y sin duplicados,
     - `reason` permitido: `DESCANSO|PERSONAL|OTRO`,
     - `date` no puede ser pasada y debe ser día operativo,
     - si algún slot tiene lock temporal activo -> `SLOT_LOCKED` (`409`),
     - si algún slot ya no está disponible -> `SLOT_NOT_AVAILABLE` (`409`),
     - colisión por duplicado persistido -> `BLOCKED_SLOT_ALREADY_EXISTS` (`409`),
+    - bloqueo de día completo ya existente -> `DAY_ALREADY_BLOCKED` (`409`),
     - no dispara integraciones externas (Google Calendar) en este flujo.
   - `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
     - payload `{ reason }`,
@@ -1007,11 +1018,12 @@ Contrato API:
   - `{ month, date, total, appointments[], blockedSlots[] }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status, name, phone }`
   - `blockedSlots[]`: `{ blockedSlotId, date, timeSlot, reason }`
+  - bloqueo diario completo se representa como un único item en `blockedSlots[]` con marcador interno de día completo.
 - Success `GET /api/admin/months/[month]/blockable-slots` (`200`):
   - `{ month, currentDate, days[] }`
   - `days[]`: `{ date, slots[] }`
 - Success `POST /api/admin/months/[month]/blocked-slots` (`200`):
-  - `{ month, date, reason, totalCreated, blockedSlots[] }`
+  - `{ month, date, fullDay, reason, totalCreated, blockedSlots[] }`
   - `blockedSlots[]`: `{ date, timeSlot, reason }`
 - Success `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]` (`200`):
   - `{ month, blockedSlotId, date, timeSlot, reason }`

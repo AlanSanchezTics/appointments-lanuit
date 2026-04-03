@@ -39,12 +39,21 @@ export function parseBlockableSlotsParams(input: { month: string; date?: string 
   };
 }
 
-const CREATE_BLOCKED_SLOTS_SCHEMA = z.object({
-  month: z.string(),
-  date: z.string(),
-  slots: z.array(z.enum(BASE_TIME_SLOTS)).min(1),
-  reason: z.enum(BLOCK_REASON_VALUES),
-});
+const CREATE_BLOCKED_SLOTS_SCHEMA = z.discriminatedUnion("fullDay", [
+  z.object({
+    month: z.string(),
+    date: z.string(),
+    fullDay: z.literal(true),
+    reason: z.enum(BLOCK_REASON_VALUES),
+  }),
+  z.object({
+    month: z.string(),
+    date: z.string(),
+    fullDay: z.literal(false).optional(),
+    slots: z.array(z.enum(BASE_TIME_SLOTS)).min(1),
+    reason: z.enum(BLOCK_REASON_VALUES),
+  }),
+]);
 
 export function parseCreateBlockedSlotsPayload(payload: unknown) {
   const parsed = CREATE_BLOCKED_SLOTS_SCHEMA.parse(payload);
@@ -57,6 +66,15 @@ export function parseCreateBlockedSlotsPayload(payload: unknown) {
     throw new Error("DATE_INVALID_FORMAT");
   }
 
+  if (parsed.fullDay) {
+    return {
+      month,
+      date,
+      fullDay: true as const,
+      reason: parsed.reason,
+    };
+  }
+
   const uniqueSlots = Array.from(new Set(parsed.slots));
 
   if (uniqueSlots.length !== parsed.slots.length) {
@@ -66,6 +84,7 @@ export function parseCreateBlockedSlotsPayload(payload: unknown) {
   return {
     month,
     date,
+    fullDay: false as const,
     slots: uniqueSlots,
     reason: parsed.reason,
   };

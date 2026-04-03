@@ -16,6 +16,7 @@ function resolveStatusCode(errorCode: string) {
   if (
     errorCode === "SLOT_NOT_AVAILABLE"
     || errorCode === "SLOT_LOCKED"
+    || errorCode === "DAY_ALREADY_BLOCKED"
     || errorCode === "BLOCKED_SLOT_ALREADY_EXISTS"
   ) {
     return 409;

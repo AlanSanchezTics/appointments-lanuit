@@ -23,6 +23,7 @@ export function useBlockSpacesModal(month: string) {
   const [days, setDays] = useState<Array<{ date: string; slots: TimeSlot[] }>>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
+  const [isFullDaySelected, setIsFullDaySelected] = useState(false);
   const [reason, setReason] = useState<BlockReason>("DESCANSO");
   const [slotViewMode, setSlotViewMode] = useState<SlotViewMode>("hour");
   const abortRef = useRef<AbortController | null>(null);
@@ -43,7 +44,7 @@ export function useBlockSpacesModal(month: string) {
     return selectedDaySlots.every((slot) => selectedSlots.includes(slot));
   }, [selectedDaySlots, selectedSlots]);
 
-  const isReadyToSubmit = Boolean(selectedDate) && selectedSlots.length > 0 && !isSubmitting;
+  const isReadyToSubmit = Boolean(selectedDate) && (selectedSlots.length > 0 || isFullDaySelected) && !isSubmitting;
 
   const open = useCallback(async () => {
     abortRef.current?.abort();
@@ -54,6 +55,7 @@ export function useBlockSpacesModal(month: string) {
     setIsLoadingDays(true);
     setErrorCode(null);
     setSelectedSlots([]);
+    setIsFullDaySelected(false);
     setReason("DESCANSO");
     setSlotViewMode("hour");
 
@@ -94,6 +96,7 @@ export function useBlockSpacesModal(month: string) {
     setDays([]);
     setSelectedDate(null);
     setSelectedSlots([]);
+    setIsFullDaySelected(false);
     setReason("DESCANSO");
     setSlotViewMode("hour");
   }, [isSubmitting]);
@@ -101,9 +104,11 @@ export function useBlockSpacesModal(month: string) {
   const selectDate = useCallback((date: string) => {
     setSelectedDate(date);
     setSelectedSlots([]);
+    setIsFullDaySelected(false);
   }, []);
 
   const toggleSlot = useCallback((slot: TimeSlot) => {
+    setIsFullDaySelected(false);
     setSelectedSlots((current) => {
       if (current.includes(slot)) {
         return current.filter((item) => item !== slot);
@@ -114,6 +119,7 @@ export function useBlockSpacesModal(month: string) {
   }, []);
 
   const toggleBlockSlots = useCallback((slots: TimeSlot[]) => {
+    setIsFullDaySelected(false);
     setSelectedSlots((current) => {
       const hasAllSlots = slots.every((slot) => current.includes(slot));
 
@@ -127,19 +133,30 @@ export function useBlockSpacesModal(month: string) {
   }, []);
 
   const selectAllSlotsForDay = useCallback(() => {
+    setIsFullDaySelected(false);
     setSelectedSlots((current) => {
       const merged = new Set([...current, ...selectedDaySlots]);
       return Array.from(merged).sort();
     });
   }, [selectedDaySlots]);
 
+  const selectFullDayForDay = useCallback(() => {
+    setIsFullDaySelected(true);
+    setSelectedSlots([]);
+  }, []);
+
   const clearSelectedSlots = useCallback(() => {
     setSelectedSlots([]);
+    setIsFullDaySelected(false);
   }, []);
 
   const submit = useCallback(
     async (onSuccess?: () => Promise<void> | void) => {
-      if (!selectedDate || selectedSlots.length === 0 || isSubmitting) {
+      if (
+        !selectedDate
+        || (!isFullDaySelected && selectedSlots.length === 0)
+        || isSubmitting
+      ) {
         return;
       }
 
@@ -147,12 +164,19 @@ export function useBlockSpacesModal(month: string) {
       setErrorCode(null);
 
       try {
-        const response = await createAdminBlockedSlots({
-          month,
-          date: selectedDate,
-          slots: selectedSlots,
-          reason,
-        });
+        const response = isFullDaySelected
+          ? await createAdminBlockedSlots({
+              month,
+              date: selectedDate,
+              fullDay: true,
+              reason,
+            })
+          : await createAdminBlockedSlots({
+              month,
+              date: selectedDate,
+              slots: selectedSlots,
+              reason,
+            });
 
         if (onSuccess) {
           await onSuccess();
@@ -167,7 +191,15 @@ export function useBlockSpacesModal(month: string) {
         setIsSubmitting(false);
       }
     },
-    [close, isSubmitting, month, reason, selectedDate, selectedSlots],
+    [
+      close,
+      isFullDaySelected,
+      isSubmitting,
+      month,
+      reason,
+      selectedDate,
+      selectedSlots,
+    ],
   );
 
   return {
@@ -180,6 +212,7 @@ export function useBlockSpacesModal(month: string) {
     selectedDate,
     selectedDaySlots,
     selectedSlots,
+    isFullDaySelected,
     areAllSelectedForDay,
     reason,
     slotViewMode,
@@ -189,6 +222,7 @@ export function useBlockSpacesModal(month: string) {
     toggleSlot,
     toggleBlockSlots,
     selectAllSlotsForDay,
+    selectFullDayForDay,
     clearSelectedSlots,
     setReason,
     setSlotViewMode,

@@ -10,6 +10,11 @@ import type {
   UpdateAdminBlockedSlotResponse,
 } from "@/lib/admin/blocked-spaces/types";
 import {
+  FULL_DAY_BLOCK_TIME_SLOT,
+  isFullDayBlockTimeSlot,
+  splitBlockedTimeSlots,
+} from "@/lib/admin/blocked-spaces/day-block";
+import {
   getAvailableStartSlotsWithManualBlocks,
   isWeekdayBookingDate,
 } from "@/lib/availability/rules";
@@ -26,6 +31,7 @@ import {
 } from "@/lib/db/appointments";
 import {
   createBlockedSlots,
+  deleteBlockedSlotsByDate,
   deleteBlockedSlotById,
   findBlockedSlotByIdForUpdate,
   listBlockedSlotsByDateForUpdate,
@@ -75,12 +81,20 @@ function buildBlockableDays<T extends string>(params: {
     .map((date) => {
       const occupiedSlots = params.occupiedByDate.get(date) ?? [];
       const activeLocks = params.lockByDate.get(date) ?? [];
-      const blockedSlots = params.blockedByDate.get(date) ?? [];
+      const blockedTimeSlots = params.blockedByDate.get(date) ?? [];
+      const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(blockedTimeSlots);
+
+      if (hasFullDayBlock) {
+        return {
+          date,
+          slots: [] as T[],
+        };
+      }
 
       const slots = getAvailableStartSlotsWithManualBlocks(
         params.baseSlots,
         [...occupiedSlots, ...activeLocks],
-        blockedSlots,
+        Array.from(blockedSlots),
       ).filter((slot) => {
         if (date !== currentDate) {
           return true;
@@ -112,6 +126,10 @@ function assertBlockedSlotBelongsToMonth(date: string, month: string) {
 }
 
 function assertBlockedSlotIsEditable(date: string, timeSlot: string, now: Date) {
+  if (isFullDayBlockTimeSlot(timeSlot)) {
+    throw new Error("BLOCKED_SLOT_NOT_EDITABLE");
+  }
+
   if (!isFutureDateTime(date, timeSlot, now)) {
     throw new Error("BLOCKED_SLOT_NOT_EDITABLE");
   }
@@ -206,13 +224,15 @@ export async function createAdminBlockedSlots(
     throw new Error("DATE_IN_PAST");
   }
 
-  for (const slot of input.slots) {
-    if (!baseSlotsSet.has(slot)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
+  if (!input.fullDay) {
+    for (const slot of input.slots) {
+      if (!baseSlotsSet.has(slot)) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
 
-    if (!isFutureDateTime(input.date, slot, now)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
+      if (!isFutureDateTime(input.date, slot, now)) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
     }
   }
 
@@ -228,15 +248,59 @@ export async function createAdminBlockedSlots(
 
     const activeLockSlots = activeLocks.map((lock) => lock.timeSlot);
     const blockedTimeSlots = blockedSlots.map((blockedSlot) => blockedSlot.timeSlot);
+    const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+    if (input.fullDay) {
+      const hasActiveLockInBaseSlot = activeLockSlots.some((slot) =>
+        baseSlotsSet.has(slot),
+      );
+
+      if (hasActiveLockInBaseSlot) {
+        throw new Error("SLOT_LOCKED");
+      }
+
+      if (hasFullDayBlock) {
+        throw new Error("DAY_ALREADY_BLOCKED");
+      }
+
+      const availableSlots = getAvailableStartSlotsWithManualBlocks(
+        baseSlots,
+        [...occupiedSlots, ...activeLockSlots],
+        Array.from(blockedSlotsSet),
+      ).filter((slot) => isFutureDateTime(input.date, slot, now));
+
+      if (availableSlots.length === 0) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
+
+      await deleteBlockedSlotsByDate(tx, input.date);
+
+      try {
+        await createBlockedSlots(tx, {
+          date: input.date,
+          slots: [FULL_DAY_BLOCK_TIME_SLOT],
+          reason: input.reason,
+          createdByAdminId: input.createdByAdminId,
+        });
+      } catch (error) {
+        normalizeCreateBlockedSlotError(error);
+      }
+
+      return;
+    }
 
     if (input.slots.some((slot) => activeLockSlots.includes(slot))) {
       throw new Error("SLOT_LOCKED");
     }
 
+    if (hasFullDayBlock) {
+      throw new Error("SLOT_NOT_AVAILABLE");
+    }
+
     const availableSlots = getAvailableStartSlotsWithManualBlocks(
       baseSlots,
       [...occupiedSlots, ...activeLockSlots],
-      blockedTimeSlots,
+      Array.from(blockedSlotsSet),
     ).filter((slot) => isFutureDateTime(input.date, slot, now));
 
     if (input.slots.some((slot) => !availableSlots.includes(slot))) {
@@ -255,9 +319,21 @@ export async function createAdminBlockedSlots(
     }
   });
 
+  if (input.fullDay) {
+    return {
+      month: input.month,
+      date: input.date,
+      fullDay: true,
+      reason: input.reason,
+      totalCreated: 1,
+      blockedSlots: [],
+    };
+  }
+
   return {
     month: input.month,
     date: input.date,
+    fullDay: false,
     reason: input.reason,
     totalCreated: input.slots.length,
     blockedSlots: input.slots.map((timeSlot) => ({

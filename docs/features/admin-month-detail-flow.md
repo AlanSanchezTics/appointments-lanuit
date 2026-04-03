@@ -65,12 +65,14 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - en `SECOND_ONLY_MODE` solo se muestra `Por hora`,
    - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta selecciona el par direccional completo),
    - acción masiva `Seleccionar todo` (selecciona todos los slots bloqueables del día activo),
+   - acción `Día completo` (bloquea el día completo en una sola operación),
    - acción `Limpiar selección` (resetea la selección de slots),
    - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`).
 19. Al confirmar:
    - UI bloquea todas las interacciones del modal mientras procesa,
    - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
    - backend persiste bloqueo por slot en `blocked_slots`,
+   - si la acción fue `Día completo`, backend persiste un marcador de bloqueo diario en `blocked_slots` sin crear una fila por cada hora,
    - frontend refresca detalle mensual (métricas + calendario).
    - disponibilidad pública/admin del día se recalcula con regla direccional de bloqueos manuales:
      - slot único bloqueado en par => propagación direccional,
@@ -80,6 +82,10 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 21. Admin toca un día del calendario y se abre modal de detalle diario.
 22. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
 23. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
+   - Incluye acciones rápidas:
+     - `Bloquear día`: se muestra solo cuando el día está completamente disponible (sin citas ni bloqueos) y bloquea el día completo en una sola operación.
+     - `Bloquear resto de espacios`: se muestra cuando el día ya tiene al menos una cita y bloquea todos los espacios aún elegibles del día.
+   - Las acciones rápidas se muestran solo cuando existen espacios bloqueables para ese día; si el día queda totalmente bloqueado o sin espacios elegibles, se ocultan.
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes solo para citas futuras.
      - Al guardar edición, el subformulario se cierra de inmediato.
@@ -91,6 +97,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - `Editar`: permite cambiar motivo (`DESCANSO`, `PERSONAL`, `OTRO`) y guardar solo en slots futuros.
      - `Editar` en slots pasados permanece deshabilitado y debe mostrar feedback explícito de no editable.
      - `Eliminar`: solicita confirmación y elimina el bloqueo manual tanto en slots pasados como futuros.
+     - cuando el día está bloqueado completo, se muestra como un único item y `Eliminar` desbloquea todo el día en una sola acción.
      - Ambas acciones refrescan agenda diaria y métricas/calendario del mes al finalizar.
 
 ## Reglas de cálculo
@@ -102,7 +109,10 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Espacios disponibles:
   - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
 - Espacios bloqueados:
-  - total de slots persistidos en `blocked_slots` para el mes.
+  - unidades de capacidad bloqueada por modalidad:
+    - `BLOCK_MODE`: un espacio bloqueado = par direccional completo bloqueado.
+    - `SECOND_ONLY_MODE`: un espacio bloqueado = un slot base bloqueado.
+    - bloqueo de día completo = `3` espacios bloqueados.
 - Ocupación proyectada para este mes:
   - `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100` (redondeado).
 - Comparativa contra mes anterior:

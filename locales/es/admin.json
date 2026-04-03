@@ -407,6 +407,8 @@
       "blocked": {
         "sectionTitle": "Espacios bloqueados",
         "subtitle": "Bloqueo manual",
+        "fullDayLabel": "Día completo",
+        "fullDaySubtitle": "Bloqueo manual de día completo",
         "actions": {
           "edit": "Editar espacio bloqueado",
           "editDisabled": "Los espacios bloqueados pasados no se pueden editar",
@@ -425,6 +427,27 @@
           "deleteLoading": "Eliminando espacio bloqueado...",
           "deleteSuccess": "Espacio bloqueado eliminado",
           "deleteError": "No se pudo eliminar el espacio bloqueado."
+        }
+      },
+      "quickActions": {
+        "blockDay": "Bloquear día",
+        "blockRemaining": "Bloquear resto de espacios",
+        "notifications": {
+          "blockDayLoading": "Bloqueando día completo...",
+          "blockDaySuccess": "Día bloqueado",
+          "blockDayError": "No se pudo bloquear el día.",
+          "blockRestLoading": "Bloqueando espacios restantes...",
+          "blockRestSuccess": "Espacios restantes bloqueados",
+          "blockRestError": "No se pudieron bloquear los espacios restantes.",
+          "errorDescriptions": {
+            "monthNotFound": "No se encontró el mes seleccionado.",
+            "slotUnavailable": "Ya no hay espacios disponibles para bloquear en este día.",
+            "slotLocked": "Hay un espacio temporalmente bloqueado por otra operación.",
+            "dateInPast": "No se puede bloquear una fecha pasada.",
+            "dayAlreadyBlocked": "El día ya está bloqueado.",
+            "noBlockableSlots": "No hay espacios disponibles para bloquear en este día.",
+            "generic": "Intenta nuevamente."
+          }
         }
       }
     },
@@ -447,9 +470,12 @@
         "block": "Por bloque"
       },
       "actions": {
+        "fullDay": "Día completo",
+        "or": "o",
         "selectAll": "Seleccionar todo",
         "clearSelection": "Limpiar selección"
       },
+      "fullDaySelected": "Se bloqueará el día completo.",
       "reasons": {
         "DESCANSO": "Descanso",
         "PERSONAL": "Personal",

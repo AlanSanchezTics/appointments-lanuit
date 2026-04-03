@@ -407,6 +407,8 @@
       "blocked": {
         "sectionTitle": "Blocked spaces",
         "subtitle": "Manual block",
+        "fullDayLabel": "Full day",
+        "fullDaySubtitle": "Manual full-day block",
         "actions": {
           "edit": "Edit blocked space",
           "editDisabled": "Past blocked spaces cannot be edited",
@@ -425,6 +427,27 @@
           "deleteLoading": "Deleting blocked space...",
           "deleteSuccess": "Blocked space deleted",
           "deleteError": "Unable to delete blocked space."
+        }
+      },
+      "quickActions": {
+        "blockDay": "Block day",
+        "blockRemaining": "Block remaining spaces",
+        "notifications": {
+          "blockDayLoading": "Blocking full day...",
+          "blockDaySuccess": "Day blocked",
+          "blockDayError": "Unable to block day.",
+          "blockRestLoading": "Blocking remaining spaces...",
+          "blockRestSuccess": "Remaining spaces blocked",
+          "blockRestError": "Unable to block remaining spaces.",
+          "errorDescriptions": {
+            "monthNotFound": "The selected month was not found.",
+            "slotUnavailable": "There are no available spaces left to block for this day.",
+            "slotLocked": "A space is temporarily locked by another operation.",
+            "dateInPast": "Past dates cannot be blocked.",
+            "dayAlreadyBlocked": "The day is already blocked.",
+            "noBlockableSlots": "There are no available spaces left to block for this day.",
+            "generic": "Please try again."
+          }
         }
       }
     },
@@ -447,9 +470,12 @@
         "block": "By block"
       },
       "actions": {
+        "fullDay": "Full day",
+        "or": "or",
         "selectAll": "Select all",
         "clearSelection": "Clear selection"
       },
+      "fullDaySelected": "The full day will be blocked.",
       "reasons": {
         "DESCANSO": "Rest",
         "PERSONAL": "Personal",

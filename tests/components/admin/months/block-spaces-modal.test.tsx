@@ -33,6 +33,8 @@ describe("BlockSpacesModal", () => {
         currentDate="2026-03-23"
         selectedDaySlots={["09:00", "10:00", "13:00"]}
         selectedSlots={["09:00"]}
+        isFullDaySelected={false}
+        canSelectFullDay={true}
         areAllSelectedForDay={false}
         reason="DESCANSO"
         allowBlockView
@@ -43,6 +45,7 @@ describe("BlockSpacesModal", () => {
         onToggleSlot={onToggleSlot}
         onToggleBlockSlots={onToggleBlockSlots}
         onSelectAllSlots={onSelectAllSlots}
+        onSelectFullDay={vi.fn()}
         onClearSelectedSlots={onClearSelectedSlots}
         onReasonChange={onReasonChange}
         onSlotViewModeChange={onSlotViewModeChange}
@@ -85,6 +88,8 @@ describe("BlockSpacesModal", () => {
         currentDate="2026-03-23"
         selectedDaySlots={["09:00", "10:00", "13:00"]}
         selectedSlots={["09:00", "10:00", "13:00"]}
+        isFullDaySelected={false}
+        canSelectFullDay={true}
         areAllSelectedForDay
         reason="DESCANSO"
         allowBlockView
@@ -95,6 +100,7 @@ describe("BlockSpacesModal", () => {
         onToggleSlot={onToggleSlot}
         onToggleBlockSlots={onToggleBlockSlots}
         onSelectAllSlots={onSelectAllSlots}
+        onSelectFullDay={vi.fn()}
         onClearSelectedSlots={onClearSelectedSlots}
         onReasonChange={onReasonChange}
         onSlotViewModeChange={onSlotViewModeChange}
@@ -128,6 +134,8 @@ describe("BlockSpacesModal", () => {
         currentDate="2026-03-23"
         selectedDaySlots={["09:00", "10:00", "13:00", "14:00"]}
         selectedSlots={[]}
+        isFullDaySelected={false}
+        canSelectFullDay={false}
         areAllSelectedForDay={false}
         reason="DESCANSO"
         allowBlockView
@@ -138,6 +146,7 @@ describe("BlockSpacesModal", () => {
         onToggleSlot={vi.fn()}
         onToggleBlockSlots={vi.fn()}
         onSelectAllSlots={vi.fn()}
+        onSelectFullDay={vi.fn()}
         onClearSelectedSlots={vi.fn()}
         onReasonChange={vi.fn()}
         onSlotViewModeChange={onSlotViewModeChange}
@@ -170,6 +179,8 @@ describe("BlockSpacesModal", () => {
         currentDate="2026-03-23"
         selectedDaySlots={["09:00", "10:00", "13:00"]}
         selectedSlots={[]}
+        isFullDaySelected={false}
+        canSelectFullDay={true}
         areAllSelectedForDay={false}
         reason="DESCANSO"
         allowBlockView
@@ -180,6 +191,7 @@ describe("BlockSpacesModal", () => {
         onToggleSlot={vi.fn()}
         onToggleBlockSlots={onToggleBlockSlots}
         onSelectAllSlots={vi.fn()}
+        onSelectFullDay={vi.fn()}
         onClearSelectedSlots={vi.fn()}
         onReasonChange={vi.fn()}
         onSlotViewModeChange={vi.fn()}
@@ -210,6 +222,8 @@ describe("BlockSpacesModal", () => {
         currentDate="2026-03-23"
         selectedDaySlots={["10:00", "14:00", "18:00"]}
         selectedSlots={[]}
+        isFullDaySelected={false}
+        canSelectFullDay={true}
         areAllSelectedForDay={false}
         reason="DESCANSO"
         allowBlockView={false}
@@ -220,6 +234,7 @@ describe("BlockSpacesModal", () => {
         onToggleSlot={vi.fn()}
         onToggleBlockSlots={vi.fn()}
         onSelectAllSlots={vi.fn()}
+        onSelectFullDay={vi.fn()}
         onClearSelectedSlots={vi.fn()}
         onReasonChange={vi.fn()}
         onSlotViewModeChange={vi.fn()}
@@ -229,5 +244,49 @@ describe("BlockSpacesModal", () => {
 
     expect(screen.queryByRole("button", { name: /Por bloque/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /10:00 AM/i })).toBeInTheDocument();
+  });
+
+  it("triggers full-day selection action", () => {
+    const onSelectFullDay = vi.fn();
+
+    render(
+      <BlockSpacesModal
+        isOpen
+        isLoadingDays={false}
+        isSubmitting={false}
+        isReadyToSubmit
+        errorCode={null}
+        days={[
+          {
+            date: "2026-03-23",
+            slots: ["09:00", "10:00", "13:00", "14:00", "17:00", "18:00"],
+          },
+        ]}
+        selectedDate="2026-03-23"
+        currentDate="2026-03-23"
+        selectedDaySlots={["09:00", "10:00", "13:00", "14:00", "17:00", "18:00"]}
+        selectedSlots={[]}
+        isFullDaySelected={false}
+        canSelectFullDay={true}
+        areAllSelectedForDay={false}
+        reason="DESCANSO"
+        allowBlockView={true}
+        slotViewMode="hour"
+        onClose={vi.fn()}
+        onRetry={vi.fn()}
+        onSelectDate={vi.fn()}
+        onToggleSlot={vi.fn()}
+        onToggleBlockSlots={vi.fn()}
+        onSelectAllSlots={vi.fn()}
+        onSelectFullDay={onSelectFullDay}
+        onClearSelectedSlots={vi.fn()}
+        onReasonChange={vi.fn()}
+        onSlotViewModeChange={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("switch", { name: /Día completo/i }));
+    expect(onSelectFullDay).toHaveBeenCalledTimes(1);
   });
 });

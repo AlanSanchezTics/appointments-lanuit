@@ -356,7 +356,10 @@ Business behavior is defined by:
   - `cancelledAppointments`: appointments in `CANCELLED` within the selected month.
   - `occupiedSpaces`: same count as active appointments for the month.
   - `availableSpaces`: `(operationalWeekdays * 3) - (occupiedSpaces + blockedSpaces)` where `3` is max daily capacity.
-  - `blockedSpaces`: count of manual blocked slots persisted in `blocked_slots` for the selected month.
+  - `blockedSpaces`: blocked capacity units for the selected month (not raw rows):
+    - `BLOCK_MODE`: each directional pair fully blocked (`09:00+10:00`, `13:00+14:00`, `17:00+18:00`) counts as `1` blocked space.
+    - `SECOND_ONLY_MODE`: each blocked base slot (`10:00`, `14:00`, `18:00`) counts as `1` blocked space.
+    - full-day manual block counts as `3` blocked spaces in both modes.
   - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
   - `saturationComparison`:
     - `previousMonth`: previous chronological month (`YYYY-MM`).
@@ -432,6 +435,10 @@ Business behavior is defined by:
     - Blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
     - Blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
     - Blocking all base slots in a day results in no bookable slots for that day.
+  - Full-day block behavior:
+    - Admin can block a full day in one action (without selecting each hour individually).
+    - Full-day block marks the day as unavailable for new bookings.
+    - Day-agenda must allow unblocking a full-day block in a single action.
   - Submit behavior:
     - operation is atomic all-or-nothing for selected slots,
     - UI disables all modal interactions while submit is in progress.
@@ -442,8 +449,11 @@ Business behavior is defined by:
     - UI supports `Por hora` and `Por bloque` views over the same eligible slot set in `BLOCK_MODE`.
     - In `SECOND_ONLY_MODE`, blocked-spaces modal only allows `Por hora`.
     - Selecting a block toggles both slots of the directional pair in the current day.
-    - Persistence remains slot-based in `blocked_slots` (no additional block-level entity).
-  - Day-agenda management behavior:
+    - Persistence uses `blocked_slots` for slot-level blocks and a dedicated full-day marker for day-level block (same table, no table adicional).
+- Day-agenda management behavior:
+    - Day agenda includes quick actions to:
+      - block full day in one action,
+      - block all remaining eligible spaces of that day in one action.
     - Admin can edit reason of a manual blocked slot from day-agenda modal.
     - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
     - Edit is allowed only for future blocked slots.

@@ -565,6 +565,318 @@ describe("MonthDetailView", () => {
     });
   });
 
+  it("shows only 'Bloquear día' when day is fully available", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots?date=2026-03-02")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [
+              {
+                date: "2026-03-02",
+                slots: ["09:00", "10:00"],
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2026-03/days/2026-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            date: "2026-03-02",
+            total: 0,
+            appointments: [],
+            blockedSlots: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+
+    expect(await screen.findByRole("button", { name: "Bloquear día" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Bloquear resto de espacios" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows only 'Bloquear resto de espacios' when day has at least one appointment", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots?date=2026-03-02")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [
+              {
+                date: "2026-03-02",
+                slots: ["10:00", "14:00"],
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2026-03/days/2026-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            date: "2026-03-02",
+            total: 1,
+            appointments: [
+              {
+                appointmentId: 10,
+                date: "2026-03-02",
+                timeSlot: "09:00:00",
+                status: "CONFIRMED",
+                name: "Ana Garcia",
+                phone: "5512345678",
+              },
+            ],
+            blockedSlots: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+
+    expect(
+      await screen.findByRole("button", { name: "Bloquear resto de espacios" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Bloquear día" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides quick block actions when no blockable slots remain", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots?date=2026-03-02")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2026-03/days/2026-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            date: "2026-03-02",
+            total: 0,
+            appointments: [],
+            blockedSlots: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+
+    await screen.findByRole("dialog");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Bloquear día" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Bloquear resto de espacios" }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it("does not open the daily agenda modal when weekend day is clicked", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

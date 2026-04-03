@@ -19,12 +19,20 @@ export type CreateAdminBlockedSlotsPayload = {
   month: string;
   date: string;
   slots: (typeof BASE_TIME_SLOTS)[number][];
+  fullDay?: false;
+  reason: BlockReason;
+} | {
+  month: string;
+  date: string;
+  slots?: never;
+  fullDay: true;
   reason: BlockReason;
 };
 
 export type CreateAdminBlockedSlotsResponse = {
   month: string;
   date: string;
+  fullDay: boolean;
   reason: BlockReason;
   totalCreated: number;
   blockedSlots: Array<{

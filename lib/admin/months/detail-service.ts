@@ -1,4 +1,5 @@
 import { isWeekdayBookingDate } from "@/lib/availability/rules";
+import { countBlockedSpacesByMode, splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import { findRegisteredMonth, listAppointmentsByMonth } from "@/lib/db/admin-months";
@@ -65,13 +66,21 @@ export async function getAdminMonthDetail(
   const previousMonth = getPreviousMonthKey(month);
   const { monthStart: previousMonthStart, monthEndExclusive: previousMonthEndExclusive } =
     getMonthBounds(previousMonth);
-  const [appointments, blockedSlots, previousMonthAppointments, previousMonthBlockedSlots] =
+  const [
+    appointments,
+    blockedSlots,
+    previousMonthAppointments,
+    previousMonthBlockedSlots,
+    previousMonthRegistration,
+  ] =
     await Promise.all([
       listAppointmentsByMonth(monthStart, monthEndExclusive),
       listMonthBlockedSlots(monthStart, monthEndExclusive),
       listAppointmentsByMonth(previousMonthStart, previousMonthEndExclusive),
       listMonthBlockedSlots(previousMonthStart, previousMonthEndExclusive),
+      findRegisteredMonth(previousMonth),
     ]);
+  const previousMonthSlotMode = previousMonthRegistration?.slotMode ?? registration.slotMode;
   const activeSlotsByDate = new Map<string, string[]>();
   const blockedSlotsByDate = new Map<string, string[]>();
 
@@ -99,10 +108,17 @@ export async function getAdminMonthDetail(
   const calendarDays = getMonthDays(month).map((date) => {
     const isWeekend = !isWeekdayBookingDate(date);
     const occupiedSlots = activeSlotsByDate.get(date) ?? [];
-    const dayBlockedSlots = blockedSlotsByDate.get(date) ?? [];
+    const dayBlockedTimeSlots = blockedSlotsByDate.get(date) ?? [];
+    const { hasFullDayBlock } = splitBlockedTimeSlots(dayBlockedTimeSlots);
+    const dayBlockedSpaces = countBlockedSpacesByMode({
+      slotMode: registration.slotMode,
+      blockedTimeSlots: dayBlockedTimeSlots,
+    });
     const availableSpaces = isWeekend
       ? 0
-      : Math.max(0, MAX_APPOINTMENTS_PER_DAY - (occupiedSlots.length + dayBlockedSlots.length));
+      : hasFullDayBlock
+      ? 0
+      : Math.max(0, MAX_APPOINTMENTS_PER_DAY - (occupiedSlots.length + dayBlockedSpaces));
 
     return {
       date,
@@ -116,7 +132,17 @@ export async function getAdminMonthDetail(
 
   const operationalDays = calendarDays.filter((day) => !day.isWeekend).length;
   const occupiedSpaces = confirmedAppointments;
-  const blockedSpaces = blockedSlots.length;
+  const blockedSpaces = calendarDays
+    .filter((day) => !day.isWeekend)
+    .reduce(
+      (total, day) =>
+        total
+        + countBlockedSpacesByMode({
+          slotMode: registration.slotMode,
+          blockedTimeSlots: blockedSlotsByDate.get(day.date) ?? [],
+        }),
+      0,
+    );
   const totalCapacity = operationalDays * MAX_APPOINTMENTS_PER_DAY;
   const availableSpaces = Math.max(0, totalCapacity - (occupiedSpaces + blockedSpaces));
   const currentMonth = getCurrentMonthKey(now);
@@ -131,7 +157,25 @@ export async function getAdminMonthDetail(
   const previousMonthOccupiedSpaces = previousMonthAppointments.filter(
     (appointment) => appointment.status !== "CANCELLED",
   ).length;
-  const previousMonthBlockedSpaces = previousMonthBlockedSlots.length;
+  const previousMonthBlockedByDate = new Map<string, string[]>();
+
+  for (const blockedSlot of previousMonthBlockedSlots) {
+    const dayBlockedSlots = previousMonthBlockedByDate.get(blockedSlot.date) ?? [];
+    dayBlockedSlots.push(blockedSlot.timeSlot);
+    previousMonthBlockedByDate.set(blockedSlot.date, dayBlockedSlots);
+  }
+
+  const previousMonthBlockedSpaces = getMonthDays(previousMonth)
+    .filter((date) => isWeekdayBookingDate(date))
+    .reduce(
+      (total, date) =>
+        total
+        + countBlockedSpacesByMode({
+          slotMode: previousMonthSlotMode,
+          blockedTimeSlots: previousMonthBlockedByDate.get(date) ?? [],
+        }),
+      0,
+    );
   const previousMonthTotalCapacity = previousMonthOperationalDays * MAX_APPOINTMENTS_PER_DAY;
   const previousMonthAvailableSpaces = Math.max(
     0,

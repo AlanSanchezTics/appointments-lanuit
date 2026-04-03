@@ -10,6 +10,7 @@ import type {
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
 } from "@/lib/admin/appointments/types";
+import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
@@ -195,11 +196,17 @@ export async function createAdminAppointment(
         listActiveAppointmentSlotsByDateForUpdate(tx, input.date),
         listBlockedSlotsByDateForUpdate(tx, input.date),
       ]);
+      const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
+      const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+      if (hasFullDayBlock) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
 
       const availableSlots = getAvailableStartSlotsWithManualBlocks(
         baseSlots,
         occupiedSlots,
-        blockedSlots.map((slot) => slot.timeSlot),
+        Array.from(blockedSlotsSet),
       );
 
       if (!availableSlots.includes(input.timeSlot)) {
@@ -370,11 +377,17 @@ export async function rescheduleAdminAppointment(
       }),
       listBlockedSlotsByDateForUpdate(tx, input.date),
     ]);
+    const blockedTimeSlots = blockedSlots.map((blockedSlot) => blockedSlot.timeSlot);
+    const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+    if (hasFullDayBlock) {
+      throw new Error("SLOT_NOT_AVAILABLE");
+    }
 
     const availableSlots = getAvailableStartSlotsWithManualBlocks(
       baseSlots,
       occupiedSlots,
-      blockedSlots.map((blockedSlot) => blockedSlot.timeSlot),
+      Array.from(blockedSlotsSet),
     );
 
     if (!availableSlots.includes(input.timeSlot)) {

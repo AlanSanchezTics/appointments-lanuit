@@ -25,6 +25,8 @@ type BlockSpacesModalProps = {
   currentDate: string;
   selectedDaySlots: TimeSlot[];
   selectedSlots: TimeSlot[];
+  isFullDaySelected: boolean;
+  canSelectFullDay: boolean;
   areAllSelectedForDay: boolean;
   reason: BlockReason;
   allowBlockView: boolean;
@@ -35,6 +37,7 @@ type BlockSpacesModalProps = {
   onToggleSlot: (slot: TimeSlot) => void;
   onToggleBlockSlots: (slots: TimeSlot[]) => void;
   onSelectAllSlots: () => void;
+  onSelectFullDay: () => void;
   onClearSelectedSlots: () => void;
   onReasonChange: (reason: BlockReason) => void;
   onSlotViewModeChange: (mode: "hour" | "block") => void;
@@ -64,6 +67,8 @@ export function BlockSpacesModal({
   currentDate,
   selectedDaySlots,
   selectedSlots,
+  isFullDaySelected,
+  canSelectFullDay,
   areAllSelectedForDay,
   reason,
   allowBlockView,
@@ -74,6 +79,7 @@ export function BlockSpacesModal({
   onToggleSlot,
   onToggleBlockSlots,
   onSelectAllSlots,
+  onSelectFullDay,
   onClearSelectedSlots,
   onReasonChange,
   onSlotViewModeChange,
@@ -197,7 +203,37 @@ export function BlockSpacesModal({
         </section>
 
         <section className="space-y-3">
-          {allowBlockView ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              role="switch"
+              onClick={() =>
+                isFullDaySelected ? onClearSelectedSlots() : onSelectFullDay()
+              }
+              disabled={isSubmitting || !canSelectFullDay}
+              aria-checked={isFullDaySelected}
+              className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-[var(--admin-border)] px-3 py-2 text-[13px] font-semibold text-[var(--admin-accent)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <span>{t("monthsDetail.blockModal.actions.fullDay")}</span>
+              <span
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                  isFullDaySelected
+                    ? "bg-[var(--admin-accent)]"
+                    : "bg-[var(--admin-inactive-bg)]"
+                }`}
+                aria-hidden
+              >
+                <span
+                  className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white text-[10px] text-[var(--admin-accent)] shadow-sm transition ${
+                    isFullDaySelected ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                >
+                  {isFullDaySelected ? "✓" : ""}
+                </span>
+              </span>
+            </button>
+          </div>
+          {!isFullDaySelected && allowBlockView ? (
             <div className="inline-flex w-full rounded-full bg-[var(--admin-inactive-bg)] p-1">
               <button
                 type="button"
@@ -227,29 +263,36 @@ export function BlockSpacesModal({
               </button>
             </div>
           ) : null}
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
-              {t("monthsDetail.blockModal.slotSection")}
-            </h3>
-            <button
-              type="button"
-              onClick={
-                areAllSelectedForDay ? onClearSelectedSlots : onSelectAllSlots
-              }
-              disabled={isSubmitting || selectedDaySlots.length === 0}
-              aria-pressed={areAllSelectedForDay}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-[13px] font-semibold text-[var(--admin-accent)] transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              <span>{t("monthsDetail.blockModal.actions.selectAll")}</span>
-              <span
-                className={`inline-flex h-4 w-4 items-center justify-center rounded-[3px] border text-[10px] leading-none ${areAllSelectedForDay ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white" : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-transparent"}`}
-                aria-hidden
+          {!isFullDaySelected ? (
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+                {t("monthsDetail.blockModal.slotSection")}
+              </h3>
+              <button
+                type="button"
+                onClick={
+                  areAllSelectedForDay ? onClearSelectedSlots : onSelectAllSlots
+                }
+                disabled={isSubmitting || selectedDaySlots.length === 0}
+                aria-pressed={areAllSelectedForDay}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-[13px] font-semibold text-[var(--admin-accent)] transition hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] disabled:cursor-not-allowed disabled:opacity-45"
               >
-                ✓
-              </span>
-            </button>
-          </div>
-          {selectedDate && selectedDaySlots.length > 0 ? (
+                <span>{t("monthsDetail.blockModal.actions.selectAll")}</span>
+                <span
+                  className={`inline-flex h-4 w-4 items-center justify-center rounded-[3px] border text-[10px] leading-none ${areAllSelectedForDay ? "border-[var(--admin-accent)] bg-[var(--admin-accent)] text-white" : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-transparent"}`}
+                  aria-hidden
+                >
+                  ✓
+                </span>
+              </button>
+            </div>
+          ) : null}
+          {isFullDaySelected ? (
+            <p className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-inactive-bg)] p-4 text-sm font-medium text-[var(--admin-text-primary)]">
+              {t("monthsDetail.blockModal.fullDaySelected")}
+            </p>
+          ) : null}
+          {isFullDaySelected ? null : selectedDate && selectedDaySlots.length > 0 ? (
             effectiveSlotViewMode === "hour" ? (
               <div className="space-y-3">
                 {selectedDaySlots.map((slot) => {
