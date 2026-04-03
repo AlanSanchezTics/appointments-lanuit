@@ -8,7 +8,11 @@ import { prisma } from "@/lib/db/prisma";
 import type { AppLanguage } from "@/lib/i18n/config";
 
 import { getDailyTipSelection } from "./daily-tip";
-import type { WeeklyOccupancySummary } from "./types";
+import type {
+  DashboardReminderItem,
+  DashboardReminderType,
+  WeeklyOccupancySummary,
+} from "./types";
 
 const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = ["CONFIRMED", "SYNC_FAILED"];
 const WEEK_CAPACITY = MAX_APPOINTMENTS_PER_DAY * 5;
@@ -147,6 +151,60 @@ async function listPendingAppointments(): Promise<AdminPendingAppointmentItem[]>
   }));
 }
 
+async function listReminderAppointmentsByDate(
+  dateKey: string,
+  reminderType: DashboardReminderType,
+): Promise<DashboardReminderItem[]> {
+  const nextDateKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(dateKey), 1));
+  const rows = await prisma.appointment.findMany({
+    where: {
+      status: {
+        in: ACTIVE_APPOINTMENT_STATUSES,
+      },
+      date: {
+        gte: parseDateKeyToUtcDate(dateKey),
+        lt: parseDateKeyToUtcDate(nextDateKey),
+      },
+    },
+    select: {
+      id: true,
+      date: true,
+      timeSlot: true,
+      appointmentReminders: {
+        where: {
+          reminderType,
+        },
+        select: {
+          id: true,
+        },
+        take: 1,
+      },
+      client: {
+        select: {
+          clientNumber: true,
+          name: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: [
+      { timeSlot: "asc" },
+      { createdAt: "asc" },
+    ],
+  });
+
+  return rows.map((row) => ({
+    appointmentId: row.id,
+    clientNumber: row.client.clientNumber,
+    date: toDateKey(row.date),
+    timeSlot: row.timeSlot.toISOString().slice(11, 16),
+    name: row.client.name,
+    phone: row.client.phone,
+    reminderType,
+    reminderSent: row.appointmentReminders.length > 0,
+  }));
+}
+
 function getBusinessWeekDays(mondayKey: string) {
   const monday = parseDateKeyToUtcDate(mondayKey);
   return Array.from({ length: 5 }, (_, index) => toDateKey(addUtcDays(monday, index)));
@@ -162,14 +220,26 @@ export async function getAdminDashboardWeeklyOccupancy(
   const currentMondayKey = getCurrentWeekMondayKey(currentDateKey);
   const previousMondayKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentMondayKey), -7));
   const nextMondayKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentMondayKey), 7));
+  const nextDayKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentDateKey), 1));
+  const nextWeekKey = toDateKey(addUtcDays(parseDateKeyToUtcDate(currentDateKey), 7));
   const currentWeekDays = getBusinessWeekDays(currentMondayKey);
   const previousWeekDays = getBusinessWeekDays(previousMondayKey);
 
-  const [currentWeekCounts, previousWeekCounts, todayAppointments, pendingAppointments, dailyTip] = await Promise.all([
+  const [
+    currentWeekCounts,
+    previousWeekCounts,
+    todayAppointments,
+    pendingAppointments,
+    nextDayReminders,
+    nextWeekReminders,
+    dailyTip,
+  ] = await Promise.all([
     groupActiveAppointmentsByDate(currentMondayKey, nextMondayKey),
     groupActiveAppointmentsByDate(previousMondayKey, currentMondayKey),
     listActiveAppointmentsByDate(agendaTargetDateKey),
     listPendingAppointments(),
+    listReminderAppointmentsByDate(nextDayKey, "NEXT_DAY"),
+    listReminderAppointmentsByDate(nextWeekKey, "NEXT_WEEK"),
     getDailyTipSelection(language, now),
   ]);
 
@@ -221,6 +291,10 @@ export async function getAdminDashboardWeeklyOccupancy(
     todayAgendaTargetDate: agendaTargetDateKey,
     todayAgenda,
     pendingAppointments,
+    reminders: {
+      nextDay: nextDayReminders,
+      nextWeek: nextWeekReminders,
+    },
     dailyTip,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,

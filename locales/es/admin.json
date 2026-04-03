@@ -104,6 +104,36 @@
         }
       }
     },
+    "reminders": {
+      "title": "Recordatorios",
+      "subtitle": "Envía recordatorios por WhatsApp para citas próximas",
+      "nextDay": {
+        "title": "Citas para mañana",
+        "empty": "No hay citas activas programadas para mañana."
+      },
+      "nextWeek": {
+        "title": "Citas para la próxima semana",
+        "empty": "No hay citas activas programadas para la próxima semana."
+      },
+      "actions": {
+        "sendAriaLabel": "Enviar recordatorio a {{name}}",
+        "alreadySentTooltip": "Este recordatorio ya fue enviado."
+      },
+      "whatsapp": {
+        "nextDayMessage": "Hola *{{name}}*!\nSolo para recordarte que tienes tu cita agendada el día de *mañana a las {{time}}*🗓️.\nNos vemos mañana✨",
+        "nextWeekMessage": "Hola *{{name}}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{{weekday}}, {{day}} de {{month}} a las {{time}}*🗓️.\nNos vemos la próxima semana✨"
+      },
+      "notifications": {
+        "sentTitle": "Recordatorio listo para enviar",
+        "sentDescription": "Se abrió WhatsApp para {{name}}.",
+        "alreadySentTitle": "Recordatorio ya enviado",
+        "alreadySentDescription": "Este tipo de recordatorio ya fue registrado para esta cita.",
+        "unauthorizedTitle": "Sesión expirada",
+        "unauthorizedDescription": "Inicia sesión de nuevo para enviar recordatorios.",
+        "errorTitle": "No se pudo enviar el recordatorio",
+        "errorDescription": "Intenta nuevamente en unos momentos."
+      }
+    },
     "metrics": {
       "appointmentsToday": "Citas hoy",
       "pending": "Pendientes",

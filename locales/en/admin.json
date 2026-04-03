@@ -104,6 +104,36 @@
         }
       }
     },
+    "reminders": {
+      "title": "Reminders",
+      "subtitle": "Send WhatsApp reminders for upcoming appointments",
+      "nextDay": {
+        "title": "Appointments for tomorrow",
+        "empty": "There are no active appointments scheduled for tomorrow."
+      },
+      "nextWeek": {
+        "title": "Appointments for next week",
+        "empty": "There are no active appointments scheduled for next week."
+      },
+      "actions": {
+        "sendAriaLabel": "Send reminder to {{name}}",
+        "alreadySentTooltip": "This reminder was already sent."
+      },
+      "whatsapp": {
+        "nextDayMessage": "Hi {{name}}!.\nThis is a reminder that you have an appointment tomorrow at {{time}}. See you tomorrow✨.",
+        "nextWeekMessage": "Hi {{name}}!.\nThis is a reminder that you have an appointment next {{weekday}} at {{time}}. See you next week✨."
+      },
+      "notifications": {
+        "sentTitle": "Reminder ready to send",
+        "sentDescription": "WhatsApp was opened for {{name}}.",
+        "alreadySentTitle": "Reminder already sent",
+        "alreadySentDescription": "This reminder type was already registered for this appointment.",
+        "unauthorizedTitle": "Session expired",
+        "unauthorizedDescription": "Sign in again to send reminders.",
+        "errorTitle": "Could not send reminder",
+        "errorDescription": "Please try again in a moment."
+      }
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",

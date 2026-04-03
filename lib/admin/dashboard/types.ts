@@ -24,6 +24,19 @@ export interface DailyTip {
   total: number;
 }
 
+export type DashboardReminderType = "NEXT_DAY" | "NEXT_WEEK";
+
+export interface DashboardReminderItem {
+  appointmentId: number;
+  clientNumber: number;
+  name: string;
+  phone: string;
+  date: string;
+  timeSlot: string;
+  reminderType: DashboardReminderType;
+  reminderSent: boolean;
+}
+
 export interface WeeklyOccupancySummary {
   days: WeeklyOccupancyDay[];
   busiestDay: WeeklyOccupancyDay;
@@ -36,6 +49,10 @@ export interface WeeklyOccupancySummary {
   todayAgendaTargetDate: string;
   todayAgenda: TodayAgendaItem[];
   pendingAppointments: AdminPendingAppointmentItem[];
+  reminders: {
+    nextDay: DashboardReminderItem[];
+    nextWeek: DashboardReminderItem[];
+  };
   dailyTip: DailyTip;
   currentWeekOccupancyPercent: number;
   previousWeekOccupancyPercent: number;

@@ -41,18 +41,45 @@ describe("admin dashboard service", () => {
       },
     ]);
 
-    findManyMock.mockResolvedValue([
-      {
-        id: 91,
-        date: new Date("2026-03-31T00:00:00.000Z"),
-        timeSlot: new Date("1970-01-01T09:00:00.000Z"),
-        client: {
-          clientNumber: 1234,
-          name: "Ana Garcia",
-          phone: "5512345678",
+    findManyMock
+      .mockResolvedValueOnce([
+        {
+          id: 91,
+          date: new Date("2026-03-31T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T09:00:00.000Z"),
+          client: {
+            clientNumber: 1234,
+            name: "Ana Garcia",
+            phone: "5512345678",
+          },
         },
-      },
-    ]);
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 92,
+          date: new Date("2026-03-31T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T10:00:00.000Z"),
+          appointmentReminders: [],
+          client: {
+            clientNumber: 2233,
+            name: "Brenda Ruiz",
+            phone: "5511112222",
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 93,
+          date: new Date("2026-04-06T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T13:00:00.000Z"),
+          appointmentReminders: [{ id: 1001 }],
+          client: {
+            clientNumber: 3344,
+            name: "Carla Perez",
+            phone: "5599988877",
+          },
+        },
+      ]);
 
     listActiveAppointmentsByDateMock.mockResolvedValue([
       {
@@ -101,5 +128,31 @@ describe("admin dashboard service", () => {
         phone: "5510001111",
       },
     ]);
+    expect(result.reminders).toEqual({
+      nextDay: [
+        {
+          appointmentId: 92,
+          clientNumber: 2233,
+          date: "2026-03-31",
+          timeSlot: "10:00",
+          name: "Brenda Ruiz",
+          phone: "5511112222",
+          reminderType: "NEXT_DAY",
+          reminderSent: false,
+        },
+      ],
+      nextWeek: [
+        {
+          appointmentId: 93,
+          clientNumber: 3344,
+          date: "2026-04-06",
+          timeSlot: "13:00",
+          name: "Carla Perez",
+          phone: "5599988877",
+          reminderType: "NEXT_WEEK",
+          reminderSent: true,
+        },
+      ],
+    });
   });
 });

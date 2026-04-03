@@ -235,6 +235,22 @@ Business behavior is defined by:
   - Fallback:
     - If EN source is missing/misaligned, use Spanish tips.
 
+- Reminders widget policy:
+  - Dashboard includes a `Recordatorios` block with two groups:
+    - next-day appointments (`currentDate + 1`),
+    - next-week appointments (`currentDate + 7`).
+  - Source includes only active statuses (`CONFIRMED`, `SYNC_FAILED`).
+  - Date bucketing and ordering must use business timezone `America/Mexico_City`.
+  - Each row includes: customer initials avatar, `name`, `clientNumber`, `phone`, `timeSlot`.
+  - Each row exposes action `Enviar recordatorio` that opens WhatsApp in a new tab using:
+    - `https://wa.me/52{phone}?text={encodedMessage}`.
+  - Reminder tracking must persist one unique record per (`appointmentId`, `reminderType`) and reject duplicates with conflict semantics.
+  - When a reminder already exists for (`appointmentId`, `reminderType`), dashboard action must render disabled and display tooltip indicating reminder was already sent.
+  - Supported reminder types:
+    - `NEXT_DAY`,
+    - `NEXT_WEEK`.
+  - Reminder copy and notifications are frontend-resolved through `react-i18next`.
+
 ## Admin Months Catalog Rules
 
 - Scope:

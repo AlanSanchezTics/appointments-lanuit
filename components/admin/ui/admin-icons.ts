@@ -36,6 +36,7 @@ import {
   faCircleInfo,
   faStar,
   faLightbulb,
+  faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -95,4 +96,5 @@ export const adminIcons = {
   info: faCircleInfo,
   busiestDay: faStar,
   dailyTip: faLightbulb,
+  sendReminder: faPaperPlane,
 } as const;

@@ -15,6 +15,11 @@ enum AppointmentStatus {
   REJECTED
 }
 
+enum AppointmentReminderType {
+  NEXT_DAY
+  NEXT_WEEK
+}
+
 enum ActiveMonthStatus {
   ACTIVE
   INACTIVE
@@ -37,15 +42,16 @@ enum BlockedSlotReason {
 }
 
 model Appointment {
-  id            Int               @id @default(autoincrement())
-  clientId      Int               @map("client_id")
-  date          DateTime          @db.Date
-  timeSlot      DateTime          @map("time_slot") @db.Time(0)
-  status        AppointmentStatus @default(CONFIRMED)
-  googleEventId String?           @map("google_event_id") @db.VarChar(255)
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
-  client        Client            @relation(fields: [clientId], references: [id])
+  id                   Int                   @id @default(autoincrement())
+  clientId             Int                   @map("client_id")
+  date                 DateTime              @db.Date
+  timeSlot             DateTime              @map("time_slot") @db.Time(0)
+  status               AppointmentStatus     @default(CONFIRMED)
+  googleEventId        String?               @map("google_event_id") @db.VarChar(255)
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  client               Client                @relation(fields: [clientId], references: [id])
+  appointmentReminders AppointmentReminder[]
 
   @@index([date, timeSlot])
   @@index([clientId, status])
@@ -94,16 +100,17 @@ model ActiveMonth {
 }
 
 model AdminUser {
-  id           Int             @id @default(autoincrement())
-  username     String          @unique @db.VarChar(191)
-  name         String          @db.VarChar(100)
-  passwordHash String          @map("password_hash") @db.Char(64)
-  passwordSalt String          @map("password_salt") @db.VarChar(191)
-  status       AdminUserStatus @default(active)
-  lastLoginAt  DateTime?       @map("last_login_at")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
-  blockedSlots BlockedSlot[]
+  id                       Int                   @id @default(autoincrement())
+  username                 String                @unique @db.VarChar(191)
+  name                     String                @db.VarChar(100)
+  passwordHash             String                @map("password_hash") @db.Char(64)
+  passwordSalt             String                @map("password_salt") @db.VarChar(191)
+  status                   AdminUserStatus       @default(active)
+  lastLoginAt              DateTime?             @map("last_login_at")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  blockedSlots             BlockedSlot[]
+  sentAppointmentReminders AppointmentReminder[]
 
   @@index([status])
   @@map("admin_users")
@@ -123,4 +130,22 @@ model BlockedSlot {
   @@index([date])
   @@index([createdByAdminId])
   @@map("blocked_slots")
+}
+
+model AppointmentReminder {
+  id                Int                     @id @default(autoincrement())
+  appointmentId     Int                     @map("appointment_id")
+  reminderType      AppointmentReminderType @map("reminder_type")
+  targetPhone       String                  @map("target_phone") @db.VarChar(10)
+  message           String                  @db.Text
+  sentByAdminUserId Int?                    @map("sent_by_admin_user_id")
+  openedAt          DateTime                @map("opened_at")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  appointment       Appointment             @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  sentByAdminUser   AdminUser?              @relation(fields: [sentByAdminUserId], references: [id], onDelete: SetNull)
+
+  @@unique([appointmentId, reminderType])
+  @@index([sentByAdminUserId])
+  @@map("appointment_reminders")
 }

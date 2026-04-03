@@ -498,6 +498,7 @@ Reglas obligatorias:
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación del día`.
 - La parte superior del dashboard debe incluir un bloque `Agenda de Hoy` en formato línea de tiempo.
 - La parte superior del dashboard debe incluir un bloque `Pendientes de confirmación`.
+- La parte superior del dashboard debe incluir un bloque `Recordatorios`.
 - La parte superior del dashboard debe incluir una tarjeta `Tip del día`.
 - La tarjeta muestra:
   - título `Ocupación semanal`,
@@ -568,6 +569,35 @@ Reglas obligatorias:
   - la acción `Confirmar` transiciona la cita a `CONFIRMED`,
   - la acción `Rechazar` transiciona la cita a `REJECTED`,
   - el bloque solo lista citas aún no resueltas manualmente.
+- Bloque `Recordatorios`:
+  - muestra dos secciones:
+    - `Citas para mañana` (`currentDate + 1`),
+    - `Citas para la próxima semana` (`currentDate + 7`).
+  - fuente de datos:
+    - solo citas activas (`CONFIRMED`, `SYNC_FAILED`) en `America/Mexico_City`.
+  - por cada cita muestra:
+    - avatar de clienta (iniciales),
+    - nombre de clienta,
+    - número de clienta,
+    - teléfono formateado,
+    - hora de cita.
+  - cada cita expone la acción `Enviar recordatorio` (icono).
+  - cuando el recordatorio de ese tipo ya fue enviado para la cita, la acción debe renderizarse deshabilitada y mostrar tooltip indicando que ya fue enviado.
+  - al ejecutar la acción:
+    - frontend construye y abre `https://wa.me/52{phone}?text={encodedMessage}` en nueva pestaña (`noopener,noreferrer`),
+    - frontend registra la acción en backend mediante endpoint admin dedicado.
+  - plantilla de mensaje por tipo:
+    - `NEXT_DAY`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el día de *mañana a las {Hora}*🗓️.\nNos vemos mañana✨`,
+    - `NEXT_WEEK`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{Día de la semana}, {Día} de {Mes} a las {Hora}*🗓️.\nNos vemos la próxima semana✨`.
+  - control de duplicado:
+    - no se permite reenviar el mismo tipo de recordatorio para la misma cita (`appointmentId + reminderType`).
+  - trazabilidad persistida por envío:
+    - `appointmentId`,
+    - `reminderType` (`NEXT_DAY` | `NEXT_WEEK`),
+    - `targetPhone`,
+    - `message`,
+    - `sentByAdminUserId` (cuando exista en sesión),
+    - `openedAt`.
 - Tarjeta `Tip del día`:
   - muestra título `Tip del día`,
   - muestra un tip operativo diario resuelto desde catálogo CSV en `assets/`,
@@ -627,6 +657,27 @@ Reglas obligatorias:
   - `GET /api/auth/session`
 - NextAuth logout endpoint:
   - `POST /api/auth/signout`
+
+### 15.4.1 Contrato API recordatorios admin
+
+- Endpoint:
+  - `POST /api/admin/appointments/[appointmentId]/reminders`
+- Request body:
+  - `reminderType`: `NEXT_DAY | NEXT_WEEK`
+  - `targetPhone`: string de 10 dígitos normalizados
+  - `message`: texto final a enviar por WhatsApp
+- Response success (`200`):
+  - `appointmentId`,
+  - `reminderType`,
+  - `targetPhone`,
+  - `message`,
+  - `sentByAdminUserId`,
+  - `openedAt` (ISO)
+- Errores funcionales:
+  - `ADMIN_UNAUTHORIZED` (`401`),
+  - `APPOINTMENT_NOT_FOUND` (`404`),
+  - `APPOINTMENT_REMINDER_ALREADY_SENT` (`409`),
+  - errores de validación/parse (`400`).
 
 ### 15.5 Contrato i18n admin
 

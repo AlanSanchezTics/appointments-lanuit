@@ -96,3 +96,21 @@ export type AdminCreateAppointmentResponse = {
   };
   syncReason?: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";
 };
+
+export type AdminAppointmentReminderType = "NEXT_DAY" | "NEXT_WEEK";
+
+export type AdminTrackAppointmentReminderPayload = {
+  reminderType: AdminAppointmentReminderType;
+  targetPhone: string;
+  message: string;
+  sentByAdminUserId?: number | null;
+};
+
+export type AdminTrackAppointmentReminderResponse = {
+  appointmentId: number;
+  reminderType: AdminAppointmentReminderType;
+  targetPhone: string;
+  message: string;
+  sentByAdminUserId: number | null;
+  openedAt: string;
+};

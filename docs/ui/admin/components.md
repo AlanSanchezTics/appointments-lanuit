@@ -505,6 +505,89 @@ El agente no debe:
 
 ---
 
+## Component: ReminderAppointmentsCard
+
+### Purpose
+
+Mostrar en el dashboard principal del admin las citas próximas que requieren recordatorio manual por WhatsApp.
+
+### Structure
+
+- contenedor base: `Card`
+- encabezado del bloque con título `Recordatorios` y subtítulo operativo
+- sección `Citas para mañana`
+- sección `Citas para la próxima semana`
+- estado vacío por sección cuando no hay resultados
+- listado de filas por cita con:
+  - avatar de iniciales
+  - nombre de clienta
+  - número de clienta
+  - teléfono
+  - hora
+  - acción iconográfica `Enviar recordatorio`
+
+### Data / Props Contract
+
+- `language: AppLanguage`
+- `nextDayItems: DashboardReminderItem[]`
+- `nextWeekItems: DashboardReminderItem[]`
+
+Cada elemento de reminders debe incluir:
+
+- `appointmentId`
+- `clientNumber`
+- `name`
+- `phone`
+- `date`
+- `timeSlot`
+- `reminderType` (`NEXT_DAY` | `NEXT_WEEK`)
+- `reminderSent` (`boolean`)
+
+### Style
+
+- usa `Card` y tokens existentes del admin
+- filas con borde suave y foco visible en acción iconográfica
+- layout responsive sin variantes nuevas de sistema
+- iconografía mediante `AdminIcon` + `adminIcons.sendReminder`
+
+### Usage
+
+Uso:
+
+- bloque del dashboard `/admin`, debajo de `TodayAgendaTimelineCard`
+
+### Rules
+
+El agente debe:
+
+- usar exclusivamente citas activas (`CONFIRMED`, `SYNC_FAILED`) ya resueltas por backend
+- abrir WhatsApp en nueva pestaña con URL codificada
+- registrar tracking de recordatorio por endpoint admin antes de abrir WhatsApp
+- deshabilitar la acción cuando `reminderSent=true` y mostrar tooltip de `ya enviado`
+- usar `sileo` para feedback (`success`, `warning`, `error`)
+- resolver todos los textos por `react-i18next`
+
+El agente no debe:
+
+- enviar recordatorios automáticamente sin acción explícita del admin
+- crear sistemas alternativos de notificación
+- introducir variantes visuales fuera de tokens/admin design system
+
+### Implementation Notes
+
+- componente reusable ubicado en `components/admin/ui/ReminderAppointmentsCard.tsx`
+- integración en `app/admin/page.tsx`
+- endpoint de soporte: `POST /api/admin/appointments/[appointmentId]/reminders`
+
+### Documentation Note
+
+- Requiere alineación con:
+  - `docs/specification.md` (sección dashboard/admin reminders)
+  - `docs/architecture/business-rules.md` (policy reminders widget)
+  - `docs/features/admin-auth-flow.md` (flujo dashboard actualizado)
+
+---
+
 ## Component: ListItem
 
 ### Purpose

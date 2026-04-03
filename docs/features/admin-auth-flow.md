@@ -44,6 +44,12 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - el dashboard incluye tarjeta `Tip del día` con:
      - título del bloque,
      - tip operativo diario obtenido por rotación determinista desde CSV según idioma.
+   - el dashboard incluye bloque `Recordatorios` con:
+     - dos secciones: `Citas para mañana` y `Citas para la próxima semana`,
+     - lista de citas activas (`CONFIRMED`, `SYNC_FAILED`) por sección,
+     - cada fila incluye `avatar`, `nombre`, `número de cliente`, `teléfono` y `hora`,
+     - acción por fila `Enviar recordatorio` que abre `wa.me` en nueva pestaña y registra tracking de envío,
+     - control de duplicado por `appointmentId + reminderType` (si ya existe registro, la acción se muestra deshabilitada con tooltip de `ya enviado` y no debe reenviar).
    - el dashboard incluye bloque `Agenda de Hoy` en formato timeline con:
      - título `Agenda de Hoy` o `Agenda para el Lunes` si hoy es sábado/domingo,
      - icono en encabezado con enlace a `/admin/months/[currentMonth]`,

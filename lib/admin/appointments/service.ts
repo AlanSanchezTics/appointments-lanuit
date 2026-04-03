@@ -9,6 +9,8 @@ import type {
   AdminDayAgendaResponse,
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
+  AdminTrackAppointmentReminderPayload,
+  AdminTrackAppointmentReminderResponse,
 } from "@/lib/admin/appointments/types";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
@@ -54,6 +56,34 @@ function mapCalendarErrorReason(error: unknown) {
   return error instanceof GoogleCalendarConfigError
     ? "CALENDAR_NOT_CONFIGURED"
     : "CALENDAR_SYNC_FAILED";
+}
+
+function isUniqueViolationError(error: unknown) {
+  return (
+    (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+    || (typeof error === "object"
+      && error !== null
+      && "code" in error
+      && (error as { code?: string }).code === "P2002")
+  );
+}
+
+function mapReminderRow(row: {
+  appointment_id: number;
+  reminder_type: AdminTrackAppointmentReminderResponse["reminderType"];
+  target_phone: string;
+  message: string;
+  sent_by_admin_user_id: number | null;
+  opened_at: Date;
+}): AdminTrackAppointmentReminderResponse {
+  return {
+    appointmentId: row.appointment_id,
+    reminderType: row.reminder_type,
+    targetPhone: row.target_phone,
+    message: row.message,
+    sentByAdminUserId: row.sent_by_admin_user_id,
+    openedAt: row.opened_at.toISOString(),
+  };
 }
 
 async function resolveClientForCreate(
@@ -465,6 +495,100 @@ export async function cancelAdminAppointment(
     appointmentId: appointment.id,
     status: "CANCELLED",
   };
+}
+
+export async function trackAdminAppointmentReminder(
+  appointmentId: number,
+  input: AdminTrackAppointmentReminderPayload,
+  now = new Date(),
+): Promise<AdminTrackAppointmentReminderResponse> {
+  const reminder = await prisma.$transaction(async (tx) => {
+    const appointmentRows = await tx.$queryRaw<Array<{ id: number }>>`
+      SELECT id
+      FROM appointments
+      WHERE id = ${appointmentId}
+      LIMIT 1
+      FOR UPDATE
+    `;
+
+    if (appointmentRows.length === 0) {
+      throw new Error("APPOINTMENT_NOT_FOUND");
+    }
+
+    const existingReminderRows = await tx.$queryRaw<Array<{ id: number }>>`
+      SELECT id
+      FROM appointment_reminders
+      WHERE appointment_id = ${appointmentId}
+        AND reminder_type = ${input.reminderType}
+      LIMIT 1
+      FOR UPDATE
+    `;
+
+    if (existingReminderRows.length > 0) {
+      throw new Error("APPOINTMENT_REMINDER_ALREADY_SENT");
+    }
+
+    try {
+      await tx.$executeRaw`
+        INSERT INTO appointment_reminders (
+          appointment_id,
+          reminder_type,
+          target_phone,
+          message,
+          sent_by_admin_user_id,
+          opened_at,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${appointmentId},
+          ${input.reminderType},
+          ${input.targetPhone},
+          ${input.message},
+          ${input.sentByAdminUserId ?? null},
+          ${now},
+          ${now},
+          ${now}
+        )
+      `;
+    } catch (error) {
+      if (isUniqueViolationError(error)) {
+        throw new Error("APPOINTMENT_REMINDER_ALREADY_SENT");
+      }
+
+      throw error;
+    }
+
+    const reminderRows = await tx.$queryRaw<Array<{
+      appointment_id: number;
+      reminder_type: AdminTrackAppointmentReminderResponse["reminderType"];
+      target_phone: string;
+      message: string;
+      sent_by_admin_user_id: number | null;
+      opened_at: Date;
+    }>>`
+      SELECT
+        appointment_id,
+        reminder_type,
+        target_phone,
+        message,
+        sent_by_admin_user_id,
+        opened_at
+      FROM appointment_reminders
+      WHERE appointment_id = ${appointmentId}
+        AND reminder_type = ${input.reminderType}
+      LIMIT 1
+    `;
+
+    const reminderRow = reminderRows[0];
+
+    if (!reminderRow) {
+      throw new Error("UNKNOWN_ERROR");
+    }
+
+    return mapReminderRow(reminderRow);
+  });
+
+  return reminder;
 }
 
 async function transitionPendingAppointment(

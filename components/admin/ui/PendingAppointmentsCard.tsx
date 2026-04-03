@@ -15,7 +15,6 @@ import type { AdminPendingAppointmentItem } from "@/lib/admin/appointments/types
 
 import { AdminIcon } from "./AdminIcon";
 import { Button } from "./Button";
-import { Card } from "./Card";
 import { adminIcons } from "./admin-icons";
 
 type PendingTransition = {
