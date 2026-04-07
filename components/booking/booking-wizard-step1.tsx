@@ -130,7 +130,7 @@ export function BookingWizardStep1({
                     weekday: formatShortWeekdayLabel(day.date, language),
                     day: formatDayOfMonthLabel(day.date),
                   })}
-                  className={`min-h-24 min-w-[5rem] flex-none flex flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                  className={`min-h-24 ${days.length > 4 ? "min-w-[5rem] flex-none" : "w-[100%]"} flex flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
                     isSelected
                       ? "bg-[var(--admin-primary)] text-white shadow-sm"
                       : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-primary)]"
