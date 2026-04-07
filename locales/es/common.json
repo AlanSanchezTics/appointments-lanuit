@@ -11,8 +11,9 @@
     "description": "Reserva y cancela citas dentro de meses habilitados."
   },
   "home": {
+    "welcome": "✨ Bienvenida ✨",
     "title": "Agenda tu cita del mes de {{month}}.",
-    "subtitle": "No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde.",
+    "subtitle": "¡No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde!",
     "bookNow": "Agendar ahora",
     "cancel": "Cancelar cita",
     "languageHint": "Puedes cambiar el idioma en cualquier momento.",

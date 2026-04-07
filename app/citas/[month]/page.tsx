@@ -37,10 +37,13 @@ export default async function BookingPage({ params }: BookingPageProps) {
               alt="La Nuit Nail Studio"
               className="mx-auto h-48 w-auto"
             />
-            <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none md:text-7xl">
-              {t("home.title", { month: formatMonthLabel(month, language) })}
+            <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none md:text-3xl text-center">
+              {t("home.welcome")}
             </h1>
-            <p className="max-w-xl text-base text-[var(--muted)]">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl leading-none md:text-2xl text-center">
+              {t("home.title", { month: formatMonthLabel(month, language) })}
+            </h2>
+            <p className="max-w-xl text-base text-[var(--muted)] text-center">
               {t("home.subtitle")}
             </p>
             {!hasSlots ? (

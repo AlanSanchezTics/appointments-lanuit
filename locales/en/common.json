@@ -11,8 +11,9 @@
     "description": "Book and cancel appointments within enabled months."
   },
   "home": {
+    "welcome": "✨ Welcome ✨",
     "title": "Book your appointment for {{month}}.",
-    "subtitle": "Don't wait too long and reserve your spot before it's gone.",
+    "subtitle": "Don't wait too long and reserve your spot before it's gone!",
     "bookNow": "Book now",
     "cancel": "Cancel appointment",
     "languageHint": "You can change the language at any time.",
