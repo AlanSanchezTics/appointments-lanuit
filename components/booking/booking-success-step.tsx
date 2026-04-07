@@ -62,7 +62,7 @@ export function BookingSuccessStep({
           </div>
         </div>
 
-        <h2 className="font-[family-name:var(--font-display)] text-[2rem] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+        <h2 className="font-[family-name:var(--font-display)] text-[1.5rem] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
           {t("booking.confirmSuccessTitle", { name: draft.name.split(" ")[0] })}
         </h2>
         <p className="mt-2 text-sm text-[var(--muted)]">

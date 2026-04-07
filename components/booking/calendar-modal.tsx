@@ -60,7 +60,7 @@ export function CalendarModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative flex items-center justify-center">
-          <h2 className="font-[family-name:var(--font-display)] text-[2rem] leading-none font-semibold text-[var(--foreground)]">
+          <h2 className="font-[family-name:var(--font-display)] text-[1.5rem] leading-none font-semibold text-[var(--foreground)]">
             {formatMonthLabel(month, language)}
           </h2>
           <button

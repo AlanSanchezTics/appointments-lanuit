@@ -52,7 +52,7 @@ export function DashboardGreetingCard({
       <p className="text-[10px] font-bold tracking-[0.14em] text-[var(--admin-text-secondary)]">
         {dateLabel}
       </p>
-      <h2 className="mt-1 text-[2rem] font-bold leading-[1.03] tracking-[-0.03em] text-[var(--admin-text-primary)]">
+      <h2 className="mt-1 text-[1.5rem] font-bold leading-[1.03] tracking-[-0.03em] text-[var(--admin-text-primary)]">
         {greeting} <span className="text-[1.5rem]">😊 ✨</span>
       </h2>
     </section>

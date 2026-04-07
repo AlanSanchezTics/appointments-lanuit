@@ -49,7 +49,7 @@ export function BookingConfirmStep({
         <p className="text-[0.64rem] font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
           {t("booking.step2Of2")}
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-[2rem] font-bold leading-[1.05] tracking-[-0.03em]">
+        <h2 className="font-[family-name:var(--font-display)] text-[1.5rem] font-bold leading-[1.05] tracking-[-0.03em]">
           {t(isNewClient ? "booking.welcomeNew" : "booking.welcomeBack", {
             name: draft.name.split(" ")[0],
           })}
@@ -172,10 +172,10 @@ export function BookingPendingConfirmationStep({
           </div>
         </div>
 
-        <h2 className="font-[family-name:var(--font-display)] text-[2rem] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+        <h2 className="font-[family-name:var(--font-display)] text-[1.5rem] font-bold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
           {t("booking.pendingTitle")}
         </h2>
-        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[var(--muted)]">
+        <p className="mt-2 whitespace-pre-line text-sm leading-5 text-[var(--muted)]">
           {t("booking.pendingDescription")}
         </p>
       </div>
