@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
+
 const acquireBookingLocksMock = vi.fn(async () => undefined);
 const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
 const releaseBookingLocksMock = vi.fn(async () => undefined);
@@ -159,6 +161,16 @@ describe("bookAppointment", () => {
     ).rejects.toThrow("SLOT_NOT_AVAILABLE");
 
     expect(createMock).not.toHaveBeenCalled();
+    expect(findManyMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: {
+            in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+          },
+        }),
+      }),
+    );
   });
 
   it("keeps successful booking flow with calendar sync and whatsapp payload", async () => {

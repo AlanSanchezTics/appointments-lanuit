@@ -1,6 +1,7 @@
 import type { AppointmentStatus } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import { prisma } from "@/lib/db/prisma";
 
 export type PersistedAppointment = {
@@ -343,7 +344,7 @@ export async function listMonthAppointments(monthStart: string, monthEndExclusiv
   const records = await prisma.appointment.findMany({
     where: {
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
+        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
       },
       date: {
         gte: new Date(`${monthStart}T00:00:00.000Z`),
@@ -400,13 +401,17 @@ export async function listActiveReservationLocksForDate(
 }
 
 export async function lockConflictingAppointments(tx: Prisma.TransactionClient, date: string, phone: string) {
+  const slotBlockingStatuses = Prisma.join(
+    SLOT_BLOCKING_APPOINTMENT_STATUSES.map((status) => Prisma.sql`${status}`),
+  );
+
   await tx.$queryRaw`
     SELECT a.id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
     WHERE (a.date = ${date} OR c.phone = ${phone})
-      AND a.status IN ('CONFIRMED', 'SYNC_FAILED')
+      AND a.status IN (${slotBlockingStatuses})
     FOR UPDATE
   `;
 }

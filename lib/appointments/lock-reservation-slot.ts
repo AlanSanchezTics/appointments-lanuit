@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import { prisma } from "@/lib/db/prisma";
 import {
   acquireBookingLocks,
@@ -139,7 +140,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         where: {
           date: new Date(`${input.date}T00:00:00.000Z`),
           status: {
-            in: ["CONFIRMED", "SYNC_FAILED"],
+            in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
           },
         },
         select: {

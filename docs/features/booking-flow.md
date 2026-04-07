@@ -165,7 +165,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Estado de cita:
   - Una cita confirmada por clienta fiel queda en `CONFIRMED`.
   - Una cita nueva de clienta no fiel queda en `PENDING`.
-  - `PENDING` no cuenta como cita activa ni bloquea disponibilidad.
+  - En disponibilidad pública por slot, `PENDING`, `CONFIRMED` y `SYNC_FAILED` bloquean ocupación.
 
 ## State Changes
 - Appointment:
@@ -206,7 +206,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - El día queda sin slots por combinación de citas activas + locks + regla direccional.
 - Reintentos tras error de conflicto requieren refrescar disponibilidad y re-seleccionar slot.
 - Re-reserva de un slot previamente cancelado genera una nueva cita (histórico preservado).
-- Una cita `PENDING` no participa en la lógica de ocupación hasta que sea confirmada.
+- Una cita `PENDING` sí participa en la lógica de ocupación del slot hasta resolverse (`CONFIRMED` o `REJECTED`).
 
 ## Observations
 - El contrato funcional define 4 vistas del flujo de reserva (entrada global en `/` + 3 vistas del wizard), pero el etiquetado visual interno del wizard muestra una progresión `step1Of2`/`step2Of2` y luego éxito. No hay contradicción funcional, pero sí diferencia de nomenclatura de pasos.

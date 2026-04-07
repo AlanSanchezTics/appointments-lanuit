@@ -75,6 +75,7 @@ Restricciones:
 - Horarios del mismo día ya transcurridos no deben mostrarse como disponibles.
 - Si todos los horarios de un día están ocupados, el día no debe mostrarse disponible.
 - Los horarios con lock temporal vigente tampoco deben mostrarse como disponibles.
+- En flujo público, un slot se considera ocupado cuando existe una cita en `PENDING`, `CONFIRMED` o `SYNC_FAILED` para ese mismo `date + timeSlot`.
 
 ### 4.2 Horarios Base
 
@@ -313,7 +314,7 @@ Histórico de cancelaciones:
 
 - Re-reservar un slot previamente cancelado crea una nueva fila.
 - Las filas CANCELLED se conservan como historial.
-- La disponibilidad y conflictos se calculan solo sobre estados activos (CONFIRMED, SYNC_FAILED); `PENDING` y `REJECTED` no bloquean ocupación.
+- La disponibilidad y conflictos se calculan sobre estados que bloquean ocupación (`PENDING`, `CONFIRMED`, `SYNC_FAILED`); `REJECTED` no bloquea ocupación.
 
 ---
 

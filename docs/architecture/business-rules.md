@@ -66,8 +66,8 @@ Business behavior is defined by:
   - A pair can contain at most one active appointment.
 
 - Active appointment definition
-  - States considered active for occupancy/conflict decisions: `CONFIRMED`, `SYNC_FAILED`.
-  - `PENDING` appointments are not active and do not count toward occupancy or conflict decisions.
+  - States considered active for occupancy/conflict decisions: `PENDING`, `CONFIRMED`, `SYNC_FAILED`.
+  - `REJECTED` and `CANCELLED` appointments do not count toward occupancy or conflict decisions.
 
 - Temporary reservation lock
   - A slot can be temporarily held during booking confirmation.

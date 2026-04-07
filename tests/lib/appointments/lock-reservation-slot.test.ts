@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
+
 const acquireBookingLocksMock = vi.fn(async () => undefined);
 const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
 const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
@@ -86,6 +88,16 @@ describe("reservation slot locks", () => {
     expect(result.lockToken).toBe("lock-123");
     expect(result.expiresAt).toBe("2026-03-13T12:10:00.000Z");
     expect(createReservationLockMock).toHaveBeenCalledOnce();
+    expect(findManyMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: {
+            in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+          },
+        }),
+      }),
+    );
   });
 
   it("rejects lock acquisition when slot is already locked", async () => {

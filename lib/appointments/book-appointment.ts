@@ -5,6 +5,7 @@ import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode"
 import { getAvailableStartSlots } from "@/lib/availability/rules";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/calendar/google";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import {
   acquireBookingLocks,
   cleanupExpiredReservationLocks,
@@ -186,7 +187,7 @@ async function createAppointmentInTransaction(
     where: {
       date: new Date(`${input.date}T00:00:00.000Z`),
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
+        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
       },
     },
     select: {
@@ -298,7 +299,7 @@ async function rescheduleAppointmentInTransaction(
     where: {
       date: new Date(`${input.date}T00:00:00.000Z`),
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
+        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
       },
       id: {
         not: appointmentToReschedule.id,

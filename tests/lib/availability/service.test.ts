@@ -155,6 +155,27 @@ describe("availability service", () => {
     expect(day?.slots).not.toContain("13:00");
   });
 
+  it("hides slots occupied by pending appointments", async () => {
+    listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);
+    listMonthAppointmentsMock.mockResolvedValueOnce([
+      {
+        id: 11,
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "13:00",
+        status: "PENDING",
+        googleEventId: null,
+        clientId: 1,
+      },
+    ]);
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day?.slots).not.toContain("13:00");
+  });
+
   it("applies directional rule against active locks", async () => {
     listMonthAppointmentsMock.mockResolvedValueOnce([]);
     listMonthActiveReservationLocksMock.mockResolvedValueOnce([
