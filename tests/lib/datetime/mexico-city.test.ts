@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatLongDate,
   getCurrentDateKey,
   getCurrentMonthKey,
   getCurrentTimeKey,
@@ -25,5 +26,10 @@ describe("mexico city datetime", () => {
     expect(isFutureDateTime("2026-03-04", "09:00", now)).toBe(true);
     expect(isFutureDateTime("2026-03-03", "13:00", now)).toBe(true);
     expect(isFutureDateTime("2026-03-03", "10:00", now)).toBe(false);
+  });
+
+  it("capitalizes month in long date format for spanish", () => {
+    expect(formatLongDate("2026-03-18", "es")).toContain("Marzo");
+    expect(formatLongDate("2026-03-18", "es")).not.toContain("marzo");
   });
 });

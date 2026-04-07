@@ -87,10 +87,13 @@ export function formatLongDate(date: string, language: AppLanguage = "es") {
     timeZone: REQUIRED_TIMEZONE,
     weekday: "long",
   }).format(parsedDate);
-  const longDate = new Intl.DateTimeFormat(locale, {
+  const longDateParts = new Intl.DateTimeFormat(locale, {
     timeZone: REQUIRED_TIMEZONE,
     dateStyle: "long",
-  }).format(parsedDate);
+  }).formatToParts(parsedDate);
+  const longDate = longDateParts
+    .map((part) => (part.type === "month" ? capitalize(part.value) : part.value))
+    .join("");
 
   return `${capitalize(weekday)}, ${longDate}`;
 }
