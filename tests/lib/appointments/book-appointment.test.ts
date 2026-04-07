@@ -327,6 +327,49 @@ describe("bookAppointment", () => {
     });
   });
 
+  it("accepts an existing client name when difference is only trailing whitespace", async () => {
+    findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
+      id: 99,
+      date: "2026-03-04",
+      timeSlot: "09:00",
+      phone: "5512345678",
+      lockToken: "lock-123",
+      expiresAt: "2026-03-03T12:10:00.000Z",
+    });
+    clientFindUniqueMock.mockResolvedValueOnce({
+      id: 12,
+      clientNumber: 1,
+      name: "Ana Lopez ",
+      phone: "5512345678",
+      isLoyal: true,
+    });
+    createMock.mockResolvedValueOnce({
+      id: 15,
+      status: "CONFIRMED",
+      client: { name: "Ana Lopez " },
+    });
+
+    const { confirmAppointmentWithLock } = await import(
+      "@/lib/appointments/book-appointment"
+    );
+
+    await expect(
+      confirmAppointmentWithLock(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          lockToken: "lock-123",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).resolves.toMatchObject({
+      appointmentId: 15,
+      status: "CONFIRMED",
+    });
+  });
+
   it("rejects confirmation for a new client when name is missing", async () => {
     findReservationLockByTokenForUpdateMock.mockResolvedValueOnce({
       id: 99,

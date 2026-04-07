@@ -4,6 +4,7 @@ import type {
   BookingSuccess,
   ClientCheckLockResult,
 } from "@/lib/booking/types";
+import { normalizeClientName } from "@/lib/shared/client-name";
 
 type ApiErrorPayload = {
   error?: string;
@@ -52,13 +53,15 @@ export async function submitBookingDraft(
   lockToken: string,
   appointmentIdToReschedule?: number | null,
 ) {
+  const normalizedName = normalizeClientName(draft.name);
+
   const response = await fetch("/api/reservar/confirm", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name: draft.name,
+      name: normalizedName,
       phone: draft.phone,
       date: draft.date,
       timeSlot: draft.timeSlot,

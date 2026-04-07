@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const aggregateMock = vi.fn();
 const createMock = vi.fn();
+const findUniqueMock = vi.fn();
 
 vi.mock("@/lib/db/prisma", () => ({
   prisma: {
@@ -106,6 +107,49 @@ describe("client number service", () => {
       ),
     ).resolves.toMatchObject({
       clientNumber: 12,
+    });
+  });
+
+  it("reuses existing client on duplicated phone when names differ only by trailing spaces", async () => {
+    aggregateMock.mockResolvedValueOnce({
+      _max: {
+        clientNumber: 10,
+      },
+    });
+    createMock.mockRejectedValueOnce({
+      code: "P2002",
+      meta: {
+        target: ["phone"],
+      },
+    });
+    findUniqueMock.mockResolvedValueOnce({
+      id: 9,
+      clientNumber: 7,
+      name: "Ana ",
+      phone: "5512345678",
+    });
+
+    const { createClientWithUniqueClientNumber } = await import(
+      "@/lib/clients/client-number-service"
+    );
+
+    await expect(
+      createClientWithUniqueClientNumber(
+        {
+          client: {
+            aggregate: aggregateMock,
+            create: createMock,
+            findUnique: findUniqueMock,
+          },
+        } as never,
+        {
+          name: "Ana",
+          phone: "5512345678",
+        },
+      ),
+    ).resolves.toMatchObject({
+      id: 9,
+      phone: "5512345678",
     });
   });
 });

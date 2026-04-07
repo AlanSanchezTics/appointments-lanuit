@@ -15,6 +15,7 @@ import {
 } from "@/lib/admin/clients/api-client";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
 import type { BaseTimeSlot } from "@/lib/constants/slots";
+import { normalizeClientName } from "@/lib/shared/client-name";
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 const MIN_CLIENT_QUERY_LENGTH = 2;
@@ -69,7 +70,7 @@ export function useBookAppointmentModal(month: string) {
       return Boolean(selectedClient);
     }
 
-    return newClientName.trim().length >= 3 && newClientPhone.trim().length > 0;
+    return normalizeClientName(newClientName).length >= 3 && newClientPhone.trim().length > 0;
   }, [
     clientMode,
     isLoadingDays,
@@ -338,7 +339,7 @@ export function useBookAppointmentModal(month: string) {
         nextErrors.client = "CLIENT_REQUIRED";
       }
     } else {
-      if (newClientName.trim().length < 3) {
+      if (normalizeClientName(newClientName).length < 3) {
         nextErrors.name = "VALIDATION_NAME_TOO_SHORT";
       }
 
@@ -394,7 +395,7 @@ export function useBookAppointmentModal(month: string) {
             date: selectedDate,
             timeSlot: selectedTimeSlot,
             client: {
-              name: newClientName.trim(),
+              name: normalizeClientName(newClientName),
               phone: newClientPhone.trim(),
               ...(newClientNumber.trim().length > 0
                 ? { clientNumber: Number(newClientNumber.trim()) }

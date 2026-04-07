@@ -94,6 +94,7 @@ Business behavior is defined by:
   - Name must be at least 3 characters.
   - Customer is resolved by phone.
   - A phone cannot map to multiple names.
+  - Name comparison for phone identity must ignore leading/trailing whitespace (trim on both values).
   - New customers always receive a unique positive `client_number`.
   - Public booking assigns `client_number` automatically from the next available value.
   - Admin inline booking may provide a manual `client_number`; if omitted, system auto-assigns.

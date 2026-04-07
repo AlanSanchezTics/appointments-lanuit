@@ -40,6 +40,7 @@ import { validateBookingRules, bookingSchema } from "@/lib/validation/appointmen
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
+import { areEquivalentClientNames } from "@/lib/shared/client-name";
 
 function getMonthRange(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -135,7 +136,7 @@ async function resolveClientForCreate(
     preferredClientNumber: input.client.clientNumber,
   });
 
-  if (client.name.trim() !== parsed.name.trim()) {
+  if (!areEquivalentClientNames(client.name, parsed.name)) {
     throw new Error("CLIENT_NAME_MISMATCH");
   }
 

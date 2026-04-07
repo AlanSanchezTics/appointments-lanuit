@@ -18,6 +18,10 @@ import { prisma } from "@/lib/db/prisma";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
 import {
+  areEquivalentClientNames,
+  normalizeClientName,
+} from "@/lib/shared/client-name";
+import {
   bookingSchema,
   confirmBookingWithLockSchema,
   validateBookingRules,
@@ -114,7 +118,8 @@ async function resolveClientInTransaction(
   tx: Prisma.TransactionClient,
   input: { phone: string; name?: string | undefined },
 ) {
-  const normalizedName = input.name?.trim();
+  const normalizedName =
+    typeof input.name === "string" ? normalizeClientName(input.name) : undefined;
 
   if (normalizedName) {
     const existingClient = await tx.client.findUnique({
@@ -124,7 +129,7 @@ async function resolveClientInTransaction(
     });
 
     if (existingClient) {
-      if (existingClient.name.trim() !== normalizedName.trim()) {
+      if (!areEquivalentClientNames(existingClient.name, normalizedName)) {
         throw new Error("CLIENT_NAME_MISMATCH");
       }
 
@@ -136,7 +141,7 @@ async function resolveClientInTransaction(
       name: normalizedName,
     });
 
-    if (client.name.trim() !== normalizedName.trim()) {
+    if (!areEquivalentClientNames(client.name, normalizedName)) {
       throw new Error("CLIENT_NAME_MISMATCH");
     }
 

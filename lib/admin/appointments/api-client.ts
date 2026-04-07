@@ -2,12 +2,44 @@
 
 import type {
   AdminCancelAppointmentResponse,
+  AdminCreateAppointmentClientInput,
   AdminCreateAppointmentPayload,
   AdminCreateAppointmentResponse,
   AdminDayAgendaResponse,
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
 } from "@/lib/admin/appointments/types";
+import { normalizeClientName } from "@/lib/shared/client-name";
+
+type AdminCreateAppointmentInlinePayload = {
+  month: string;
+  date: string;
+  timeSlot: AdminCreateAppointmentPayload["timeSlot"];
+  client: AdminCreateAppointmentClientInput;
+  clientId?: never;
+};
+
+function hasInlineClientPayload(
+  payload: AdminCreateAppointmentPayload,
+): payload is AdminCreateAppointmentInlinePayload {
+  return "client" in payload && payload.client !== undefined;
+}
+
+function normalizeCreateAppointmentPayload(
+  payload: AdminCreateAppointmentPayload,
+): AdminCreateAppointmentPayload {
+  if (!hasInlineClientPayload(payload)) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    client: {
+      ...payload.client,
+      name: normalizeClientName(payload.client.name),
+    },
+  };
+}
 
 export async function fetchAdminDayAgenda(
   month: string,
@@ -77,12 +109,13 @@ export async function cancelAdminAppointmentById(
 export async function createAdminAppointmentByMonth(
   payload: AdminCreateAppointmentPayload,
 ): Promise<AdminCreateAppointmentResponse> {
+  const normalizedPayload = normalizeCreateAppointmentPayload(payload);
   const response = await fetch(`/api/admin/months/${payload.month}/appointments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(normalizedPayload),
   });
 
   if (!response.ok) {

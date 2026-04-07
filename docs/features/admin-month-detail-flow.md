@@ -168,6 +168,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
     - `{ date, timeSlot, clientId }`
   - soporta payload con alta inline de cliente:
     - `{ date, timeSlot, client: { name, phone, clientNumber? } }`
+    - frontend debe enviar `client.name` en forma canónica (trim) para evitar espacios residuales.
   - reglas de dominio aplicadas:
     - `month` registrado y `ACTIVE`,
     - disponibilidad del slot (ocupación + locks + bloqueos manuales + reglas direccionales),

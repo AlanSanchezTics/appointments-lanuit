@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { areEquivalentClientNames } from "@/lib/shared/client-name";
 
 const MAX_ASSIGNMENT_RETRIES = 3;
 
@@ -115,7 +116,10 @@ export async function createClientWithUniqueClientNumber(
             },
           });
 
-          if (existingClient && existingClient.name.trim() === input.name.trim()) {
+          if (
+            existingClient
+            && areEquivalentClientNames(existingClient.name, input.name)
+          ) {
             return existingClient;
           }
 

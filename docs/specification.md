@@ -115,6 +115,7 @@ Regla direccional formal:
 - Nombre mínimo: 3 caracteres.
 - El cliente se identifica por teléfono.
 - Un teléfono no puede estar asociado a más de un nombre.
+- La validación de nombre canónico por teléfono debe ignorar espacios al inicio y final del texto (trim en ambos valores) para evitar falsos `CLIENT_NAME_MISMATCH`.
 - Cada cliente tiene `client_number` único (entero positivo) asignado al momento de creación.
 - En flujo público, `client_number` se asigna automáticamente con el siguiente número disponible.
 - En flujo admin, para cliente nuevo inline, se sugiere el siguiente número disponible y se permite override manual antes de guardar.
@@ -192,6 +193,7 @@ Contratos de payload relevantes en flujo vigente:
   - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar si, además de reagendar, está permitido `Agendar como nueva cita` bajo la regla de 15 días naturales.
 - `POST /api/reservar/confirm`:
   - admite `appointmentIdToReschedule` opcional para reprogramar una cita futura activa del mismo teléfono y mes al `date + timeSlot` seleccionado.
+  - el frontend debe enviar `name` en forma canónica (trim) cuando aplique.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
 
@@ -1013,6 +1015,7 @@ Contrato API:
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
     - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone, clientNumber? } }`,
+    - para cliente nuevo inline, frontend debe enviar `client.name` en forma canónica (trim),
     - exactamente una modalidad de cliente por request,
     - `month` debe existir y estar `ACTIVE`,
     - aplica invariantes de disponibilidad (weekday, slot válido por modalidad, slot futuro, conflictos por lock/ocupación/bloqueo manual y reglas direccionales),

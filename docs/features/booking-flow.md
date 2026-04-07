@@ -102,6 +102,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - el encabezado del paso de confirmación es condicional por tipo de clienta,
   - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`,
   - clienta existente: mantiene saludo de retorno (`welcomeBack`).
+  - previo al `POST /api/reservar/confirm`, frontend envía `name` en forma canónica (trim).
 - Backend (transaccional):
   - limpia locks expirados,
   - valida lock vigente por `lock_token`, fecha, horario y teléfono,
@@ -155,6 +156,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
+  - La comparación contra nombre existente por teléfono ignora espacios al inicio/fin (trim en ambos valores).
   - Un teléfono no puede asociarse a nombres distintos.
 - Número de cliente:
   - Se asigna automáticamente para cliente nuevo durante confirmación exitosa.
