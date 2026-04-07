@@ -20,8 +20,8 @@
   --warning-surface: rgba(255, 220, 188, 0.45);
   --shadow-soft: 0 14px 36px rgba(136, 82, 8, 0.14);
   --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.26);
-  --font-display: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-  --font-body: var(--font-montserrat), "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-display: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-body: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   --admin-canvas: #fbf9f5;
   --admin-surface: #ffffff;
   --admin-primary: #e49f53;
@@ -61,8 +61,8 @@ body {
   min-height: 100vh;
   color: var(--foreground);
   background: transparent;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.5px;
   text-rendering: optimizeLegibility;
 }
 
