@@ -19,14 +19,14 @@
     "whatsapp": "Contactar por WhatsApp",
     "orSeparator": "- o -",
     "languageHint": "Puedes cambiar el idioma en cualquier momento.",
-    "unavailableMessage": "Agenda no disponible por el momento, contactanos por WhatsApp para más información.",
+    "unavailableMessage": "Agenda no disponible por el momento, contáctanos por WhatsApp para más información.",
     "unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",
     "contactWhatsapp": "Contactar por WhatsApp",
     "whatsappUnavailable": "WhatsApp no disponible por el momento.",
-    "unavailableWhatsappMessage": "Hola Pau 👋🏼,\n Me gustaría recibir más información sobre disponibilidad de agenda 😊."
+    "unavailableWhatsappMessage": "Hola Pau 👋🏼,\nMe gustaría recibir más información sobre disponibilidad de agenda 😊."
   },
   "notFound": {
-    "invalidRoute": "Ruta invalida",
+    "invalidRoute": "Ruta inválida",
     "allowedMonthsOnly": "Solo se permite operar con meses habilitados.",
     "backHome": "Volver al inicio"
   },
@@ -53,13 +53,13 @@
     "phone": "Teléfono",
     "fullName": "Nombre completo",
     "phonePlaceholder": "322 123 4567",
-    "namePlaceholder": "Ej. Ana Garcia",
-    "slotLockedForYou": "Este horario esta bloqueado para ti por {{time}}.",
+    "namePlaceholder": "Ej. Ana García",
+    "slotLockedForYou": "Este horario está bloqueado para ti por {{time}}.",
     "next": "Siguiente",
     "wait": "Un momento...",
     "back": "Regresar",
-    "confirmTitle": "Confirmar Detalles",
-    "welcomeBack": "Hola {{name}}, que gusto tenerte de vuelta ✨",
+    "confirmTitle": "Confirmar detalles",
+    "welcomeBack": "Hola {{name}}, qué gusto tenerte de vuelta ✨",
     "name": "Nombre",
     "date": "Fecha",
     "time": "Hora",
@@ -67,7 +67,7 @@
     "editInformation": "Editar información",
     "rescheduleSelectionTitle": "Ya tienes citas activas en este mes",
     "rescheduleCurrentSelectionTitle": "Detalles de tu nueva cita",
-    "rescheduleSelectionSingle": "¿Quieres reagendar alguna de tus citas activas de este mes?, Seleccionala:",
+    "rescheduleSelectionSingle": "¿Quieres reagendar alguna de tus citas activas de este mes? Selecciónala:",
     "rescheduleSelectionMultiple": "Selecciona la cita que deseas reagendar al horario que elegiste.",
     "orSeparator": "O",
     "bookAsNewAppointment": "Agendar como nueva cita",
@@ -76,20 +76,20 @@
     "confirmSuccessTitle": "¡Todo listo, {{name}}!",
     "confirmSuccessBody": "Tu cita ha sido agendada con éxito.",
     "pendingTitle": "Ya estamos casi listas",
-    "pendingDescription": "Tu cita ya se encuentra pre-registrada.\nPara terminar de agendar tu cita, es necesario que envíes a whatsapp el comprobante de deposito para reservar el espacio.\nUna vez que recibamos tu comprobante, confirmaremos tu cita.",
+    "pendingDescription": "Tu cita ya se encuentra prerregistrada.\nPara terminar de agendar tu cita, es necesario que envíes a WhatsApp el comprobante de depósito para reservar el espacio.\nUna vez que recibamos tu comprobante, confirmaremos tu cita.",
     "pendingSendReceipt": "Enviar comprobante",
     "pendingBack": "Volver",
     "thanks": "Muchas gracias",
-    "syncFailedInfo": "La reserva quedo registrada. La sincronizacion con calendario se completara despues.",
+    "syncFailedInfo": "La reserva quedó registrada. La sincronización con calendario se completará después.",
     "sendWhatsapp": "Enviar confirmación por WhatsApp",
     "backHome": "Volver al inicio",
     "calendarClose": "Cerrar calendario",
     "calendarSelected": "Seleccionado",
     "calendarAvailable": "Disponible",
     "calendarDone": "Listo",
-    "calendarHint": "Toca un dia para ver horarios disponibles",
-    "calendarAriaSelected": "Dia seleccionado",
-    "calendarAriaSelect": "Seleccionar dia",
+    "calendarHint": "Toca un día para ver horarios disponibles",
+    "calendarAriaSelected": "Día seleccionado",
+    "calendarAriaSelect": "Seleccionar día",
     "close": "Cerrar"
   },
   "cancel": {
@@ -101,7 +101,7 @@
     "search": "Buscar cita",
     "searching": "Buscando...",
     "back": "Regresar",
-    "confirmTitle": "Confirmar Cancelación",
+    "confirmTitle": "Confirmar cancelación",
     "confirmIntro": "Hemos encontrado la siguiente cita vinculada a tu número de teléfono.",
     "confirmIntroMultiple": "Hemos encontrado citas futuras vinculadas a tu número. Selecciona la o las citas que deseas cancelar.",
     "helloName": "Hola {{name}}",
@@ -113,7 +113,7 @@
     "cancelling": "Cancelando...",
     "backLink": "Volver",
     "successTitle": "Tu cita ha sido cancelada con éxito",
-    "successBody": "Que pena que no puedas venir :(",
+    "successBody": "Qué pena que no puedas venir :(",
     "successInfo": "Gracias por avisar. Si lo necesitas, puedes volver a reservar en meses habilitados.",
     "backHome": "Volver al inicio",
     "name": "Nombre",
@@ -122,7 +122,7 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "Hola Pau ✨\nsoy {{name}} ✌️.\nYa te agendé para el día {{date}} a las {{time}} 🗓️.\nMuchas gracias y bonito día 😊.",
-    "pendingMessageTemplate": "Hola Pau ✨\nSoy {{name}} ✌️.\nMe interesa agendarte para el día {{date}} a las {{time}} 🗓️.\nAdjunto el comprobante de depósito para confirmar mi cita.\n¡Gracias!"
+    "messageTemplate": "Hola Pau ✨\nSoy *{{name}}* ✌️.\nYa te agendé para el día *{{date}} a las {{time}}* 🗓️.\nMuchas gracias y bonito día 😊.",
+    "pendingMessageTemplate": "Hola Pau ✨\nSoy *{{name}}* ✌️.\nMe interesa agendarte para el día *{{date}} a las {{time}}* 🗓️.\nAdjunto el comprobante de depósito para confirmar mi cita.\n¡Gracias!"
   }
 }

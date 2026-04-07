@@ -62,7 +62,7 @@
       "more": "más",
       "less": "menos",
       "similar": "similar",
-      "versusPreviousWeek": "Vs semana pasada",
+      "versusPreviousWeek": "vs. semana pasada",
       "dayAppointmentsTooltip": "{{count}} citas"
     },
     "busiestDay": {
@@ -74,13 +74,13 @@
     },
     "dailyOccupancy": {
       "title": "Ocupación del día",
-      "titleForMonday": "Ocupación para el Lunes",
+      "titleForMonday": "Ocupación para el lunes",
       "scheduledToday_one": "{{count}} cita agendada para el día de hoy",
       "scheduledToday_other": "{{count}} citas agendadas para el día de hoy"
     },
     "todayAgenda": {
-      "title": "Agenda de Hoy",
-      "titleForMonday": "Agenda para el Lunes",
+      "title": "Agenda de hoy",
+      "titleForMonday": "Agenda para el lunes",
       "empty": "No hay citas activas agendadas para hoy.",
       "monthLinkAriaLabel": "Ir al detalle del mes actual",
       "status": {
@@ -321,7 +321,7 @@
       }
     },
     "list": {
-      "title": "Listado de Meses",
+      "title": "Listado de meses",
       "total_one": "{{count}} Reg.",
       "total_other": "{{count}} Reg.",
       "empty": "No hay meses para los filtros seleccionados."
@@ -588,7 +588,7 @@
       "success": {
         "title": "¡Cita Confirmada!",
         "description": "La cita ha sido agendada con éxito",
-        "sendWhatsapp": "Envíar confirmación de cita por whatsapp",
+        "sendWhatsapp": "Enviar confirmación de cita por WhatsApp",
         "whatsappMessage": "Hola *{{name}}* 👋🏼.\nYa quedó agendada tu cita para el día *{{date}}, a las {{time}}* 🗓️.\n¡Nos vemos pronto ✨!",
         "back": "Volver",
         "labels": {

@@ -1,30 +1,30 @@
 {
   "api": {
-    "SLOT_NOT_AVAILABLE": "Ese horario ya no esta disponible. Elige otro.",
-    "SLOT_LOCKED": "Ese horario ya no esta disponible. Elige otro.",
-    "PHONE_ALREADY_BOOKED": "Debe existir al menos 15 dias naturales entre tus citas activas del mismo mes.",
+    "SLOT_NOT_AVAILABLE": "Ese horario ya no está disponible. Elige otro.",
+    "SLOT_LOCKED": "Ese horario ya no está disponible. Elige otro.",
+    "PHONE_ALREADY_BOOKED": "Debe existir al menos 15 días naturales entre tus citas activas del mismo mes.",
     "MONTH_NOT_ALLOWED": "Solo se puede agendar en meses habilitados.",
     "LOCK_TIMEOUT": "Hubo un conflicto temporal al reservar. Intenta de nuevo.",
-    "LOCK_EXPIRED_OR_INVALID": "El bloqueo temporal expiro. Selecciona de nuevo tu horario.",
-    "PAST_TIME_SLOT": "Ese horario ya paso. Elige uno disponible.",
+    "LOCK_EXPIRED_OR_INVALID": "El bloqueo temporal expiró. Selecciona de nuevo tu horario.",
+    "PAST_TIME_SLOT": "Ese horario ya pasó. Elige uno disponible.",
     "NAME_REQUIRED_FOR_NEW_CLIENT": "Ingresa tu nombre para completar la reserva.",
-    "CLIENT_NAME_MISMATCH": "Este telefono ya esta registrado con otro nombre.",
+    "CLIENT_NAME_MISMATCH": "Este teléfono ya está registrado con otro nombre.",
     "APPOINTMENT_NOT_FOUND": "No encontramos una cita confirmada futura en meses habilitados.",
     "APPOINTMENT_IS_COMING_SOON": "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.",
     "VALIDATION_ERROR": "Revisa los datos ingresados e intenta nuevamente.",
     "UNKNOWN_ERROR": "No se pudo completar la operación. Intenta de nuevo."
   },
   "validation": {
-    "DATE_REQUIRED": "Selecciona un dia disponible.",
+    "DATE_REQUIRED": "Selecciona un día disponible.",
     "TIME_SLOT_REQUIRED": "Selecciona un horario antes de continuar.",
-    "PHONE_INVALID": "Ingresa un telefono de 10 digitos.",
+    "PHONE_INVALID": "Ingresa un teléfono de 10 dígitos.",
     "NAME_REQUIRED": "Ingresa tu nombre completo.",
     "FORM_INCOMPLETE": "Completa la fecha y el horario antes de continuar.",
-    "RESCHEDULE_DECISION_REQUIRED": "Selecciona una de las opciones disponibles para continuar"
+    "RESCHEDULE_DECISION_REQUIRED": "Selecciona una de las opciones disponibles para continuar."
   },
   "cancel": {
     "LOOKUP_FAILED": "No se pudo buscar tu cita. Intenta de nuevo.",
     "CANCEL_FAILED": "No se pudo cancelar la cita. Intenta de nuevo.",
-    "NOT_CANCELLABLE": "La cita ya no esta disponible para cancelar."
+    "NOT_CANCELLABLE": "La cita ya no está disponible para cancelar."
   }
 }
