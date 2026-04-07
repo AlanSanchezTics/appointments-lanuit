@@ -26,30 +26,47 @@ describe("booking wizard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(screen.getByText("Selecciona un día disponible.")).toBeInTheDocument();
-    expect(screen.getByText("Selecciona un horario antes de continuar.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Agendar cita" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Selecciona un día disponible."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Selecciona un horario antes de continuar."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Agendar cita" }),
+    ).toBeInTheDocument();
   });
 
   it("shows local validation errors for invalid phone", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "An", phone: "123" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "An",
+          phone: "123",
+        }}
         month="2026-03"
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(screen.getByText("Ingresa un teléfono de 10 dígitos.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ingresa un teléfono de 10 dígitos."),
+    ).toBeInTheDocument();
   });
 
   it("reveals name field when check+lock identifies a new client", async () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-123",
@@ -68,20 +85,35 @@ describe("booking wizard", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Siguiente" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Regresar" })).toHaveAttribute("href", "/citas/2026-03");
+    expect(
+      screen.getByRole("button", { name: "Siguiente" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Regresar" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("tracks transition direction across wizard steps", async () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-123",
@@ -93,22 +125,36 @@ describe("booking wizard", () => {
     );
 
     const stepContainer = screen.getByTestId("booking-step-container");
-    expect(stepContainer).toHaveAttribute("data-transition-direction", "forward");
+    expect(stepContainer).toHaveAttribute(
+      "data-transition-direction",
+      "forward",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Confirmar detalles");
-    expect(stepContainer).toHaveAttribute("data-transition-direction", "forward");
+    expect(stepContainer).toHaveAttribute(
+      "data-transition-direction",
+      "forward",
+    );
 
     fireEvent.click(screen.getByRole("link", { name: /Editar información/i }));
     await screen.findByRole("heading", { name: "Agendar cita" });
-    expect(stepContainer).toHaveAttribute("data-transition-direction", "backward");
+    expect(stepContainer).toHaveAttribute(
+      "data-transition-direction",
+      "backward",
+    );
   });
 
   it("shows reschedule selection when phone already has active appointments in month", async () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-123",
@@ -132,7 +178,9 @@ describe("booking wizard", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    expect(await screen.findByText("Ya tienes citas activas en este mes")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Ya tienes citas activas en este mes"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Detalles de tu nueva cita")).toBeInTheDocument();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByText("551 234 5678")).toBeInTheDocument();
@@ -142,7 +190,9 @@ describe("booking wizard", () => {
     expect(screen.queryByLabelText("Teléfono")).not.toBeInTheDocument();
     expect(screen.getByText("10:00 AM")).toBeInTheDocument();
     expect(screen.getByText("02:00 PM")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Agendar como nueva cita" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Agendar como nueva cita" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /10:00 AM/i }));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
@@ -154,7 +204,12 @@ describe("booking wizard", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-20", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-20",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-123",
@@ -174,9 +229,13 @@ describe("booking wizard", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    expect(await screen.findByText("Ya tienes citas activas en este mes")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Ya tienes citas activas en este mes"),
+    ).toBeInTheDocument();
     expect(screen.getByText("O")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Agendar como nueva cita" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Agendar como nueva cita" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
   });
@@ -185,7 +244,12 @@ describe("booking wizard", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-20", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-20",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-123",
@@ -205,15 +269,17 @@ describe("booking wizard", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    expect(await screen.findByText("Ya tienes citas activas en este mes")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Ya tienes citas activas en este mes"),
+    ).toBeInTheDocument();
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Siguiente/i }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: /Siguiente/i })).toBeEnabled();
     });
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     expect(
-      screen.getByText("Selecciona una de las opciones disponibles para continuar."),
+      screen.getByText(
+        "Selecciona una de las opciones disponibles para continuar.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -221,7 +287,12 @@ describe("booking wizard", () => {
     render(
       <BookingWizard
         days={days}
-        initialDraft={{ date: "2026-03-04", timeSlot: "09:00", name: "Ana Garcia", phone: "5512345678" }}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
         month="2026-03"
         checkClientAndAcquireLock={async () => ({
           lockToken: "lock-456",
@@ -251,7 +322,9 @@ describe("booking wizard", () => {
         name: /Ya casi estamos listas; solo nos queda un paso por realizar\./i,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enviar comprobante" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Enviar comprobante" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument();
   });
 });

@@ -77,7 +77,9 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Confirmar detalles");
-    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Confirmar cita" }),
+    );
 
     expect(
       await screen.findByText("Ese horario ya no está disponible. Elige otro."),
@@ -113,7 +115,9 @@ describe("booking confirm step", () => {
       expect(releaseLock).toHaveBeenCalledWith("lock-1");
     });
     await waitFor(() => {
-      expect(screen.getByText(/El bloqueo temporal expiró/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/El bloqueo temporal expiró/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -161,13 +165,13 @@ describe("booking confirm step", () => {
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Ya tienes citas activas en este mes");
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Siguiente/i }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: /Siguiente/i })).toBeEnabled();
     });
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Confirmar detalles");
-    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Confirmar cita" }),
+    );
 
     await waitFor(() => {
       expect(submitBooking).toHaveBeenCalledWith(
@@ -278,7 +282,7 @@ describe("booking confirm step", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Hola Mariana, Bienvenida a La Nuit Nail Studio! ✨",
+        name: "Hola Mariana! Bienvenida ✨",
       }),
     ).toBeInTheDocument();
   });
