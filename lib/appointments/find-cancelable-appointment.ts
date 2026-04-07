@@ -3,7 +3,7 @@ import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
 import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
 import {
-  listConfirmedFutureAppointmentsByPhoneInMonth,
+  listCancelableFutureAppointmentsByPhoneInMonth,
   type PersistedAppointment,
 } from "@/lib/db/appointments";
 import { cancelLookupSchema } from "@/lib/validation/cancel";
@@ -17,7 +17,7 @@ export async function findCancelableAppointment(rawInput: unknown, now = new Dat
   for (const month of activeMonths) {
     const { monthStart, monthEndExclusive } = getMonthRange(month);
 
-    const monthAppointments = await listConfirmedFutureAppointmentsByPhoneInMonth(
+    const monthAppointments = await listCancelableFutureAppointmentsByPhoneInMonth(
       input.phone,
       currentDate,
       monthStart,
@@ -45,7 +45,7 @@ export async function findCancelableAppointment(rawInput: unknown, now = new Dat
       phone: appointment.phone,
       date: appointment.date,
       timeSlot: appointment.timeSlot,
-      status: "CONFIRMED" as const,
+      status: appointment.status,
     })),
   };
 }

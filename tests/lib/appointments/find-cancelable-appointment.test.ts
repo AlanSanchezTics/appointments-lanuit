@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const listConfirmedFutureAppointmentsByPhoneInMonthMock = vi.fn();
+const listCancelableFutureAppointmentsByPhoneInMonthMock = vi.fn();
 const listBookableMonthsMock = vi.fn();
 
 vi.mock("@/lib/db/appointments", () => ({
-  listConfirmedFutureAppointmentsByPhoneInMonth:
-    listConfirmedFutureAppointmentsByPhoneInMonthMock,
+  listCancelableFutureAppointmentsByPhoneInMonth:
+    listCancelableFutureAppointmentsByPhoneInMonthMock,
 }));
 
 vi.mock("@/lib/active-months/service", () => ({
@@ -19,7 +19,7 @@ describe("findCancelableAppointment", () => {
 
   it("returns the next confirmed appointment in active month", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
+    listCancelableFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
       {
         id: 12,
         name: "Ana Garcia",
@@ -48,7 +48,7 @@ describe("findCancelableAppointment", () => {
       new Date("2026-03-12T12:00:00.000Z"),
     );
 
-    expect(listConfirmedFutureAppointmentsByPhoneInMonthMock).toHaveBeenCalledWith(
+    expect(listCancelableFutureAppointmentsByPhoneInMonthMock).toHaveBeenCalledWith(
       "5512345678",
       "2026-03-12",
       "2026-03-01",
@@ -78,7 +78,7 @@ describe("findCancelableAppointment", () => {
 
   it("throws APPOINTMENT_NOT_FOUND when there is no confirmed appointment", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([]);
+    listCancelableFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([]);
 
     const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
 
@@ -94,7 +94,7 @@ describe("findCancelableAppointment", () => {
 
   it("throws APPOINTMENT_IS_COMING_SOON when appointment is inside 24-hour window", async () => {
     listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
-    listConfirmedFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
+    listCancelableFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
       {
         id: 12,
         name: "Ana Garcia",
@@ -116,5 +116,41 @@ describe("findCancelableAppointment", () => {
         new Date("2026-03-12T12:00:00.000Z"),
       ),
     ).rejects.toThrow("APPOINTMENT_IS_COMING_SOON");
+  });
+
+  it("returns sync-failed appointments as cancelable", async () => {
+    listBookableMonthsMock.mockResolvedValueOnce(["2026-03"]);
+    listCancelableFutureAppointmentsByPhoneInMonthMock.mockResolvedValueOnce([
+      {
+        id: 21,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        date: "2026-03-18",
+        timeSlot: "13:00",
+        status: "SYNC_FAILED",
+        googleEventId: null,
+      },
+    ]);
+
+    const { findCancelableAppointment } = await import("@/lib/appointments/find-cancelable-appointment");
+    const result = await findCancelableAppointment(
+      {
+        phone: "5512345678",
+      },
+      new Date("2026-03-12T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      appointments: [
+        {
+          appointmentId: 21,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-18",
+          timeSlot: "13:00",
+          status: "SYNC_FAILED",
+        },
+      ],
+    });
   });
 });

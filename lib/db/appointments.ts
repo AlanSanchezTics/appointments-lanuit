@@ -158,7 +158,7 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
   return record ? mapAppointment(record) : null;
 }
 
-export async function listConfirmedFutureAppointmentsByPhoneInMonth(
+export async function listCancelableFutureAppointmentsByPhoneInMonth(
   phone: string,
   dateFloor: string,
   monthStart: string,
@@ -169,7 +169,9 @@ export async function listConfirmedFutureAppointmentsByPhoneInMonth(
       client: {
         phone,
       },
-      status: "CONFIRMED",
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
       date: {
         gt: new Date(`${dateFloor}T00:00:00.000Z`),
         gte: new Date(`${monthStart}T00:00:00.000Z`),
@@ -289,7 +291,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
   } satisfies PersistedAppointment;
 }
 
-export async function findConfirmedFutureAppointmentsByIdsForUpdate(
+export async function findCancelableFutureAppointmentsByIdsForUpdate(
   tx: Prisma.TransactionClient,
   appointmentIds: number[],
   phone: string,
@@ -320,7 +322,7 @@ export async function findConfirmedFutureAppointmentsByIdsForUpdate(
       ON c.id = a.client_id
     WHERE a.id IN (${ids})
       AND c.phone = ${phone}
-      AND a.status = 'CONFIRMED'
+      AND a.status IN ('CONFIRMED', 'SYNC_FAILED')
       AND a.date > ${dateFloor}
       AND a.date >= ${monthStart}
       AND a.date < ${monthEndExclusive}

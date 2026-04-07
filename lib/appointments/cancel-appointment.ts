@@ -3,7 +3,7 @@ import { listBookableMonths } from "@/lib/active-months/service";
 import { APPOINTMENT_IS_COMING_SOON } from "@/lib/cancel/error-codes";
 import { isWebCancellationWindowAllowed } from "@/lib/cancel/rules";
 import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
-import { findConfirmedFutureAppointmentsByIdsForUpdate } from "@/lib/db/appointments";
+import { findCancelableFutureAppointmentsByIdsForUpdate } from "@/lib/db/appointments";
 import type { PersistedAppointment } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
 import { cancelSchema } from "@/lib/validation/cancel";
@@ -19,7 +19,7 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
 
     for (const month of activeMonths) {
       const { monthStart, monthEndExclusive } = getMonthRange(month);
-      const monthAppointments = await findConfirmedFutureAppointmentsByIdsForUpdate(
+      const monthAppointments = await findCancelableFutureAppointmentsByIdsForUpdate(
         tx,
         selectedIds,
         input.phone,

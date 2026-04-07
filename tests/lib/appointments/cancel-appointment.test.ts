@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const findConfirmedFutureAppointmentsByIdsForUpdateMock = vi.fn();
+const findCancelableFutureAppointmentsByIdsForUpdateMock = vi.fn();
 const deleteCalendarEventMock = vi.fn(async () => undefined);
 const listBookableMonthsMock = vi.fn();
 const transactionMock = vi.fn();
@@ -8,8 +8,8 @@ const appointmentUpdateMock = vi.fn(async () => undefined);
 const txAppointmentUpdateManyMock = vi.fn(async () => undefined);
 
 vi.mock("@/lib/db/appointments", () => ({
-  findConfirmedFutureAppointmentsByIdsForUpdate:
-    findConfirmedFutureAppointmentsByIdsForUpdateMock,
+  findCancelableFutureAppointmentsByIdsForUpdate:
+    findCancelableFutureAppointmentsByIdsForUpdateMock,
 }));
 
 vi.mock("@/lib/calendar/google", () => ({
@@ -44,7 +44,7 @@ describe("cancelAppointment", () => {
   });
 
   it("cancels selected confirmed appointments and clears google event ids", async () => {
-    findConfirmedFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
+    findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
         name: "Ana Garcia",
@@ -74,7 +74,7 @@ describe("cancelAppointment", () => {
       new Date("2026-03-12T12:00:00.000Z"),
     );
 
-    expect(findConfirmedFutureAppointmentsByIdsForUpdateMock).toHaveBeenCalledWith(
+    expect(findCancelableFutureAppointmentsByIdsForUpdateMock).toHaveBeenCalledWith(
       expect.any(Object),
       [44, 45],
       "5512345678",
@@ -116,7 +116,7 @@ describe("cancelAppointment", () => {
   });
 
   it("throws APPOINTMENT_NOT_FOUND when any selected appointment is not cancelable", async () => {
-    findConfirmedFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
+    findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
         name: "Ana Garcia",
@@ -142,7 +142,7 @@ describe("cancelAppointment", () => {
   });
 
   it("throws APPOINTMENT_IS_COMING_SOON when any selected appointment is inside 24-hour window", async () => {
-    findConfirmedFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
+    findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
         name: "Ana Garcia",
@@ -167,5 +167,37 @@ describe("cancelAppointment", () => {
     ).rejects.toThrow("APPOINTMENT_IS_COMING_SOON");
 
     expect(txAppointmentUpdateManyMock).not.toHaveBeenCalled();
+  });
+
+  it("cancels sync-failed appointments too", async () => {
+    findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
+      {
+        id: 46,
+        name: "Ana Garcia",
+        phone: "5512345678",
+        date: "2026-03-20",
+        timeSlot: "13:00",
+        status: "SYNC_FAILED",
+        googleEventId: null,
+      },
+    ]);
+
+    const { cancelAppointment } = await import("@/lib/appointments/cancel-appointment");
+    const result = await cancelAppointment(
+      {
+        phone: "5512345678",
+        appointmentIds: [46],
+      },
+      new Date("2026-03-12T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      cancelledAppointments: [
+        {
+          appointmentId: 46,
+          status: "CANCELLED",
+        },
+      ],
+    });
   });
 });

@@ -14,7 +14,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 ## Preconditions
 - El usuario debe proporcionar teléfono válido (normalizado a 10 dígitos).
 - Debe existir una cita cancelable que cumpla simultáneamente:
-- Estado `CONFIRMED`.
+- Estado `CONFIRMED` o `SYNC_FAILED`.
 - Fecha futura respecto a `hoy` en `America/Mexico_City`.
 - Mes activo (`ACTIVE`) dentro de `active_months`.
 - Distancia mínima de 24 horas para permitir cancelación por este medio web.
@@ -39,10 +39,10 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Validación inicial UI: formato de teléfono de 10 dígitos.
 - Backend:
 - Normaliza y valida teléfono.
-- Busca cita `CONFIRMED` futura dentro de meses activos.
+- Busca cita `CONFIRMED` o `SYNC_FAILED` futura dentro de meses activos.
 - Evalúa restricción de 24 horas mínimas.
 - Resultado:
-- Si cumple: retorna `appointments[]` con `appointmentId`, nombre, teléfono, fecha, hora y estatus `CONFIRMED`.
+- Si cumple: retorna `appointments[]` con `appointmentId`, nombre, teléfono, fecha, hora y estatus (`CONFIRMED` o `SYNC_FAILED`).
 - Si no cumple: retorna error estable y UI no avanza al paso de confirmación.
 
 3. Revisión y confirmación
@@ -71,7 +71,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Entrada aceptada con separadores, validación real sobre 10 dígitos.
 - Si no cumple, no debe avanzar.
 - Elegibilidad de cita en búsqueda:
-- Debe existir cita `CONFIRMED`.
+- Debe existir cita `CONFIRMED` o `SYNC_FAILED`.
 - Debe ser futura (`date > hoy` en zona de negocio).
 - Debe pertenecer a un mes activo.
 - Debe cumplir ventana mínima de 24 horas para cancelación web.
@@ -82,8 +82,8 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Frontend traduce `errorCode` según idioma activo.
 
 ## State Changes
-- Estado inicial cancelable: `CONFIRMED`.
-- Transición principal: `CONFIRMED -> CANCELLED` por cada cita seleccionada.
+- Estado inicial cancelable: `CONFIRMED` o `SYNC_FAILED`.
+- Transición principal: (`CONFIRMED` | `SYNC_FAILED`) -> `CANCELLED` por cada cita seleccionada.
 - Post-condición:
 - Citas en `CANCELLED` no deben bloquear disponibilidad.
 - El historial de la cita cancelada se conserva.
@@ -106,7 +106,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - La operación sobre Google Calendar ocurre después del cambio de estado persistido y no revierte la cancelación local.
 
 ## Edge Cases
-- Usuario busca con teléfono válido pero sin cita `CONFIRMED` futura elegible.
+- Usuario busca con teléfono válido pero sin cita (`CONFIRMED` o `SYNC_FAILED`) futura elegible.
 - Usuario intenta cancelar cita en umbral cercano de tiempo y queda fuera de la regla de 24h.
 - Cita existe pero mes quedó inactivo: flujo la trata como no elegible.
 - Cita ya fue cancelada por otro intento antes de confirmar acción en UI.

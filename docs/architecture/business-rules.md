@@ -123,7 +123,7 @@ Business behavior is defined by:
 ## Cancellation Rules
 
 - A cancellation request is allowed only when the appointment is:
-  - In `CONFIRMED` state.
+  - In `CONFIRMED` or `SYNC_FAILED` state.
   - In the future (not past date).
   - Inside an active month.
   - At least 24 hours away from the current local time.
@@ -135,10 +135,16 @@ Business behavior is defined by:
 - Cancellation effects:
   - Each selected appointment state changes to `CANCELLED`.
   - Released slot becomes available again under normal availability rules.
+  - For `SYNC_FAILED`, cancellation remains valid even if no external event exists (`googleEventId = null`).
 
 - Not allowed:
   - Cancelling past appointments.
   - Cancelling appointments with less than 24 hours remaining via the web cancellation flow.
+
+- SYNC_FAILED recovery:
+  - A scheduled maintenance job may retry external sync for appointments in `SYNC_FAILED`.
+  - On successful retry, appointment transitions to `CONFIRMED` and stores `googleEventId`.
+  - On retry failure, appointment remains `SYNC_FAILED`.
 
 ## Admin Access Rules
 

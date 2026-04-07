@@ -107,4 +107,43 @@ describe("POST /api/cancelar/buscar", () => {
       error: "APPOINTMENT_IS_COMING_SOON",
     });
   });
+
+  it("returns 200 when lookup includes sync-failed appointments", async () => {
+    findCancelableAppointmentMock.mockResolvedValueOnce({
+      appointments: [
+        {
+          appointmentId: 12,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-20",
+          timeSlot: "13:00",
+          status: "SYNC_FAILED",
+        },
+      ],
+    });
+
+    const { POST } = await import("@/app/api/cancelar/buscar/route");
+    const response = await POST(
+      new Request("http://localhost/api/cancelar/buscar", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: "5512345678",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      appointments: [
+        {
+          appointmentId: 12,
+          name: "Ana Garcia",
+          phone: "5512345678",
+          date: "2026-03-20",
+          timeSlot: "13:00",
+          status: "SYNC_FAILED",
+        },
+      ],
+    });
+  });
 });

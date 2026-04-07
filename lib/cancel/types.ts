@@ -6,7 +6,7 @@ export type CancelableAppointment = {
   phone: string;
   date: string;
   timeSlot: string;
-  status: "CONFIRMED";
+  status: "CONFIRMED" | "SYNC_FAILED";
 };
 
 export type CancellationResult = {

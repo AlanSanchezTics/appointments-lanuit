@@ -120,7 +120,7 @@ integrationSuite("cancelAppointment integration", () => {
     expect(refreshed.googleEventId).toBe("google-event-2");
   });
 
-  it("rejects cancellation when the appointment is not CONFIRMED", async () => {
+  it("allows cancellation when the appointment is SYNC_FAILED", async () => {
     const client = await prisma.client.create({
       data: {
         name: "Ana Lopez",
@@ -137,14 +137,21 @@ integrationSuite("cancelAppointment integration", () => {
       },
     });
 
-    await expect(
-      cancelAppointment(
+    const result = await cancelAppointment(
+      {
+        phone: "5512345678",
+        appointmentIds: [appointment.id],
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      cancelledAppointments: [
         {
-          phone: "5512345678",
-          appointmentIds: [appointment.id],
+          appointmentId: appointment.id,
+          status: "CANCELLED",
         },
-        new Date("2026-03-03T12:00:00.000Z"),
-      ),
-    ).rejects.toThrow("APPOINTMENT_NOT_FOUND");
+      ],
+    });
   });
 });

@@ -131,6 +131,8 @@ Regla direccional formal:
 
 `PENDING` representa una cita pre-registrada que requiere revisión manual; si no se confirma ni rechaza en 36 horas, el sistema la marca como `REJECTED` automáticamente.
 
+`SYNC_FAILED` representa una cita activa sin espejo en Calendar; un job programado puede reintentar la sincronización y, si crea evento correctamente, transicionarla a `CONFIRMED`.
+
 ---
 
 ## 7. Flujo de Reserva
@@ -252,7 +254,7 @@ Mensaje base para cita `PENDING`:
 
 1. Usuario ingresa teléfono.
 2. Sistema busca citas cancelables con estas condiciones simultáneas:
-   - Estatus `CONFIRMED`.
+   - Estatus `CONFIRMED` o `SYNC_FAILED`.
    - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
    - Dentro de un mes `ACTIVE` en `active_months`.
    - La cita debe estar al menos a 24 horas de distancia; si faltan menos de 24 horas, no se permite cancelación por este medio.
@@ -275,6 +277,8 @@ Notas de contrato:
 - El backend no retorna mensajes localizados de UX final.
 
 No se pueden cancelar citas pasadas en el flujo público (`/citas/cancelar`).
+
+Las citas `SYNC_FAILED` sí son cancelables en flujo público si cumplen las mismas reglas temporales (mes activo + cita futura + ventana >= 24 horas).
 
 ---
 
