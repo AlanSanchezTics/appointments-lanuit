@@ -120,10 +120,10 @@ export function BookingConfirmStep({
             t("booking.wait")
           ) : (
             <>
-              <span className="mr-[8px]">
+              <CheckCircleIcon />
+              <span className="ml-[8px]">
                 {t("booking.confirmAppointment")}
               </span>
-              <CheckCircleIcon />
             </>
           )}
         </Button>

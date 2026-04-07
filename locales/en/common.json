@@ -71,7 +71,7 @@
     "rescheduleSelectionMultiple": "Select which appointment you want to reschedule to your chosen slot.",
     "orSeparator": "OR",
     "bookAsNewAppointment": "Book as new appointment",
-    "whatsappReminder": "You'll receive a WhatsApp reminder one day before your appointment.",
+    "whatsappReminder": "You'll receive two reminders via WhatsApp: one a week before and another one a day before your appointment.",
     "successTitle": "Your appointment was successfully booked",
     "confirmSuccessTitle": "All set, {{name}}!",
     "confirmSuccessBody": "Your appointment has been successfully scheduled.",
@@ -114,7 +114,7 @@
     "backLink": "Back",
     "successTitle": "Your appointment has been canceled",
     "successBody": "Sorry you can't make it :(",
-    "successInfo": "Thanks for letting us know. You can book again in enabled months whenever needed.",
+    "successInfo": "Thank you for letting us know in advance. If you need to, you can book again in the available months.",
     "backHome": "Back to home",
     "name": "Name",
     "date": "Date",
@@ -122,7 +122,7 @@
     "phone": "Phone"
   },
   "whatsapp": {
-    "messageTemplate": "Hi Pau ✨\nthis is {{name}} ✌️.\nI already booked for {{date}} at {{time}} 🗓️.\nThank you very much and have a great day 😊.",
-    "pendingMessageTemplate": "Hi Pau ✨\nI'm {{name}} ✌️.\nI'm interested in booking you for {{date}} at {{time}} 🗓️.\nI'm attaching the deposit receipt to confirm my appointment.\nThanks!"
+    "messageTemplate": "Hi Pau!, this is {{name}} ✨\nI already booked my appointment for {{date}} at {{time}} 🗓️.\nSee you soon!",
+    "pendingMessageTemplate": "Hi Pau!, this is {{name}} ✨.\n\n🧾 Attached is the receipt for my appointment deposit ({{date}} at {{time}}).\n\nLooking forward to your confirmation,\nThank you!"
   }
 }
