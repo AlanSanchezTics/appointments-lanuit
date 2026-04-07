@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
@@ -88,6 +88,7 @@ export function BlockSpacesModal({
   const { t, i18n } = useTranslation("admin");
   const locale = i18n.resolvedLanguage === "en" ? "en-US" : "es-MX";
   const effectiveSlotViewMode = allowBlockView ? slotViewMode : "hour";
+  const dayButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const dayFormatter = useMemo(
     () =>
@@ -119,6 +120,26 @@ export function BlockSpacesModal({
       ),
     [selectedDaySlots],
   );
+
+  useEffect(() => {
+    if (!isOpen || !selectedDate || isLoadingDays) {
+      return;
+    }
+
+    const selectedDayButton = dayButtonRefs.current[selectedDate];
+
+    if (!selectedDayButton || typeof selectedDayButton.scrollIntoView !== "function") {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      selectedDayButton.scrollIntoView({
+        block: "nearest",
+        inline: "center",
+        behavior: "smooth",
+      });
+    });
+  }, [isLoadingDays, isOpen, selectedDate]);
 
   return (
     <BottomSheetModal
@@ -179,6 +200,9 @@ export function BlockSpacesModal({
                   <button
                     type="button"
                     key={day.date}
+                    ref={(element) => {
+                      dayButtonRefs.current[day.date] = element;
+                    }}
                     onClick={() => onSelectDate(day.date)}
                     disabled={isSubmitting}
                     className={`flex h-[88px] min-w-[72px] flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${

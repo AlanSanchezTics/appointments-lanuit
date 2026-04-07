@@ -107,6 +107,7 @@ export function BookAppointmentModal({
   const locale = language === "en" ? "en-US" : "es-MX";
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const clientDropdownRef = useRef<HTMLDivElement | null>(null);
+  const dayButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const successDateLabel = useMemo(() => {
     if (!successResult) {
@@ -149,6 +150,29 @@ export function BookAppointmentModal({
       document.removeEventListener("mousedown", handleDocumentClick);
     };
   }, [isClientDropdownOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedDate || isLoadingDays) {
+      return;
+    }
+
+    const selectedDayButton = dayButtonRefs.current[selectedDate];
+
+    if (
+      !selectedDayButton ||
+      typeof selectedDayButton.scrollIntoView !== "function"
+    ) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      selectedDayButton.scrollIntoView({
+        block: "nearest",
+        inline: "center",
+        behavior: "smooth",
+      });
+    });
+  }, [isLoadingDays, isOpen, selectedDate]);
 
   const whatsappUrl = useMemo(() => {
     if (!successResult) {
@@ -260,7 +284,6 @@ export function BookAppointmentModal({
                   </p>
                 </div>
               </div>
-
             </div>
           </section>
           <div className="space-y-3">
@@ -303,6 +326,9 @@ export function BookAppointmentModal({
                     <button
                       type="button"
                       key={day.date}
+                      ref={(element) => {
+                        dayButtonRefs.current[day.date] = element;
+                      }}
                       onClick={() => onSelectDate(day.date)}
                       disabled={isSubmitting}
                       className={`flex h-[88px] min-w-[72px] flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
@@ -503,7 +529,8 @@ export function BookAppointmentModal({
                                 <p
                                   className={`text-sm ${selectedClient?.clientId === client.clientId ? "text-white/90" : "text-[var(--admin-text-secondary)]"}`}
                                 >
-                                  #{client.clientNumber} · {formatPhoneForDisplay(client.phone)}
+                                  #{client.clientNumber} ·{" "}
+                                  {formatPhoneForDisplay(client.phone)}
                                 </p>
                               </button>
                             ))}
@@ -535,7 +562,9 @@ export function BookAppointmentModal({
                     "monthsDetail.bookModal.placeholders.newClientName",
                   )}
                   disabled={isSubmitting}
-                  icon={<AdminIcon icon={adminIcons.username} tone="secondary" />}
+                  icon={
+                    <AdminIcon icon={adminIcons.username} tone="secondary" />
+                  }
                   error={
                     fieldErrors.name
                       ? t("monthsDetail.bookModal.errors.nameRequired")
@@ -548,7 +577,9 @@ export function BookAppointmentModal({
                   onChange={(event) =>
                     onNewClientPhoneChange(event.target.value)
                   }
-                  label={t("monthsDetail.bookModal.placeholders.newClientPhone")}
+                  label={t(
+                    "monthsDetail.bookModal.placeholders.newClientPhone",
+                  )}
                   placeholder={t(
                     "monthsDetail.bookModal.placeholders.newClientPhone",
                   )}
@@ -564,9 +595,13 @@ export function BookAppointmentModal({
                   id="admin-book-new-client-number"
                   value={newClientNumber}
                   onChange={(event) =>
-                    onNewClientNumberChange(event.target.value.replace(/\D/g, ""))
+                    onNewClientNumberChange(
+                      event.target.value.replace(/\D/g, ""),
+                    )
                   }
-                  label={t("monthsDetail.bookModal.placeholders.newClientNumber")}
+                  label={t(
+                    "monthsDetail.bookModal.placeholders.newClientNumber",
+                  )}
                   placeholder={t(
                     "monthsDetail.bookModal.placeholders.newClientNumber",
                   )}
