@@ -268,6 +268,7 @@ function renderStep({
     return (
       <BookingConfirmStep
         draft={draft}
+        isNewClient={clientState === "new"}
         errorMessage={translatedSubmitError}
         isPending={isPending}
         remainingSeconds={remainingSeconds}

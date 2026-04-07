@@ -17,6 +17,7 @@ import Link from "next/link";
 
 type BookingConfirmStepProps = {
   draft: BookingDraft;
+  isNewClient: boolean;
   errorMessage: string | null;
   isPending: boolean;
   remainingSeconds: number;
@@ -32,6 +33,7 @@ type BookingPendingConfirmationStepProps = {
 
 export function BookingConfirmStep({
   draft,
+  isNewClient,
   errorMessage,
   isPending,
   remainingSeconds,
@@ -48,7 +50,9 @@ export function BookingConfirmStep({
           {t("booking.step2Of2")}
         </p>
         <h2 className="font-[family-name:var(--font-display)] text-[2rem] font-bold leading-[1.05] tracking-[-0.03em]">
-          {t("booking.welcomeBack", { name: draft.name.split(" ")[0] })}
+          {t(isNewClient ? "booking.welcomeNew" : "booking.welcomeBack", {
+            name: draft.name.split(" ")[0],
+          })}
         </h2>
       </header>
 

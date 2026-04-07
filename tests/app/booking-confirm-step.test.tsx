@@ -37,7 +37,7 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(await screen.findByText("Confirmar Detalles")).toBeInTheDocument();
+    expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByText("551 234 5678")).toBeInTheDocument();
     expect(screen.getByText("09:00 AM")).toBeInTheDocument();
@@ -76,11 +76,11 @@ describe("booking confirm step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
-      await screen.findByText("Ese horario ya no esta disponible. Elige otro."),
+      await screen.findByText("Ese horario ya no está disponible. Elige otro."),
     ).toBeInTheDocument();
   });
 
@@ -113,7 +113,7 @@ describe("booking confirm step", () => {
       expect(releaseLock).toHaveBeenCalledWith("lock-1");
     });
     await waitFor(() => {
-      expect(screen.getByText(/El bloqueo temporal expiro/i)).toBeInTheDocument();
+      expect(screen.getByText(/El bloqueo temporal expiró/i)).toBeInTheDocument();
     });
   });
 
@@ -166,7 +166,7 @@ describe("booking confirm step", () => {
       ).toBeEnabled();
     });
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     await waitFor(() => {
@@ -230,7 +230,7 @@ describe("booking confirm step", () => {
       screen.getByRole("button", { name: "Agendar como nueva cita" }),
     );
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
 
     await waitFor(() => {
@@ -244,5 +244,42 @@ describe("booking confirm step", () => {
         null,
       );
     });
+  });
+
+  it("shows personalized welcome title for new clients in confirm step", async () => {
+    const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
+      lockToken: "lock-1",
+      expiresAt: "2099-03-13T12:10:00.000Z",
+      clientExists: false,
+    });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-17",
+          timeSlot: "09:00",
+          name: "Mariana Perez",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        checkClientAndAcquireLock={checkClientAndAcquireLock}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    const continueButton = await screen.findByRole("button", {
+      name: /Siguiente/i,
+    });
+    await waitFor(() => {
+      expect(continueButton).toBeEnabled();
+    });
+    fireEvent.click(continueButton);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Hola Mariana, Bienvenida a La Nuit Nail Studio! ✨",
+      }),
+    ).toBeInTheDocument();
   });
 });

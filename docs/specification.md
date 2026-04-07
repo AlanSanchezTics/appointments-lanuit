@@ -199,6 +199,9 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
   - Entrada global (`/`): branding + listado de meses disponibles (CTA por mes) + CTA secundaria `Cancelar cita`.
   - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
   - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
+    - Título dinámico:
+      - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.
+      - clienta existente: saludo de retorno actual (`welcomeBack`) definido por i18n.
   - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
     - Para clienta fiel: CTA explícito para abrir WhatsApp y enviar confirmación.
     - Para clienta no fiel: CTA principal `Enviar comprobante` y CTA secundario `Volver`.

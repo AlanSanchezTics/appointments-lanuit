@@ -97,6 +97,10 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 7. Confirmación de cita
 - Trigger: acción `Confirmar cita`.
+- UI:
+  - el encabezado del paso de confirmación es condicional por tipo de clienta,
+  - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`,
+  - clienta existente: mantiene saludo de retorno (`welcomeBack`).
 - Backend (transaccional):
   - limpia locks expirados,
   - valida lock vigente por `lock_token`, fecha, horario y teléfono,
