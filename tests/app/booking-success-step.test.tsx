@@ -47,7 +47,7 @@ describe("booking success step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
@@ -100,17 +100,17 @@ describe("booking success step", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: /Ya estamos casi listas/i,
+        name: /Ya casi estamos listas; solo nos queda un paso por realizar\./i,
       }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText(/Tu cita ya se encuentra pre-registrada\./i),
+      screen.getByText(/Tu cita ya se encuentra prerregistrada\./i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Enviar comprobante" }),
@@ -122,7 +122,7 @@ describe("booking success step", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
 
     expect(onWhatsAppRedirect).toHaveBeenCalledWith(
-      expect.stringContaining("Adjunto%20el%20comprobante%20de%20dep%C3%B3sito"),
+      expect.stringContaining("Adjunto%20el%20comprobante%20del%20dep%C3%B3sito"),
     );
   });
 });

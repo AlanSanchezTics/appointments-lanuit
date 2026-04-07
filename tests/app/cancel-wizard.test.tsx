@@ -16,7 +16,7 @@ describe("cancel wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
-    expect(screen.getByText("Ingresa un telefono de 10 digitos.")).toBeInTheDocument();
+    expect(screen.getByText("Ingresa un teléfono de 10 dígitos.")).toBeInTheDocument();
   });
 
   it("shows appointment details in step 2 and allows reset to step 1", async () => {
@@ -52,7 +52,7 @@ describe("cancel wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
-    expect(await screen.findByRole("heading", { name: "Confirmar Cancelación" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Confirmar cancelación" })).toBeInTheDocument();
     expect(screen.getByText("Hola Ana Garcia")).toBeInTheDocument();
     expect(
       screen.getByText("A continuación los detalles de tu(s) cita(s)"),
@@ -103,7 +103,7 @@ describe("cancel wizard", () => {
       target: { value: "5512345678" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
-    await screen.findByRole("heading", { name: "Confirmar Cancelación" });
+    await screen.findByRole("heading", { name: "Confirmar cancelación" });
     fireEvent.click(screen.getByRole("button", { name: /18 de marzo de 2026/i }));
 
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
@@ -139,7 +139,7 @@ describe("cancel wizard", () => {
       target: { value: "5512345678" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
-    await screen.findByRole("heading", { name: "Confirmar Cancelación" });
+    await screen.findByRole("heading", { name: "Confirmar cancelación" });
 
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
 

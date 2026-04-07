@@ -26,7 +26,7 @@ describe("booking wizard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(screen.getByText("Selecciona un dia disponible.")).toBeInTheDocument();
+    expect(screen.getByText("Selecciona un día disponible.")).toBeInTheDocument();
     expect(screen.getByText("Selecciona un horario antes de continuar.")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Agendar cita" })).toBeInTheDocument();
   });
@@ -42,7 +42,7 @@ describe("booking wizard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(screen.getByText("Ingresa un telefono de 10 digitos.")).toBeInTheDocument();
+    expect(screen.getByText("Ingresa un teléfono de 10 dígitos.")).toBeInTheDocument();
   });
 
   it("reveals name field when check+lock identifies a new client", async () => {
@@ -96,7 +96,7 @@ describe("booking wizard", () => {
     expect(stepContainer).toHaveAttribute("data-transition-direction", "forward");
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     expect(stepContainer).toHaveAttribute("data-transition-direction", "forward");
 
     fireEvent.click(screen.getByRole("link", { name: /Editar información/i }));
@@ -147,7 +147,7 @@ describe("booking wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /10:00 AM/i }));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
 
-    expect(await screen.findByText("Confirmar Detalles")).toBeInTheDocument();
+    expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
   });
 
   it("shows OR separator and allows booking as new appointment when rule allows it", async () => {
@@ -178,7 +178,7 @@ describe("booking wizard", () => {
     expect(screen.getByText("O")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Agendar como nueva cita" }));
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    expect(await screen.findByText("Confirmar Detalles")).toBeInTheDocument();
+    expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
   });
 
   it("shows decision-specific validation when no option is selected in decision view", async () => {
@@ -213,7 +213,7 @@ describe("booking wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     expect(
-      screen.getByText("Selecciona una de las opciones disponibles para continuar"),
+      screen.getByText("Selecciona una de las opciones disponibles para continuar."),
     ).toBeInTheDocument();
   });
 
@@ -243,12 +243,12 @@ describe("booking wizard", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar Detalles");
+    await screen.findByText("Confirmar detalles");
     fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: /Ya estamos casi listas/i,
+        name: /Ya casi estamos listas; solo nos queda un paso por realizar\./i,
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar comprobante" })).toBeInTheDocument();
