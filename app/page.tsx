@@ -27,7 +27,7 @@ export default async function HomePage() {
     : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-16">
+    <main className="mx-auto flex min-h-screen max-w-[412px] items-center py-16">
       <section className="w-full rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
         <Image
           src={Logo}

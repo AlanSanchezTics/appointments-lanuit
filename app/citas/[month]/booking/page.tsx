@@ -21,7 +21,7 @@ export default async function BookingWizardPage({
     const days = await getMonthAvailability(month);
 
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center">
+      <main className="mx-auto flex min-h-screen w-full max-w-[412px] items-center justify-center">
         <MonthView month={month} days={days} />
       </main>
     );
