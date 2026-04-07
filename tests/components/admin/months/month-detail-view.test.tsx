@@ -565,7 +565,7 @@ describe("MonthDetailView", () => {
     });
   });
 
-  it("shows only 'Bloquear día' when day is fully available", async () => {
+  it("shows daily action CTAs when selected day is eligible", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
 
@@ -659,13 +659,19 @@ describe("MonthDetailView", () => {
     const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
     fireEvent.click(dayButtons[1]);
 
-    expect(await screen.findByRole("button", { name: "Bloquear día" })).toBeInTheDocument();
+    const dayModal = await screen.findByRole("dialog", {
+      name: /Detalles del/i,
+    });
+
     expect(
-      screen.queryByRole("button", { name: "Bloquear resto de espacios" }),
-    ).not.toBeInTheDocument();
+      await within(dayModal).findByRole("button", { name: "Agendar nueva cita" }),
+    ).toBeInTheDocument();
+    expect(
+      await within(dayModal).findByRole("button", { name: "Bloquear espacios" }),
+    ).toBeInTheDocument();
   });
 
-  it("shows only 'Bloquear resto de espacios' when day has at least one appointment", async () => {
+  it("opens booking modal from day action and loads booking availability", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
 
@@ -677,7 +683,7 @@ describe("MonthDetailView", () => {
             days: [
               {
                 date: "2026-03-02",
-                slots: ["10:00", "14:00"],
+                slots: ["10:00"],
               },
             ],
           }),
@@ -695,17 +701,8 @@ describe("MonthDetailView", () => {
           JSON.stringify({
             month: "2026-03",
             date: "2026-03-02",
-            total: 1,
-            appointments: [
-              {
-                appointmentId: 10,
-                date: "2026-03-02",
-                timeSlot: "09:00:00",
-                status: "CONFIRMED",
-                name: "Ana Garcia",
-                phone: "5512345678",
-              },
-            ],
+            total: 0,
+            appointments: [],
             blockedSlots: [],
           }),
           {
@@ -768,15 +765,25 @@ describe("MonthDetailView", () => {
     const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
     fireEvent.click(dayButtons[1]);
 
+    const dayModal = await screen.findByRole("dialog", {
+      name: /Detalles del/i,
+    });
+    fireEvent.click(
+      await within(dayModal).findByRole("button", { name: "Agendar nueva cita" }),
+    );
+
+    const bookingModal = await screen.findByRole("dialog", {
+      name: "Agendar cita",
+    });
+    expect(bookingModal).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Bloquear resto de espacios" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Bloquear día" }),
-    ).not.toBeInTheDocument();
+      fetchMock.mock.calls.some(([input]) =>
+        String(input).includes("/api/admin/months/2026-03/blockable-slots"),
+      ),
+    ).toBe(true);
   });
 
-  it("hides quick block actions when no blockable slots remain", async () => {
+  it("hides daily action CTAs when selected day is not eligible", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
 
@@ -865,16 +872,151 @@ describe("MonthDetailView", () => {
     const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
     fireEvent.click(dayButtons[1]);
 
-    await screen.findByRole("dialog");
+    const dayModal = await screen.findByRole("dialog", {
+      name: /Detalles del/i,
+    });
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("button", { name: "Bloquear día" }),
+        within(dayModal).queryByRole("button", { name: "Agendar nueva cita" }),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: "Bloquear resto de espacios" }),
+        within(dayModal).queryByRole("button", { name: "Bloquear espacios" }),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("opens block modal from day action with selected day prefilled", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots?date=2026-03-02")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [
+              {
+                date: "2026-03-02",
+                slots: ["10:00"],
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2026-03/blockable-slots")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            currentDate: "2026-03-01",
+            days: [
+              {
+                date: "2026-03-03",
+                slots: ["14:00"],
+              },
+              {
+                date: "2026-03-02",
+                slots: ["10:00"],
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.includes("/api/admin/months/2026-03/days/2026-03-02/agenda")) {
+        return new Response(
+          JSON.stringify({
+            month: "2026-03",
+            date: "2026-03-02",
+            total: 0,
+            appointments: [],
+            blockedSlots: [],
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      return new Response(JSON.stringify({ errorCode: "NOT_FOUND" }), {
+        status: 404,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    const dayButtons = screen.getAllByRole("button", { name: /Detalles del/i });
+    fireEvent.click(dayButtons[1]);
+
+    const dayModal = await screen.findByRole("dialog", {
+      name: /Detalles del/i,
+    });
+    fireEvent.click(
+      await within(dayModal).findByRole("button", { name: "Bloquear espacios" }),
+    );
+
+    const blockModal = await screen.findByRole("dialog", {
+      name: "Bloquear horario",
+    });
+    expect(within(blockModal).getByText(/10:00/)).toBeInTheDocument();
+    expect(within(blockModal).queryByText(/02:00/)).not.toBeInTheDocument();
   });
 
   it("does not open the daily agenda modal when weekend day is clicked", () => {

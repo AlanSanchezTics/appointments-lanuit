@@ -416,6 +416,7 @@
       "title": "Detalles del {{date}}",
       "close": "Cerrar detalle del día",
       "sectionTitle": "Agenda del día",
+      "actionSectionTitle": "Acciones",
       "loading": "Cargando agenda...",
       "empty": "No hay citas activas ni espacios bloqueados para este día.",
       "actions": {

@@ -295,6 +295,11 @@ Ejemplo:
   - cierre por botón `X`,
   - cierre por click en overlay,
   - cierre por tecla `Escape`.
+  - cuando el día es elegible, incluye bloque de acciones con CTAs primarias:
+    - `Agendar nueva cita`,
+    - `Bloquear espacios`.
+  - ambos CTAs reutilizan los mismos modales del detalle mensual con la fecha del día preseleccionada.
+  - si el día no es elegible, el bloque de acciones no se renderiza.
 
 ---
 

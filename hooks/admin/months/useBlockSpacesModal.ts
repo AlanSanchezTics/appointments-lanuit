@@ -46,7 +46,7 @@ export function useBlockSpacesModal(month: string) {
 
   const isReadyToSubmit = Boolean(selectedDate) && (selectedSlots.length > 0 || isFullDaySelected) && !isSubmitting;
 
-  const open = useCallback(async () => {
+  const open = useCallback(async (initialDate?: string) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -63,6 +63,15 @@ export function useBlockSpacesModal(month: string) {
       const response = await fetchAdminBlockableSlots(month, null, controller.signal);
       setDays(response.days);
       setSelectedDate((current) => {
+        const preferredDateIfAvailable =
+          initialDate && response.days.some((day) => day.date === initialDate)
+            ? initialDate
+            : null;
+
+        if (preferredDateIfAvailable) {
+          return preferredDateIfAvailable;
+        }
+
         if (current && response.days.some((day) => day.date === current)) {
           return current;
         }

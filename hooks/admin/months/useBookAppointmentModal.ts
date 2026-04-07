@@ -98,7 +98,7 @@ export function useBookAppointmentModal(month: string) {
     }));
   }, []);
 
-  const refreshAvailability = useCallback(async () => {
+  const refreshAvailability = useCallback(async (preferredDate?: string) => {
     abortDaysRef.current?.abort();
     const controller = new AbortController();
     abortDaysRef.current = controller;
@@ -116,10 +116,18 @@ export function useBookAppointmentModal(month: string) {
       setDays(mappedDays);
       setSelectedDate((currentDate) => {
         const firstDate = mappedDays[0]?.date ?? null;
+        const preferredDateIfAvailable =
+          preferredDate && mappedDays.some((day) => day.date === preferredDate)
+            ? preferredDate
+            : null;
         const hasCurrent = currentDate
           ? mappedDays.some((day) => day.date === currentDate)
           : false;
-        const resolvedDate = hasCurrent ? currentDate : firstDate;
+        const resolvedDate = preferredDateIfAvailable
+          ? preferredDateIfAvailable
+          : hasCurrent
+            ? currentDate
+            : firstDate;
         const resolvedDay = mappedDays.find((day) => day.date === resolvedDate);
 
         setSelectedTimeSlot((currentSlot) => {
@@ -153,7 +161,7 @@ export function useBookAppointmentModal(month: string) {
     }
   }, [month]);
 
-  const open = useCallback(async () => {
+  const open = useCallback(async (initialDate?: string) => {
     setIsOpen(true);
     setIsLoadingDays(true);
     setIsSubmitting(false);
@@ -162,7 +170,7 @@ export function useBookAppointmentModal(month: string) {
     setClientMode("existing");
     resetClientState();
     setSuccessResult(null);
-    await refreshAvailability();
+    await refreshAvailability(initialDate);
   }, [refreshAvailability, resetClientState]);
 
   const close = useCallback(() => {

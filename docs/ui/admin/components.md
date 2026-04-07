@@ -676,7 +676,10 @@ Presentar flujos contextuales móviles dentro del admin sin navegar a otra panta
 Uso:
 
 - agenda diaria de `/admin/months/[month]`
-- acciones rápidas sobre citas (editar/cancelar)
+- acciones sobre citas y bloqueos (editar/cancelar)
+- bloque de acciones operativas del detalle diario:
+  - `Agendar nueva cita`
+  - `Bloquear espacios`
 
 Reglas:
 

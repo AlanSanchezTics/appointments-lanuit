@@ -416,6 +416,7 @@
       "title": "Details for {{date}}",
       "close": "Close day detail",
       "sectionTitle": "Day agenda",
+      "actionSectionTitle": "Actions",
       "loading": "Loading agenda...",
       "empty": "There are no active appointments or blocked spaces for this day.",
       "actions": {

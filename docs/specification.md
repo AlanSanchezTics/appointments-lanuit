@@ -792,10 +792,10 @@ Flujo UI:
      - hora,
      - motivo (`DESCANSO|PERSONAL|OTRO`),
      - acciones (`Editar motivo`, `Eliminar bloqueo`).
-   - El modal diario incluye acciones rápidas:
-     - `Bloquear día` (bloqueo completo del día en una operación) se muestra solo cuando el día está completamente disponible.
-     - `Bloquear resto de espacios` (bloquea todos los espacios elegibles restantes del día) se muestra cuando el día tiene al menos una cita.
-     - la acción rápida visible se renderiza en tamaño pequeño y se oculta cuando el día queda sin espacios elegibles.
+   - El modal diario incluye bloque de acciones operativas:
+     - CTA primaria `Agendar nueva cita` que abre el mismo `BottomSheetModal` de agendado del detalle mensual con la fecha del día preseleccionada.
+     - CTA primaria `Bloquear espacios` que abre el mismo `BottomSheetModal` de bloqueo del detalle mensual con la fecha del día preseleccionada.
+     - el bloque de acciones se oculta cuando el día no tiene espacios elegibles para operar.
    - Restricción operativa para bloqueos manuales en modal diario:
      - editar motivo solo se permite en slots bloqueados futuros (no pasados).
      - eliminar bloqueo se permite en slots bloqueados pasados y futuros.
