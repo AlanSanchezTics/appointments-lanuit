@@ -215,7 +215,7 @@ export function BookAppointmentModal({
     <BottomSheetModal
       isOpen={isOpen}
       onClose={onClose}
-      disableClose={isSubmitting || Boolean(successResult)}
+      disableClose={isSubmitting}
       title={t("monthsDetail.bookModal.title")}
       closeLabel={t("monthsDetail.bookModal.close")}
     >
