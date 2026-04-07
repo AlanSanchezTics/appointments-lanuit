@@ -12,10 +12,12 @@
   },
   "home": {
     "welcome": "✨ Bienvenida ✨",
-    "title": "Agenda tu cita del mes de {{month}}.",
+    "title": "Elige tu mes ideal y vive una experiencia pensada para ti",
     "subtitle": "¡No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde!",
     "bookNow": "Agendar ahora",
     "cancel": "Cancelar cita",
+    "whatsapp": "Contactar por WhatsApp",
+    "orSeparator": "- o -",
     "languageHint": "Puedes cambiar el idioma en cualquier momento.",
     "unavailableMessage": "Agenda no disponible por el momento, contactanos por WhatsApp para más información.",
     "unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",

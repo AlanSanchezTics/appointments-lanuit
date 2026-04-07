@@ -129,6 +129,8 @@ Business behavior is defined by:
   - At least 24 hours away from the current local time.
 - Cancellation lookup by phone must return all future appointments that satisfy those conditions so the user can choose one or more to cancel.
 - Cancellation execution in public flow must allow cancelling one or multiple selected appointments in the same request.
+- Public cancellation entry route is `/citas/cancelar`.
+- Legacy `/cancelar` may remain as compatibility redirect to `/citas/cancelar`.
 
 - Cancellation effects:
   - Each selected appointment state changes to `CANCELLED`.
@@ -569,9 +571,10 @@ Business behavior is defined by:
 ## Edge Cases
 
 - Requesting bookings in past or inactive months must be rejected.
-- Root-entry routing (`/`) behavior when current month is inactive:
-  - if at least one active eligible month exists, redirect must resolve to the nearest active month (ascending `YYYY-MM`),
-  - if no active eligible months exist, root must render an unavailable-agenda state with WhatsApp contact action.
+- Root-entry routing (`/`) behavior:
+  - root renders a welcome entry view with month CTAs and cancellation CTA.
+  - month CTAs must include only active eligible months (`>= currentMonth`) with at least one available slot.
+  - if no months satisfy that filter, root keeps the same welcome layout and shows unavailable-agenda messaging while preserving cancellation CTA.
 - Two users trying to secure the same slot at nearly the same time can result in only one successful booking.
 - A lock can expire while the user is confirming; confirmation must fail and force reselection.
 - Same-day booking near slot time cutoff may become invalid between selection and confirmation.

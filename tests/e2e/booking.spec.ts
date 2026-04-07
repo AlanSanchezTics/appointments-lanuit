@@ -16,7 +16,7 @@ function getUniquePhone() {
 test("home exposes booking entrypoint", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("link", { name: "Agendar ahora" })).toBeVisible();
+  await expect(page.locator('a[href^="/citas/"][href$="/booking"]').first()).toBeVisible();
 });
 
 test("legacy booking endpoint is deprecated", async ({ request }) => {
@@ -65,9 +65,6 @@ test("booking flow renders a local success step before WhatsApp", async ({ page,
   });
 
   await page.goto(`/citas/${month}`);
-  const bookingEntrypoint = page.locator(`a[href="/citas/${month}/booking"]`);
-  await expect(bookingEntrypoint).toBeVisible();
-  await bookingEntrypoint.click();
   await expect(page).toHaveURL(new RegExp(`/citas/${month}/booking$`));
   await expect(page.getByRole("heading", { name: /Agendar cita/i })).toBeVisible();
   await page.locator("#booking-phone").fill(getUniquePhone());

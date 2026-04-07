@@ -5,7 +5,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Actors
 - Usuario final: inicia la cancelación capturando su teléfono y confirma la acción.
-- UI de cancelación (`/cancelar`): guía el wizard de 3 pasos, muestra datos de cita elegible, errores y confirmación final.
+- UI de cancelación (`/citas/cancelar`): guía el wizard de 3 pasos, muestra datos de cita elegible, errores y confirmación final.
 - API de cancelación: expone búsqueda de cita cancelable y ejecución de cancelación.
 - Servicios de dominio: evalúan elegibilidad de cancelación y aplican transición de estado.
 - Base de datos (fuente de verdad): persiste el cambio de estado a `CANCELLED`.
@@ -20,7 +20,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Distancia mínima de 24 horas para permitir cancelación por este medio web.
 
 ## High-Level Flow
-1. Usuario abre `/cancelar`.
+1. Usuario abre `/citas/cancelar`.
 2. En el paso 1, captura teléfono y solicita búsqueda.
 3. Backend busca citas cancelables con reglas de elegibilidad.
 4. Si hay coincidencias, UI muestra lista de citas futuras cancelables y permite seleccionar una o varias.
@@ -31,7 +31,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Step-by-Step Flow
 1. Entrada al flujo
-- Trigger: navegación a `/cancelar`.
+- Trigger: navegación a `/citas/cancelar`.
 - Resultado: UI muestra paso de búsqueda por teléfono.
 
 2. Búsqueda por teléfono
@@ -115,6 +115,8 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Observations
 - La especificación exige que la cancelación web solo proceda con al menos 24 horas de anticipación.
+- La ruta canónica del flujo público de cancelación es `/citas/cancelar`.
+- La ruta legacy `/cancelar` queda como compatibilidad mediante redirect hacia `/citas/cancelar`.
 - En el flujo actual, esta regla se valida en dos puntos:
   - Durante la búsqueda (`/api/cancelar/buscar`) para decidir si la UI puede avanzar al paso de confirmación.
   - Durante la ejecución (`/api/cancelar`) para evitar que una cita pase a no elegible por cambio de tiempo entre búsqueda y confirmación.

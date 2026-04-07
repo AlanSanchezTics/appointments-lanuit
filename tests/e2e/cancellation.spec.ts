@@ -1,4 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 function getActiveMonth() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -77,72 +80,54 @@ async function getBookableSlot(request: APIRequestContext) {
   throw new Error("No available slot found in active month candidates");
 }
 
-async function createConfirmedAppointment(
-  request: APIRequestContext,
-  input: { name: string },
-) {
-  let lastError = "UNKNOWN_ERROR";
-
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const slot = await getBookableSlot(request);
-    const phone = getUniquePhone();
-    const lockResponse = await request.post("/api/reservar/client-check-lock", {
-      data: {
-        phone,
-        date: slot.date,
-        timeSlot: slot.timeSlot,
-      },
-    });
-
-    if (lockResponse.status() !== 201) {
-      const lockPayload = (await lockResponse.json()) as {
-        errorCode?: string;
-        error?: string;
-      };
-      lastError = lockPayload.errorCode ?? lockPayload.error ?? `LOCK_STATUS_${lockResponse.status()}`;
-      continue;
-    }
-
-    const lockPayload = (await lockResponse.json()) as { lockToken: string };
-    const confirmResponse = await request.post("/api/reservar/confirm", {
-      data: {
-        name: input.name,
-        phone,
-        date: slot.date,
-        timeSlot: slot.timeSlot,
-        lockToken: lockPayload.lockToken,
-      },
-    });
-
-    if (confirmResponse.status() === 201) {
-      return {
-        phone,
-        date: slot.date,
-        timeSlot: slot.timeSlot,
-      };
-    }
-
-    const confirmPayload = (await confirmResponse.json()) as {
-      errorCode?: string;
-      error?: string;
-    };
-    lastError =
-      confirmPayload.errorCode ??
-      confirmPayload.error ??
-      `CONFIRM_STATUS_${confirmResponse.status()}`;
-
-    await request.delete("/api/reservar/lock", {
-      data: { lockToken: lockPayload.lockToken },
-    });
-  }
-
-  throw new Error(`Unable to create confirmed appointment after retries: ${lastError}`);
+function toSqlDateTime(dateString: string, time: string) {
+  return new Date(`${dateString}T${time}:00.000Z`);
 }
+
+async function createConfirmedAppointment(request: APIRequestContext, input: { name: string }) {
+  const slot = await getBookableSlot(request);
+  const phone = getUniquePhone();
+  const { _max } = await prisma.client.aggregate({
+    _max: {
+      clientNumber: true,
+    },
+  });
+  const nextClientNumber = (_max.clientNumber ?? 0) + 1;
+
+  const client = await prisma.client.create({
+    data: {
+      name: input.name,
+      phone,
+      clientNumber: nextClientNumber,
+    },
+  });
+
+  await prisma.appointment.create({
+    data: {
+      clientId: client.id,
+      date: toSqlDateTime(slot.date, "00:00"),
+      timeSlot: toSqlDateTime(slot.date, slot.timeSlot),
+      status: "CONFIRMED",
+    },
+  });
+
+  return {
+    phone,
+    date: slot.date,
+    timeSlot: slot.timeSlot,
+  };
+}
+
+test.afterAll(async () => {
+  await prisma.$disconnect();
+});
 
 test("home exposes cancellation entrypoint", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("link", { name: "Cancelar cita" })).toBeVisible();
+  const cancelLink = page.getByRole("link", { name: "Cancelar cita" });
+  await expect(cancelLink).toBeVisible();
+  await expect(cancelLink).toHaveAttribute("href", "/citas/cancelar");
 });
 
 test("booking can be cancelled through the public endpoints", async ({ request }) => {
@@ -191,13 +176,13 @@ test("user completes cancellation wizard in three steps", async ({
     name: "E2E Wizard Cancel",
   });
 
-  await page.goto("/cancelar");
+  await page.goto("/citas/cancelar");
   await page.locator("#cancel-phone").fill(appointment.phone);
   await page.getByRole("button", { name: "Buscar cita" }).click();
 
   await expect(page.getByRole("heading", { name: /Confirmar Cancelaci.n/i })).toBeVisible();
   await expect(page.getByRole("button", { name: "Volver" })).toBeVisible();
-  await page.getByRole("button", { name: /E2E Wizard Cancel/i }).click();
+  await page.getByRole("button", { name: /\d{2}:\d{2}\s?(AM|PM)/i }).first().click();
 
   await page.getByRole("button", { name: "Cancelar cita" }).click();
   await expect(

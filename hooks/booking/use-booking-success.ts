@@ -42,8 +42,8 @@ export function useBookingSuccess({
             time: formattedTime,
             cancelUrl:
               typeof window === "undefined"
-                ? "/cancelar"
-                : `${window.location.origin}/cancelar`,
+                ? "/citas/cancelar"
+                : `${window.location.origin}/citas/cancelar`,
           });
 
     onWhatsAppRedirect(

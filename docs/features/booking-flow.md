@@ -5,7 +5,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 ## Actors
 - Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y decide si envía confirmación por WhatsApp.
-- UI de Booking (`/citas/YYYY-MM` y `/citas/YYYY-MM/booking`): guía el wizard, muestra disponibilidad, errores y estado de lock.
+- UI pública (`/` y `/citas/YYYY-MM/booking`): muestra meses disponibles, guía el wizard, muestra disponibilidad, errores y estado de lock.
 - API de reservas: ejecuta `check + lock`, confirmación y liberación de lock.
 - Servicios de dominio: validan reglas de negocio (mes activo, disponibilidad, teléfono, restricciones por pares y máximo diario).
 - Base de datos (fuente de verdad): persiste clientes, citas y locks temporales; aplica transacciones y bloqueos.
@@ -27,10 +27,10 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 ## High-Level Flow
 1. Usuario entra a `/`:
-   - si existe al menos un mes activo elegible (`>= currentMonth`), se redirige a `/citas/YYYY-MM` del primer mes activo disponible (orden ascendente),
-   - si no existe ningún mes activo elegible, se muestra vista de indisponibilidad con mensaje y CTA para contactar por WhatsApp.
-2. En `/citas/YYYY-MM`, visualiza la entrada del flujo y selecciona `Agendar cita`.
-3. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
+   - se muestra pantalla de bienvenida con CTAs por mes disponible (`/citas/YYYY-MM/booking`),
+   - solo se listan meses `ACTIVE` con al menos un slot disponible,
+   - si no hay meses disponibles, se mantiene layout de bienvenida con aviso de indisponibilidad y CTA de cancelación.
+2. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
 4. Al continuar, backend ejecuta `check + lock` temporal (TTL 10 minutos).
 5. Si el cliente ya existe por teléfono, avanza directo a confirmación.
 6. Si el cliente ya tiene citas futuras activas en el mismo mes, UI muestra la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas en este mes`.
@@ -45,19 +45,20 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 14. Usuario puede ejecutar explícitamente `Enviar confirmación por WhatsApp`.
 
 ## Step-by-Step Flow
-1. Entrada al mes
+1. Entrada al flujo público
 - Trigger: navegación a `/`.
 - Comportamiento:
-  - intenta redirect automático al primer mes activo elegible (`/citas/YYYY-MM`),
-  - si no hay meses activos elegibles, renderiza vista de indisponibilidad con acción de contacto por WhatsApp.
+  - renderiza bienvenida + lista de meses disponibles con links directos a `/citas/YYYY-MM/booking`,
+  - filtra meses por elegibilidad (`ACTIVE`, `>= currentMonth`) y disponibilidad real de slots,
+  - cuando no hay meses disponibles, muestra aviso de indisponibilidad en el mismo layout.
 - Resultado:
-  - con meses activos: el flujo inicia sin pantalla de bienvenida intermedia,
-  - sin meses activos: usuario recibe salida controlada para contacto y no entra al flujo de booking.
+  - con meses disponibles: el flujo inicia al seleccionar un CTA de mes,
+  - sin meses disponibles: usuario conserva salida por cancelación.
 
-2. Pantalla de entrada del mes
-- Trigger: carga de `/citas/YYYY-MM`.
-- Comportamiento: se obtiene disponibilidad del mes activo y se presentan CTAs (`Agendar cita`, `Cancelar cita`).
-- Resultado: usuario entra al flujo de booking en `/citas/YYYY-MM/booking`.
+2. Entrada de compatibilidad por mes
+- Trigger: navegación a `/citas/YYYY-MM`.
+- Comportamiento: redirect server-side directo a `/citas/YYYY-MM/booking`.
+- Resultado: se conserva compatibilidad sin mantener pantalla intermedia.
 
 3. Captura de datos base (wizard)
 - Trigger: paso inicial de `/booking`.
@@ -200,6 +201,6 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Una cita `PENDING` no participa en la lógica de ocupación hasta que sea confirmada.
 
 ## Observations
-- El contrato funcional define 4 vistas del flujo de reserva (entrada de mes + 3 vistas del wizard), pero el etiquetado visual interno del wizard muestra una progresión `step1Of2`/`step2Of2` y luego éxito. No hay contradicción funcional, pero sí diferencia de nomenclatura de pasos.
+- El contrato funcional define 4 vistas del flujo de reserva (entrada global en `/` + 3 vistas del wizard), pero el etiquetado visual interno del wizard muestra una progresión `step1Of2`/`step2Of2` y luego éxito. No hay contradicción funcional, pero sí diferencia de nomenclatura de pasos.
 - El endpoint legacy `POST /api/reservar` está deprecado (`410`) y el flujo vigente usa `client-check-lock` + `confirm`, alineado con la especificación.
 - La propiedad del texto final de WhatsApp está en frontend (mensaje localizado + `encodeURIComponent`), consistente con el contrato que evita que backend retorne copy final de UX.

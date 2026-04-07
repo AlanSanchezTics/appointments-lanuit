@@ -51,8 +51,18 @@ Restricciones:
 - Todas las reglas de disponibilidad aplican únicamente dentro de meses activos.
 - Ventana operativa por defecto: mes actual + siguiente mes (`ACTIVE_MONTH_WINDOW_SIZE=2`), extensible a N meses.
 - Los meses pasados deben quedar `INACTIVE` por reconciliación automática.
-- La entrada raíz (`/`) debe resolver el **primer mes activo disponible** (orden ascendente por `YYYY-MM`) para redirigir a `/citas/YYYY-MM`.
-- Si no existe ningún mes activo elegible (`>= currentMonth`), `/` no redirige y muestra una vista de indisponibilidad con CTA de contacto por WhatsApp.
+- La entrada raíz (`/`) debe mostrar una vista pública de bienvenida con:
+  - `home.welcome`,
+  - `home.title`,
+  - `home.subtitle`,
+  - lista de botones por mes disponible (`/citas/YYYY-MM/booking`),
+  - acción de cancelación (`/citas/cancelar`).
+- Un mes disponible para la vista de `/` debe cumplir simultáneamente:
+  - `status=ACTIVE` en `active_months`,
+  - mes actual o futuro (`>= currentMonth`),
+  - al menos un horario disponible en `getMonthAvailability(month)`.
+- Meses inactivos o sin cupo no deben mostrarse como CTA en `/`.
+- Si no existe ningún mes disponible bajo esas reglas, `/` mantiene el layout de bienvenida y muestra aviso de indisponibilidad, conservando la acción de cancelación.
 
 ---
 
@@ -124,18 +134,20 @@ Regla direccional formal:
 
 ## 7. Flujo de Reserva
 
-0. Usuario ingresa al inicio (`/`) y el sistema intenta redirigir automáticamente al primer mes activo elegible (`/citas/YYYY-MM`).
-   - Si el mes actual está inactivo pero existe un mes futuro activo, debe redirigir al mes futuro activo más cercano.
-   - Si no existe ningún mes activo elegible, `/` muestra una vista de indisponibilidad con mensaje y CTA para contactar por WhatsApp.
-   - No existe pantalla de bienvenida en `/`.
+0. Usuario ingresa al inicio (`/`) y el sistema muestra una pantalla de bienvenida pública.
+   - Renderiza botones por mes disponible con destino `/citas/YYYY-MM/booking`.
+   - Solo se listan meses `ACTIVE` con al menos un horario disponible.
+   - Meses sin cupo o inactivos no se muestran.
+   - Si no hay meses disponibles, se muestra aviso de indisponibilidad en el mismo layout y se mantiene CTA `Cancelar cita`.
+   - El botón de cancelación en `/` apunta a `/citas/cancelar`.
    - La selección de idioma (`es`/`en`) permanece disponible en todo el producto:
      - flujo público: selector tipo FAB global,
      - panel admin autenticado (`/admin/*` excepto `/admin/login`): selector integrado al `appHeader`.
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
    - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
 
-1. Usuario accede a un mes habilitado (`/citas/YYYY-MM`) y visualiza pantalla de entrada del flujo.
-2. Desde esa pantalla selecciona `Agendar cita` y avanza a `/citas/YYYY-MM/booking`.
+1. Usuario selecciona un mes desde `/` y navega a `/citas/YYYY-MM/booking`.
+2. La ruta `/citas/YYYY-MM` se mantiene como compatibilidad y redirige a `/citas/YYYY-MM/booking`.
 3. En el paso 1 del wizard selecciona día y horario, e ingresa teléfono.
 4. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
    - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
@@ -184,7 +196,7 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
 
 - Enfoque mobile-first obligatorio (desktop muestra un contenedor tipo móvil).
 - El flujo visual de reserva queda compuesto por 4 vistas:
-  - Entrada del mes (`/citas/YYYY-MM`): branding + CTA principal `Agendar cita` + CTA secundaria `Cancelar cita`.
+  - Entrada global (`/`): branding + listado de meses disponibles (CTA por mes) + CTA secundaria `Cancelar cita`.
   - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
   - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
   - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
@@ -212,7 +224,7 @@ Mensaje base para cita `CONFIRMED`:
     Ya te agendé para el día {Fecha} a las {Hora}.
     Muchas gracias y bonito día 😊
 
-    (Para cancelar tu cita accede a https://dominio.com/cancelar)
+    (Para cancelar tu cita accede a https://dominio.com/citas/cancelar)
 
 El mensaje debe codificarse usando encodeURIComponent.
 La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
@@ -252,7 +264,7 @@ Notas de contrato:
 - El frontend traduce `errorCode` al idioma activo.
 - El backend no retorna mensajes localizados de UX final.
 
-No se pueden cancelar citas pasadas en el flujo público (`/cancelar`).
+No se pueden cancelar citas pasadas en el flujo público (`/citas/cancelar`).
 
 ---
 

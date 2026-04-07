@@ -1,11 +1,7 @@
-import { CancelForm } from "@/components/cancel/cancel-form";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default function CancelPage() {
-  return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center">
-      <CancelForm />
-    </main>
-  );
+  redirect("/citas/cancelar");
 }
