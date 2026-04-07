@@ -12,7 +12,6 @@ import {
 import {
   formatPhoneForDisplay,
   formatRemainingTime,
-  getHighlightedDays,
 } from "@/lib/booking/formatters";
 import type { AppLanguage } from "@/lib/i18n/config";
 import { translateValidationError } from "@/lib/i18n/translate";
@@ -69,7 +68,6 @@ export function BookingWizardStep1({
   const { i18n, t } = useTranslation(["common", "errors"]);
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
   const selectedDay = days.find((day) => day.date === draft.date) ?? null;
-  const highlightedDays = getHighlightedDays(days, draft.date);
   const showRescheduleSelection = rescheduleOptions.length > 0;
 
   return (
@@ -122,7 +120,7 @@ export function BookingWizardStep1({
           </div>
 
           <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2 items-center justify-stretch">
-            {highlightedDays.map((day) => {
+            {days.map((day) => {
               const isSelected = draft.date === day.date;
 
               return (
@@ -132,7 +130,7 @@ export function BookingWizardStep1({
                     weekday: formatShortWeekdayLabel(day.date, language),
                     day: formatDayOfMonthLabel(day.date),
                   })}
-                  className={`min-h-24 w-[100%] flex flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                  className={`min-h-24 min-w-[5rem] flex-none flex flex-col items-center justify-center rounded-2xl px-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
                     isSelected
                       ? "bg-[var(--admin-primary)] text-white shadow-sm"
                       : "bg-[var(--admin-inactive-bg)] text-[var(--admin-text-primary)]"

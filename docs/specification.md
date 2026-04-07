@@ -216,6 +216,9 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
   - touch targets >= 44px,
   - estados de foco visibles,
   - errores inline por campo/contexto.
+- Requisito visual del selector de días en Paso 1:
+  - debe renderizar todos los días disponibles del mes en una lista horizontal desplazable,
+  - el día seleccionado debe mantenerse resaltado visualmente.
 
 Mensaje base para cita `CONFIRMED`:
 

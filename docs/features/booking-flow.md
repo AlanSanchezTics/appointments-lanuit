@@ -63,7 +63,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 3. Captura de datos base (wizard)
 - Trigger: paso inicial de `/booking`.
 - Datos: `date`, `timeSlot`, `phone`.
-- Comportamiento: UI valida formato base y solicita avance.
+- Comportamiento:
+  - UI valida formato base y solicita avance.
+  - El selector de días muestra todos los días disponibles en carrusel horizontal (scroll) y mantiene resaltado el día seleccionado.
 
 4. Check + lock temporal
 - Trigger: continuar desde paso inicial.
