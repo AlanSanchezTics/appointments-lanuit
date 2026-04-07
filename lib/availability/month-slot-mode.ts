@@ -4,7 +4,7 @@ export const MONTH_SLOT_MODE_VALUES = ["BLOCK_MODE", "SECOND_ONLY_MODE"] as cons
 
 export type MonthSlotMode = (typeof MONTH_SLOT_MODE_VALUES)[number];
 
-export const DEFAULT_MONTH_SLOT_MODE: MonthSlotMode = "BLOCK_MODE";
+export const DEFAULT_MONTH_SLOT_MODE: MonthSlotMode = "SECOND_ONLY_MODE";
 
 const SECOND_ONLY_BASE_TIME_SLOTS = ["10:00", "14:00", "18:00"] as const;
 
@@ -15,4 +15,3 @@ export function resolveBaseSlotsByMonthMode(mode?: MonthSlotMode | null) {
 
   return BASE_TIME_SLOTS;
 }
-

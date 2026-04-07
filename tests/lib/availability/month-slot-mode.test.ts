@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import {
+  DEFAULT_MONTH_SLOT_MODE,
+  resolveBaseSlotsByMonthMode,
+} from "@/lib/availability/month-slot-mode";
 
 describe("month slot mode", () => {
   it("returns full base slots in BLOCK_MODE", () => {
@@ -32,5 +35,8 @@ describe("month slot mode", () => {
       "18:00",
     ]);
   });
-});
 
+  it("uses SECOND_ONLY_MODE as default month slot mode", () => {
+    expect(DEFAULT_MONTH_SLOT_MODE).toBe("SECOND_ONLY_MODE");
+  });
+});

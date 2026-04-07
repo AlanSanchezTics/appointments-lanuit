@@ -1487,4 +1487,61 @@ describe("MonthDetailView", () => {
       within(modal).getByText(/10:00am, 02:00pm y 06:00pm/i),
     ).toBeInTheDocument();
   });
+
+  it("renders slot mode options with SECOND_ONLY_MODE first", async () => {
+    render(
+      <MonthDetailView
+        month="2026-03"
+        initialData={{
+          month: "2026-03",
+          monthStatus: "ACTIVE",
+          slotMode: "BLOCK_MODE",
+          currentMonth: "2026-03",
+          currentDate: "2026-03-01",
+          isPastMonth: false,
+          projectedSaturationPercent: 85,
+          metrics: {
+            confirmedAppointments: 8,
+            cancelledAppointments: 1,
+            availableSpaces: 54,
+            blockedSpaces: 0,
+            occupiedSpaces: 8,
+          },
+          calendarDays: [
+            {
+              date: "2026-03-01",
+              day: 1,
+              isWeekend: true,
+              availableSpaces: 0,
+              tone: "weekend",
+            },
+            {
+              date: "2026-03-02",
+              day: 2,
+              isWeekend: false,
+              availableSpaces: 6,
+              tone: "available",
+            },
+          ],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Modalidad/i }));
+    const modal = await screen.findByRole("dialog", {
+      name: /Modalidad de disponibilidad/i,
+    });
+
+    const optionButtons = within(modal)
+      .getAllByRole("button")
+      .filter(
+        (button) =>
+          button.textContent?.includes("Horario fijo") ||
+          button.textContent?.includes("Bloques de horarios"),
+      );
+
+    expect(optionButtons).toHaveLength(2);
+    expect(optionButtons[0]).toHaveTextContent("Horario fijo");
+    expect(optionButtons[1]).toHaveTextContent("Bloques de horarios");
+  });
 });

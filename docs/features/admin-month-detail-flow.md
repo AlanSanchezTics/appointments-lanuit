@@ -31,8 +31,8 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - tags de estado (`Activo|Inactivo`) y `Histórico` debajo del título cuando `isPastMonth=true`.
 7. Si `isPastMonth=false`, admin puede tocar botón `Modalidad` en el encabezado para abrir modal de configuración.
 8. En el modal de modalidad selecciona:
-   - `Bloques de horarios` (`BLOCK_MODE`): base `09:00,10:00,13:00,14:00,17:00,18:00`.
    - `Horario fijo` (`SECOND_ONLY_MODE`): base `10:00,14:00,18:00`.
+   - `Bloques de horarios` (`BLOCK_MODE`): base `09:00,10:00,13:00,14:00,17:00,18:00`.
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
 9. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
 10. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`.

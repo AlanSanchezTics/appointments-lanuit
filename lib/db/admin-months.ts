@@ -2,7 +2,10 @@ import type { AppointmentStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import type { ActiveMonthStatus } from "@/lib/admin/months/types";
-import { type MonthSlotMode } from "@/lib/availability/month-slot-mode";
+import {
+  DEFAULT_MONTH_SLOT_MODE,
+  type MonthSlotMode,
+} from "@/lib/availability/month-slot-mode";
 
 const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = [
   "CONFIRMED",
@@ -231,6 +234,7 @@ export async function createInactiveMonths(months: string[]) {
     data: months.map((month) => ({
       month,
       status: "INACTIVE",
+      slotMode: DEFAULT_MONTH_SLOT_MODE,
     })),
     skipDuplicates: true,
   });

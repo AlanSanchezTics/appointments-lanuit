@@ -287,6 +287,7 @@ Business behavior is defined by:
   - Year selection for creation is constrained to `[currentYear..currentYear+5]`.
   - Batch selection supports multiple months in one request.
   - New records are created with `status = INACTIVE`.
+  - New records default `slot_mode = SECOND_ONLY_MODE`.
   - Persistence is idempotent-partial:
     - existing months are skipped,
     - missing months are created,
@@ -486,6 +487,7 @@ Business behavior is defined by:
 ## Availability Rules
 
 - Month slot mode policy:
+  - Default `slot_mode` for newly registered months in admin catalog is `SECOND_ONLY_MODE`.
   - `BLOCK_MODE`:
     - valid base time slots: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
   - `SECOND_ONLY_MODE`:

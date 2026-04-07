@@ -1394,28 +1394,6 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           <div className="space-y-3">
             <button
               type="button"
-              onClick={() => setSlotModeDraft("BLOCK_MODE")}
-              disabled={isUpdatingSlotMode}
-              aria-pressed={slotModeDraft === "BLOCK_MODE"}
-              className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
-                slotModeDraft === "BLOCK_MODE"
-                  ? "border-transparent bg-[var(--admin-primary)] text-white"
-                  : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
-              }`}
-            >
-              <span className="font-semibold">
-                {t("monthsDetail.slotMode.options.block")}
-              </span>
-              <AdminIcon
-                icon={adminIcons.monthDetailAvailable}
-                tone={slotModeDraft === "BLOCK_MODE" ? "primary" : "secondary"}
-                className={
-                  slotModeDraft === "BLOCK_MODE" ? "text-white" : undefined
-                }
-              />
-            </button>
-            <button
-              type="button"
               onClick={() => setSlotModeDraft("SECOND_ONLY_MODE")}
               disabled={isUpdatingSlotMode}
               aria-pressed={slotModeDraft === "SECOND_ONLY_MODE"}
@@ -1437,6 +1415,28 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                   slotModeDraft === "SECOND_ONLY_MODE"
                     ? "text-white"
                     : undefined
+                }
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSlotModeDraft("BLOCK_MODE")}
+              disabled={isUpdatingSlotMode}
+              aria-pressed={slotModeDraft === "BLOCK_MODE"}
+              className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${
+                slotModeDraft === "BLOCK_MODE"
+                  ? "border-transparent bg-[var(--admin-primary)] text-white"
+                  : "border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text-primary)]"
+              }`}
+            >
+              <span className="font-semibold">
+                {t("monthsDetail.slotMode.options.block")}
+              </span>
+              <AdminIcon
+                icon={adminIcons.monthDetailAvailable}
+                tone={slotModeDraft === "BLOCK_MODE" ? "primary" : "secondary"}
+                className={
+                  slotModeDraft === "BLOCK_MODE" ? "text-white" : undefined
                 }
               />
             </button>
