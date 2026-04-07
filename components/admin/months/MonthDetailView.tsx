@@ -774,7 +774,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   async function handleConfirmBlockedSlots() {
     await sileo.promise(
       blockSpacesModal.submit(async () => {
-        await refresh();
+        await Promise.all([
+          refresh(),
+          dayAgendaModal.isOpen ? dayAgendaModal.refresh() : Promise.resolve(),
+        ]);
       }),
       {
         loading: {
@@ -811,6 +814,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           };
         },
       });
+
+      await Promise.all([
+        refresh(),
+        dayAgendaModal.isOpen ? dayAgendaModal.refresh() : Promise.resolve(),
+      ]);
     } catch {
       try {
         await bookAppointmentModal.refreshAvailability();
@@ -1339,54 +1347,6 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
             {t("monthsDetail.dayModal.sectionTitle")}
           </h3>
-          {shouldShowDayActionButtons ? (
-            <div className="grid grid-cols-1 gap-2">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
-                {t("monthsDetail.dayModal.actionSectionTitle")}
-              </h3>
-              <Button
-                type="button"
-                variant="primary"
-                fullWidth
-                disabled={
-                  isLoading ||
-                  isUpdatingSlotMode ||
-                  isUpdatingMonthStatus ||
-                  data.monthStatus !== "ACTIVE"
-                }
-                onClick={() =>
-                  void handleOpenBookAppointmentModal(
-                    dayAgendaModal.selectedDate ?? undefined,
-                  )
-                }
-                className="h-12"
-              >
-                <AdminIcon
-                  icon={adminIcons.addNewAppointment}
-                  className="text-white! mr-2"
-                />
-                {t("monthsDetail.bookModal.openCta")}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                fullWidth
-                disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-                onClick={() =>
-                  void handleOpenBlockSpacesModal(
-                    dayAgendaModal.selectedDate ?? undefined,
-                  )
-                }
-                className="h-12"
-              >
-                <AdminIcon
-                  icon={adminIcons.blockSpaces}
-                  className="text-white! mr-2"
-                />
-                {t("monthsDetail.blockModal.openCta")}
-              </Button>
-            </div>
-          ) : null}
 
           {dayAgendaModal.isLoadingAgenda ? (
             <p className="rounded-xl bg-[var(--admin-inactive-bg)] p-4 text-sm text-[var(--admin-text-secondary)]">
@@ -1699,6 +1659,54 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                   })}
                 </>
               ) : null}
+            </div>
+          ) : null}
+
+          {shouldShowDayActionButtons ? (
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                disabled={
+                  isLoading ||
+                  isUpdatingSlotMode ||
+                  isUpdatingMonthStatus ||
+                  data.monthStatus !== "ACTIVE"
+                }
+                onClick={() =>
+                  void handleOpenBookAppointmentModal(
+                    dayAgendaModal.selectedDate ?? undefined,
+                  )
+                }
+                className="h-12"
+              >
+                <AdminIcon
+                  icon={adminIcons.addNewAppointment}
+                  className="text-white! mr-2"
+                />
+                {t("monthsDetail.bookModal.openCta")}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                disabled={
+                  isLoading || isUpdatingSlotMode || isUpdatingMonthStatus
+                }
+                onClick={() =>
+                  void handleOpenBlockSpacesModal(
+                    dayAgendaModal.selectedDate ?? undefined,
+                  )
+                }
+                className="h-12"
+              >
+                <AdminIcon
+                  icon={adminIcons.blockSpaces}
+                  className="text-white! mr-2"
+                />
+                {t("monthsDetail.blockModal.openCta")}
+              </Button>
             </div>
           ) : null}
         </div>
