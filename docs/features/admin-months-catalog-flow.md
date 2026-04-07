@@ -44,7 +44,7 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
    - el chip cambia a fondo primario y texto blanco.
 7. Admin pulsa `Guardar`.
 8. Frontend ejecuta `POST /api/admin/months`.
-9. Backend crea faltantes como `INACTIVE`, omite existentes, y devuelve resumen `created/skipped`.
+9. Backend crea faltantes como `INACTIVE` con `slot_mode=SECOND_ONLY_MODE`, omite existentes, y devuelve resumen `created/skipped`.
 10. UI refresca catálogo y cierra modal.
 
 ## Flujo alterno: error de carga
@@ -63,6 +63,6 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
 
 ## Notas de MVP
 
-- La creación solo registra meses y deja estado inicial `INACTIVE`.
+- La creación solo registra meses y deja estado inicial `INACTIVE` con `slot_mode=SECOND_ONLY_MODE`.
 - Edición de estado/activación queda fuera de este flujo.
 - El detalle mensual consume `GET /api/admin/months/[month]`; si el mes no existe en catálogo responde `MONTH_NOT_REGISTERED` (404).

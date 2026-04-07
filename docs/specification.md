@@ -372,7 +372,7 @@ Tabla: active_months
 - id (PK)
 - month CHAR(7) UNIQUE (`YYYY-MM`)
 - status ENUM('ACTIVE','INACTIVE')
-- slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') DEFAULT 'BLOCK_MODE'
+- slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') DEFAULT 'SECOND_ONLY_MODE'
 - created_at DATETIME
 - updated_at DATETIME
 
@@ -812,8 +812,8 @@ Flujo UI:
    - A la derecha del encabezado del mes existe botón de acción `Modalidad` que abre `BottomSheetModal` únicamente cuando `isPastMonth=false`.
    - En meses pasados (`isPastMonth=true`) el botón `Modalidad` no se renderiza.
    - En el modal de modalidad:
-     - `Bloques de horarios` (`BLOCK_MODE`): base de slots `09:00,10:00,13:00,14:00,17:00,18:00`.
      - `Horario fijo` (`SECOND_ONLY_MODE`): base de slots `10:00,14:00,18:00`.
+     - `Bloques de horarios` (`BLOCK_MODE`): base de slots `09:00,10:00,13:00,14:00,17:00,18:00`.
      - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
      - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
@@ -886,7 +886,7 @@ Flujo UI:
    - Selección múltiple.
 7. Admin confirma `Guardar`.
 8. Frontend ejecuta `POST /api/admin/months`.
-9. Backend persiste nuevos meses con `status=INACTIVE`, omite existentes y retorna resumen `created/skipped`.
+9. Backend persiste nuevos meses con `status=INACTIVE` y `slot_mode=SECOND_ONLY_MODE`, omite existentes y retorna resumen `created/skipped`.
 10. UI cierra modal y refresca métricas/listado.
 
 Reglas de módulo:
@@ -895,7 +895,7 @@ Reglas de módulo:
 - En el modal, los meses ya creados (`ACTIVE` o `INACTIVE`) no deben mostrarse como opción seleccionable.
 - El registro de meses es idempotente parcial:
   - meses existentes se omiten,
-  - meses faltantes se crean con `INACTIVE`.
+  - meses faltantes se crean con `INACTIVE` y `slot_mode=SECOND_ONLY_MODE`.
 - El módulo es mobile-first con contenedor centrado `max-width: 412px`.
 - Gaps visuales objetivo entre bloques/listas: `12px–16px`.
 - Todos los textos admin del módulo deben resolverse por `react-i18next`.
