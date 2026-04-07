@@ -14,7 +14,6 @@ import {
   rescheduleAdminAppointmentById,
 } from "@/lib/admin/appointments/api-client";
 import {
-  createAdminBlockedSlots,
   fetchAdminBlockableSlots,
   deleteAdminBlockedSlotById,
   updateAdminBlockedSlotById,
@@ -122,25 +121,6 @@ function resolveDayModalCancelErrorDescriptionKey(errorCode: string) {
       return "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotFound";
     default:
       return "monthsDetail.dayModal.notifications.errorDescriptions.generic";
-  }
-}
-
-function resolveDayModalQuickBlockErrorDescriptionKey(errorCode: string) {
-  switch (errorCode) {
-    case "MONTH_NOT_REGISTERED":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.monthNotFound";
-    case "SLOT_NOT_AVAILABLE":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.slotUnavailable";
-    case "SLOT_LOCKED":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.slotLocked";
-    case "DATE_IN_PAST":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.dateInPast";
-    case "DAY_ALREADY_BLOCKED":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.dayAlreadyBlocked";
-    case "NO_BLOCKABLE_SLOTS":
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.noBlockableSlots";
-    default:
-      return "monthsDetail.dayModal.quickActions.notifications.errorDescriptions.generic";
   }
 }
 
@@ -302,8 +282,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     initialData.slotMode,
   );
   const [isUpdatingMonthStatus, setIsUpdatingMonthStatus] = useState(false);
-  const [hasQuickBlockableSlots, setHasQuickBlockableSlots] = useState(false);
-  const [isLoadingQuickBlockableSlots, setIsLoadingQuickBlockableSlots] =
+  const [hasDayActionableSlots, setHasDayActionableSlots] = useState(false);
+  const [isLoadingDayActionableSlots, setIsLoadingDayActionableSlots] =
     useState(false);
   const monthBaseSlots = useMemo(
     () => resolveBaseSlotsByMonthMode(data.slotMode),
@@ -383,19 +363,15 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     (entry) => entry.kind === "full-day",
   );
   const selectedAgendaDate = dayAgendaModal.selectedDate;
-  const shouldShowQuickBlockActions =
+  const shouldShowDayActionButtons =
     !dayAgendaModal.isLoadingAgenda &&
     !dayAgendaModal.agendaErrorCode &&
     dayAgenda !== null &&
     selectedAgendaDate !== null &&
     selectedAgendaDate >= data.currentDate &&
     !hasFullDayBlockedEntry &&
-    hasQuickBlockableSlots &&
-    !isLoadingQuickBlockableSlots;
-  const isDayFullyAvailableForQuickBlock =
-    dayAgenda !== null &&
-    dayAgenda.appointments.length === 0 &&
-    dayBlockedEntries.length === 0;
+    hasDayActionableSlots &&
+    !isLoadingDayActionableSlots;
   const slotModeHelperKey =
     slotModeDraft === "BLOCK_MODE"
       ? "monthsDetail.slotMode.helpers.block"
@@ -553,7 +529,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
 
   useEffect(() => {
     const selectedDate = dayAgendaModal.selectedDate;
-    const canCheckQuickActions =
+    const canCheckDayActions =
       dayAgendaModal.isOpen &&
       selectedDate !== null &&
       !dayAgendaModal.isLoadingAgenda &&
@@ -561,14 +537,14 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
       selectedDate >= data.currentDate &&
       !hasFullDayBlockedEntry;
 
-    if (!canCheckQuickActions || !selectedDate) {
-      setHasQuickBlockableSlots(false);
-      setIsLoadingQuickBlockableSlots(false);
+    if (!canCheckDayActions || !selectedDate) {
+      setHasDayActionableSlots(false);
+      setIsLoadingDayActionableSlots(false);
       return;
     }
 
     let isCancelled = false;
-    setIsLoadingQuickBlockableSlots(true);
+    setIsLoadingDayActionableSlots(true);
 
     void fetchAdminBlockableSlots(data.month, selectedDate)
       .then((response) => {
@@ -579,7 +555,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         const targetDay = response.days.find(
           (day) => day.date === selectedDate,
         );
-        setHasQuickBlockableSlots(
+        setHasDayActionableSlots(
           Boolean(targetDay && targetDay.slots.length > 0),
         );
       })
@@ -588,11 +564,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           return;
         }
 
-        setHasQuickBlockableSlots(false);
+        setHasDayActionableSlots(false);
       })
       .finally(() => {
         if (!isCancelled) {
-          setIsLoadingQuickBlockableSlots(false);
+          setIsLoadingDayActionableSlots(false);
         }
       });
 
@@ -795,114 +771,6 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     }
   }
 
-  async function handleQuickBlockDay() {
-    const targetDate = dayAgendaModal.selectedDate;
-
-    if (!targetDate) {
-      return;
-    }
-
-    try {
-      await sileo.promise(
-        createAdminBlockedSlots({
-          month: data.month,
-          date: targetDate,
-          fullDay: true,
-          reason: "DESCANSO",
-        }),
-        {
-          loading: {
-            title: t(
-              "monthsDetail.dayModal.quickActions.notifications.blockDayLoading",
-            ),
-          },
-          success: {
-            title: t(
-              "monthsDetail.dayModal.quickActions.notifications.blockDaySuccess",
-            ),
-          },
-          error: (error: unknown) => {
-            const errorCode =
-              error instanceof Error ? error.message : "UNKNOWN_ERROR";
-
-            return {
-              title: t(
-                "monthsDetail.dayModal.quickActions.notifications.blockDayError",
-              ),
-              description: t(
-                resolveDayModalQuickBlockErrorDescriptionKey(errorCode),
-              ),
-            };
-          },
-        },
-      );
-      await Promise.all([dayAgendaModal.refresh(), refresh()]);
-    } catch {
-      // handled via toast
-    }
-  }
-
-  async function handleQuickBlockRemainingSpaces() {
-    const targetDate = dayAgendaModal.selectedDate;
-
-    if (!targetDate) {
-      return;
-    }
-
-    try {
-      await sileo.promise(
-        (async () => {
-          const response = await fetchAdminBlockableSlots(
-            data.month,
-            targetDate,
-          );
-          const targetDay = response.days.find(
-            (day) => day.date === targetDate,
-          );
-
-          if (!targetDay || targetDay.slots.length === 0) {
-            throw new Error("NO_BLOCKABLE_SLOTS");
-          }
-
-          return createAdminBlockedSlots({
-            month: data.month,
-            date: targetDate,
-            slots: targetDay.slots,
-            reason: "DESCANSO",
-          });
-        })(),
-        {
-          loading: {
-            title: t(
-              "monthsDetail.dayModal.quickActions.notifications.blockRestLoading",
-            ),
-          },
-          success: {
-            title: t(
-              "monthsDetail.dayModal.quickActions.notifications.blockRestSuccess",
-            ),
-          },
-          error: (error: unknown) => {
-            const errorCode =
-              error instanceof Error ? error.message : "UNKNOWN_ERROR";
-
-            return {
-              title: t(
-                "monthsDetail.dayModal.quickActions.notifications.blockRestError",
-              ),
-              description: t(
-                resolveDayModalQuickBlockErrorDescriptionKey(errorCode),
-              ),
-            };
-          },
-        },
-      );
-      await Promise.all([dayAgendaModal.refresh(), refresh()]);
-    } catch {
-      // handled via toast
-    }
-  }
-
   async function handleConfirmBlockedSlots() {
     await sileo.promise(
       blockSpacesModal.submit(async () => {
@@ -952,9 +820,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     }
   }
 
-  async function handleOpenBookAppointmentModal() {
+  async function handleOpenBookAppointmentModal(initialDate?: string) {
     try {
-      await bookAppointmentModal.open();
+      await bookAppointmentModal.open(initialDate);
     } catch (error) {
       const errorCode =
         error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -968,6 +836,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   async function handleBackFromBookingSuccess() {
     bookAppointmentModal.close();
     await refresh();
+  }
+
+  async function handleOpenBlockSpacesModal(initialDate?: string) {
+    await blockSpacesModal.open(initialDate);
   }
 
   async function handleCopyMonthAgendaLink() {
@@ -1352,7 +1224,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             variant="primary"
             fullWidth
             disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
-            onClick={() => void blockSpacesModal.open()}
+            onClick={() => void handleOpenBlockSpacesModal()}
             className="h-12"
           >
             <AdminIcon
@@ -1467,29 +1339,52 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
             {t("monthsDetail.dayModal.sectionTitle")}
           </h3>
-          {shouldShowQuickBlockActions ? (
+          {shouldShowDayActionButtons ? (
             <div className="grid grid-cols-1 gap-2">
-              {isDayFullyAvailableForQuickBlock ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void handleQuickBlockDay()}
-                >
-                  <AdminIcon icon={adminIcons.blockConfirm} className="mr-1" />
-                  {t("monthsDetail.dayModal.quickActions.blockDay")}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void handleQuickBlockRemainingSpaces()}
-                >
-                  <AdminIcon icon={adminIcons.blockConfirm} className="mr-1" />
-                  {t("monthsDetail.dayModal.quickActions.blockRemaining")}
-                </Button>
-              )}
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--admin-text-secondary)]">
+                {t("monthsDetail.dayModal.actionSectionTitle")}
+              </h3>
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                disabled={
+                  isLoading ||
+                  isUpdatingSlotMode ||
+                  isUpdatingMonthStatus ||
+                  data.monthStatus !== "ACTIVE"
+                }
+                onClick={() =>
+                  void handleOpenBookAppointmentModal(
+                    dayAgendaModal.selectedDate ?? undefined,
+                  )
+                }
+                className="h-12"
+              >
+                <AdminIcon
+                  icon={adminIcons.addNewAppointment}
+                  className="text-white! mr-2"
+                />
+                {t("monthsDetail.bookModal.openCta")}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                disabled={isLoading || isUpdatingSlotMode || isUpdatingMonthStatus}
+                onClick={() =>
+                  void handleOpenBlockSpacesModal(
+                    dayAgendaModal.selectedDate ?? undefined,
+                  )
+                }
+                className="h-12"
+              >
+                <AdminIcon
+                  icon={adminIcons.blockSpaces}
+                  className="text-white! mr-2"
+                />
+                {t("monthsDetail.blockModal.openCta")}
+              </Button>
             </div>
           ) : null}
 
@@ -1827,7 +1722,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         allowBlockView={data.slotMode === "BLOCK_MODE"}
         slotViewMode={blockSpacesModal.slotViewMode}
         onClose={blockSpacesModal.close}
-        onRetry={() => void blockSpacesModal.open()}
+        onRetry={() => void handleOpenBlockSpacesModal()}
         onSelectDate={blockSpacesModal.selectDate}
         onToggleSlot={blockSpacesModal.toggleSlot}
         onToggleBlockSlots={blockSpacesModal.toggleBlockSlots}

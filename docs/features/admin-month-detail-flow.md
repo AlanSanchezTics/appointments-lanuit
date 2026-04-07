@@ -82,10 +82,10 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 21. Admin toca un día del calendario y se abre modal de detalle diario.
 22. Frontend solicita `GET /api/admin/months/[month]/days/[date]/agenda`.
 23. Modal muestra agenda cronológica del día con acciones por cita y sección de espacios bloqueados:
-   - Incluye acciones rápidas:
-     - `Bloquear día`: se muestra solo cuando el día está completamente disponible (sin citas ni bloqueos) y bloquea el día completo en una sola operación.
-     - `Bloquear resto de espacios`: se muestra cuando el día ya tiene al menos una cita y bloquea todos los espacios aún elegibles del día.
-   - Las acciones rápidas se muestran solo cuando existen espacios bloqueables para ese día; si el día queda totalmente bloqueado o sin espacios elegibles, se ocultan.
+   - Incluye bloque de acciones:
+     - `Agendar nueva cita`: abre el mismo `BottomSheetModal` de agendado del detalle mensual con la fecha del día preseleccionada.
+     - `Bloquear espacios`: abre el mismo `BottomSheetModal` de bloqueo del detalle mensual con la fecha del día preseleccionada.
+   - El bloque de acciones se muestra solo cuando existen espacios elegibles para ese día; si el día queda totalmente bloqueado o sin espacios elegibles, se oculta.
    - Cada fila incluye hora + nombre + teléfono (subtítulo).
    - `Editar`: reprogramar fecha+slot dentro del mismo mes solo para citas futuras.
      - Al guardar edición, el subformulario se cierra de inmediato.

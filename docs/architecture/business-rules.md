@@ -475,9 +475,10 @@ Business behavior is defined by:
     - Selecting a block toggles both slots of the directional pair in the current day.
     - Persistence uses `blocked_slots` for slot-level blocks and a dedicated full-day marker for day-level block (same table, no table adicional).
 - Day-agenda management behavior:
-    - Day agenda includes quick actions to:
-      - block full day in one action,
-      - block all remaining eligible spaces of that day in one action.
+    - Day agenda includes operational CTAs to:
+      - open `Agendar nueva cita` with the selected day prefilled,
+      - open `Bloquear espacios` with the selected day prefilled.
+    - Day-agenda CTAs are hidden when the selected day has no eligible spaces.
     - Admin can edit reason of a manual blocked slot from day-agenda modal.
     - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
     - Edit is allowed only for future blocked slots.
