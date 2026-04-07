@@ -123,7 +123,7 @@ async function resolveClientInTransaction(
     });
 
     if (existingClient) {
-      if (existingClient.name !== normalizedName) {
+      if (existingClient.name.trim() !== normalizedName.trim()) {
         throw new Error("CLIENT_NAME_MISMATCH");
       }
 
@@ -135,7 +135,7 @@ async function resolveClientInTransaction(
       name: normalizedName,
     });
 
-    if (client.name !== normalizedName) {
+    if (client.name.trim() !== normalizedName.trim()) {
       throw new Error("CLIENT_NAME_MISMATCH");
     }
 

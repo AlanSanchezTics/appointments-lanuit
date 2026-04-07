@@ -135,7 +135,7 @@ async function resolveClientForCreate(
     preferredClientNumber: input.client.clientNumber,
   });
 
-  if (client.name !== parsed.name) {
+  if (client.name.trim() !== parsed.name.trim()) {
     throw new Error("CLIENT_NAME_MISMATCH");
   }
 

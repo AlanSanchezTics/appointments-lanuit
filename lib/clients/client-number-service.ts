@@ -115,7 +115,7 @@ export async function createClientWithUniqueClientNumber(
             },
           });
 
-          if (existingClient && existingClient.name === input.name) {
+          if (existingClient && existingClient.name.trim() === input.name.trim()) {
             return existingClient;
           }
 
