@@ -412,7 +412,7 @@ export function BookingWizardStep1({
         <div className="flex justify-center">
           <Link
             className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
-            href={`/citas/${month}`}
+            href="/"
           >
             {t("booking.back")}
           </Link>

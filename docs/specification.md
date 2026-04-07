@@ -198,6 +198,7 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
 - El flujo visual de reserva queda compuesto por 4 vistas:
   - Entrada global (`/`): branding + listado de meses disponibles (CTA por mes) + CTA secundaria `Cancelar cita`.
   - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
+    - CTA secundaria `Volver` regresa al inicio público (`/`).
   - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
     - Título dinámico:
       - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.
@@ -205,6 +206,7 @@ Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquea
   - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
     - Para clienta fiel: CTA explícito para abrir WhatsApp y enviar confirmación.
     - Para clienta no fiel: CTA principal `Enviar comprobante` y CTA secundario `Volver`.
+    - CTA `Volver`/`Regresar al inicio` regresa al inicio público (`/`).
 - El flujo de `/booking` usa transición horizontal entre pasos:
   - avance: slide hacia la izquierda,
   - retroceso: slide hacia la derecha.
@@ -262,6 +264,7 @@ Mensaje base para cita `PENDING`:
    - Elimina evento en Google Calendar por cada cita seleccionada que tenga `google_event_id`.
 6. UI muestra el mensaje final:
    - `Tu cita ha sido cancelada con exito`.
+   - Muestra CTA primaria `Agendar nueva cita` con navegación a `/`.
 7. Todos los horarios cancelados vuelven a estar disponibles automáticamente.
 
 Notas de contrato:

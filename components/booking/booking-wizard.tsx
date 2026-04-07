@@ -288,7 +288,7 @@ function renderStep({
       onWhatsAppRedirect={onWhatsAppRedirect}
       success={success}
       onBack={() => {
-        window.location.assign(`/citas/${month}`);
+        window.location.assign("/");
       }}
     />
   );

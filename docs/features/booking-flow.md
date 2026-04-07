@@ -66,6 +66,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Comportamiento:
   - UI valida formato base y solicita avance.
   - El selector de días muestra todos los días disponibles en carrusel horizontal (scroll) y mantiene resaltado el día seleccionado.
+  - CTA secundaria `Volver` regresa al inicio público (`/`).
 
 4. Check + lock temporal
 - Trigger: continuar desde paso inicial.
@@ -127,6 +128,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Comportamiento:
   - si la cita quedó `CONFIRMED`, UI muestra pantalla de éxito local y CTA explícito para abrir `wa.me` con mensaje codificado de confirmación;
   - si la cita quedó `PENDING`, UI muestra `Ya estamos casi listas`, explica que la cita quedó pre-registrada y muestra CTA principal `Enviar comprobante` y CTA secundaria `Volver`.
+  - CTA `Volver`/`Regresar al inicio` en éxito regresa al inicio público (`/`).
 - Resultado: envío por WhatsApp depende de acción explícita del usuario.
 
 10. Abandono o expiración

@@ -63,6 +63,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 5. Resultado final
 - Trigger: respuesta exitosa de cancelación.
 - UI: muestra mensaje final de éxito del flujo.
+- UI: muestra CTA primaria `Agendar nueva cita` que navega a `/`.
 - Efecto funcional: el slot deja de contar como ocupado para disponibilidad futura.
 
 ## Validation Points

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { TFunction } from "i18next";
+import { buttonVariants } from "@/components/ui/public/button";
 
 type CancelSuccessStepProps = {
   t: TFunction;
@@ -35,9 +36,12 @@ export function CancelSuccessStep({ t }: CancelSuccessStepProps) {
         </p>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex">
         <Link
-          className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+          className={buttonVariants({
+            variant: "primary",
+            className: "w-full min-h-14 py-4 text-[1rem] font-bold text-white!",
+          })}
           href="/"
         >
           {t("cancel.backHome")}
@@ -81,4 +85,3 @@ function CalendarTimesIcon() {
     </svg>
   );
 }
-
