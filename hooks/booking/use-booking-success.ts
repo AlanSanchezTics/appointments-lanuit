@@ -32,19 +32,18 @@ export function useBookingSuccess({
     const message =
       success.status === "PENDING"
         ? translate("whatsapp.pendingMessageTemplate", {
-            name: success.whatsappData.name,
-            date: formattedDate,
-            time: formattedTime,
-          })
+          name: success.whatsappData.name,
+          date: formattedDate,
+          time: formattedTime,
+        })
         : translate("whatsapp.messageTemplate", {
-            name: success.whatsappData.name,
-            date: formattedDate,
-            time: formattedTime,
-            cancelUrl:
-              typeof window === "undefined"
-                ? "/citas/cancelar"
-                : `${window.location.origin}/citas/cancelar`,
-          });
+          date: formattedDate,
+          time: formattedTime,
+          cancelUrl:
+            typeof window === "undefined"
+              ? "/citas/cancelar"
+              : `${window.location.origin}/citas/cancelar`,
+        });
 
     onWhatsAppRedirect(
       buildWhatsappUrlFromMessage({

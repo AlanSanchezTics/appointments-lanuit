@@ -123,7 +123,7 @@
     "phone": "Phone"
   },
   "whatsapp": {
-    "messageTemplate": "Hi Pau!, this is {{name}} ✨\nI already booked my appointment for {{date}} at {{time}} 🗓️.\nSee you soon!",
-    "pendingMessageTemplate": "Hi Pau!, this is {{name}} ✨.\n\n🧾 Attached is the receipt for my appointment deposit ({{date}} at {{time}}).\n\nLooking forward to your confirmation,\nThank you!"
+    "messageTemplate": "Hi Pau! ✨\n\n🗓️I booked my appointment for *{{date}} at {{time}}*\nSee you soon!",
+    "pendingMessageTemplate": "Hi Pau!, this is {{name}} ✨.\n\n🧾 Attached is the receipt for my appointment deposit (_*{{date}} at {{time}}*_).\n\nLooking forward to your confirmation,\nThank you!"
   }
 }

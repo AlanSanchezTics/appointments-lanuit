@@ -123,7 +123,7 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "Hola Pau!, Soy *{{name}}* ✨\nAgendé mi cita para el día *{{date}} a las {{time}}* 🗓️.\n¡Nos vemos pronto!",
-    "pendingMessageTemplate": "Hola Pau!, soy *{{name}}* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (*{{date}} a las {{time}}*).\n\nEspero tu confirmación,\n¡Gracias!"
+    "messageTemplate": "Hola Pau! ✨\n\n🗓️Agendé mi cita para el día *{{date}} a las {{time}}*\nNos vemos pronto!",
+    "pendingMessageTemplate": "Hola Pau!, soy *{{name}}* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación,\n¡Gracias!"
   }
 }

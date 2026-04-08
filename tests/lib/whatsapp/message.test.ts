@@ -28,7 +28,7 @@ describe("whatsapp message helpers", () => {
     const result = buildWhatsappUrlFromMessage({
       phone: "5215512345678",
       message:
-        "Hola Pau ✨\nSoy Ana ✌️.\nMe interesa agendarte para el día miércoles, 18 de marzo de 2026 a las 09:00 AM 🗓️.\nAdjunto el comprobante de depósito para confirmar mi cita.\n¡Gracias!",
+        "Hola Pau!, soy *Ana* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*18 de marzo de 2026 a las 09:00 AM*_).\n\nEspero tu confirmación,\n¡Gracias!"
     });
 
     expect(result.startsWith("https://wa.me/5215512345678?text=")).toBe(true);
