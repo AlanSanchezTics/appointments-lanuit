@@ -10,29 +10,29 @@ describe("whatsapp message helpers", () => {
   });
 
   it("returns configured whatsapp phone", () => {
-    process.env.WHATSAPP_PHONE = "5215512345678";
+    process.env.WHATSAPP_PHONE = "+5215512345678";
 
-    expect(getWhatsappPhone()).toBe("5215512345678");
+    expect(getWhatsappPhone()).toBe("+5215512345678");
   });
 
   it("encodes message into wa.me URL", () => {
     const result = buildWhatsappUrlFromMessage({
-      phone: "5215512345678",
+      phone: "+5215512345678",
       message: "Hola Pau ✨",
     });
 
-    expect(result).toBe("https://wa.me/5215512345678?text=Hola%20Pau%20%E2%9C%A8");
+    expect(result).toBe("https://wa.me/%2B5215512345678?text=Hola%20Pau%20%E2%9C%A8");
   });
 
   it("encodes the pending receipt message into wa.me URL", () => {
     const result = buildWhatsappUrlFromMessage({
-      phone: "5215512345678",
+      phone: "+5215512345678",
       message:
         "Hola Pau!, soy *Ana* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*18 de marzo de 2026 a las 09:00 AM*_).\n\nEspero tu confirmación,\n¡Gracias!"
     });
 
-    expect(result.startsWith("https://wa.me/5215512345678?text=")).toBe(true);
-    expect(result).toContain("Adjunto%20el%20comprobante%20de%20dep%C3%B3sito");
+    expect(result.startsWith("https://wa.me/%2B5215512345678?text=")).toBe(true);
+    expect(result).toContain("Adjunto%20el%20comprobante%20del%20dep%C3%B3sito");
     expect(result).toContain("%0A");
   });
 });

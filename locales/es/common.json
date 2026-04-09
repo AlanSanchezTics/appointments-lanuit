@@ -116,7 +116,8 @@
     "successTitle": "Tu cita ha sido cancelada con éxito",
     "successBody": "Qué pena que no puedas venir :(",
     "successInfo": "Gracias por avisar con anticipación. Si lo necesitas, puedes volver a reservar en los meses disponibles.",
-    "backHome": "Volver al inicio",
+    "notifyWhatsapp": "Notificar por WhatsApp",
+    "backHome": "Agendar nueva cita",
     "name": "Nombre",
     "date": "Fecha",
     "time": "Hora",
@@ -124,6 +125,7 @@
   },
   "whatsapp": {
     "messageTemplate": "Hola Pau! ✨\n\n🗓️Agendé mi cita para el día *{{date}} a las {{time}}*\nNos vemos pronto!",
-    "pendingMessageTemplate": "Hola Pau!, soy *{{name}}* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación,\n¡Gracias!"
+    "pendingMessageTemplate": "Hola Pau!, soy *{{name}}* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación,\n¡Gracias!",
+    "cancelMessageTemplate": "Hola Pau!\nTenía una cita agendada para el día *{{date}} a las {{time}}* pero la tuve que cancelar ☹️\nGracias!"
   }
 }

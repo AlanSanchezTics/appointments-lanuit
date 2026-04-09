@@ -71,7 +71,14 @@ export function CancelForm() {
           />
         ) : null}
 
-        {step === "success" ? <CancelSuccessStep t={t} /> : null}
+        {step === "success" ? (
+          <CancelSuccessStep
+            appointments={appointments}
+            language={language}
+            selectedAppointmentIds={selectedAppointmentIds}
+            t={t}
+          />
+        ) : null}
       </div>
     </section>
   );

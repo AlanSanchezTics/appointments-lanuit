@@ -116,7 +116,8 @@
     "successTitle": "Your appointment has been canceled",
     "successBody": "Sorry you can't make it :(",
     "successInfo": "Thank you for letting us know in advance. If you need to, you can book again in the available months.",
-    "backHome": "Back to home",
+    "notifyWhatsapp": "Notify by WhatsApp",
+    "backHome": "Book new appointment",
     "name": "Name",
     "date": "Date",
     "time": "Time",
@@ -124,6 +125,7 @@
   },
   "whatsapp": {
     "messageTemplate": "Hi Pau! ✨\n\n🗓️I booked my appointment for *{{date}} at {{time}}*\nSee you soon!",
-    "pendingMessageTemplate": "Hi Pau!, this is {{name}} ✨.\n\n🧾 Attached is the receipt for my appointment deposit (_*{{date}} at {{time}}*_).\n\nLooking forward to your confirmation,\nThank you!"
+    "pendingMessageTemplate": "Hi Pau!, this is {{name}} ✨.\n\n🧾 Attached is the receipt for my appointment deposit (_*{{date}} at {{time}}*_).\n\nLooking forward to your confirmation,\nThank you!",
+    "cancelMessageTemplate": "Hi Pau!\nI had an appointment scheduled for *{{date}} at {{time}}* but I had to cancel it ☹️\nThank you!"
   }
 }

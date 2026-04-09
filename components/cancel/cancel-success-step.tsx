@@ -1,12 +1,30 @@
 import Link from "next/link";
 import type { TFunction } from "i18next";
 import { buttonVariants } from "@/components/ui/public/button";
+import { useCancelSuccessWhatsapp } from "@/hooks/cancel/use-cancel-success-whatsapp";
+import type { CancelableAppointment } from "@/lib/cancel/types";
+import type { AppLanguage } from "@/lib/i18n/config";
 
 type CancelSuccessStepProps = {
+  appointments: CancelableAppointment[];
+  language: AppLanguage;
+  selectedAppointmentIds: number[];
   t: TFunction;
 };
 
-export function CancelSuccessStep({ t }: CancelSuccessStepProps) {
+export function CancelSuccessStep({
+  appointments,
+  language,
+  selectedAppointmentIds,
+  t,
+}: CancelSuccessStepProps) {
+  const { whatsappUrl } = useCancelSuccessWhatsapp({
+    appointments,
+    language,
+    selectedAppointmentIds,
+    translate: (key, options) => t(key, options) as string,
+  });
+
   return (
     <div className="space-y-8">
       <div className="relative pt-2">
@@ -36,11 +54,25 @@ export function CancelSuccessStep({ t }: CancelSuccessStepProps) {
         </p>
       </div>
 
-      <div className="flex">
+      <div className="space-y-4">
+        {whatsappUrl ? (
+          <a
+            className={buttonVariants({
+              variant: "primary",
+              className: "w-full min-h-14 py-4 text-[1rem]",
+            })}
+            href={whatsappUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {t("cancel.notifyWhatsapp")}
+          </a>
+        ) : null}
+
         <Link
           className={buttonVariants({
-            variant: "primary",
-            className: "w-full min-h-14 py-4 text-[1rem] font-bold text-white!",
+            variant: "secondary",
+            className: "w-full min-h-14 py-4 text-[1rem]",
           })}
           href="/"
         >

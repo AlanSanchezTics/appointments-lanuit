@@ -1,5 +1,5 @@
 export function getWhatsappPhone() {
-  return process.env.WHATSAPP_PHONE ?? "";
+  return process.env.WHATSAPP_PHONE ?? "+523223833722";
 }
 
 export function getAppUrl() {
@@ -9,5 +9,6 @@ export function getAppUrl() {
 
 export function buildWhatsappUrlFromMessage(input: { phone: string; message: string }) {
   const message = encodeURIComponent(input.message);
-  return `https://wa.me/${input.phone}?text=${message}`;
+  const phone = encodeURIComponent(input.phone);
+  return `https://wa.me/${phone}?text=${message}`;
 }

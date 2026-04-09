@@ -131,7 +131,7 @@ export function ReminderAppointmentsCard({
       });
 
       const whatsappUrl = buildWhatsappUrlFromMessage({
-        phone: `52${item.phone}`,
+        phone: `+52${item.phone}`,
         message,
       });
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");

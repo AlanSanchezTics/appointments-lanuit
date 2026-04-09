@@ -16,7 +16,9 @@ describe("cancel wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
-    expect(screen.getByText("Ingresa un teléfono de 10 dígitos.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ingresa un teléfono de 10 dígitos."),
+    ).toBeInTheDocument();
   });
 
   it("shows appointment details in step 2 and allows reset to step 1", async () => {
@@ -52,18 +54,24 @@ describe("cancel wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
 
-    expect(await screen.findByRole("heading", { name: "Confirmar cancelación" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Confirmar cancelación" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Hola Ana Garcia")).toBeInTheDocument();
     expect(
       screen.getByText("A continuación los detalles de tu(s) cita(s)"),
     ).toBeInTheDocument();
     expect(screen.getByText(/18 de marzo de 2026/i)).toBeInTheDocument();
     expect(screen.getByText(/24 de marzo de 2026/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cancelar cita" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Cancelar cita" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
 
-    expect(screen.getByRole("heading", { name: "Cancelar cita" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Cancelar cita" }),
+    ).toBeInTheDocument();
   });
 
   it("completes cancellation and renders success message in step 3", async () => {
@@ -104,7 +112,9 @@ describe("cancel wizard", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
     await screen.findByRole("heading", { name: "Confirmar cancelación" });
-    fireEvent.click(screen.getByRole("button", { name: /18 de marzo de 2026/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /18 de marzo de 2026/i }),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
 
@@ -113,6 +123,23 @@ describe("cancel wizard", () => {
         name: "Tu cita ha sido cancelada con éxito",
       }),
     ).toBeInTheDocument();
+
+    const whatsappButton = screen.getByRole("link", {
+      name: "Notificar por WhatsApp",
+    });
+    expect(whatsappButton).toHaveAttribute("target", "_blank");
+    expect(whatsappButton).toHaveAttribute("href");
+    const href = whatsappButton.getAttribute("href") ?? "";
+    expect(href).toContain("https://wa.me/?text=");
+    const decodedMessage = decodeURIComponent(
+      new URL(href).searchParams.get("text") ?? "",
+    );
+    expect(decodedMessage).toContain(
+      "Hola Pau!\nTenía una cita agendada para el día *",
+    );
+    expect(decodedMessage).toContain("18 de");
+    expect(decodedMessage).toContain("01:00 PM* pero la tuve que cancelar ☹️");
+    expect(decodedMessage).toContain("\nGracias!");
   });
 
   it("requires selecting at least one appointment before cancelling", async () => {
