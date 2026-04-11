@@ -1,4 +1,4 @@
-import { GoogleCalendarConfigError } from "@/lib/calendar/google";
+import { GoogleCalendarConfigError, GoogleCalendarSyncError } from "@/lib/calendar/google";
 import {
   createBlockedSlotCalendarEvent,
   deleteBlockedSlotCalendarEvent,
@@ -48,6 +48,10 @@ export async function syncBlockedSlotCreate(input: {
       durationHours: input.durationHours,
     });
 
+    if (!googleEventId) {
+      throw new GoogleCalendarSyncError("CALENDAR_EVENT_ID_MISSING");
+    }
+
     await markBlockedSlotSynced(input.blockedSlotId, googleEventId);
 
     return { status: "CONFIRMED", googleEventId };
@@ -89,6 +93,10 @@ export async function syncBlockedSlotUpdate(input: {
       timeSlot: input.timeSlot,
       reason: input.reason,
     });
+
+    if (!googleEventId) {
+      throw new GoogleCalendarSyncError("CALENDAR_EVENT_ID_MISSING");
+    }
 
     await markBlockedSlotSynced(input.blockedSlotId, googleEventId);
     return { status: "CONFIRMED" };
