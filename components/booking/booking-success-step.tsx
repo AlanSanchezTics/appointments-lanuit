@@ -33,11 +33,14 @@ export function BookingSuccessStep({
 }: BookingSuccessStepProps) {
   const { i18n, t } = useTranslation("common");
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+  const shouldAutoRedirectToWhatsApp =
+    success.status === "CONFIRMED" || success.status === "SYNC_FAILED";
   const { handleWhatsAppClick } = useBookingSuccess({
     language,
     success,
     translate: (key, options) => t(key, options) as string,
     onWhatsAppRedirect,
+    autoRedirectOnMount: shouldAutoRedirectToWhatsApp,
   });
   const isPending = success.status === "PENDING";
 

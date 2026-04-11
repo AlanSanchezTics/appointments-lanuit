@@ -28,7 +28,7 @@ Este documento está diseñado para servir como especificación fuente para impl
 - Zona horaria obligatoria: America/Mexico_City.
 - Integraciones:
   - Google Calendar (sistema espejo).
-  - WhatsApp (notificación manual vía redirección).
+  - WhatsApp (notificación vía redirección: auto-intento en éxito `CONFIRMED`/`SYNC_FAILED` con fallback manual; manual en `PENDING`).
 - Enfoque Mobile-first.
 
 ---
@@ -196,9 +196,9 @@ Regla general:
 8. Si la cita quedó `CONFIRMED`, crea evento en Google Calendar.
 9. UI muestra pantalla local de éxito (paso 3 del wizard).
    - Si la cita quedó `PENDING`, la UI muestra el mensaje `Ya estamos casi listas` con la explicación de que la cita quedó pre-registrada y requiere envío del comprobante por WhatsApp para terminar de agendar.
-10. Usuario ejecuta acción explícita:
-    - `Enviar confirmación por WhatsApp` cuando la cita quedó `CONFIRMED`,
-    - `Enviar comprobante` cuando la cita quedó `PENDING`.
+10. Acción WhatsApp en éxito:
+    - cuando la cita quedó `CONFIRMED` o `SYNC_FAILED`, la UI realiza un intento automático único de redirección a `wa.me` al entrar al paso de éxito y mantiene el botón `Enviar confirmación por WhatsApp` como fallback manual visible;
+    - cuando la cita quedó `PENDING`, la acción permanece explícita con `Enviar comprobante`.
     - El frontend compone el texto final localizado.
     - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
@@ -231,7 +231,7 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
       - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.
       - clienta existente: saludo de retorno actual (`welcomeBack`) definido por i18n.
   - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
-    - Para clienta fiel: CTA explícito para abrir WhatsApp y enviar confirmación.
+    - Para clienta fiel (`CONFIRMED`) o cita `SYNC_FAILED`: intento automático único para abrir WhatsApp al entrar al paso + CTA visible de fallback para reenviar.
     - Para clienta no fiel: CTA principal `Enviar comprobante` y CTA secundario `Volver`.
     - CTA `Volver`/`Regresar al inicio` regresa al inicio público (`/`).
 - El flujo de `/booking` usa transición horizontal entre pasos:

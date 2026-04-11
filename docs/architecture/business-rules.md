@@ -121,6 +121,9 @@ Business behavior is defined by:
   - Public confirmation may include `appointmentIdToReschedule`; when present, the selected active future appointment for the same phone/month is rescheduled instead of creating a new record.
   - Public confirmation without `appointmentIdToReschedule` creates the new appointment in `CONFIRMED` for loyal customers and `PENDING` for non-loyal customers.
   - `PENDING` appointments do not create a calendar event until they are later confirmed.
+  - Public success-step WhatsApp behavior:
+    - `CONFIRMED` and `SYNC_FAILED`: UI performs one automatic WhatsApp redirect attempt when success view is entered, and keeps a visible manual CTA fallback.
+    - `PENDING`: WhatsApp action remains explicit/manual (`Enviar comprobante`).
 
 - Pending review rules:
   - `PENDING` appointments await manual review by admin.

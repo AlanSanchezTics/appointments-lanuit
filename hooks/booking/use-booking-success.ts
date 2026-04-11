@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 import {
@@ -18,6 +18,7 @@ type UseBookingSuccessParams = {
   success: BookingSuccess;
   translate: TranslateFn;
   onWhatsAppRedirect: (url: string) => void;
+  autoRedirectOnMount?: boolean;
 };
 
 export function useBookingSuccess({
@@ -25,7 +26,10 @@ export function useBookingSuccess({
   success,
   translate,
   onWhatsAppRedirect,
+  autoRedirectOnMount = false,
 }: UseBookingSuccessParams) {
+  const autoRedirectKeyRef = useRef<string | null>(null);
+
   const handleWhatsAppClick = useCallback(() => {
     const formattedDate = formatLongDate(success.whatsappData.date, language);
     const formattedTime = formatTimeSlotLabel(success.whatsappData.timeSlot, language);
@@ -52,6 +56,21 @@ export function useBookingSuccess({
       }),
     );
   }, [language, onWhatsAppRedirect, success, translate]);
+
+  useEffect(() => {
+    if (!autoRedirectOnMount) {
+      return;
+    }
+
+    const autoRedirectKey = `${success.appointmentId}:${success.status}`;
+
+    if (autoRedirectKeyRef.current === autoRedirectKey) {
+      return;
+    }
+
+    autoRedirectKeyRef.current = autoRedirectKey;
+    handleWhatsAppClick();
+  }, [autoRedirectOnMount, handleWhatsAppClick, success.appointmentId, success.status]);
 
   return {
     handleWhatsAppClick,

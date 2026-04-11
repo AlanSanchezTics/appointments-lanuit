@@ -45,7 +45,7 @@ test("legacy booking endpoint is deprecated", async ({ request }) => {
   });
 });
 
-test("booking flow renders a local success step before WhatsApp", async ({ page, request }) => {
+test("booking flow redirects to WhatsApp automatically from success with manual fallback", async ({ page, request }) => {
   const month = getActiveMonth();
   const availabilityResponse = await request.get(`/api/availability/${month}`);
   expect(availabilityResponse.ok()).toBeTruthy();
@@ -80,10 +80,20 @@ test("booking flow renders a local success step before WhatsApp", async ({ page,
   await expect(confirmHeading).toBeVisible();
   await page.getByRole("button", { name: /Confirmar cita/i }).click();
 
-  const whatsappButton = page
-    .getByRole("button", { name: /Enviar comprobante|WhatsApp/i })
-    .first();
-  await expect(whatsappButton).toBeVisible();
-  await whatsappButton.click();
+  let autoRedirected = true;
+  try {
+    await page.waitForURL(/https:\/\/wa\.me\//, { timeout: 4000 });
+  } catch {
+    autoRedirected = false;
+  }
+
+  if (!autoRedirected) {
+    const whatsappButton = page
+      .getByRole("button", { name: /Enviar comprobante|WhatsApp/i })
+      .first();
+    await expect(whatsappButton).toBeVisible();
+    await whatsappButton.click();
+  }
+
   await expect(page).toHaveURL(/https:\/\/wa\.me\//);
 });

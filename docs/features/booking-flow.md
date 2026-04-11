@@ -4,13 +4,13 @@
 Describir de forma estructurada el flujo end-to-end de reserva de citas, desde la entrada al mes activo hasta la confirmación final en UI, incluyendo validaciones, estados, control de concurrencia, flujo de pendientes para clientas no fieles y efectos del sistema.
 
 ## Actors
-- Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y decide si envía confirmación por WhatsApp.
+- Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y completa la acción de WhatsApp (automática o manual según estado final).
 - UI pública (`/` y `/citas/YYYY-MM/booking`): muestra meses disponibles, guía el wizard, muestra disponibilidad, errores y estado de lock.
 - API de reservas: ejecuta `check + lock`, confirmación y liberación de lock.
 - Servicios de dominio: validan reglas de negocio (mes activo, disponibilidad, teléfono, restricciones por pares y máximo diario).
 - Base de datos (fuente de verdad): persiste clientes, citas y locks temporales; aplica transacciones y bloqueos.
 - Google Calendar: integración espejo posterior al commit (no fuente de verdad).
-- WhatsApp: canal externo abierto explícitamente por el usuario desde la UI de éxito.
+- WhatsApp: canal externo abierto desde la UI de éxito (auto-intento único en `CONFIRMED`/`SYNC_FAILED`, manual en `PENDING`).
 
 ## Preconditions
 - El mes solicitado en la ruta (`/citas/YYYY-MM`) debe estar en `active_months` con estado `ACTIVE`.
@@ -44,7 +44,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 11. Usuario confirma la cita; backend confirma de forma atómica usando `lock_token`.
 12. Tras commit, se intenta crear evento en Google Calendar.
 13. UI muestra vista de éxito local.
-14. Usuario puede ejecutar explícitamente `Enviar confirmación por WhatsApp`.
+14. En éxito, WhatsApp se dispara automáticamente para `CONFIRMED`/`SYNC_FAILED` con botón manual de fallback; `PENDING` conserva acción explícita `Enviar comprobante`.
 
 ## Step-by-Step Flow
 1. Entrada al flujo público
@@ -134,10 +134,10 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 9. Éxito en UI + WhatsApp
 - Trigger: respuesta de confirmación.
 - Comportamiento:
-  - si la cita quedó `CONFIRMED`, UI muestra pantalla de éxito local y CTA explícito para abrir `wa.me` con mensaje codificado de confirmación;
+  - si la cita quedó `CONFIRMED` o `SYNC_FAILED`, UI muestra pantalla de éxito local, dispara una sola redirección automática a `wa.me` al entrar al paso y mantiene CTA explícito de fallback para reenviar;
   - si la cita quedó `PENDING`, UI muestra `Ya estamos casi listas`, explica que la cita quedó pre-registrada y muestra CTA principal `Enviar comprobante` y CTA secundaria `Volver`.
   - CTA `Volver`/`Regresar al inicio` en éxito regresa al inicio público (`/`).
-- Resultado: envío por WhatsApp depende de acción explícita del usuario.
+- Resultado: envío por WhatsApp es automático en `CONFIRMED`/`SYNC_FAILED` (con fallback manual) y manual en `PENDING`.
 
 10. Abandono o expiración
 - Si usuario retrocede/abandona: lock puede liberarse explícitamente o vencer por TTL.
