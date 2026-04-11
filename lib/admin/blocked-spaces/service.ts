@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import type {
+  BlockedSlotSyncWarning,
   CreateAdminBlockedSlotsPayload,
   CreateAdminBlockedSlotsResponse,
   DeleteAdminBlockedSlotPayload,
@@ -9,6 +10,11 @@ import type {
   UpdateAdminBlockedSlotPayload,
   UpdateAdminBlockedSlotResponse,
 } from "@/lib/admin/blocked-spaces/types";
+import {
+  syncBlockedSlotCreate,
+  syncBlockedSlotDelete,
+  syncBlockedSlotUpdate,
+} from "@/lib/calendar/sync-blocked-slot";
 import {
   FULL_DAY_BLOCK_TIME_SLOT,
   isFullDayBlockTimeSlot,
@@ -31,6 +37,7 @@ import {
 } from "@/lib/db/appointments";
 import {
   createBlockedSlots,
+  countBlockedSlotsByGoogleEventId,
   deleteBlockedSlotsByDate,
   deleteBlockedSlotById,
   findBlockedSlotByIdForUpdate,
@@ -143,6 +150,17 @@ function toBaseTimeSlot(timeSlot: string): BaseTimeSlot {
   throw new Error("SLOT_NOT_AVAILABLE");
 }
 
+function buildSyncSummary(input: {
+  total: number;
+  warnings: BlockedSlotSyncWarning[];
+}) {
+  return {
+    total: input.total,
+    failed: input.warnings.length,
+    synced: Math.max(0, input.total - input.warnings.length),
+  };
+}
+
 export async function getAdminBlockableSlots(
   input: { month: string; date?: string | null },
   now = new Date(),
@@ -236,6 +254,9 @@ export async function createAdminBlockedSlots(
     }
   }
 
+  let createdBlockedSlots: Awaited<ReturnType<typeof createBlockedSlots>> = [];
+  let removedSlotsForFullDay: Array<{ id: number; googleEventId: string | null }> = [];
+
   await prisma.$transaction(async (tx) => {
     await cleanupExpiredReservationLocks(tx, now);
     await lockConflictingAppointments(tx, input.date, "");
@@ -273,10 +294,15 @@ export async function createAdminBlockedSlots(
         throw new Error("SLOT_NOT_AVAILABLE");
       }
 
+      removedSlotsForFullDay = blockedSlots.map((slot) => ({
+        id: slot.id,
+        googleEventId: slot.googleEventId,
+      }));
+
       await deleteBlockedSlotsByDate(tx, input.date);
 
       try {
-        await createBlockedSlots(tx, {
+        createdBlockedSlots = await createBlockedSlots(tx, {
           date: input.date,
           slots: [FULL_DAY_BLOCK_TIME_SLOT],
           reason: input.reason,
@@ -308,7 +334,7 @@ export async function createAdminBlockedSlots(
     }
 
     try {
-      await createBlockedSlots(tx, {
+      createdBlockedSlots = await createBlockedSlots(tx, {
         date: input.date,
         slots: input.slots,
         reason: input.reason,
@@ -319,6 +345,42 @@ export async function createAdminBlockedSlots(
     }
   });
 
+  const syncWarnings: BlockedSlotSyncWarning[] = [];
+
+  for (const removedSlot of removedSlotsForFullDay) {
+    const syncResult = await syncBlockedSlotDelete({
+      googleEventId: removedSlot.googleEventId,
+    });
+
+    if (syncResult.status === "SYNC_FAILED") {
+      syncWarnings.push({
+        blockedSlotId: removedSlot.id,
+        reason: syncResult.reason,
+      });
+    }
+  }
+
+  for (const blockedSlot of createdBlockedSlots) {
+    const durationHours = registration.slotMode === "SECOND_ONLY_MODE"
+      ? undefined
+      : 1;
+
+    const syncResult = await syncBlockedSlotCreate({
+      blockedSlotId: blockedSlot.id,
+      date: blockedSlot.date,
+      timeSlot: blockedSlot.timeSlot,
+      reason: blockedSlot.reason,
+      durationHours,
+    });
+
+    if (syncResult.status === "SYNC_FAILED") {
+      syncWarnings.push({
+        blockedSlotId: blockedSlot.id,
+        reason: syncResult.reason,
+      });
+    }
+  }
+
   if (input.fullDay) {
     return {
       month: input.month,
@@ -327,6 +389,11 @@ export async function createAdminBlockedSlots(
       reason: input.reason,
       totalCreated: 1,
       blockedSlots: [],
+      syncSummary: buildSyncSummary({
+        total: removedSlotsForFullDay.length + 1,
+        warnings: syncWarnings,
+      }),
+      syncWarnings,
     };
   }
 
@@ -341,6 +408,11 @@ export async function createAdminBlockedSlots(
       timeSlot,
       reason: input.reason,
     })),
+    syncSummary: buildSyncSummary({
+      total: input.slots.length,
+      warnings: syncWarnings,
+    }),
+    syncWarnings,
   };
 }
 
@@ -372,12 +444,28 @@ export async function updateAdminBlockedSlot(
     return blockedSlot;
   });
 
+  const syncResult = await syncBlockedSlotUpdate({
+    blockedSlotId: input.blockedSlotId,
+    date: result.date,
+    timeSlot: result.timeSlot,
+    reason: input.reason,
+    googleEventId: result.googleEventId,
+  });
+  const syncWarnings: BlockedSlotSyncWarning[] = syncResult.status === "SYNC_FAILED"
+    ? [{ blockedSlotId: input.blockedSlotId, reason: syncResult.reason }]
+    : [];
+
   return {
     month: input.month,
     blockedSlotId: input.blockedSlotId,
     date: result.date,
     timeSlot: toBaseTimeSlot(result.timeSlot),
     reason: input.reason,
+    syncSummary: buildSyncSummary({
+      total: 1,
+      warnings: syncWarnings,
+    }),
+    syncWarnings,
   };
 }
 
@@ -390,7 +478,7 @@ export async function deleteAdminBlockedSlot(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  await prisma.$transaction(async (tx) => {
+  const removedBlockedSlot = await prisma.$transaction(async (tx) => {
     const blockedSlot = await findBlockedSlotByIdForUpdate(tx, input.blockedSlotId);
 
     if (!blockedSlot) {
@@ -399,11 +487,28 @@ export async function deleteAdminBlockedSlot(
 
     assertBlockedSlotBelongsToMonth(blockedSlot.date, input.month);
     await deleteBlockedSlotById(tx, input.blockedSlotId);
+
+    return blockedSlot;
   });
+
+  const shouldDeleteCalendarEvent = removedBlockedSlot.googleEventId
+    ? (await countBlockedSlotsByGoogleEventId(removedBlockedSlot.googleEventId)) === 0
+    : false;
+  const syncResult = await syncBlockedSlotDelete({
+    googleEventId: shouldDeleteCalendarEvent ? removedBlockedSlot.googleEventId : null,
+  });
+  const syncWarnings: BlockedSlotSyncWarning[] = syncResult.status === "SYNC_FAILED"
+    ? [{ blockedSlotId: input.blockedSlotId, reason: syncResult.reason }]
+    : [];
 
   return {
     month: input.month,
     blockedSlotId: input.blockedSlotId,
     status: "DELETED",
+    syncSummary: buildSyncSummary({
+      total: 1,
+      warnings: syncWarnings,
+    }),
+    syncWarnings,
   };
 }

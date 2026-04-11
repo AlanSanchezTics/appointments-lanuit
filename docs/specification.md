@@ -885,6 +885,16 @@ Flujo UI:
      - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),
      - backend crea registro en `blocked_slots` por cada slot seleccionado,
      - cuando la acción es `Día completo`, backend crea un marcador de bloqueo diario sin generar una fila por cada hora base.
+     - backend sincroniza evento espejo en Google Calendar por cada bloqueo creado (slot o día completo),
+     - título de evento espejo:
+       - bloqueo por slot => `No disponible - [Motivo]`,
+       - bloqueo de día completo => `Día libre - [Motivo]`,
+     - rango horario del evento espejo por `slot_mode`:
+       - `SECOND_ONLY_MODE`: se mantiene comportamiento actual (duración estándar del slot en Calendar),
+       - `BLOCK_MODE` + bloqueo de una sola hora: evento de `1 hora`,
+       - `BLOCK_MODE` + bloqueo de bloque (par direccional): se crea un evento por cada hora del bloque (cada evento de `1 hora`),
+       - bloqueo de día completo: evento `06:00-23:00` del mismo día (`America/Mexico_City`),
+     - si la sincronización externa falla, el bloqueo local se conserva y la UI muestra advertencia operativa.
    - Persistencia de vista por bloque:
      - la selección en vista `Por bloque` solo afecta UX; en backend se registran los mismos slots unitarios de siempre.
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
@@ -1042,16 +1052,21 @@ Contrato API:
     - si algún slot ya no está disponible -> `SLOT_NOT_AVAILABLE` (`409`),
     - colisión por duplicado persistido -> `BLOCKED_SLOT_ALREADY_EXISTS` (`409`),
     - bloqueo de día completo ya existente -> `DAY_ALREADY_BLOCKED` (`409`),
-    - no dispara integraciones externas (Google Calendar) en este flujo.
+    - sincroniza eventos espejo en Google Calendar por cada bloqueo creado.
+    - para `fullDay: true`, el evento espejo se registra el mismo día en rango `06:00-23:00` (`America/Mexico_City`).
+    - los eventos espejo de bloqueos usan el calendario configurado en `BLOCKED_GOOGLE_CALENDAR_ID`.
+    - si falla Calendar, el bloqueo local se mantiene y se devuelve `syncWarnings`.
   - `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
     - payload `{ reason }`,
     - `blockedSlotId` válido (>0),
     - registro debe existir dentro del `month`,
     - permite actualizar solo slots bloqueados futuros, de lo contrario `BLOCKED_SLOT_NOT_EDITABLE` (`409`).
+    - intenta sincronizar cambio de motivo con Google Calendar; ante fallo no bloquea la actualización local y devuelve `syncWarnings`.
   - `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]`:
     - `blockedSlotId` válido (>0),
     - registro debe existir dentro del `month`,
     - permite eliminar slots bloqueados pasados y futuros.
+    - intenta eliminar evento espejo en Google Calendar; ante fallo no bloquea la eliminación local y devuelve `syncWarnings`.
   - `PATCH /api/admin/appointments/[appointmentId]/reschedule`:
     - payload `{ month, date, timeSlot }`,
     - `appointmentId` válido (>0),
@@ -1121,12 +1136,14 @@ Contrato API:
   - `{ month, currentDate, days[] }`
   - `days[]`: `{ date, slots[] }`
 - Success `POST /api/admin/months/[month]/blocked-slots` (`200`):
-  - `{ month, date, fullDay, reason, totalCreated, blockedSlots[] }`
+  - `{ month, date, fullDay, reason, totalCreated, blockedSlots[], syncSummary, syncWarnings[] }`
   - `blockedSlots[]`: `{ date, timeSlot, reason }`
+  - `syncSummary`: `{ total, synced, failed }`
+  - `syncWarnings[]`: `{ blockedSlotId|null, reason }`
 - Success `PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]` (`200`):
-  - `{ month, blockedSlotId, date, timeSlot, reason }`
+  - `{ month, blockedSlotId, date, timeSlot, reason, syncSummary, syncWarnings[] }`
 - Success `DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]` (`200`):
-  - `{ month, blockedSlotId, status: "DELETED" }`
+  - `{ month, blockedSlotId, status: "DELETED", syncSummary, syncWarnings[] }`
 - Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
   - `{ appointmentId, date, timeSlot, status, syncReason? }`
 - Success `POST /api/admin/appointments/[appointmentId]/confirm` (`200`):

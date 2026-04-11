@@ -50,6 +50,7 @@ import type {
   MonthDetailResponse,
 } from "@/lib/admin/months/types";
 import type { BlockReason } from "@/lib/admin/blocked-spaces/types";
+import type { BlockedSlotSyncWarning } from "@/lib/admin/blocked-spaces/types";
 
 type MonthDetailViewProps = {
   month: string;
@@ -121,6 +122,19 @@ function resolveDayModalCancelErrorDescriptionKey(errorCode: string) {
       return "monthsDetail.dayModal.notifications.errorDescriptions.appointmentNotFound";
     default:
       return "monthsDetail.dayModal.notifications.errorDescriptions.generic";
+  }
+}
+
+function resolveBlockedSlotSyncWarningDescriptionKey(
+  reason: BlockedSlotSyncWarning["reason"],
+) {
+  switch (reason) {
+    case "CALENDAR_NOT_CONFIGURED":
+      return "monthsDetail.blockedSync.notifications.errorDescriptions.calendarNotConfigured";
+    case "CALENDAR_DELETE_FAILED":
+      return "monthsDetail.blockedSync.notifications.errorDescriptions.calendarDeleteFailed";
+    default:
+      return "monthsDetail.blockedSync.notifications.errorDescriptions.calendarSyncFailed";
   }
 }
 
@@ -289,6 +303,21 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     () => resolveBaseSlotsByMonthMode(data.slotMode),
     [data.slotMode],
   );
+
+  function notifyBlockedSlotSyncWarnings(warnings?: BlockedSlotSyncWarning[]) {
+    if (!warnings || warnings.length === 0) {
+      return;
+    }
+
+    const firstWarning = warnings[0];
+    sileo.warning({
+      title: t("monthsDetail.blockedSync.notifications.warningTitle"),
+      description: t(
+        resolveBlockedSlotSyncWarningDescriptionKey(firstWarning.reason),
+        { count: warnings.length },
+      ),
+    });
+  }
 
   const monthTitle = formatMonthLabel(data.month, language);
   const calendarCells = useMemo(
@@ -691,7 +720,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     setProcessingBlockedSlotId(blockedSlotId);
 
     try {
-      await sileo.promise(
+      const response = await sileo.promise(
         updateAdminBlockedSlotById({
           month: data.month,
           blockedSlotId,
@@ -713,6 +742,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           },
         },
       );
+      notifyBlockedSlotSyncWarnings(response.syncWarnings ?? []);
       stopEditingBlockedSlot();
       await Promise.all([dayAgendaModal.refresh(), refresh()]);
     } finally {
@@ -739,7 +769,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     setProcessingBlockedSlotId(input.blockedSlotIds[0] ?? null);
 
     try {
-      await sileo.promise(
+      const responses = await sileo.promise(
         Promise.all(
           input.blockedSlotIds.map((blockedSlotId) =>
             deleteAdminBlockedSlotById({
@@ -764,6 +794,8 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           },
         },
       );
+      const syncWarnings = responses.flatMap((response) => response.syncWarnings ?? []);
+      notifyBlockedSlotSyncWarnings(syncWarnings);
       stopEditingBlockedSlot();
       await Promise.all([dayAgendaModal.refresh(), refresh()]);
     } finally {
@@ -772,7 +804,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   }
 
   async function handleConfirmBlockedSlots() {
-    await sileo.promise(
+    const response = await sileo.promise(
       blockSpacesModal.submit(async () => {
         await Promise.all([
           refresh(),
@@ -791,6 +823,9 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         },
       },
     );
+    if (response) {
+      notifyBlockedSlotSyncWarnings(response.syncWarnings ?? []);
+    }
   }
 
   async function handleCreateAdminAppointment() {

@@ -53,6 +53,12 @@ describe("PATCH/DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]",
       date: "2026-03-21",
       timeSlot: "13:00",
       reason: "PERSONAL",
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
     });
 
     const { PATCH } = await import(
@@ -81,6 +87,12 @@ describe("PATCH/DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]",
       date: "2026-03-21",
       timeSlot: "13:00",
       reason: "PERSONAL",
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
     });
     expect(updateAdminBlockedSlotMock).toHaveBeenCalledWith({
       month: "2026-03",
@@ -95,6 +107,12 @@ describe("PATCH/DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]",
       month: "2026-03",
       blockedSlotId: 12,
       status: "DELETED",
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
     });
 
     const { DELETE } = await import(
@@ -117,6 +135,12 @@ describe("PATCH/DELETE /api/admin/months/[month]/blocked-slots/[blockedSlotId]",
       month: "2026-03",
       blockedSlotId: 12,
       status: "DELETED",
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
     });
     expect(deleteAdminBlockedSlotMock).toHaveBeenCalledWith({
       month: "2026-03",

@@ -19,6 +19,7 @@
     "calendar:smoke": "node --env-file-if-exists=.env scripts/google-calendar-smoke.mjs",
     "appointments:reject-pending": "node --env-file-if-exists=.env scripts/reject-pending-appointments.mjs",
     "appointments:retry-sync-failed": "node --env-file-if-exists=.env scripts/retry-sync-failed-appointments.mjs",
+    "blocked-slots:retry-sync-failed": "node --env-file-if-exists=.env scripts/retry-sync-failed-blocked-slots.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:dev": "prisma migrate dev",

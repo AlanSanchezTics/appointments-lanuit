@@ -60,8 +60,42 @@ export function getCalendarConfig(): CalendarConfig {
   };
 }
 
+export function getBlockedCalendarConfig(): CalendarConfig {
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const calendarId = process.env.BLOCKED_GOOGLE_CALENDAR_ID;
+
+  if (!clientEmail || !privateKey || !calendarId) {
+    throw new GoogleCalendarConfigError("CALENDAR_NOT_CONFIGURED");
+  }
+
+  return {
+    calendarId,
+    clientEmail,
+    privateKey,
+  };
+}
+
 function getCalendarClient() {
   const config = getCalendarConfig();
+
+  const auth = new google.auth.JWT({
+    email: config.clientEmail,
+    key: config.privateKey,
+    scopes: ["https://www.googleapis.com/auth/calendar"],
+  });
+
+  return {
+    calendar: google.calendar({
+      version: "v3",
+      auth,
+    }),
+    calendarId: config.calendarId,
+  };
+}
+
+function getBlockedCalendarClient() {
+  const config = getBlockedCalendarConfig();
 
   const auth = new google.auth.JWT({
     email: config.clientEmail,
@@ -170,6 +204,111 @@ export async function createCalendarEvent(input: { name: string; date: string; t
   }
 }
 
+export async function createBlockedSlotCalendarEvent(input: {
+  date: string;
+  timeSlot: string;
+  reason: string;
+  durationHours?: number;
+}) {
+  try {
+    const { calendar, calendarId } = getBlockedCalendarClient();
+    const isFullDayBlock = input.timeSlot === "00:00";
+    const summary = isFullDayBlock
+      ? `Día libre - ${input.reason}`
+      : `No disponible - ${input.reason}`;
+
+    if (isFullDayBlock) {
+      const response = await calendar.events.insert({
+        calendarId,
+        requestBody: {
+          summary,
+          start: {
+            dateTime: `${input.date}T06:00:00`,
+            timeZone: REQUIRED_TIMEZONE,
+          },
+          end: {
+            dateTime: `${input.date}T23:00:00`,
+            timeZone: REQUIRED_TIMEZONE,
+          },
+        },
+      });
+
+      if (!response.data.id) {
+        throw new GoogleCalendarSyncError("CALENDAR_EVENT_ID_MISSING");
+      }
+
+      return response.data.id;
+    }
+
+    const [startHour, startMinute] = input.timeSlot.split(":").map(Number);
+    const startDate = new Date(Date.UTC(
+      Number(input.date.slice(0, 4)),
+      Number(input.date.slice(5, 7)) - 1,
+      Number(input.date.slice(8, 10)),
+      startHour,
+      startMinute,
+      0,
+    ));
+    const endDate = new Date(startDate);
+    endDate.setUTCHours(endDate.getUTCHours() + (input.durationHours ?? GOOGLE_EVENT_DURATION_HOURS));
+
+    const response = await calendar.events.insert({
+      calendarId,
+      requestBody: {
+        summary,
+        start: {
+          dateTime: buildDateTime(startDate),
+          timeZone: REQUIRED_TIMEZONE,
+        },
+        end: {
+          dateTime: buildDateTime(endDate),
+          timeZone: REQUIRED_TIMEZONE,
+        },
+      },
+    });
+
+    if (!response.data.id) {
+      throw new GoogleCalendarSyncError("CALENDAR_EVENT_ID_MISSING");
+    }
+
+    return response.data.id;
+  } catch (error) {
+    normalizeGoogleCalendarError(error);
+  }
+}
+
+export async function updateCalendarEventSummary(input: { eventId: string; summary: string }) {
+  try {
+    const { calendar, calendarId } = getCalendarClient();
+
+    await calendar.events.patch({
+      calendarId,
+      eventId: input.eventId,
+      requestBody: {
+        summary: input.summary,
+      },
+    });
+  } catch (error) {
+    normalizeGoogleCalendarError(error);
+  }
+}
+
+export async function updateBlockedSlotCalendarEventSummary(input: { eventId: string; summary: string }) {
+  try {
+    const { calendar, calendarId } = getBlockedCalendarClient();
+
+    await calendar.events.patch({
+      calendarId,
+      eventId: input.eventId,
+      requestBody: {
+        summary: input.summary,
+      },
+    });
+  } catch (error) {
+    normalizeGoogleCalendarError(error);
+  }
+}
+
 export async function createSmokeTestCalendarEvent(input: { date: string; timeSlot: string }) {
   return createCalendarEvent({
     name: "Smoke Test La Nuit",
@@ -181,6 +320,19 @@ export async function createSmokeTestCalendarEvent(input: { date: string; timeSl
 export async function deleteCalendarEvent(eventId: string) {
   try {
     const { calendar, calendarId } = getCalendarClient();
+
+    await calendar.events.delete({
+      calendarId,
+      eventId,
+    });
+  } catch (error) {
+    normalizeGoogleCalendarError(error);
+  }
+}
+
+export async function deleteBlockedSlotCalendarEvent(eventId: string) {
+  try {
+    const { calendar, calendarId } = getBlockedCalendarClient();
 
     await calendar.events.delete({
       calendarId,

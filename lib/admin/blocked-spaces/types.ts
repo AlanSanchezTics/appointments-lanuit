@@ -4,6 +4,22 @@ export const BLOCK_REASON_VALUES = ["DESCANSO", "PERSONAL", "OTRO"] as const;
 
 export type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
 
+export type BlockedSlotSyncWarningReason =
+  | "CALENDAR_NOT_CONFIGURED"
+  | "CALENDAR_SYNC_FAILED"
+  | "CALENDAR_DELETE_FAILED";
+
+export type BlockedSlotSyncWarning = {
+  blockedSlotId: number | null;
+  reason: BlockedSlotSyncWarningReason;
+};
+
+export type BlockedSlotSyncSummary = {
+  total: number;
+  synced: number;
+  failed: number;
+};
+
 export type AdminBlockableDay = {
   date: string;
   slots: (typeof BASE_TIME_SLOTS)[number][];
@@ -40,6 +56,8 @@ export type CreateAdminBlockedSlotsResponse = {
     timeSlot: (typeof BASE_TIME_SLOTS)[number];
     reason: BlockReason;
   }>;
+  syncSummary: BlockedSlotSyncSummary;
+  syncWarnings: BlockedSlotSyncWarning[];
 };
 
 export type UpdateAdminBlockedSlotPayload = {
@@ -54,6 +72,8 @@ export type UpdateAdminBlockedSlotResponse = {
   date: string;
   timeSlot: (typeof BASE_TIME_SLOTS)[number];
   reason: BlockReason;
+  syncSummary: BlockedSlotSyncSummary;
+  syncWarnings: BlockedSlotSyncWarning[];
 };
 
 export type DeleteAdminBlockedSlotPayload = {
@@ -65,4 +85,6 @@ export type DeleteAdminBlockedSlotResponse = {
   month: string;
   blockedSlotId: number;
   status: "DELETED";
+  syncSummary: BlockedSlotSyncSummary;
+  syncWarnings: BlockedSlotSyncWarning[];
 };

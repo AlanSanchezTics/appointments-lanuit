@@ -1,4 +1,9 @@
-import type { BlockedSlotReason, Prisma } from "@prisma/client";
+import type {
+  BlockedSlotCalendarSyncReason,
+  BlockedSlotCalendarSyncStatus,
+  BlockedSlotReason,
+  Prisma,
+} from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 
@@ -7,6 +12,9 @@ export type PersistedBlockedSlot = {
   date: string;
   timeSlot: string;
   reason: BlockedSlotReason;
+  googleEventId: string | null;
+  calendarSyncStatus: BlockedSlotCalendarSyncStatus;
+  calendarSyncReason: BlockedSlotCalendarSyncReason | null;
   createdByAdminId: number | null;
 };
 
@@ -23,6 +31,9 @@ function mapBlockedSlot(row: {
   date: Date;
   timeSlot: Date;
   reason: BlockedSlotReason;
+  googleEventId: string | null;
+  calendarSyncStatus: BlockedSlotCalendarSyncStatus;
+  calendarSyncReason: BlockedSlotCalendarSyncReason | null;
   createdByAdminId: number | null;
 }) {
   return {
@@ -30,6 +41,9 @@ function mapBlockedSlot(row: {
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     reason: row.reason,
+    googleEventId: row.googleEventId,
+    calendarSyncStatus: row.calendarSyncStatus,
+    calendarSyncReason: row.calendarSyncReason,
     createdByAdminId: row.createdByAdminId,
   } satisfies PersistedBlockedSlot;
 }
@@ -145,12 +159,109 @@ export async function createBlockedSlots(
     createdByAdminId: number | null;
   },
 ) {
-  await tx.blockedSlot.createMany({
-    data: input.slots.map((timeSlot) => ({
-      date: new Date(`${input.date}T00:00:00.000Z`),
-      timeSlot: timeSlotToDate(timeSlot),
-      reason: input.reason,
-      createdByAdminId: input.createdByAdminId,
-    })),
+  const createdRows = await Promise.all(
+    input.slots.map((timeSlot) =>
+      tx.blockedSlot.create({
+        data: {
+          date: new Date(`${input.date}T00:00:00.000Z`),
+          timeSlot: timeSlotToDate(timeSlot),
+          reason: input.reason,
+          calendarSyncStatus: "CONFIRMED",
+          calendarSyncReason: null,
+          createdByAdminId: input.createdByAdminId,
+        },
+      }),
+    ),
+  );
+
+  return createdRows
+    .map(mapBlockedSlot)
+    .sort((left, right) => left.timeSlot.localeCompare(right.timeSlot));
+}
+
+export async function markBlockedSlotSynced(
+  blockedSlotId: number,
+  googleEventId: string,
+) {
+  await prisma.blockedSlot.update({
+    where: {
+      id: blockedSlotId,
+    },
+    data: {
+      googleEventId,
+      calendarSyncStatus: "CONFIRMED",
+      calendarSyncReason: null,
+    },
+  });
+}
+
+export async function markBlockedSlotSyncFailed(
+  blockedSlotId: number,
+  reason: BlockedSlotCalendarSyncReason,
+) {
+  await prisma.blockedSlot.update({
+    where: {
+      id: blockedSlotId,
+    },
+    data: {
+      calendarSyncStatus: "SYNC_FAILED",
+      calendarSyncReason: reason,
+    },
+  });
+}
+
+export async function listBlockedSlotsWithSyncFailed(input: {
+  take: number;
+  afterId?: number;
+}) {
+  const rows = await prisma.blockedSlot.findMany({
+    where: {
+      id: {
+        gt: input.afterId ?? 0,
+      },
+      calendarSyncStatus: "SYNC_FAILED",
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: input.take,
+  });
+
+  return rows.map(mapBlockedSlot);
+}
+
+export async function updateBlockedSlotSyncFailure(
+  blockedSlotId: number,
+  reason: BlockedSlotCalendarSyncReason,
+) {
+  await prisma.blockedSlot.update({
+    where: {
+      id: blockedSlotId,
+    },
+    data: {
+      calendarSyncStatus: "SYNC_FAILED",
+      calendarSyncReason: reason,
+    },
+  });
+}
+
+export async function clearBlockedSlotGoogleEventId(blockedSlotId: number) {
+  await prisma.blockedSlot.update({
+    where: {
+      id: blockedSlotId,
+    },
+    data: {
+      googleEventId: null,
+      calendarSyncStatus: "SYNC_FAILED",
+      calendarSyncReason: "CALENDAR_DELETE_FAILED",
+    },
+  });
+}
+
+export async function countBlockedSlotsByGoogleEventId(googleEventId: string) {
+  return prisma.blockedSlot.count({
+    where: {
+      googleEventId,
+    },
   });
 }

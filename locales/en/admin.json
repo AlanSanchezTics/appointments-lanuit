@@ -531,6 +531,16 @@
         "submitError": "Unable to block spaces."
       }
     },
+    "blockedSync": {
+      "notifications": {
+        "warningTitle": "Block saved with Calendar warnings",
+        "errorDescriptions": {
+          "calendarNotConfigured": "The block was saved, but Google Calendar is not configured.",
+          "calendarSyncFailed": "The block was saved, but it could not be synced to Google Calendar.",
+          "calendarDeleteFailed": "The block was deleted locally, but the event could not be deleted in Google Calendar."
+        }
+      }
+    },
     "bookModal": {
       "openCta": "Schedule new appointment",
       "title": "Schedule appointment",

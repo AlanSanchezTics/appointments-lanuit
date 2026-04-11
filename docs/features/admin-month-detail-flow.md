@@ -72,7 +72,18 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - UI bloquea todas las interacciones del modal mientras procesa,
    - frontend ejecuta `POST /api/admin/months/[month]/blocked-slots`,
    - backend persiste bloqueo por slot en `blocked_slots`,
+   - backend intenta crear evento espejo por bloqueo en Google Calendar,
+   - título del evento espejo:
+     - bloqueo por slot => `No disponible - [Motivo]`,
+     - bloqueo de día completo => `Día libre - [Motivo]`,
+   - rango del evento espejo por `slot_mode`:
+     - `SECOND_ONLY_MODE` conserva la duración actual,
+     - `BLOCK_MODE` + bloqueo por hora => evento de 1 hora,
+     - `BLOCK_MODE` + bloqueo por bloque => se crea un evento por cada hora del par (1 hora por evento),
+   - cuando el bloqueo es de día completo, el evento espejo usa rango `06:00-23:00` del mismo día (`America/Mexico_City`),
    - si la acción fue `Día completo`, backend persiste un marcador de bloqueo diario en `blocked_slots` sin crear una fila por cada hora,
+   - si Calendar falla, el bloqueo local se conserva y backend devuelve `syncWarnings`,
+   - frontend muestra advertencia operativa cuando recibe `syncWarnings`,
    - frontend refresca detalle mensual (métricas + calendario).
    - disponibilidad pública/admin del día se recalcula con regla direccional de bloqueos manuales:
      - slot único bloqueado en par => propagación direccional,
@@ -95,8 +106,11 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`) tanto para citas pasadas como futuras.
    - En `Espacios bloqueados`:
      - `Editar`: permite cambiar motivo (`DESCANSO`, `PERSONAL`, `OTRO`) y guardar solo en slots futuros.
+       - al guardar, backend intenta sincronizar el cambio de motivo en Google Calendar.
      - `Editar` en slots pasados permanece deshabilitado y debe mostrar feedback explícito de no editable.
      - `Eliminar`: solicita confirmación y elimina el bloqueo manual tanto en slots pasados como futuros.
+       - al eliminar, backend intenta eliminar el evento espejo en Google Calendar.
+       - fallos de Calendar no revierten la operación local y se reportan como `syncWarnings`.
      - cuando el día está bloqueado completo, se muestra como un único item y `Eliminar` desbloquea todo el día en una sola acción.
      - Ambas acciones refrescan agenda diaria y métricas/calendario del mes al finalizar.
 

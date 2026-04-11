@@ -468,6 +468,19 @@ Business behavior is defined by:
   - Manual-block directional propagation:
     - Blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
     - Blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
+  - Calendar mirror:
+    - Every blocked slot creation (including full-day marker) must attempt to create a mirror event in Google Calendar.
+    - Mirror event title format:
+      - slot block: `No disponible - [Reason]`.
+      - full-day block: `Día libre - [Reason]`.
+    - Mirror event range by month slot mode:
+      - `SECOND_ONLY_MODE`: keep current standard duration behavior.
+      - `BLOCK_MODE` single-hour block: event duration is 1 hour.
+      - `BLOCK_MODE` directional pair block: create one 1-hour event per blocked hour in the pair.
+    - Full-day blocked-slot mirror event must use same-day schedule window `06:00-23:00` in `America/Mexico_City`.
+    - Blocked-slot reason updates must attempt to update the mirror event summary.
+    - Blocked-slot deletion must attempt to delete the mirror event when `googleEventId` exists.
+    - Calendar failures never rollback local blocked-slot mutations; failures are exposed as sync warnings and tracked as `SYNC_FAILED` for retry when applicable.
     - Blocking all base slots in a day results in no bookable slots for that day.
   - Full-day block behavior:
     - Admin can block a full day in one action (without selecting each hour individually).

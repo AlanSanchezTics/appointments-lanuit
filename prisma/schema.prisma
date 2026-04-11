@@ -41,6 +41,17 @@ enum BlockedSlotReason {
   OTRO
 }
 
+enum BlockedSlotCalendarSyncStatus {
+  CONFIRMED
+  SYNC_FAILED
+}
+
+enum BlockedSlotCalendarSyncReason {
+  CALENDAR_NOT_CONFIGURED
+  CALENDAR_SYNC_FAILED
+  CALENDAR_DELETE_FAILED
+}
+
 model Appointment {
   id                   Int                   @id @default(autoincrement())
   clientId             Int                   @map("client_id")
@@ -117,17 +128,21 @@ model AdminUser {
 }
 
 model BlockedSlot {
-  id               Int               @id @default(autoincrement())
-  date             DateTime          @db.Date
-  timeSlot         DateTime          @map("time_slot") @db.Time(0)
-  reason           BlockedSlotReason
-  createdByAdminId Int?              @map("created_by_admin_user_id")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  createdByAdmin   AdminUser?        @relation(fields: [createdByAdminId], references: [id])
+  id                 Int                           @id @default(autoincrement())
+  date               DateTime                      @db.Date
+  timeSlot           DateTime                      @map("time_slot") @db.Time(0)
+  reason             BlockedSlotReason
+  googleEventId      String?                       @map("google_event_id") @db.VarChar(255)
+  calendarSyncStatus BlockedSlotCalendarSyncStatus @default(CONFIRMED) @map("calendar_sync_status")
+  calendarSyncReason BlockedSlotCalendarSyncReason? @map("calendar_sync_reason")
+  createdByAdminId   Int?                          @map("created_by_admin_user_id")
+  createdAt          DateTime                      @default(now()) @map("created_at")
+  updatedAt          DateTime                      @updatedAt @map("updated_at")
+  createdByAdmin     AdminUser?                    @relation(fields: [createdByAdminId], references: [id])
 
   @@unique([date, timeSlot])
   @@index([date])
+  @@index([calendarSyncStatus])
   @@index([createdByAdminId])
   @@map("blocked_slots")
 }

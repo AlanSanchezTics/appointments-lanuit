@@ -52,6 +52,12 @@ describe("POST /api/admin/months/[month]/blocked-slots", () => {
           reason: "DESCANSO",
         },
       ],
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
     });
 
     const { POST } = await import("@/app/api/admin/months/[month]/blocked-slots/route");
@@ -71,6 +77,26 @@ describe("POST /api/admin/months/[month]/blocked-slots", () => {
     );
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      month: "2026-03",
+      date: "2026-03-21",
+      fullDay: false,
+      reason: "DESCANSO",
+      totalCreated: 1,
+      blockedSlots: [
+        {
+          date: "2026-03-21",
+          timeSlot: "13:00",
+          reason: "DESCANSO",
+        },
+      ],
+      syncSummary: {
+        total: 1,
+        synced: 1,
+        failed: 0,
+      },
+      syncWarnings: [],
+    });
     expect(createAdminBlockedSlotsMock).toHaveBeenCalledWith({
       month: "2026-03",
       date: "2026-03-21",

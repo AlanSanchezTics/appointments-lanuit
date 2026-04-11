@@ -531,6 +531,16 @@
         "submitError": "No se pudieron bloquear los espacios."
       }
     },
+    "blockedSync": {
+      "notifications": {
+        "warningTitle": "Bloqueo guardado con advertencias de Calendar",
+        "errorDescriptions": {
+          "calendarNotConfigured": "El bloqueo se guardó, pero Google Calendar no está configurado.",
+          "calendarSyncFailed": "El bloqueo se guardó, pero no se pudo sincronizar con Google Calendar.",
+          "calendarDeleteFailed": "El bloqueo se eliminó en el sistema, pero no se pudo eliminar el evento en Google Calendar."
+        }
+      }
+    },
     "bookModal": {
       "openCta": "Agendar nueva cita",
       "title": "Agendar cita",
