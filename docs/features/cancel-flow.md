@@ -63,7 +63,8 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 5. Resultado final
 - Trigger: respuesta exitosa de cancelación.
 - UI: muestra mensaje final de éxito del flujo.
-- UI: muestra CTA primaria `Notificar por WhatsApp` que abre nueva pestaña hacia `wa.me` con mensaje predefinido de aviso de cancelación incluyendo fecha/hora de la cita cancelada.
+- UI: al entrar al paso de éxito, dispara un intento automático único de redirección a `wa.me` cuando existe `whatsappUrl`.
+- UI: mantiene CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `wa.me` con mensaje predefinido de aviso de cancelación incluyendo fecha/hora de la cita cancelada.
 - UI: mantiene CTA `Volver al inicio` que navega a `/`.
 - Efecto funcional: el slot deja de contar como ocupado para disponibilidad futura.
 

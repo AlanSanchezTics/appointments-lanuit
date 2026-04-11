@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import type { TFunction } from "i18next";
 import { buttonVariants } from "@/components/ui/public/button";
@@ -9,6 +10,7 @@ type CancelSuccessStepProps = {
   appointments: CancelableAppointment[];
   language: AppLanguage;
   selectedAppointmentIds: number[];
+  onWhatsAppRedirect: (url: string) => void;
   t: TFunction;
 };
 
@@ -16,14 +18,29 @@ export function CancelSuccessStep({
   appointments,
   language,
   selectedAppointmentIds,
+  onWhatsAppRedirect,
   t,
 }: CancelSuccessStepProps) {
+  const autoRedirectedUrlRef = useRef<string | null>(null);
   const { whatsappUrl } = useCancelSuccessWhatsapp({
     appointments,
     language,
     selectedAppointmentIds,
     translate: (key, options) => t(key, options) as string,
   });
+
+  useEffect(() => {
+    if (!whatsappUrl) {
+      return;
+    }
+
+    if (autoRedirectedUrlRef.current === whatsappUrl) {
+      return;
+    }
+
+    autoRedirectedUrlRef.current = whatsappUrl;
+    onWhatsAppRedirect(whatsappUrl);
+  }, [onWhatsAppRedirect, whatsappUrl]);
 
   return (
     <div className="space-y-8">

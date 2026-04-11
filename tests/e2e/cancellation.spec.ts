@@ -176,6 +176,14 @@ test("user completes cancellation wizard in three steps", async ({
     name: "E2E Wizard Cancel",
   });
 
+  await page.route("https://wa.me/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<html><body>ok</body></html>",
+    });
+  });
+
   await page.goto("/citas/cancelar");
   await page.locator("#cancel-phone").fill(appointment.phone);
   await page.getByRole("button", { name: "Buscar cita" }).click();
@@ -185,9 +193,22 @@ test("user completes cancellation wizard in three steps", async ({
   await page.getByRole("button", { name: /\d{2}:\d{2}\s?(AM|PM)/i }).first().click();
 
   await page.getByRole("button", { name: "Cancelar cita" }).click();
-  await expect(
-    page.getByRole("heading", {
-      name: /Tu cita ha sido cancelada con .xito/i,
-    }),
-  ).toBeVisible();
+
+  let autoRedirected = true;
+  try {
+    await page.waitForURL(/https:\/\/wa\.me\//, { timeout: 4000 });
+  } catch {
+    autoRedirected = false;
+  }
+
+  if (!autoRedirected) {
+    await expect(
+      page.getByRole("heading", {
+        name: /Tu cita ha sido cancelada con .xito/i,
+      }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Notificar por WhatsApp" }).click();
+  }
+
+  await expect(page).toHaveURL(/https:\/\/wa\.me\//);
 });

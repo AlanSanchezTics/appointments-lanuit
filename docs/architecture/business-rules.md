@@ -146,6 +146,9 @@ Business behavior is defined by:
   - Each selected appointment state changes to `CANCELLED`.
   - Released slot becomes available again under normal availability rules.
   - For `SYNC_FAILED`, cancellation remains valid even if no external event exists (`googleEventId = null`).
+  - Public cancellation success-step WhatsApp behavior:
+    - UI performs one automatic WhatsApp redirect attempt when success view is entered and `whatsappUrl` is available.
+    - UI keeps a visible manual CTA fallback (`Notificar por WhatsApp`).
 
 - Not allowed:
   - Cancelling past appointments.

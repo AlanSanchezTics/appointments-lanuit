@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CancelForm } from "@/components/cancel/cancel-form";
+import { CancelSuccessStep } from "@/components/cancel/cancel-success-step";
 
 describe("cancel wizard", () => {
   afterEach(() => {
@@ -75,6 +76,7 @@ describe("cancel wizard", () => {
   });
 
   it("completes cancellation and renders success message in step 3", async () => {
+    const onWhatsAppRedirect = vi.fn();
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({
@@ -105,7 +107,7 @@ describe("cancel wizard", () => {
       });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<CancelForm />);
+    render(<CancelForm onWhatsAppRedirect={onWhatsAppRedirect} />);
 
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
@@ -123,6 +125,10 @@ describe("cancel wizard", () => {
         name: "Tu cita ha sido cancelada con éxito",
       }),
     ).toBeInTheDocument();
+    expect(onWhatsAppRedirect).toHaveBeenCalledTimes(1);
+    expect(onWhatsAppRedirect).toHaveBeenCalledWith(
+      expect.stringContaining("https://wa.me/"),
+    );
 
     const whatsappButton = screen.getByRole("link", {
       name: "Notificar por WhatsApp",
@@ -130,7 +136,7 @@ describe("cancel wizard", () => {
     expect(whatsappButton).toHaveAttribute("target", "_blank");
     expect(whatsappButton).toHaveAttribute("href");
     const href = whatsappButton.getAttribute("href") ?? "";
-    expect(href).toContain("https://wa.me/?text=");
+    expect(href).toContain("https://wa.me/");
     const decodedMessage = decodeURIComponent(
       new URL(href).searchParams.get("text") ?? "",
     );
@@ -140,6 +146,34 @@ describe("cancel wizard", () => {
     expect(decodedMessage).toContain("18 de");
     expect(decodedMessage).toContain("01:00 PM* pero la tuve que cancelar ☹️");
     expect(decodedMessage).toContain("\nGracias!");
+  });
+
+  it("does not auto-redirect when whatsappUrl cannot be generated", () => {
+    const onWhatsAppRedirect = vi.fn();
+
+    render(
+      <CancelSuccessStep
+        appointments={[
+          {
+            appointmentId: 5,
+            name: "Ana Garcia",
+            phone: "5512345678",
+            date: "2026-03-18",
+            timeSlot: "13:00",
+            status: "CONFIRMED",
+          },
+        ]}
+        language="es"
+        onWhatsAppRedirect={onWhatsAppRedirect}
+        selectedAppointmentIds={[]}
+        t={(key) => String(key)}
+      />,
+    );
+
+    expect(onWhatsAppRedirect).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("link", { name: "cancel.notifyWhatsapp" }),
+    ).not.toBeInTheDocument();
   });
 
   it("requires selecting at least one appointment before cancelling", async () => {

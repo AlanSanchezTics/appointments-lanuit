@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { CancelLookupStep } from "@/components/cancel/cancel-lookup-step";
 import { CancelReviewStep } from "@/components/cancel/cancel-review-step";
 import { CancelSuccessStep } from "@/components/cancel/cancel-success-step";
@@ -11,9 +12,24 @@ import {
 import type { AppLanguage } from "@/lib/i18n/config";
 import { useTranslation } from "react-i18next";
 
-export function CancelForm() {
+type CancelFormProps = {
+  onWhatsAppRedirect?: (url: string) => void;
+};
+
+export function CancelForm({ onWhatsAppRedirect }: CancelFormProps) {
   const { i18n, t } = useTranslation(["common", "errors"]);
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
+  const handleWhatsAppRedirect = useCallback(
+    (url: string) => {
+      if (onWhatsAppRedirect) {
+        onWhatsAppRedirect(url);
+        return;
+      }
+
+      window.location.assign(url);
+    },
+    [onWhatsAppRedirect],
+  );
 
   const {
     step,
@@ -76,6 +92,7 @@ export function CancelForm() {
             appointments={appointments}
             language={language}
             selectedAppointmentIds={selectedAppointmentIds}
+            onWhatsAppRedirect={handleWhatsAppRedirect}
             t={t}
           />
         ) : null}

@@ -291,7 +291,8 @@ Mensaje base para cita `PENDING`:
    - Elimina evento en Google Calendar por cada cita seleccionada que tenga `google_event_id`.
 6. UI muestra el mensaje final:
    - `Tu cita ha sido cancelada con exito`.
-   - Muestra CTA primaria `Notificar por WhatsApp` que abre nueva pestaña hacia `https://wa.me/?text=...` con el mensaje:
+   - Cuando existe `whatsappUrl`, la UI realiza un intento automático único de redirección a `https://wa.me/?text=...` al entrar al paso de éxito.
+   - Muestra CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `https://wa.me/?text=...` con el mensaje:
      - `Hola Pau!`
      - (línea en blanco)
      - `Tenía una cita agendada para el día *[date] a las [time]* pero la tuve que cancelar ☹️`
