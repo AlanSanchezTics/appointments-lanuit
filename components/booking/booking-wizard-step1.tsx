@@ -166,7 +166,7 @@ export function BookingWizardStep1({
       ) : null}
 
       {showRescheduleSelection && hasActiveLock ? (
-        <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)]">
+        <p className="rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)] mb-[1rem]">
           {t("booking.slotLockedForYou", {
             time: formatRemainingTime(remainingSeconds),
           })}
@@ -222,67 +222,67 @@ export function BookingWizardStep1({
       ) : null}
 
       {showRescheduleSelection ? (
-        <section className="space-y-4 rounded-[1.15rem] border border-[var(--warning-soft)] bg-[rgba(243,229,214,0.55)] p-5">
-          <p className="text-sm font-semibold text-[var(--accent-dark)]">
+        <>
+          <p className="rounded-2xl border border-[var(--error-soft)] bg-[var(--error-surface)] px-4 py-3 text-sm text-[var(--error)] mb-[1rem] text-center">
             {t("booking.rescheduleSelectionTitle")}
           </p>
-          <p className="text-xs text-[var(--muted)]">
-            {rescheduleOptions.length > 1
-              ? t("booking.rescheduleSelectionMultiple")
-              : t("booking.rescheduleSelectionSingle")}
-          </p>
-          <div className="space-y-3">
-            {rescheduleOptions.map((option) => {
-              const isSelected =
-                !isBookingAsNewAppointment &&
-                selectedRescheduleAppointmentId === option.appointmentId;
+          <section className="space-y-4 rounded-[1.15rem] border border-[var(--warning-soft)] bg-[rgba(243,229,214,0.55)] p-5 mb-[1rem]">
+            <p className="text-[var(--muted)] text-center">
+              {t("booking.rescheduleSelectionSingle")}
+            </p>
+            <div className="space-y-3">
+              {rescheduleOptions.map((option) => {
+                const isSelected =
+                  !isBookingAsNewAppointment &&
+                  selectedRescheduleAppointmentId === option.appointmentId;
 
-              return (
+                return (
+                  <button
+                    key={option.appointmentId}
+                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                      isSelected
+                        ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)]"
+                        : "border-[var(--border)] bg-white/80"
+                    }`}
+                    onClick={() =>
+                      onSelectRescheduleAppointment(option.appointmentId)
+                    }
+                    type="button"
+                  >
+                    <p className="text-sm font-semibold text-[var(--foreground)]">
+                      {formatLongDate(option.date, language)}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {formatTimeSlotLabel(option.timeSlot, language)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+            {canBookAsNewAppointment ? (
+              <>
+                <div className="flex items-center gap-3 py-1">
+                  <div className="h-px flex-1 bg-[var(--border)]" />
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
+                    {t("booking.orSeparator")}
+                  </span>
+                  <div className="h-px flex-1 bg-[var(--border)]" />
+                </div>
                 <button
-                  key={option.appointmentId}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                    isSelected
-                      ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)]"
-                      : "border-[var(--border)] bg-white/80"
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                    isBookingAsNewAppointment
+                      ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
+                      : "border-[var(--border)] bg-white/80 text-[var(--foreground)]"
                   }`}
-                  onClick={() =>
-                    onSelectRescheduleAppointment(option.appointmentId)
-                  }
+                  onClick={onChooseBookAsNewAppointment}
                   type="button"
                 >
-                  <p className="text-sm font-semibold text-[var(--foreground)]">
-                    {formatLongDate(option.date, language)}
-                  </p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {formatTimeSlotLabel(option.timeSlot, language)}
-                  </p>
+                  {t("booking.bookAsNewAppointment")}
                 </button>
-              );
-            })}
-          </div>
-          {canBookAsNewAppointment ? (
-            <>
-              <div className="flex items-center gap-3 py-1">
-                <div className="h-px flex-1 bg-[var(--border)]" />
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
-                  {t("booking.orSeparator")}
-                </span>
-                <div className="h-px flex-1 bg-[var(--border)]" />
-              </div>
-              <button
-                className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                  isBookingAsNewAppointment
-                    ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
-                    : "border-[var(--border)] bg-white/80 text-[var(--foreground)]"
-                }`}
-                onClick={onChooseBookAsNewAppointment}
-                type="button"
-              >
-                {t("booking.bookAsNewAppointment")}
-              </button>
-            </>
-          ) : null}
-        </section>
+              </>
+            ) : null}
+          </section>
+        </>
       ) : null}
 
       {!showRescheduleSelection ? (
