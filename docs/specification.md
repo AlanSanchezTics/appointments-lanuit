@@ -254,23 +254,22 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 
 Mensaje base para cita `CONFIRMED`:
 
-    Hola Pau ✨
-    soy {Nombre} ✌️.
-    Ya te agendé para el día {Fecha} a las {Hora}.
-    Muchas gracias y bonito día 😊
+    ¡Cita agendada con éxito!
+    🗓️ *{Fecha} a las {Hora}*
 
-    (Para cancelar tu cita accede a https://dominio.com/citas/cancelar)
+    Puedes revisar, editar o cancelar tu cita en el siguiente enlace {appurl}
+    ⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._
 
 El mensaje debe codificarse usando encodeURIComponent.
 La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
 
 Mensaje base para cita `PENDING`:
 
-    Hola Pau ✨
-    Soy {Nombre} ✌️.
-    Me interesa agendarte para el día {Día de la semana}, {Día} de {Mes} del {Año} a las {Hora} 🗓️.
-    Adjunto el comprobante de depósito para confirmar mi cita.
-    ¡Gracias!
+    Hola Pau! Soy {Nombre} ✨
+
+    🧾 Adjunto el comprobante del depósito de mi cita (_*{Fecha} a las {Hora}*_).
+
+    Espero tu confirmación. ¡Gracias!
 
 ---
 
@@ -293,10 +292,10 @@ Mensaje base para cita `PENDING`:
    - `Tu cita ha sido cancelada con exito`.
    - Cuando existe `whatsappUrl`, la UI realiza un intento automático único de redirección a `https://wa.me/?text=...` al entrar al paso de éxito.
    - Muestra CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `https://wa.me/?text=...` con el mensaje:
-     - `Hola Pau!`
+     - `❌ *CITA CANCELADA*`
+     - `_[date] a las [time]_`
      - (línea en blanco)
-     - `Tenía una cita agendada para el día *[date] a las [time]* pero la tuve que cancelar ☹️`
-     - `Gracias!`
+     - `Una disculpa, no podré asistir a esta cita. Gracias!`
    - El mensaje se construye con la fecha/hora de la cita cancelada y se codifica con `encodeURIComponent`.
    - Muestra CTA secundaria `Volver al inicio` con navegación a `/`.
 7. Todos los horarios cancelados vuelven a estar disponibles automáticamente.

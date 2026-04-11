@@ -133,8 +133,8 @@
         "alreadySentTooltip": "Este recordatorio ya fue enviado."
       },
       "whatsapp": {
-        "nextDayMessage": "Hola *{{name}}*!\nSolo para recordarte que tienes tu cita agendada el día de *mañana a las {{time}}*🗓️.\nNos vemos mañana✨",
-        "nextWeekMessage": "Hola *{{name}}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{{weekday}}, {{day}} de {{month}} a las {{time}}*🗓️.\nNos vemos la próxima semana✨"
+        "nextDayMessage": "Hola *{{name}}* ✨\nNos vemos *mañana a las {{time}}*!",
+        "nextWeekMessage": "Hola *{{name}}*, qué tal! ✨\nTe recuerdo que tienes una cita el *{{weekday}}, {{day}} de {{month}} a las {{time}}*.\nNos vemos la próxima semana🙌🏻"
       },
       "notifications": {
         "sentTitle": "Recordatorio listo para enviar",
@@ -600,7 +600,7 @@
         "title": "¡Cita Confirmada!",
         "description": "La cita ha sido agendada con éxito",
         "sendWhatsapp": "Enviar confirmación de cita por WhatsApp",
-        "whatsappMessage": "Hola *{{name}}* 👋🏼.\nYa quedó agendada tu cita para el día *{{date}}, a las {{time}}* 🗓️.\n¡Nos vemos pronto ✨!",
+        "whatsappMessage": "🗓️ *Nos vemos {{date}}, a las {{time}}*!",
         "back": "Volver",
         "labels": {
           "name": "Nombre",

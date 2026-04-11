@@ -12,7 +12,7 @@
   },
   "home": {
     "welcome": "✨ Bienvenida ✨",
-    "title": "Elige tu mes ideal y vive una experiencia pensada para ti",
+    "title": "Vive la experiencia La Nuit, donde el servicio y el ambiente están pensados exclusivamente para ti",
     "subtitle": "¡No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde!",
     "bookNow": "Agendar ahora",
     "cancel": "Cancelar cita",
@@ -125,8 +125,8 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "Hola Pau! ✨\n\n🗓️Agendé mi cita para el día *{{date}} a las {{time}}*\nNos vemos pronto!",
-    "pendingMessageTemplate": "Hola Pau!, soy *{{name}}* ✨.\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación,\n¡Gracias!",
-    "cancelMessageTemplate": "Hola Pau!\nTenía una cita agendada para el día *{{date}} a las {{time}}* pero la tuve que cancelar ☹️\nGracias!"
+    "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\n\nPuedes revisar, editar o cancelar tu cita en el siguiente enlace {{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._",
+    "pendingMessageTemplate": "Hola Pau! Soy {{name}} ✨\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación. ¡Gracias!",
+    "cancelMessageTemplate": "❌ *CITA CANCELADA*\n_{{date}} a las {{time}}_\n\nUna disculpa, no podré asistir a esta cita. Gracias!\n"
   }
 }

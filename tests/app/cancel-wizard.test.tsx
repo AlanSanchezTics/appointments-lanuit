@@ -62,8 +62,8 @@ describe("cancel wizard", () => {
     expect(
       screen.getByText("A continuación los detalles de tu(s) cita(s)"),
     ).toBeInTheDocument();
-    expect(screen.getByText(/18 de marzo de 2026/i)).toBeInTheDocument();
-    expect(screen.getByText(/24 de marzo de 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/18 de marzo 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/24 de marzo 2026/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Cancelar cita" }),
     ).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe("cancel wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buscar cita" }));
     await screen.findByRole("heading", { name: "Confirmar cancelación" });
     fireEvent.click(
-      screen.getByRole("button", { name: /18 de marzo de 2026/i }),
+      screen.getByRole("button", { name: /18 de marzo 2026/i }),
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Cancelar cita" }));
@@ -140,12 +140,13 @@ describe("cancel wizard", () => {
     const decodedMessage = decodeURIComponent(
       new URL(href).searchParams.get("text") ?? "",
     );
-    expect(decodedMessage).toContain(
-      "Hola Pau!\nTenía una cita agendada para el día *",
-    );
+    expect(decodedMessage).toContain("❌ *CITA CANCELADA*");
+    expect(decodedMessage).toContain("_");
     expect(decodedMessage).toContain("18 de");
-    expect(decodedMessage).toContain("01:00 PM* pero la tuve que cancelar ☹️");
-    expect(decodedMessage).toContain("\nGracias!");
+    expect(decodedMessage).toContain("01:00 PM_");
+    expect(decodedMessage).toContain(
+      "Una disculpa, no podré asistir a esta cita. Gracias!",
+    );
   });
 
   it("does not auto-redirect when whatsappUrl cannot be generated", () => {

@@ -133,8 +133,8 @@
         "alreadySentTooltip": "This reminder was already sent."
       },
       "whatsapp": {
-        "nextDayMessage": "Hi {{name}}!.\nThis is a reminder that you have an appointment tomorrow at {{time}}. See you tomorrow✨.",
-        "nextWeekMessage": "Hi {{name}}!.\nThis is a reminder that you have an appointment next {{weekday}} at {{time}}. See you next week✨."
+        "nextDayMessage": "Hi *{{name}}* ✨\nSee you *tomorrow at {{time}}*!",
+        "nextWeekMessage": "Hi *{{name}}*, how are you? ✨\nJust a reminder that you have an appointment on *{{weekday}}, {{day}} of {{month}} at {{time}}*.\nSee you next week 🙌🏻"
       },
       "notifications": {
         "sentTitle": "Reminder ready to send",
@@ -600,7 +600,7 @@
         "title": "Appointment Confirmed!",
         "description": "The appointment was successfully scheduled",
         "sendWhatsapp": "Send appointment confirmation via WhatsApp",
-        "whatsappMessage": "Hi *{{name}}* 👋🏼.\nYour appointment is scheduled for *{{date}} at {{time}}* 🗓️.\nSee you soon ✨!",
+        "whatsappMessage": "🗓️ *See you on {{date}}, at {{time}}*!",
         "back": "Back",
         "labels": {
           "name": "Name",

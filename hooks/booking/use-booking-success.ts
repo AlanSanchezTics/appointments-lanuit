@@ -43,10 +43,10 @@ export function useBookingSuccess({
         : translate("whatsapp.messageTemplate", {
           date: formattedDate,
           time: formattedTime,
-          cancelUrl:
+          appurl:
             typeof window === "undefined"
-              ? "/citas/cancelar"
-              : `${window.location.origin}/citas/cancelar`,
+              ? "/"
+              : window.location.origin,
         });
 
     onWhatsAppRedirect(

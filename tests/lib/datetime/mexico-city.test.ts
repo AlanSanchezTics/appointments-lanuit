@@ -32,4 +32,8 @@ describe("mexico city datetime", () => {
     expect(formatLongDate("2026-03-18", "es")).toContain("Marzo");
     expect(formatLongDate("2026-03-18", "es")).not.toContain("marzo");
   });
+
+  it("formats spanish long date without 'de' before year", () => {
+    expect(formatLongDate("2026-04-13", "es")).toBe("Lunes, 13 de Abril 2026");
+  });
 });

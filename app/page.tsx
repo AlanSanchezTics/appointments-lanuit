@@ -36,10 +36,10 @@ export default async function HomePage() {
         />
         {hasAvailableMonths ? (
           <div className="mb-[1.5rem]">
-            <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl">
+            <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-3xl">
               {t("home.welcome")}
             </h1>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-2xl md:text-3xl">
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-xl md:text-xl leading-6">
               {t("home.title")}
             </h2>
             <p className="mt-3 text-sm text-[var(--muted)]">
