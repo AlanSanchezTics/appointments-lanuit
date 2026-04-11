@@ -110,6 +110,54 @@ describe("booking wizard", () => {
     );
   });
 
+  it("uses internal back action from reschedule view instead of navigating home", async () => {
+    const releaseLock = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        releaseLock={releaseLock}
+        checkClientAndAcquireLock={async () => ({
+          lockToken: "lock-123",
+          expiresAt: "2099-01-01T00:10:00.000Z",
+          clientExists: true,
+          clientName: "Ana Garcia",
+          canBookAsNewAppointment: true,
+          futureAppointmentsInMonth: [
+            {
+              appointmentId: 11,
+              date: "2026-03-01",
+              timeSlot: "10:00",
+            },
+          ],
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    expect(
+      await screen.findByText("Ya tienes citas activas en este mes"),
+    ).toBeInTheDocument();
+
+    const backButton = screen.getByRole("button", { name: "Regresar" });
+    fireEvent.click(backButton);
+
+    await waitFor(() => {
+      expect(releaseLock).toHaveBeenCalledWith("lock-123");
+    });
+    expect(await screen.findByText("Días disponibles")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Ya tienes citas activas en este mes"),
+    ).not.toBeInTheDocument();
+  });
+
   it("tracks transition direction across wizard steps", async () => {
     render(
       <BookingWizard
@@ -201,12 +249,14 @@ describe("booking wizard", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /10:00 AM/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Reagendar cita seleccionada/i }),
+    );
 
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
   });
 
-  it("shows OR separator and allows booking as new appointment when rule allows it", async () => {
+  it("shows only dynamic primary CTA and allows booking as new appointment when rule allows it", async () => {
     render(
       <BookingWizard
         days={days}
@@ -238,15 +288,19 @@ describe("booking wizard", () => {
     expect(
       await screen.findByText("Ya tienes citas activas en este mes"),
     ).toBeInTheDocument();
-    expect(screen.getByText("O")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Agendar como nueva cita" }),
+    ).not.toBeInTheDocument();
+    const continueAsNewButton = await screen.findByRole("button", {
+      name: /Continuar como nueva cita/i,
+    });
     fireEvent.click(
-      screen.getByRole("button", { name: "Agendar como nueva cita" }),
+      continueAsNewButton,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
   });
 
-  it("shows decision-specific validation when no option is selected in decision view", async () => {
+  it("shows decision-specific validation when no option is selected and booking as new is not allowed", async () => {
     render(
       <BookingWizard
         days={days}
@@ -262,7 +316,6 @@ describe("booking wizard", () => {
           expiresAt: "2099-01-01T00:10:00.000Z",
           clientExists: true,
           clientName: "Ana Garcia",
-          canBookAsNewAppointment: true,
           futureAppointmentsInMonth: [
             {
               appointmentId: 11,
@@ -286,6 +339,51 @@ describe("booking wizard", () => {
       screen.getByText(
         "Selecciona una de las opciones disponibles para continuar.",
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("allows deselecting a previously selected reschedule option", async () => {
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-20",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        checkClientAndAcquireLock={async () => ({
+          lockToken: "lock-123",
+          expiresAt: "2099-01-01T00:10:00.000Z",
+          clientExists: true,
+          clientName: "Ana Garcia",
+          canBookAsNewAppointment: true,
+          futureAppointmentsInMonth: [
+            {
+              appointmentId: 11,
+              date: "2026-03-01",
+              timeSlot: "10:00",
+            },
+          ],
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    expect(
+      await screen.findByText("Ya tienes citas activas en este mes"),
+    ).toBeInTheDocument();
+
+    const optionButton = screen.getByRole("button", { name: /10:00 AM/i });
+    fireEvent.click(optionButton);
+    expect(
+      await screen.findByRole("button", { name: /Reagendar cita seleccionada/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(optionButton);
+    expect(
+      await screen.findByRole("button", { name: /Continuar como nueva cita/i }),
     ).toBeInTheDocument();
   });
 

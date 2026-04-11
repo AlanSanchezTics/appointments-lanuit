@@ -21,7 +21,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - `SECOND_ONLY_MODE`: `10:00`, `14:00`, `18:00`.
 - Para el mismo día, solo se permiten horarios futuros (no transcurridos).
 - El teléfono se valida/persiste normalizado a 10 dígitos.
-- Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`) si la separación entre citas activas del mismo mes es de al menos 15 días naturales.
+- Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`).
 - Un mismo teléfono puede tener citas activas futuras en meses distintos.
 - El flujo público distingue entre clienta fiel y no fiel:
   - clienta fiel: la cita se confirma de forma inmediata,
@@ -35,9 +35,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 2. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
 4. Al continuar, backend ejecuta `check + lock` temporal (TTL 10 minutos).
 5. Si el cliente ya existe por teléfono, avanza directo a confirmación.
-6. Si el cliente ya tiene citas futuras activas en el mismo mes, UI muestra la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas en este mes`.
-7. Si la nueva fecha cumple separación mínima de 15 días naturales con todas sus citas activas del mes, esa vista muestra separador `O` y botón `Agendar como nueva cita`.
-8. Si la nueva fecha no cumple separación mínima de 15 días naturales con alguna cita activa, el cliente debe seleccionar cuál cita reagendar al nuevo `date + timeSlot` para continuar en autoservicio.
+6. Si el cliente ya tiene citas futuras activas en el mismo mes y la nueva fecha cae dentro del umbral `<15 días` contra alguna de ellas, UI muestra la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas en este mes`.
+7. En esa vista, el cliente puede decidir entre reagendar una cita existente o continuar como cita nueva.
+8. Si no hay citas activas del mes dentro del umbral `<15 días`, no se muestra la vista de sugerencia y el flujo continúa directo a confirmación.
 9. Si el cliente no existe, la UI solicita nombre y continúa con el mismo lock activo.
    - al confirmar, backend crea cliente con `client_number` único asignado automáticamente.
 10. Al seleccionar cita a reagendar o al elegir `Agendar como nueva cita`, UI avanza a confirmación.
@@ -68,29 +68,34 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Comportamiento:
   - UI valida formato base y solicita avance.
   - El selector de días muestra todos los días disponibles en carrusel horizontal (scroll) y mantiene resaltado el día seleccionado.
-  - CTA secundaria `Volver` regresa al inicio público (`/`).
+  - CTA secundaria `Volver` regresa al inicio público (`/`) en estado normal del paso.
 
 4. Check + lock temporal
 - Trigger: continuar desde paso inicial.
 - Backend:
   - valida reglas de reserva (mes, día hábil, horario futuro, slot válido),
   - verifica conflictos por disponibilidad,
-  - verifica restricción por teléfono (separación mínima de 15 días naturales entre citas activas futuras del mismo mes),
+  - evalúa umbral de sugerencia por teléfono (`<15 días`) contra citas activas futuras del mismo mes,
   - crea lock temporal (`reservation_locks`) con TTL 10 minutos.
 - Resultado:
   - cliente existente sin citas futuras activas en ese mes: retorna `clientExists=true` y avanza a confirmación,
-  - cliente existente con citas futuras activas en ese mes: retorna `futureAppointmentsInMonth[]` y mantiene lock para entrar a vista de decisión,
-  - cuando separación es válida: además retorna `canBookAsNewAppointment=true`,
-  - cuando separación no es válida: retorna `canBookAsNewAppointment=false` y mantiene solo opciones de reagendado,
+  - cliente existente con citas futuras activas en ese mes dentro del umbral `<15 días`: retorna `futureAppointmentsInMonth[]` y mantiene lock para entrar a vista de sugerencia/decisión,
+  - en esa vista retorna `canBookAsNewAppointment=true` para permitir reagendar o continuar como cita nueva,
+  - cliente existente con citas en el mes fuera del umbral `<15 días`: avanza directo a confirmación (sin sugerencia),
   - cliente nuevo: retorna `clientExists=false`, UI pide nombre y mantiene lock.
 
 5. Selección de cita a reagendar o agendar como nueva (cliente con citas futuras activas en el mes)
 - Trigger: respuesta con `futureAppointmentsInMonth[]`.
 - Regla:
-  - si `canBookAsNewAppointment=false`, el cliente debe elegir una cita activa para reagendar,
-  - si `canBookAsNewAppointment=true`, además de reagendar se permite `Agendar como nueva cita`,
+  - la vista de sugerencia se muestra únicamente cuando existe al menos una cita activa futura del mismo mes dentro del umbral `<15 días`,
+  - en esa vista, además de reagendar se permite `Agendar como nueva cita`,
+  - la lista de citas activas inicia sin selección por defecto (sin preselección automática),
+  - CTA principal dinámico en esta vista:
+    - sin cita seleccionada y `canBookAsNewAppointment=true`: `Continuar como nueva cita`,
+    - con cita seleccionada: `Reagendar cita seleccionada`,
   - antes de esta lista, UI muestra un bloque resumen con `date`, `timeSlot`, `name` y `phone` actualmente seleccionados.
   - en este estado no se renderizan los bloques del paso 1 para seleccionar día, horario y teléfono.
+  - en este estado, CTA `Regresar` debe ejecutar regreso interno (igual que `Editar información` del paso de confirmación), liberando lock y devolviendo la vista editable del paso 1.
 - Resultado: al seleccionar cita o al elegir `Agendar como nueva cita`, avanza a confirmación con lock vigente.
 
 6. Captura de nombre (solo cliente nuevo)
@@ -157,9 +162,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - En `SECOND_ONLY_MODE` no aplica propagación direccional entre pares.
 - Teléfono:
   - Se normaliza a 10 dígitos.
-  - Puede tener más de una cita activa futura en el mismo mes solo si existe separación mínima de 15 días naturales entre citas activas.
+  - Puede tener más de una cita activa futura en el mismo mes.
   - Un teléfono puede tener citas activas futuras en meses distintos.
-  - Si la nueva fecha no cumple la separación mínima de 15 días con alguna cita activa del mes, para continuar debe seleccionarse cita a reagendar.
+  - El umbral `<15 días` se usa para mostrar sugerencia de UX (reagendar o continuar como nueva), no como bloqueo de creación.
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
@@ -191,7 +196,6 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Mes inválido/inactivo/pasado: rechazo de disponibilidad y/o reserva.
 - Fecha fuera de reglas (fin de semana o slot pasado en mismo día): rechazo.
 - Slot no disponible por ocupación, lock activo o restricciones direccionales: conflicto.
-- Teléfono con cita activa futura en el mismo mes y separación menor a 15 días naturales respecto a la nueva fecha: conflicto para creación directa (debe reagendar o elegir otra fecha).
 - Lock inexistente, expirado o no coincidente: conflicto en confirmación.
 - Timeout al adquirir locks de concurrencia: conflicto.
 - Validación de payload inválida: error de validación.

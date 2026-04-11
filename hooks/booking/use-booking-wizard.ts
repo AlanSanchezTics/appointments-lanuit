@@ -312,6 +312,7 @@ export function useBookingWizard({
       clientState === "reschedule"
       && !isBookingAsNewAppointment
       && selectedRescheduleAppointmentId === null
+      && !canBookAsNewAppointment
     ) {
       nextErrors.form = "RESCHEDULE_DECISION_REQUIRED";
     }
@@ -326,6 +327,14 @@ export function useBookingWizard({
       if (!activeLock?.lockToken) {
         setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
         return;
+      }
+
+      if (
+        clientState === "reschedule"
+        && selectedRescheduleAppointmentId === null
+        && canBookAsNewAppointment
+      ) {
+        setIsBookingAsNewAppointment(true);
       }
 
       setStep("confirm");
@@ -357,11 +366,7 @@ export function useBookingWizard({
           setRescheduleOptions(futureAppointmentsInMonth);
           setCanBookAsNewAppointment(canBookAsNew);
           setIsBookingAsNewAppointment(false);
-          setSelectedRescheduleAppointmentId(
-            !canBookAsNew && futureAppointmentsInMonth.length === 1
-              ? (futureAppointmentsInMonth[0]?.appointmentId ?? null)
-              : null,
-          );
+          setSelectedRescheduleAppointmentId(null);
           setDraft((current) => ({
             ...current,
             name: response.clientName ?? current.name,
@@ -392,6 +397,7 @@ export function useBookingWizard({
     draft,
     selectedRescheduleAppointmentId,
     isBookingAsNewAppointment,
+    canBookAsNewAppointment,
     setRemainingSeconds,
   ]);
 
@@ -491,10 +497,24 @@ export function useBookingWizard({
       handleContinue,
       setCalendarOpen,
       setSelectedRescheduleAppointmentId: (appointmentId: number | null) => {
-        setSelectedRescheduleAppointmentId(appointmentId);
-        if (typeof appointmentId === "number") {
+        const isDeselectingCurrent =
+          typeof appointmentId === "number"
+          && appointmentId === selectedRescheduleAppointmentId;
+
+        if (isDeselectingCurrent) {
+          setSelectedRescheduleAppointmentId(null);
+          setIsBookingAsNewAppointment(canBookAsNewAppointment);
+        } else {
+          setSelectedRescheduleAppointmentId(appointmentId);
+        }
+
+        if (typeof appointmentId === "number" && !isDeselectingCurrent) {
           setIsBookingAsNewAppointment(false);
         }
+        setErrors((current) => ({
+          ...current,
+          form: undefined,
+        }));
       },
       chooseBookAsNewAppointment: () => {
         setSelectedRescheduleAppointmentId(null);

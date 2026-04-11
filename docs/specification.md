@@ -119,10 +119,10 @@ Regla general:
 
 ## 5. Restricciones por Teléfono
 
-- Flujo público (`/citas/*`): un número telefónico puede tener más de una cita activa futura en el mismo mes, siempre que exista una separación mínima de 15 días naturales entre cada cita activa del mes.
+- Flujo público (`/citas/*`): un número telefónico puede tener más de una cita activa futura en el mismo mes.
 - Flujo público (`/citas/*`): puede tener citas activas futuras en meses distintos.
 - Flujo admin (`/admin/months/[month]`): puede crear múltiples citas activas futuras para el mismo cliente/teléfono.
-- En flujo público, si la nueva cita viola la separación mínima de 15 días naturales con alguna cita activa del mes, no puede crearse como cita adicional y debe resolverse mediante reagendado.
+- En flujo público, el umbral de 15 días naturales no bloquea la creación de citas adicionales; se usa solo para detonar una sugerencia de UX para que la clienta decida entre reagendar una cita existente o continuar como cita nueva.
 - Formato persistido obligatorio: 10 dígitos numéricos.
 - En UI se permite captura con separadores (espacios/guiones/paréntesis), pero backend normaliza a 10 dígitos antes de validar y persistir.
 - Nombre mínimo: 3 caracteres.
@@ -168,12 +168,15 @@ Regla general:
 3. En el paso 1 del wizard selecciona día y horario, e ingresa teléfono.
 4. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
    - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
-   - Si el cliente tiene citas futuras activas en el mismo mes, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
-   - Si la nueva fecha mantiene al menos 15 días naturales de separación con todas las citas activas del mes, esa vista incluye separador `O` + acción `Agendar como nueva cita` para continuar sin reagendar.
-   - Si la nueva fecha rompe la separación mínima de 15 días naturales con alguna cita activa del mes, esa vista exige seleccionar una cita activa para reagendar al nuevo `date + timeSlot`.
-   - Si hay una sola cita activa elegible en ese estado, puede preseleccionarse para reagendar.
+   - Si el cliente tiene citas futuras activas en el mismo mes y la nueva fecha queda a menos de 15 días naturales de al menos una de ellas, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
+   - Si no existe ninguna cita activa del mes dentro de ese umbral (<15 días), UI avanza directo a confirmación (sin vista de sugerencia).
+   - En la vista de sugerencia, la lista de citas activas del mes inicia sin cita preseleccionada; la clienta debe elegir explícitamente qué cita reagendar o decidir continuar como cita nueva.
+   - En la vista de decisión, el CTA principal es dinámico:
+     - sin cita seleccionada y con `canBookAsNewAppointment=true`: `Continuar como nueva cita`,
+     - con cita seleccionada: `Reagendar cita seleccionada`.
    - Mientras UI está en selección de cita a reagendar, se muestra un bloque resumen con `name`, `phone`, `date` y `timeSlot` actualmente seleccionados, antes de la lista de citas activas del mes.
    - En este estado se ocultan los controles del paso 1 para cambiar `date`, `timeSlot` y `phone`.
+   - En esa misma vista, `Regresar` no debe navegar a `/`; debe ejecutar una regresión interna equivalente a `Editar información` (liberar lock activo y volver a edición del paso 1).
    - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
 5. Si el lock no puede crearse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
 6. Usuario confirma cita (paso 2 del wizard).
@@ -202,8 +205,8 @@ Regla general:
 
 Contratos de payload relevantes en flujo vigente:
 - `POST /api/reservar/client-check-lock`:
-  - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes.
-  - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar si, además de reagendar, está permitido `Agendar como nueva cita` bajo la regla de 15 días naturales.
+  - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes que activan la sugerencia de UX por umbral `<15 días`.
+  - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar que, dentro de la vista de sugerencia, también está permitido continuar como cita nueva.
 - `POST /api/reservar/confirm`:
   - admite `appointmentIdToReschedule` opcional para reprogramar una cita futura activa del mismo teléfono y mes al `date + timeSlot` seleccionado.
   - el frontend debe enviar `name` en forma canónica (trim) cuando aplique.
@@ -221,7 +224,8 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 - El flujo visual de reserva queda compuesto por 4 vistas:
   - Entrada global (`/`): branding + listado de meses disponibles (CTA por mes) + CTA secundaria `Cancelar cita`.
   - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
-    - CTA secundaria `Volver` regresa al inicio público (`/`).
+    - CTA secundaria `Volver` regresa al inicio público (`/`) en estado normal.
+    - Si el paso 1 está en la vista de sugerencia/reagendado (con lock activo), `Volver` ejecuta regreso interno al estado editable del paso 1 (mismo comportamiento que `Editar información` en paso 2).
   - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
     - Título dinámico:
       - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.

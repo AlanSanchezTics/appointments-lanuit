@@ -225,7 +225,7 @@ describe("reservation slot locks", () => {
       expiresAt: "2026-03-13T12:10:00.000Z",
       clientExists: true,
       clientName: "Ana Lopez",
-      canBookAsNewAppointment: false,
+      canBookAsNewAppointment: true,
       whatsappPhone: "5215512345678",
       futureAppointmentsInMonth: [
         {
@@ -237,7 +237,7 @@ describe("reservation slot locks", () => {
     });
   });
 
-  it("does not return reschedule options when same-month appointments keep a 15-day gap", async () => {
+  it("does not return suggestion options when same-month appointments keep a 15-day gap", async () => {
     findUniqueClientMock.mockResolvedValueOnce({
       id: 9,
       name: "Ana Lopez",
@@ -261,8 +261,8 @@ describe("reservation slot locks", () => {
       new Date("2026-02-27T12:00:00.000Z"),
     );
 
-    expect(result.futureAppointmentsInMonth).toHaveLength(1);
-    expect(result.canBookAsNewAppointment).toBe(true);
+    expect(result.futureAppointmentsInMonth).toHaveLength(0);
+    expect(result.canBookAsNewAppointment).toBe(false);
     expect(result.whatsappPhone).toBe("5215512345678");
   });
 

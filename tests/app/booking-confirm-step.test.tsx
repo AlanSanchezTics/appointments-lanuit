@@ -164,10 +164,15 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Ya tienes citas activas en este mes");
+    fireEvent.click(screen.getByRole("button", { name: /10:00 AM/i }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Siguiente/i })).toBeEnabled();
+      expect(
+        screen.getByRole("button", { name: /Reagendar cita seleccionada/i }),
+      ).toBeEnabled();
     });
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Reagendar cita seleccionada/i }),
+    );
     await screen.findByText("Confirmar detalles");
     fireEvent.click(
       await screen.findByRole("button", { name: "Confirmar cita" }),
@@ -230,10 +235,12 @@ describe("booking confirm step", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Ya tienes citas activas en este mes");
+    const continueAsNewButton = await screen.findByRole("button", {
+      name: /Continuar como nueva cita/i,
+    });
     fireEvent.click(
-      screen.getByRole("button", { name: "Agendar como nueva cita" }),
+      continueAsNewButton,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
     await screen.findByText("Confirmar detalles");
     fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
 

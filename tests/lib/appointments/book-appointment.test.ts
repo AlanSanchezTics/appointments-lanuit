@@ -167,7 +167,7 @@ describe("bookAppointment", () => {
 
     expect(createMock).not.toHaveBeenCalled();
     expect(findManyMock).toHaveBeenNthCalledWith(
-      2,
+      1,
       expect.objectContaining({
         where: expect.objectContaining({
           status: {
@@ -401,27 +401,38 @@ describe("bookAppointment", () => {
     ).rejects.toThrow("NAME_REQUIRED_FOR_NEW_CLIENT");
   });
 
-  it("rejects booking when same-month future appointments are less than 15 days apart", async () => {
-    findManyMock.mockResolvedValueOnce([
-      {
-        date: new Date("2026-03-18T00:00:00.000Z"),
-        timeSlot: new Date("1970-01-01T13:00:00.000Z"),
-      },
-    ]);
+  it("allows booking when same-month future appointments are less than 15 days apart", async () => {
+    findManyMock
+      .mockResolvedValueOnce([
+        {
+          id: 70,
+          date: new Date("2026-03-18T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T13:00:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    clientCreateMock.mockResolvedValueOnce({
+      id: 44,
+      clientNumber: 2,
+      name: "Ana Lopez",
+      phone: "5512345678",
+    });
+    clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 1 } });
+    createMock.mockResolvedValueOnce({ id: 91, client: { name: "Ana Lopez" } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
+    const result = await bookAppointment(
+      {
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-20",
+        timeSlot: "09:00",
+      },
+      new Date("2026-03-03T12:00:00.000Z"),
+    );
 
-    await expect(
-      bookAppointment(
-        {
-          name: "Ana Lopez",
-          phone: "5512345678",
-          date: "2026-03-20",
-          timeSlot: "09:00",
-        },
-        new Date("2026-03-03T12:00:00.000Z"),
-      ),
-    ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+    expect(result.appointmentId).toBe(91);
+    expect(createMock).toHaveBeenCalledOnce();
   });
 
   it("returns SLOT_NOT_AVAILABLE when target slot is manually blocked", async () => {

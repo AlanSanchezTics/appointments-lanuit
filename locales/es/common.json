@@ -69,6 +69,8 @@
     "rescheduleSelectionTitle": "Ya tienes citas activas en este mes",
     "rescheduleCurrentSelectionTitle": "Detalles de tu nueva cita",
     "rescheduleSelectionSingle": "¿Quieres reagendar alguna de tus citas activas de este mes?",
+    "continueAsNewAppointment": "Continuar como nueva cita",
+    "rescheduleSelectedAppointment": "Reagendar cita seleccionada",
     "orSeparator": "O",
     "bookAsNewAppointment": "Agendar como nueva cita",
     "whatsappReminder": "Recibirás dos recordatorios por WhatsApp: una semana antes y un día antes de tu cita.",

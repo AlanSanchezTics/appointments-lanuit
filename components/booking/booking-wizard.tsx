@@ -57,7 +57,6 @@ type RenderStepParams = {
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
   onOpenCalendar: () => void;
   onSelectRescheduleAppointment: (appointmentId: number) => void;
-  onChooseBookAsNewAppointment: () => void;
   onWhatsAppRedirect: (url: string) => void;
   onBack: () => void;
   onConfirm: () => void;
@@ -119,7 +118,6 @@ export function BookingWizard({
     onDraftChange: actions.updateDraft,
     onOpenCalendar: () => actions.setCalendarOpen(true),
     onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
-    onChooseBookAsNewAppointment: actions.chooseBookAsNewAppointment,
     onBack: actions.handleBack,
     onConfirm: actions.handleConfirm,
     onWhatsAppRedirect: handleWhatsAppRedirect,
@@ -145,7 +143,6 @@ export function BookingWizard({
         onDraftChange: actions.updateDraft,
         onOpenCalendar: () => actions.setCalendarOpen(true),
         onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
-        onChooseBookAsNewAppointment: actions.chooseBookAsNewAppointment,
         onBack: actions.handleBack,
         onConfirm: actions.handleConfirm,
         onWhatsAppRedirect: handleWhatsAppRedirect,
@@ -234,7 +231,6 @@ function renderStep({
   onDraftChange,
   onOpenCalendar,
   onSelectRescheduleAppointment,
-  onChooseBookAsNewAppointment,
   onBack,
   onConfirm,
   onWhatsAppRedirect,
@@ -248,6 +244,7 @@ function renderStep({
         errors={errors}
         month={month}
         onContinue={onContinue}
+        onBack={onBack}
         onDraftChange={onDraftChange}
         onOpenCalendar={onOpenCalendar}
         isPending={isPending}
@@ -258,7 +255,6 @@ function renderStep({
         isBookingAsNewAppointment={isBookingAsNewAppointment}
         selectedRescheduleAppointmentId={selectedRescheduleAppointmentId}
         onSelectRescheduleAppointment={onSelectRescheduleAppointment}
-        onChooseBookAsNewAppointment={onChooseBookAsNewAppointment}
         remainingSeconds={remainingSeconds}
       />
     );

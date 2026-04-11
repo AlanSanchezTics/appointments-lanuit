@@ -69,6 +69,8 @@
     "rescheduleSelectionTitle": "You already have active appointments in this month",
     "rescheduleCurrentSelectionTitle": "Details of your new appointment",
     "rescheduleSelectionSingle": "Do you want to reschedule one of your active appointments this month?",
+    "continueAsNewAppointment": "Continue as new appointment",
+    "rescheduleSelectedAppointment": "Reschedule selected appointment",
     "orSeparator": "OR",
     "bookAsNewAppointment": "Book as new appointment",
     "whatsappReminder": "You'll receive two reminders via WhatsApp: one a week before and another one a day before your appointment.",

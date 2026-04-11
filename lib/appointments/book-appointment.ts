@@ -30,7 +30,6 @@ import {
 } from "@/lib/validation/appointment";
 import { getWhatsappPhone } from "@/lib/whatsapp/message";
 
-const MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS = 15;
 type AppointmentCreationStatus = "CONFIRMED" | "PENDING";
 
 function timeSlotToDate(timeSlot: string) {
@@ -48,72 +47,6 @@ function getMonthRange(month: string) {
     monthStart,
     monthEndExclusive,
   };
-}
-
-function getNaturalDayDifference(dateA: string, dateB: string) {
-  const [yearA, monthA, dayA] = dateA.split("-").map(Number);
-  const [yearB, monthB, dayB] = dateB.split("-").map(Number);
-  const utcA = Date.UTC(yearA, monthA - 1, dayA);
-  const utcB = Date.UTC(yearB, monthB - 1, dayB);
-  return Math.abs(Math.floor((utcB - utcA) / (24 * 60 * 60 * 1000)));
-}
-
-type FutureAppointmentInMonth = {
-  appointmentId: number;
-  date: string;
-  timeSlot: string;
-};
-
-function hasInsufficientDayGap(
-  candidateDate: string,
-  futureAppointmentsInMonth: FutureAppointmentInMonth[],
-) {
-  return futureAppointmentsInMonth.some(
-    (appointment) =>
-      getNaturalDayDifference(candidateDate, appointment.date)
-      < MIN_DAYS_BETWEEN_PUBLIC_APPOINTMENTS,
-  );
-}
-
-async function listActiveFutureAppointmentsInMonth(
-  tx: Prisma.TransactionClient,
-  input: { phone: string; month: string; excludeAppointmentId?: number },
-  now: Date,
-) {
-  const { monthStart, monthEndExclusive } = getMonthRange(input.month);
-  const appointments = await tx.appointment.findMany({
-    where: {
-      client: {
-        phone: input.phone,
-      },
-      status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
-      },
-      date: {
-        gte: new Date(`${monthStart}T00:00:00.000Z`),
-        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
-      },
-      ...(typeof input.excludeAppointmentId === "number"
-        ? { id: { not: input.excludeAppointmentId } }
-        : {}),
-    },
-    select: {
-      id: true,
-      date: true,
-      timeSlot: true,
-    },
-    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
-  });
-
-  return appointments
-    .map((appointment) => ({
-      appointmentId: appointment.id,
-      date: appointment.date.toISOString().slice(0, 10),
-      timeSlot: appointment.timeSlot.toISOString().slice(11, 16),
-    }))
-    .filter((appointment) =>
-      isFutureDateTime(appointment.date, appointment.timeSlot, now),
-    ) satisfies FutureAppointmentInMonth[];
 }
 
 async function resolveClientInTransaction(
@@ -174,22 +107,8 @@ async function createAppointmentInTransaction(
   },
   baseSlots: readonly string[],
   slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE",
-  now: Date,
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
-
-  const futureAppointmentsInTargetMonth = await listActiveFutureAppointmentsInMonth(
-    tx,
-    {
-      phone: input.phone,
-      month: input.date.slice(0, 7),
-    },
-    now,
-  );
-
-  if (hasInsufficientDayGap(input.date, futureAppointmentsInTargetMonth)) {
-    throw new Error("PHONE_ALREADY_BOOKED");
-  }
 
   const [occupied, blockedSlots] = await Promise.all([
     tx.appointment.findMany({
@@ -303,20 +222,6 @@ async function rescheduleAppointmentInTransaction(
 
   if (!isFutureDateTime(currentDate, currentTimeSlot, now)) {
     throw new Error("APPOINTMENT_NOT_FOUND");
-  }
-
-  const futureAppointmentsInTargetMonth = await listActiveFutureAppointmentsInMonth(
-    tx,
-    {
-      phone: input.phone,
-      month: input.date.slice(0, 7),
-      excludeAppointmentId: appointmentToReschedule.id,
-    },
-    now,
-  );
-
-  if (hasInsufficientDayGap(input.date, futureAppointmentsInTargetMonth)) {
-    throw new Error("PHONE_ALREADY_BOOKED");
   }
 
   const [occupied, blockedSlots] = await Promise.all([
@@ -496,7 +401,6 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
         },
         baseSlots,
         monthConfig.slotMode,
-        now,
       );
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
@@ -583,7 +487,6 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         input,
         baseSlots,
         monthConfig.slotMode,
-        now,
       );
       await deleteReservationLockByToken(tx, lockToken);
 

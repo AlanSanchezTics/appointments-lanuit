@@ -133,10 +133,13 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         },
         now,
       );
-      const hasInsufficientGap = hasInsufficientDayGap(
+      const shouldShowRescheduleSuggestion = hasInsufficientDayGap(
         input.date,
         futureAppointmentsInMonth,
       );
+      const suggestedFutureAppointmentsInMonth = shouldShowRescheduleSuggestion
+        ? futureAppointmentsInMonth
+        : [];
 
       const [occupied, blockedSlots] = await Promise.all([
         tx.appointment.findMany({
@@ -191,9 +194,8 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         lock,
         clientExists: Boolean(existingClient),
         clientName: existingClient?.name,
-        futureAppointmentsInMonth,
-        canBookAsNewAppointment:
-          futureAppointmentsInMonth.length > 0 ? !hasInsufficientGap : false,
+        futureAppointmentsInMonth: suggestedFutureAppointmentsInMonth,
+        canBookAsNewAppointment: suggestedFutureAppointmentsInMonth.length > 0,
         whatsappPhone: getWhatsappPhone(),
       };
     } finally {

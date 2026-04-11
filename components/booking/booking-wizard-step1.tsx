@@ -31,6 +31,7 @@ type BookingWizardStep1Props = {
   errors: BookingValidationErrors;
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
   onContinue: () => void;
+  onBack: () => void;
   onOpenCalendar: () => void;
   isPending: boolean;
   showNameField: boolean;
@@ -40,7 +41,6 @@ type BookingWizardStep1Props = {
   isBookingAsNewAppointment: boolean;
   selectedRescheduleAppointmentId: number | null;
   onSelectRescheduleAppointment: (appointmentId: number) => void;
-  onChooseBookAsNewAppointment: () => void;
   remainingSeconds: number;
   errorMessage?: string | null;
 };
@@ -52,6 +52,7 @@ export function BookingWizardStep1({
   errors,
   onDraftChange,
   onContinue,
+  onBack,
   onOpenCalendar,
   isPending,
   showNameField,
@@ -61,7 +62,6 @@ export function BookingWizardStep1({
   isBookingAsNewAppointment,
   selectedRescheduleAppointmentId,
   onSelectRescheduleAppointment,
-  onChooseBookAsNewAppointment,
   remainingSeconds,
   errorMessage,
 }: BookingWizardStep1Props) {
@@ -69,6 +69,15 @@ export function BookingWizardStep1({
   const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
   const selectedDay = days.find((day) => day.date === draft.date) ?? null;
   const showRescheduleSelection = rescheduleOptions.length > 0;
+  const hasSelectedAppointmentToReschedule =
+    !isBookingAsNewAppointment && selectedRescheduleAppointmentId !== null;
+  const continueButtonLabel = showRescheduleSelection
+    ? hasSelectedAppointmentToReschedule
+      ? t("booking.rescheduleSelectedAppointment")
+      : canBookAsNewAppointment
+        ? t("booking.continueAsNewAppointment")
+        : t("booking.next")
+    : t("booking.next");
 
   return (
     <div className="space-y-8">
@@ -249,38 +258,34 @@ export function BookingWizardStep1({
                     }
                     type="button"
                   >
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {formatLongDate(option.date, language)}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">
-                      {formatTimeSlotLabel(option.timeSlot, language)}
-                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--foreground)]">
+                          {formatLongDate(option.date, language)}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          {formatTimeSlotLabel(option.timeSlot, language)}
+                        </p>
+                      </div>
+                      <span
+                        aria-hidden="true"
+                        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
+                          isSelected
+                            ? "border-[var(--accent)]"
+                            : "border-[var(--muted)]"
+                        }`}
+                      >
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full transition ${
+                            isSelected ? "bg-[var(--accent)]" : "bg-transparent"
+                          }`}
+                        />
+                      </span>
+                    </div>
                   </button>
                 );
               })}
             </div>
-            {canBookAsNewAppointment ? (
-              <>
-                <div className="flex items-center gap-3 py-1">
-                  <div className="h-px flex-1 bg-[var(--border)]" />
-                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
-                    {t("booking.orSeparator")}
-                  </span>
-                  <div className="h-px flex-1 bg-[var(--border)]" />
-                </div>
-                <button
-                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                    isBookingAsNewAppointment
-                      ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
-                      : "border-[var(--border)] bg-white/80 text-[var(--foreground)]"
-                  }`}
-                  onClick={onChooseBookAsNewAppointment}
-                  type="button"
-                >
-                  {t("booking.bookAsNewAppointment")}
-                </button>
-              </>
-            ) : null}
           </section>
         </>
       ) : null}
@@ -402,7 +407,7 @@ export function BookingWizardStep1({
             t("booking.wait")
           ) : (
             <>
-              {t("booking.next")}
+              {continueButtonLabel}
               <span aria-hidden="true" className="ml-2">
                 →
               </span>
@@ -410,12 +415,22 @@ export function BookingWizardStep1({
           )}
         </Button>
         <div className="flex justify-center">
-          <Link
-            className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
-            href="/"
-          >
-            {t("booking.back")}
-          </Link>
+          {showRescheduleSelection ? (
+            <button
+              className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+              onClick={onBack}
+              type="button"
+            >
+              {t("booking.back")}
+            </button>
+          ) : (
+            <Link
+              className="inline-flex justify-center text-[0.9rem] font-medium tracking-[-0.01em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+              href="/"
+            >
+              {t("booking.back")}
+            </Link>
+          )}
         </div>
       </div>
     </div>
