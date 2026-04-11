@@ -469,8 +469,9 @@ Business behavior is defined by:
     - not blocked by active temporary lock,
     - not already manually blocked.
   - Manual-block directional propagation:
-    - Blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
-    - Blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
+    - `BLOCK_MODE`: blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
+    - `BLOCK_MODE`: blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
+    - `SECOND_ONLY_MODE`: no directional propagation; each blocked slot affects only that exact slot.
   - Calendar mirror:
     - Every blocked slot creation (including full-day marker) must attempt to create a mirror event in Google Calendar.
     - Mirror event title format:
@@ -527,12 +528,17 @@ Business behavior is defined by:
   - Slots occupied by active appointments.
   - Slots blocked by active temporary locks.
   - Slots manually blocked by admin (`blocked_slots`).
-  - Slots invalidated by pair-direction constraints.
+  - Slots invalidated by pair-direction constraints (`BLOCK_MODE` only).
 
-- Pair-direction rule:
+- `BLOCK_MODE` pair-direction rule:
   - If a booking exists on the first slot of pair `i`, the second slot of every earlier pair is blocked.
   - If a booking exists on the second slot of pair `i`, the first slot of every later pair is blocked.
   - A candidate slot must satisfy all directional restrictions produced by all active appointments on that day.
+
+- `SECOND_ONLY_MODE` slot rule:
+  - Valid bookable slots are `10:00`, `14:00`, `18:00`.
+  - No pair-direction propagation is applied.
+  - A candidate slot is valid only when that exact slot is not occupied, locked, or manually blocked.
 
 - Day visibility rule:
   - If all slots for a day are unavailable, that day is treated as unavailable.

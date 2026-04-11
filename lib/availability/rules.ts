@@ -1,4 +1,5 @@
 import { DIRECTIONAL_SLOT_PAIRS, MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
+import type { MonthSlotMode } from "@/lib/availability/month-slot-mode";
 
 type PairSlotPosition = "first" | "second";
 
@@ -34,6 +35,18 @@ function canCoexistByDirectionalRule(candidateSlot: string, occupiedSlot: string
   }
 
   return true;
+}
+
+function canCoexistByModeRule(
+  candidateSlot: string,
+  occupiedSlot: string,
+  slotMode: MonthSlotMode,
+) {
+  if (slotMode === "SECOND_ONLY_MODE") {
+    return candidateSlot !== occupiedSlot;
+  }
+
+  return canCoexistByDirectionalRule(candidateSlot, occupiedSlot);
 }
 
 function canCoexistWithManualBlockedSlotRule(
@@ -88,6 +101,7 @@ export function isWeekdayBookingDate(date: string) {
 export function getAvailableStartSlots<T extends string>(
   baseSlots: readonly T[],
   occupiedSlots: string[],
+  slotMode: MonthSlotMode = "BLOCK_MODE",
 ) {
   if (occupiedSlots.length >= MAX_APPOINTMENTS_PER_DAY) {
     return [];
@@ -98,7 +112,9 @@ export function getAvailableStartSlots<T extends string>(
       return false;
     }
 
-    return occupiedSlots.every((occupiedSlot) => canCoexistByDirectionalRule(candidateSlot, occupiedSlot));
+    return occupiedSlots.every((occupiedSlot) =>
+      canCoexistByModeRule(candidateSlot, occupiedSlot, slotMode),
+    );
   });
 }
 
@@ -106,9 +122,22 @@ export function getAvailableStartSlotsWithManualBlocks<T extends string>(
   baseSlots: readonly T[],
   directionalOccupiedSlots: string[],
   manualBlockedSlots: string[],
+  slotMode: MonthSlotMode = "BLOCK_MODE",
 ) {
   if (directionalOccupiedSlots.length >= MAX_APPOINTMENTS_PER_DAY) {
     return [];
+  }
+
+  if (slotMode === "SECOND_ONLY_MODE") {
+    return baseSlots.filter((candidateSlot) => {
+      if (manualBlockedSlots.includes(candidateSlot)) {
+        return false;
+      }
+
+      return directionalOccupiedSlots.every((occupiedSlot) =>
+        canCoexistByModeRule(candidateSlot, occupiedSlot, slotMode),
+      );
+    });
   }
 
   return baseSlots.filter((candidateSlot) => {

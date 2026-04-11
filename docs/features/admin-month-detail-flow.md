@@ -85,9 +85,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - si Calendar falla, el bloqueo local se conserva y backend devuelve `syncWarnings`,
    - frontend muestra advertencia operativa cuando recibe `syncWarnings`,
    - frontend refresca detalle mensual (métricas + calendario).
-   - disponibilidad pública/admin del día se recalcula con regla direccional de bloqueos manuales:
-     - slot único bloqueado en par => propagación direccional,
-     - par completo bloqueado => sin propagación adicional,
+   - disponibilidad pública/admin del día se recalcula por `slotMode`:
+     - `BLOCK_MODE`: slot único bloqueado en par => propagación direccional; par completo bloqueado => sin propagación adicional,
+     - `SECOND_ONLY_MODE`: sin propagación direccional; cada bloqueo afecta solo el slot bloqueado,
      - día completo bloqueado => sin disponibilidad.
 20. Si `isPastMonth=true`, no se renderiza el bloque completo de 4 CTAs (`Compartir agenda`, `Agendar nueva cita`, `Bloquear espacios`, `Activar|Desactivar mes`).
 21. Admin toca un día del calendario y se abre modal de detalle diario.
@@ -121,7 +121,8 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Canceladas:
   - estado `CANCELLED` dentro del mes.
 - Espacios disponibles:
-  - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
+  - en métricas mensuales: `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
+  - en `calendarDays.availableSpaces` (semáforo diario): conteo real de espacios elegibles del día según `slotMode`, ocupación, locks temporales y bloqueos manuales.
 - Espacios bloqueados:
   - unidades de capacidad bloqueada por modalidad:
     - `BLOCK_MODE`: un espacio bloqueado = par direccional completo bloqueado.

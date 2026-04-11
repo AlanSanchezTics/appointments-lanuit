@@ -74,4 +74,25 @@ describe("availability rules", () => {
 
     expect(available).toEqual([]);
   });
+
+  it("does not apply directional restriction in SECOND_ONLY_MODE", () => {
+    const available = getAvailableStartSlots(
+      ["10:00", "14:00", "18:00"],
+      ["18:00"],
+      "SECOND_ONLY_MODE",
+    );
+
+    expect(available).toEqual(["10:00", "14:00"]);
+  });
+
+  it("does not propagate manual blocked slots across pairs in SECOND_ONLY_MODE", () => {
+    const available = getAvailableStartSlotsWithManualBlocks(
+      ["10:00", "14:00", "18:00"],
+      ["18:00"],
+      ["14:00"],
+      "SECOND_ONLY_MODE",
+    );
+
+    expect(available).toEqual(["10:00"]);
+  });
 });

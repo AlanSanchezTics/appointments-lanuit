@@ -2,7 +2,8 @@ import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
-import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
+import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/calendar/google";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
@@ -14,6 +15,7 @@ import {
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
+import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
@@ -171,6 +173,7 @@ async function createAppointmentInTransaction(
     status?: AppointmentCreationStatus;
   },
   baseSlots: readonly string[],
+  slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE",
   now: Date,
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
@@ -188,22 +191,37 @@ async function createAppointmentInTransaction(
     throw new Error("PHONE_ALREADY_BOOKED");
   }
 
-  const occupied = await tx.appointment.findMany({
-    where: {
-      date: new Date(`${input.date}T00:00:00.000Z`),
-      status: {
-        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+  const [occupied, blockedSlots] = await Promise.all([
+    tx.appointment.findMany({
+      where: {
+        date: new Date(`${input.date}T00:00:00.000Z`),
+        status: {
+          in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+        },
       },
-    },
-    select: {
-      timeSlot: true,
-    },
-  });
+      select: {
+        timeSlot: true,
+      },
+    }),
+    listBlockedSlotsByDateForUpdate(tx, input.date),
+  ]);
 
   const occupiedSlots = occupied.map((item) =>
     item.timeSlot.toISOString().slice(11, 16),
   );
-  const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
+  const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
+  const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+  if (hasFullDayBlock) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  const availableSlots = getAvailableStartSlotsWithManualBlocks(
+    baseSlots,
+    occupiedSlots,
+    Array.from(blockedSlotsSet),
+    slotMode,
+  );
 
   if (!availableSlots.includes(input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
@@ -243,6 +261,7 @@ async function rescheduleAppointmentInTransaction(
     timeSlot: string;
   },
   baseSlots: readonly string[],
+  slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE",
   now: Date,
   lockToken: string,
 ) {
@@ -300,25 +319,40 @@ async function rescheduleAppointmentInTransaction(
     throw new Error("PHONE_ALREADY_BOOKED");
   }
 
-  const occupied = await tx.appointment.findMany({
-    where: {
-      date: new Date(`${input.date}T00:00:00.000Z`),
-      status: {
-        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+  const [occupied, blockedSlots] = await Promise.all([
+    tx.appointment.findMany({
+      where: {
+        date: new Date(`${input.date}T00:00:00.000Z`),
+        status: {
+          in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+        },
+        id: {
+          not: appointmentToReschedule.id,
+        },
       },
-      id: {
-        not: appointmentToReschedule.id,
+      select: {
+        timeSlot: true,
       },
-    },
-    select: {
-      timeSlot: true,
-    },
-  });
+    }),
+    listBlockedSlotsByDateForUpdate(tx, input.date),
+  ]);
 
   const occupiedSlots = occupied.map((item) =>
     item.timeSlot.toISOString().slice(11, 16),
   );
-  const availableSlots = getAvailableStartSlots(baseSlots, occupiedSlots);
+  const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
+  const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+  if (hasFullDayBlock) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  const availableSlots = getAvailableStartSlotsWithManualBlocks(
+    baseSlots,
+    occupiedSlots,
+    Array.from(blockedSlotsSet),
+    slotMode,
+  );
 
   if (!availableSlots.includes(input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
@@ -461,6 +495,7 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
           status: "CONFIRMED",
         },
         baseSlots,
+        monthConfig.slotMode,
         now,
       );
     } finally {
@@ -530,6 +565,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
             timeSlot: input.timeSlot,
           },
           baseSlots,
+          monthConfig.slotMode,
           now,
           lockToken,
         );
@@ -542,7 +578,13 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         };
       }
 
-      const created = await createAppointmentInTransaction(tx, input, baseSlots, now);
+      const created = await createAppointmentInTransaction(
+        tx,
+        input,
+        baseSlots,
+        monthConfig.slotMode,
+        now,
+      );
       await deleteReservationLockByToken(tx, lockToken);
 
       return {

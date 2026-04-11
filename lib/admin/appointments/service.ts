@@ -238,6 +238,7 @@ export async function createAdminAppointment(
         baseSlots,
         occupiedSlots,
         Array.from(blockedSlotsSet),
+        registration.slotMode,
       );
 
       if (!availableSlots.includes(input.timeSlot)) {
@@ -419,6 +420,7 @@ export async function rescheduleAdminAppointment(
       baseSlots,
       occupiedSlots,
       Array.from(blockedSlotsSet),
+      registration.slotMode,
     );
 
     if (!availableSlots.includes(input.timeSlot)) {

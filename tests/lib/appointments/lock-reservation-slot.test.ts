@@ -22,6 +22,7 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
   status: "ACTIVE",
   slotMode: "BLOCK_MODE",
 }));
+const listBlockedSlotsByDateForUpdateMock = vi.fn(async () => []);
 
 const transactionMock = vi.fn();
 const findManyMock = vi.fn();
@@ -50,6 +51,9 @@ vi.mock("@/lib/db/prisma", () => ({
 vi.mock("@/lib/active-months/service", () => ({
   getBookableMonthConfig: getBookableMonthConfigMock,
 }));
+vi.mock("@/lib/db/blocked-slots", () => ({
+  listBlockedSlotsByDateForUpdate: listBlockedSlotsByDateForUpdateMock,
+}));
 vi.mock("@/lib/whatsapp/message", () => ({
   getWhatsappPhone: vi.fn(() => "5215512345678"),
 }));
@@ -69,6 +73,7 @@ describe("reservation slot locks", () => {
       }),
     );
     findManyMock.mockResolvedValue([]);
+    listBlockedSlotsByDateForUpdateMock.mockResolvedValue([]);
   });
 
   it("acquires a lock for an available slot", async () => {
@@ -289,6 +294,78 @@ describe("reservation slot locks", () => {
       futureAppointmentsInMonth: [],
       canBookAsNewAppointment: false,
       whatsappPhone: "5215512345678",
+    });
+  });
+
+  it("rejects lock acquisition when slot is manually blocked", async () => {
+    findUniqueClientMock.mockResolvedValueOnce(null);
+    listBlockedSlotsByDateForUpdateMock.mockResolvedValueOnce([
+      {
+        id: 60,
+        date: "2026-03-16",
+        timeSlot: "10:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    await expect(
+      acquireReservationSlotLock(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-16",
+          timeSlot: "10:00",
+        },
+        new Date("2026-03-13T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
+  });
+
+  it("keeps 10:00 available in SECOND_ONLY_MODE with lock at 18:00 and manual block at 14:00", async () => {
+    getBookableMonthConfigMock.mockResolvedValueOnce({
+      id: 1,
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "SECOND_ONLY_MODE",
+    });
+    findUniqueClientMock.mockResolvedValueOnce(null);
+    listActiveReservationLocksForDateMock.mockResolvedValueOnce([
+      {
+        id: 2,
+        date: "2026-03-16",
+        timeSlot: "18:00",
+        phone: "5511111111",
+        lockToken: "other-lock",
+        expiresAt: "2026-03-13T12:09:00.000Z",
+      },
+    ]);
+    listBlockedSlotsByDateForUpdateMock.mockResolvedValueOnce([
+      {
+        id: 61,
+        date: "2026-03-16",
+        timeSlot: "14:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    await expect(
+      acquireReservationSlotLock(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-16",
+          timeSlot: "10:00",
+        },
+        new Date("2026-03-13T12:00:00.000Z"),
+      ),
+    ).resolves.toMatchObject({
+      lockToken: "lock-123",
     });
   });
 });

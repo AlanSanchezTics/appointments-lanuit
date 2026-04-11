@@ -295,4 +295,40 @@ describe("availability service", () => {
 
     expect(day?.slots).toEqual(["10:00", "14:00", "18:00"]);
   });
+
+  it("keeps 10:00 available in SECOND_ONLY_MODE when 18:00 is occupied and 14:00 is manually blocked", async () => {
+    getBookableMonthConfigMock.mockResolvedValueOnce({
+      id: 1,
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "SECOND_ONLY_MODE",
+    });
+    listMonthAppointmentsMock.mockResolvedValueOnce([
+      {
+        id: 1,
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-03-04",
+        timeSlot: "18:00",
+        status: "CONFIRMED",
+        googleEventId: null,
+        clientId: 1,
+      },
+    ]);
+    listMonthActiveReservationLocksMock.mockResolvedValueOnce([]);
+    listMonthBlockedSlotsMock.mockResolvedValueOnce([
+      {
+        id: 40,
+        date: "2026-03-04",
+        timeSlot: "14:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+
+    const result = await getMonthAvailability("2026-03", new Date("2026-03-03T12:00:00.000Z"));
+    const day = result.find((entry) => entry.date === "2026-03-04");
+
+    expect(day?.slots).toEqual(["10:00"]);
+  });
 });

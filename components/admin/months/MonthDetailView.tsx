@@ -520,6 +520,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           monthBaseSlots,
           occupiedSlots,
           blockedSlots,
+          data.slotMode,
         ).filter((slot) => isFutureDateTime(editDate, slot));
 
         setAvailableEditSlots(slots);

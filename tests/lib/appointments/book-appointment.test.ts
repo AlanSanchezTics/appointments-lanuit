@@ -12,7 +12,8 @@ const syncAppointmentToCalendarMock = vi.fn(async () => ({ status: "CONFIRMED" a
 const createCalendarEventMock = vi.fn(async () => "google-event-1");
 const deleteCalendarEventMock = vi.fn(async () => undefined);
 const getWhatsappPhoneMock = vi.fn(() => "5215512345678");
-const getAvailableStartSlotsMock = vi.fn(() => ["09:00", "13:00"]);
+const getAvailableStartSlotsWithManualBlocksMock = vi.fn(() => ["09:00", "13:00"]);
+const listBlockedSlotsByDateForUpdateMock = vi.fn(async () => []);
 const getBookableMonthConfigMock = vi.fn(async () => ({
   id: 1,
   month: "2026-03",
@@ -60,7 +61,10 @@ vi.mock("@/lib/whatsapp/message", () => ({
 }));
 
 vi.mock("@/lib/availability/rules", () => ({
-  getAvailableStartSlots: getAvailableStartSlotsMock,
+  getAvailableStartSlotsWithManualBlocks: getAvailableStartSlotsWithManualBlocksMock,
+}));
+vi.mock("@/lib/db/blocked-slots", () => ({
+  listBlockedSlotsByDateForUpdate: listBlockedSlotsByDateForUpdateMock,
 }));
 
 vi.mock("@/lib/active-months/service", () => ({
@@ -88,6 +92,7 @@ describe("bookAppointment", () => {
     );
     findManyMock.mockResolvedValue([]);
     clientFindUniqueMock.mockResolvedValue(null);
+    listBlockedSlotsByDateForUpdateMock.mockResolvedValue([]);
   });
 
   it("creates a new appointment even when there is historical cancellation on the same slot", async () => {
@@ -144,7 +149,7 @@ describe("bookAppointment", () => {
     findManyMock
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ timeSlot: new Date("1970-01-01T09:00:00.000Z") }]);
-    getAvailableStartSlotsMock.mockReturnValueOnce(["13:00"]);
+    getAvailableStartSlotsWithManualBlocksMock.mockReturnValueOnce(["13:00"]);
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
 
@@ -417,6 +422,36 @@ describe("bookAppointment", () => {
         new Date("2026-03-03T12:00:00.000Z"),
       ),
     ).rejects.toThrow("PHONE_ALREADY_BOOKED");
+  });
+
+  it("returns SLOT_NOT_AVAILABLE when target slot is manually blocked", async () => {
+    findManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    listBlockedSlotsByDateForUpdateMock.mockResolvedValueOnce([
+      {
+        id: 70,
+        date: "2026-03-04",
+        timeSlot: "09:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+    getAvailableStartSlotsWithManualBlocksMock.mockReturnValueOnce(["13:00"]);
+
+    const { bookAppointment } = await import("@/lib/appointments/book-appointment");
+
+    await expect(
+      bookAppointment(
+        {
+          name: "Ana Lopez",
+          phone: "5512345678",
+          date: "2026-03-04",
+          timeSlot: "09:00",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
   });
 
   it("allows booking in the same month when future appointments are 15 or more days apart", async () => {

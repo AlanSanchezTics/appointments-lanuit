@@ -16,7 +16,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - El mes solicitado en la ruta (`/citas/YYYY-MM`) debe estar en `active_months` con estado `ACTIVE`.
 - El flujo opera en zona horaria `America/Mexico_City`.
 - Solo se pueden reservar días lunes a viernes.
-- Solo se permiten horarios base oficiales: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
+- Los horarios válidos dependen de `slotMode` del mes:
+  - `BLOCK_MODE`: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
+  - `SECOND_ONLY_MODE`: `10:00`, `14:00`, `18:00`.
 - Para el mismo día, solo se permiten horarios futuros (no transcurridos).
 - El teléfono se valida/persiste normalizado a 10 dígitos.
 - Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`) si la separación entre citas activas del mismo mes es de al menos 15 días naturales.
@@ -150,7 +152,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Si es hoy, el horario debe ser futuro en `America/Mexico_City`.
 - Horario:
   - Debe ser uno de los slots base oficiales.
-  - Debe cumplir disponibilidad global del día (ocupados + locks + regla direccional + máximo diario).
+  - Debe cumplir disponibilidad global del día (ocupados + locks + bloqueos manuales + máximo diario).
+  - En `BLOCK_MODE` aplica regla direccional por pares.
+  - En `SECOND_ONLY_MODE` no aplica propagación direccional entre pares.
 - Teléfono:
   - Se normaliza a 10 dígitos.
   - Puede tener más de una cita activa futura en el mismo mes solo si existe separación mínima de 15 días naturales entre citas activas.

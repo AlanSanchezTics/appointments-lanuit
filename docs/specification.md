@@ -86,21 +86,34 @@ Restricciones:
 - 17:00
 - 18:00
 
-### 4.3 Regla Direccional por Pares + Máximo Diario
+### 4.3 Reglas por Modalidad + Máximo Diario
+
+Regla general:
 
 - Duración del evento en Google Calendar: 3 horas.
+- Límite diario: máximo 3 citas activas por día.
+
+`BLOCK_MODE`:
+
 - Pares oficiales de horarios:
   - (09:00, 10:00)
   - (13:00, 14:00)
   - (17:00, 18:00)
-- Límite diario: máximo 3 citas activas por día.
 - Restricción estructural: máximo 1 cita activa por par.
+- Regla direccional formal:
+  - Si existe una cita en la primera hora de un par $i$, se bloquea la segunda hora de todos los pares anteriores ($j < i$).
+  - Si existe una cita en la segunda hora de un par $i$, se bloquea la primera hora de todos los pares posteriores ($j > i$).
+  - Un slot candidato es válido solo si cumple simultáneamente todas las restricciones inducidas por todas las citas activas del día (composición global).
+- Ejemplos:
+  - si hay cita activa a las `17:00`, se bloquean `14:00` y `10:00`,
+  - si hay cita activa a las `10:00`, se bloquean `13:00` y `17:00`.
 
-Regla direccional formal:
+`SECOND_ONLY_MODE`:
 
-- Si existe una cita en la primera hora de un par $i$, se bloquea la segunda hora de todos los pares anteriores ($j < i$).
-- Si existe una cita en la segunda hora de un par $i$, se bloquea la primera hora de todos los pares posteriores ($j > i$).
-- Un slot candidato es válido solo si cumple simultáneamente todas las restricciones inducidas por todas las citas activas del día (composición global).
+- Slots oficiales: `10:00`, `14:00`, `18:00`.
+- Restricción estructural: máximo 1 cita activa por slot.
+- No aplica propagación direccional entre pares.
+- Un slot candidato es válido solo si ese slot específico no está ocupado, lockeado o bloqueado manualmente.
 
 ---
 
@@ -162,7 +175,7 @@ Regla direccional formal:
    - Mientras UI está en selección de cita a reagendar, se muestra un bloque resumen con `name`, `phone`, `date` y `timeSlot` actualmente seleccionados, antes de la lista de citas activas del mes.
    - En este estado se ocultan los controles del paso 1 para cambiar `date`, `timeSlot` y `phone`.
    - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
-5. Si el lock no puede crearse (slot ocupado/lockeado), usuario debe elegir otro horario.
+5. Si el lock no puede crearse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
 6. Usuario confirma cita (paso 2 del wizard).
 7. Backend:
    - Inicia transacción.
@@ -880,13 +893,13 @@ Flujo UI:
      - solo días `>= currentDate` dentro del `month`,
      - solo se listan días que tengan al menos un slot bloqueable,
      - slot bloqueable = no pasado (same-day), no ocupado por cita activa, sin lock temporal activo y no bloqueado manualmente.
-   - Regla direccional para bloqueos manuales:
-     - si se bloquea **una sola hora** dentro de un par direccional, se aplica propagación direccional en slots homólogos de pares posteriores/anteriores;
-     - si se bloquea el **par completo** (ej. `09:00` y `10:00`), no se propaga restricción direccional adicional y solo ese par queda fuera;
-     - si se bloquean los 6 slots del día, el día queda sin disponibilidad para reserva.
-   - Ejemplos normativos:
-     - bloquear `09:00` => disponibles `10:00`, `14:00`, `18:00`;
-     - bloquear `09:00` + `10:00` => disponibles `13:00`, `14:00`, `17:00`, `18:00`;
+   - Regla de bloqueos manuales por modalidad:
+     - `BLOCK_MODE`:
+       - si se bloquea **una sola hora** dentro de un par direccional, se aplica propagación direccional en slots homólogos de pares posteriores/anteriores;
+       - si se bloquea el **par completo** (ej. `09:00` y `10:00`), no se propaga restricción direccional adicional y solo ese par queda fuera.
+     - `SECOND_ONLY_MODE`:
+       - no aplica propagación direccional entre pares;
+       - cada bloqueo manual afecta solo el slot bloqueado (`10:00`, `14:00` o `18:00`).
      - bloquear día completo => sin slots disponibles.
    - Al confirmar bloqueo:
      - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),

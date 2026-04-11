@@ -2,8 +2,9 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
-import { getAvailableStartSlots } from "@/lib/availability/rules";
+import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
 import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -15,6 +16,7 @@ import {
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
+import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { lockReservationSchema, validateBookingRules } from "@/lib/validation/appointment";
 import { getWhatsappPhone } from "@/lib/whatsapp/message";
@@ -136,24 +138,38 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         futureAppointmentsInMonth,
       );
 
-      const occupied = await tx.appointment.findMany({
-        where: {
-          date: new Date(`${input.date}T00:00:00.000Z`),
-          status: {
-            in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+      const [occupied, blockedSlots] = await Promise.all([
+        tx.appointment.findMany({
+          where: {
+            date: new Date(`${input.date}T00:00:00.000Z`),
+            status: {
+              in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+            },
           },
-        },
-        select: {
-          timeSlot: true,
-        },
-      });
+          select: {
+            timeSlot: true,
+          },
+        }),
+        listBlockedSlotsByDateForUpdate(tx, input.date),
+      ]);
 
       await deleteActiveReservationLocksByPhone(tx, input.phone, now);
       const activeLocks = await listActiveReservationLocksForDate(tx, input.date, now);
       const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
       const lockedSlots = activeLocks.map((item) => item.timeSlot);
-      const allOccupiedSlots = [...occupiedSlots, ...lockedSlots];
-      const availableSlots = getAvailableStartSlots(baseSlots, allOccupiedSlots);
+      const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
+      const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+
+      if (hasFullDayBlock) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
+
+      const availableSlots = getAvailableStartSlotsWithManualBlocks(
+        baseSlots,
+        [...occupiedSlots, ...lockedSlots],
+        Array.from(blockedSlotsSet),
+        monthConfig.slotMode,
+      );
 
       if (!availableSlots.includes(input.timeSlot)) {
         if (lockedSlots.includes(input.timeSlot)) {

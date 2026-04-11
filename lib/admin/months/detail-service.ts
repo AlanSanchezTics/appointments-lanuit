@@ -1,6 +1,7 @@
-import { isWeekdayBookingDate } from "@/lib/availability/rules";
+import { getAvailableStartSlotsWithManualBlocks, isWeekdayBookingDate } from "@/lib/availability/rules";
+import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
 import { countBlockedSpacesByMode, splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
-import { MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
+import { DIRECTIONAL_SLOT_PAIRS, MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import { findRegisteredMonth, listAppointmentsByMonth } from "@/lib/db/admin-months";
 import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
@@ -50,6 +51,22 @@ function resolveTone(isWeekend: boolean, availableSpaces: number): MonthDetailCa
   }
 
   return "available";
+}
+
+function countAvailableSpacesFromSlots(availableSlots: readonly string[]) {
+  const pairsWithAvailability = new Set<number>();
+
+  for (const slot of availableSlots) {
+    const pairIndex = DIRECTIONAL_SLOT_PAIRS.findIndex(
+      ([firstSlot, secondSlot]) => firstSlot === slot || secondSlot === slot,
+    );
+
+    if (pairIndex >= 0) {
+      pairsWithAvailability.add(pairIndex);
+    }
+  }
+
+  return pairsWithAvailability.size;
 }
 
 export async function getAdminMonthDetail(
@@ -110,15 +127,17 @@ export async function getAdminMonthDetail(
     const occupiedSlots = activeSlotsByDate.get(date) ?? [];
     const dayBlockedTimeSlots = blockedSlotsByDate.get(date) ?? [];
     const { hasFullDayBlock } = splitBlockedTimeSlots(dayBlockedTimeSlots);
-    const dayBlockedSpaces = countBlockedSpacesByMode({
-      slotMode: registration.slotMode,
-      blockedTimeSlots: dayBlockedTimeSlots,
-    });
-    const availableSpaces = isWeekend
-      ? 0
-      : hasFullDayBlock
-      ? 0
-      : Math.max(0, MAX_APPOINTMENTS_PER_DAY - (occupiedSlots.length + dayBlockedSpaces));
+    const { blockedSlots } = splitBlockedTimeSlots(dayBlockedTimeSlots);
+    const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+    const dayAvailableSlots = isWeekend || hasFullDayBlock
+      ? []
+      : getAvailableStartSlotsWithManualBlocks(
+        baseSlots,
+        occupiedSlots,
+        Array.from(blockedSlots),
+        registration.slotMode,
+      );
+    const availableSpaces = countAvailableSpacesFromSlots(dayAvailableSlots);
 
     return {
       date,

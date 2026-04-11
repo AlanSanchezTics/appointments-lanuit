@@ -84,6 +84,7 @@ export async function getMonthAvailability(month: string, now = new Date()) {
         baseSlots,
         [...occupiedSlots, ...activeLockSlots],
         Array.from(blockedSlots),
+        monthConfig.slotMode,
       )
         .filter((slot) => {
         if (date !== currentDate) {

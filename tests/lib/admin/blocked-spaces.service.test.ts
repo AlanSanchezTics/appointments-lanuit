@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createAdminBlockedSlots,
   deleteAdminBlockedSlot,
+  getAdminBlockableSlots,
   updateAdminBlockedSlot,
 } from "@/lib/admin/blocked-spaces/service";
 
@@ -12,8 +13,11 @@ const {
   cleanupExpiredReservationLocksMock,
   lockConflictingAppointmentsMock,
   listActiveReservationLocksForDateMock,
+  listMonthActiveReservationLocksMock,
+  listMonthAppointmentsMock,
   listActiveAppointmentSlotsByDateForUpdateMock,
   listBlockedSlotsByDateForUpdateMock,
+  listMonthBlockedSlotsMock,
   createBlockedSlotsMock,
   countBlockedSlotsByGoogleEventIdMock,
   deleteBlockedSlotsByDateMock,
@@ -29,8 +33,11 @@ const {
   cleanupExpiredReservationLocksMock: vi.fn(),
   lockConflictingAppointmentsMock: vi.fn(),
   listActiveReservationLocksForDateMock: vi.fn(),
+  listMonthActiveReservationLocksMock: vi.fn(),
+  listMonthAppointmentsMock: vi.fn(),
   listActiveAppointmentSlotsByDateForUpdateMock: vi.fn(),
   listBlockedSlotsByDateForUpdateMock: vi.fn(),
+  listMonthBlockedSlotsMock: vi.fn(),
   createBlockedSlotsMock: vi.fn(),
   countBlockedSlotsByGoogleEventIdMock: vi.fn(),
   deleteBlockedSlotsByDateMock: vi.fn(),
@@ -56,6 +63,8 @@ vi.mock("@/lib/db/appointments", () => ({
   cleanupExpiredReservationLocks: cleanupExpiredReservationLocksMock,
   lockConflictingAppointments: lockConflictingAppointmentsMock,
   listActiveReservationLocksForDate: listActiveReservationLocksForDateMock,
+  listMonthActiveReservationLocks: listMonthActiveReservationLocksMock,
+  listMonthAppointments: listMonthAppointmentsMock,
 }));
 
 vi.mock("@/lib/db/admin-appointments", () => ({
@@ -69,7 +78,7 @@ vi.mock("@/lib/db/blocked-slots", () => ({
   deleteBlockedSlotById: deleteBlockedSlotByIdMock,
   findBlockedSlotByIdForUpdate: findBlockedSlotByIdForUpdateMock,
   listBlockedSlotsByDateForUpdate: listBlockedSlotsByDateForUpdateMock,
-  listMonthBlockedSlots: vi.fn(),
+  listMonthBlockedSlots: listMonthBlockedSlotsMock,
   updateBlockedSlotReasonById: updateBlockedSlotReasonByIdMock,
 }));
 
@@ -97,7 +106,10 @@ describe("admin blocked spaces service", () => {
     lockConflictingAppointmentsMock.mockResolvedValue(undefined);
     listActiveAppointmentSlotsByDateForUpdateMock.mockResolvedValue([]);
     listActiveReservationLocksForDateMock.mockResolvedValue([]);
+    listMonthAppointmentsMock.mockResolvedValue([]);
+    listMonthActiveReservationLocksMock.mockResolvedValue([]);
     listBlockedSlotsByDateForUpdateMock.mockResolvedValue([]);
+    listMonthBlockedSlotsMock.mockResolvedValue([]);
     createBlockedSlotsMock.mockResolvedValue([
       {
         id: 31,
@@ -317,5 +329,44 @@ describe("admin blocked spaces service", () => {
         reason: "CALENDAR_DELETE_FAILED",
       },
     ]);
+  });
+
+  it("keeps 10:00 blockable in SECOND_ONLY_MODE when 18:00 is occupied and 14:00 is manually blocked", async () => {
+    findRegisteredMonthMock.mockResolvedValueOnce({
+      month: "2026-04",
+      status: "ACTIVE",
+      slotMode: "SECOND_ONLY_MODE",
+    });
+    listMonthAppointmentsMock.mockResolvedValueOnce([
+      {
+        id: 81,
+        name: "Ana Lopez",
+        phone: "5512345678",
+        date: "2026-04-22",
+        timeSlot: "18:00",
+        status: "CONFIRMED",
+        googleEventId: null,
+        clientId: 1,
+      },
+    ]);
+    listMonthBlockedSlotsMock.mockResolvedValueOnce([
+      {
+        id: 82,
+        date: "2026-04-22",
+        timeSlot: "14:00",
+        reason: "DESCANSO",
+        createdByAdminId: 1,
+      },
+    ]);
+
+    const result = await getAdminBlockableSlots(
+      {
+        month: "2026-04",
+      },
+      new Date("2026-04-10T15:00:00.000Z"),
+    );
+
+    const day = result.days.find((entry) => entry.date === "2026-04-22");
+    expect(day?.slots).toEqual(["10:00"]);
   });
 });

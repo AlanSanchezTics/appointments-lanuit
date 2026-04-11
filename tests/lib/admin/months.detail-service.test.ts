@@ -163,4 +163,33 @@ describe("admin month detail service", () => {
     expect(day?.availableSpaces).toBe(0);
     expect(day?.tone).toBe("full");
   });
+
+  it("shows one available space in SECOND_ONLY_MODE when 18:00 is occupied and 14:00 is manually blocked", async () => {
+    findRegisteredMonthMock.mockResolvedValueOnce({
+      month: "2026-03",
+      status: "ACTIVE",
+      slotMode: "SECOND_ONLY_MODE",
+    });
+    listAppointmentsByMonthMock.mockResolvedValueOnce([
+      { date: "2026-03-03", timeSlot: "18:00", status: "CONFIRMED" },
+    ]);
+    listMonthBlockedSlotsMock.mockResolvedValueOnce([
+      {
+        id: 2,
+        date: "2026-03-03",
+        timeSlot: "14:00",
+        reason: "PERSONAL",
+        createdByAdminId: 10,
+      },
+    ]);
+
+    const result = await getAdminMonthDetail(
+      "2026-03",
+      new Date("2026-03-01T12:00:00.000Z"),
+    );
+
+    const day = result.calendarDays.find((entry) => entry.date === "2026-03-03");
+    expect(day?.availableSpaces).toBe(1);
+    expect(day?.tone).toBe("low");
+  });
 });

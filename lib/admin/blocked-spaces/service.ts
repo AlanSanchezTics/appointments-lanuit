@@ -24,7 +24,7 @@ import {
   getAvailableStartSlotsWithManualBlocks,
   isWeekdayBookingDate,
 } from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { resolveBaseSlotsByMonthMode, type MonthSlotMode } from "@/lib/availability/month-slot-mode";
 import { getCurrentDateKey, getCurrentTimeKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { listActiveAppointmentSlotsByDateForUpdate } from "@/lib/db/admin-appointments";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
@@ -74,6 +74,7 @@ function getMonthDays(month: string) {
 function buildBlockableDays<T extends string>(params: {
   month: string;
   now: Date;
+  slotMode: MonthSlotMode;
   baseSlots: readonly T[];
   occupiedByDate: Map<string, string[]>;
   lockByDate: Map<string, string[]>;
@@ -102,6 +103,7 @@ function buildBlockableDays<T extends string>(params: {
         params.baseSlots,
         [...occupiedSlots, ...activeLocks],
         Array.from(blockedSlots),
+        params.slotMode,
       ).filter((slot) => {
         if (date !== currentDate) {
           return true;
@@ -204,6 +206,7 @@ export async function getAdminBlockableSlots(
   const allBlockableDays = buildBlockableDays({
     month: input.month,
     now,
+    slotMode: registration.slotMode,
     baseSlots,
     occupiedByDate,
     lockByDate,
@@ -288,6 +291,7 @@ export async function createAdminBlockedSlots(
         baseSlots,
         [...occupiedSlots, ...activeLockSlots],
         Array.from(blockedSlotsSet),
+        registration.slotMode,
       ).filter((slot) => isFutureDateTime(input.date, slot, now));
 
       if (availableSlots.length === 0) {
@@ -327,6 +331,7 @@ export async function createAdminBlockedSlots(
       baseSlots,
       [...occupiedSlots, ...activeLockSlots],
       Array.from(blockedSlotsSet),
+      registration.slotMode,
     ).filter((slot) => isFutureDateTime(input.date, slot, now));
 
     if (input.slots.some((slot) => !availableSlots.includes(slot))) {
