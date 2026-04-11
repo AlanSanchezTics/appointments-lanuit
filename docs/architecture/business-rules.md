@@ -72,6 +72,9 @@ Business behavior is defined by:
 - Temporary reservation lock
   - A slot can be temporarily held during booking confirmation.
   - While active, a lock blocks availability for that slot.
+  - On unexpected page exit (`refresh`, tab close, external navigation), frontend should attempt early lock release via `pagehide + sendBeacon` to a dedicated idempotent endpoint.
+  - On `reload` navigation, frontend should revalidate month availability immediately (no-store) and perform one short retry to reduce transient stale availability after best-effort lock release.
+  - Early release is best-effort only; business guarantee remains TTL expiration.
   - Locks expire automatically and stop affecting availability once expired.
 
 - Mirror integration principle

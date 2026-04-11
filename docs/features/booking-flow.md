@@ -134,6 +134,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 10. Abandono o expiración
 - Si usuario retrocede/abandona: lock puede liberarse explícitamente o vencer por TTL.
+- Si ocurre salida inesperada (refresh/cierre/navegación fuera de la página), frontend dispara `pagehide` e intenta liberar lock mediante `sendBeacon` a `POST /api/reservar/lock/release-beacon` (best-effort, idempotente).
+- Cuando la navegación es `reload`, frontend fuerza revalidación inmediata de disponibilidad (`no-store`) y hace un reintento corto único para mitigar stale UI mientras termina de procesarse la liberación del lock.
+- Si ese envío no se entrega, el lock sigue protegido por expiración automática de TTL (10 minutos).
 - Si expira TTL en confirmación: se rechaza confirmación y se fuerza re-selección de horario.
 
 ## Validation Points

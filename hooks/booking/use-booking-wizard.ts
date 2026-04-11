@@ -24,6 +24,7 @@ import type {
   SlotLock,
 } from "@/lib/booking/types";
 import { useBookingLockTimer } from "@/hooks/booking/use-booking-lock-timer";
+import { useBookingExitLockRelease } from "@/hooks/booking/use-booking-exit-lock-release";
 import { useBookingStepTransition } from "@/hooks/booking/use-booking-step-transition";
 
 type UseBookingWizardParams = {
@@ -41,6 +42,39 @@ type UseBookingWizardParams = {
     appointmentIdToReschedule?: number | null,
   ) => Promise<BookingSuccess>;
 };
+
+const RELOAD_REVALIDATION_RETRY_DELAY_MS = 500;
+
+function dayAvailabilitiesMatch(a: DayAvailability[], b: DayAvailability[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let index = 0; index < a.length; index += 1) {
+    const dayA = a[index];
+    const dayB = b[index];
+
+    if (!dayA || !dayB) {
+      return false;
+    }
+
+    if (dayA.date !== dayB.date) {
+      return false;
+    }
+
+    if (dayA.slots.length !== dayB.slots.length) {
+      return false;
+    }
+
+    for (let slotIndex = 0; slotIndex < dayA.slots.length; slotIndex += 1) {
+      if (dayA.slots[slotIndex] !== dayB.slots[slotIndex]) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
 
 function getInitialDraft(
   initialDraft: Partial<BookingDraft> | undefined,
@@ -89,6 +123,62 @@ export function useBookingWizard({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    const entries = performance.getEntriesByType("navigation") as
+      | Array<{ type?: string }>
+      | undefined;
+    const navigationType = entries?.[0]?.type;
+
+    if (navigationType !== "reload") {
+      return;
+    }
+
+    let isCancelled = false;
+    let retryTimeoutId: number | null = null;
+
+    const revalidateAfterReload = async () => {
+      try {
+        const nextDays = await refreshDays(month);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setCurrentDays(nextDays);
+        setDraft((current) => normalizeDraftByAvailability(current, nextDays));
+
+        if (!dayAvailabilitiesMatch(days, nextDays)) {
+          return;
+        }
+
+        retryTimeoutId = window.setTimeout(() => {
+          void refreshDays(month)
+            .then((retriedDays) => {
+              if (isCancelled) {
+                return;
+              }
+
+              setCurrentDays(retriedDays);
+              setDraft((current) => normalizeDraftByAvailability(current, retriedDays));
+            })
+            .catch(() => undefined);
+        }, RELOAD_REVALIDATION_RETRY_DELAY_MS);
+      } catch {
+        // no-op: keep SSR-provided days on revalidation failures.
+      }
+    };
+
+    void revalidateAfterReload();
+
+    return () => {
+      isCancelled = true;
+
+      if (retryTimeoutId !== null) {
+        window.clearTimeout(retryTimeoutId);
+      }
+    };
+  }, [days, month, refreshDays]);
+
+  useEffect(() => {
     setCurrentDays(days);
     setDraft((current) => normalizeDraftByAvailability(current, days));
   }, [days]);
@@ -100,6 +190,10 @@ export function useBookingWizard({
       }
     };
   }, [activeLock?.lockToken, releaseLock]);
+
+  useBookingExitLockRelease({
+    activeLockToken: activeLock?.lockToken ?? null,
+  });
 
   const { remainingSeconds, setRemainingSeconds } = useBookingLockTimer({
     activeLock,

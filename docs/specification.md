@@ -194,8 +194,13 @@ Contratos de payload relevantes en flujo vigente:
 - `POST /api/reservar/confirm`:
   - admite `appointmentIdToReschedule` opcional para reprogramar una cita futura activa del mismo teléfono y mes al `date + timeSlot` seleccionado.
   - el frontend debe enviar `name` en forma canónica (trim) cuando aplique.
+- `POST /api/reservar/lock/release-beacon`:
+  - payload: `{ lockToken }`.
+  - contrato idempotente (`200` con `{ released: boolean }`) para intentos best-effort al salir inesperadamente del flujo (`pagehide + sendBeacon`).
+  - no reemplaza el TTL; funciona como liberación temprana adicional.
 
 Si el usuario abandona en confirmación o expira el TTL, el lock deja de bloquear automáticamente.
+En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediatamente con `cache: "no-store"` y ejecutar un reintento corto único para reducir desalineaciones temporales entre el render SSR y la liberación best-effort del lock.
 
 ### 7.1 Contrato de UI/UX del Wizard
 
@@ -306,6 +311,8 @@ Locking temporal adicional:
 
 - Tabla `reservation_locks` para bloquear slot durante el paso de confirmación.
 - `TTL` fijo de 10 minutos por lock.
+- El frontend debe intentar liberar lock en salida inesperada (`refresh`, cierre de pestaña o navegación fuera del flujo) usando `pagehide + sendBeacon` hacia `POST /api/reservar/lock/release-beacon`.
+- Este envío es best-effort y no garantiza entrega; el TTL sigue siendo el respaldo obligatorio de liberación.
 - Sin cron obligatorio: cleanup lazy en endpoints de lock/confirm y filtro por `expires_at > now` en disponibilidad.
 - Opcionalmente puede ejecutarse un cron externo frecuente para borrar locks expirados (`expires_at <= now`) por lotes.
 

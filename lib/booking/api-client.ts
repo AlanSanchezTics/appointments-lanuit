@@ -48,6 +48,25 @@ export async function releaseReservationLock(lockToken: string) {
   });
 }
 
+export function releaseReservationLockByBeacon(lockToken: string) {
+  const normalizedToken = lockToken.trim();
+
+  if (!normalizedToken) {
+    return false;
+  }
+
+  if (
+    typeof navigator === "undefined"
+    || typeof navigator.sendBeacon !== "function"
+  ) {
+    return false;
+  }
+
+  const payload = JSON.stringify({ lockToken: normalizedToken });
+
+  return navigator.sendBeacon("/api/reservar/lock/release-beacon", payload);
+}
+
 export async function submitBookingDraft(
   draft: BookingDraft,
   lockToken: string,

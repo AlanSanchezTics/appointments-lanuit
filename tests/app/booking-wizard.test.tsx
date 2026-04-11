@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BookingWizard } from "@/components/booking/booking-wizard";
 
@@ -15,6 +15,12 @@ const days = [
 ];
 
 describe("booking wizard", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
   it("does not advance without a selected date and slot", () => {
     render(
       <BookingWizard
@@ -281,6 +287,105 @@ describe("booking wizard", () => {
         "Selecciona una de las opciones disponibles para continuar.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("sends lock release beacon on pagehide when there is an active lock", async () => {
+    const sendBeaconMock = vi.fn(() => true);
+    vi.stubGlobal("navigator", { sendBeacon: sendBeaconMock });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        checkClientAndAcquireLock={async () => ({
+          lockToken: "lock-pagehide",
+          expiresAt: "2099-01-01T00:10:00.000Z",
+          clientExists: true,
+          clientName: "Ana Garcia",
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    await screen.findByText("Confirmar detalles");
+
+    window.dispatchEvent(new Event("pagehide"));
+    window.dispatchEvent(new Event("pagehide"));
+
+    expect(sendBeaconMock).toHaveBeenCalledOnce();
+    expect(sendBeaconMock).toHaveBeenCalledWith(
+      "/api/reservar/lock/release-beacon",
+      JSON.stringify({ lockToken: "lock-pagehide" }),
+    );
+  });
+
+  it("does not send lock release beacon on pagehide when there is no active lock", () => {
+    const sendBeaconMock = vi.fn(() => true);
+    vi.stubGlobal("navigator", { sendBeacon: sendBeaconMock });
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "09:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+      />,
+    );
+
+    window.dispatchEvent(new Event("pagehide"));
+
+    expect(sendBeaconMock).not.toHaveBeenCalled();
+  });
+
+  it("revalidates availability on reload and retries once when first refresh matches SSR days", async () => {
+    vi.spyOn(window.performance, "getEntriesByType").mockReturnValue([
+      { type: "reload" } as PerformanceNavigationTiming,
+    ]);
+    const refreshDaysMock = vi
+      .fn()
+      .mockResolvedValueOnce(days)
+      .mockResolvedValueOnce([
+        {
+          date: "2026-03-04",
+          slots: ["09:00", "13:00"],
+        },
+        {
+          date: "2026-03-05",
+          slots: ["10:00", "14:00"],
+        },
+      ]);
+
+    render(
+      <BookingWizard
+        days={days}
+        initialDraft={{
+          date: "2026-03-04",
+          timeSlot: "13:00",
+          name: "Ana Garcia",
+          phone: "5512345678",
+        }}
+        month="2026-03"
+        refreshDays={refreshDaysMock}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(refreshDaysMock).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(refreshDaysMock).toHaveBeenCalledTimes(2);
+    }, { timeout: 2000 });
   });
 
   it("transitions to the pending confirmation screen after a non-loyal booking is confirmed", async () => {
