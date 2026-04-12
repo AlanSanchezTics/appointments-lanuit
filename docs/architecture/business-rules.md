@@ -80,6 +80,9 @@ Business behavior is defined by:
 - Mirror integration principle
   - External calendar synchronization mirrors domain state but does not define source-of-truth booking validity.
 
+- Referential integrity policy
+  - `appointments.client_id -> clients.id` uses cascading referential actions (`ON DELETE CASCADE`, `ON UPDATE CASCADE`).
+
 ## Booking Rules
 
 - A booking request is valid only when all of the following hold:

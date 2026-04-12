@@ -377,6 +377,10 @@ Tabla: appointments
 - created_at DATETIME
 - updated_at DATETIME
 
+Regla de integridad referencial:
+
+- FK `appointments.client_id -> clients.id` con `ON DELETE CASCADE` y `ON UPDATE CASCADE`.
+
 Índices:
 
 - INDEX(date, time_slot)
