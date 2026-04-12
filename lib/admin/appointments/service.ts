@@ -59,6 +59,14 @@ function mapCalendarErrorReason(error: unknown) {
     : "CALENDAR_SYNC_FAILED";
 }
 
+function dateToDateKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function timeToTimeSlotKey(value: Date) {
+  return value.toISOString().slice(11, 16);
+}
+
 function isUniqueViolationError(error: unknown) {
   return (
     (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
@@ -600,7 +608,15 @@ async function transitionPendingAppointment(
     appointmentId: number;
     nextStatus: "CONFIRMED" | "REJECTED";
   },
-): Promise<AdminAppointmentTransitionResponse> {
+): Promise<
+  AdminAppointmentTransitionResponse & {
+    syncInput?: {
+      name: string;
+      date: string;
+      timeSlot: string;
+    };
+  }
+> {
   const current = await tx.appointment.findUnique({
     where: {
       id: input.appointmentId,
@@ -608,6 +624,13 @@ async function transitionPendingAppointment(
     select: {
       id: true,
       status: true,
+      date: true,
+      timeSlot: true,
+      client: {
+        select: {
+          name: true,
+        },
+      },
     },
   });
 
@@ -633,21 +656,61 @@ async function transitionPendingAppointment(
     throw new Error("APPOINTMENT_STATUS_INVALID_TRANSITION");
   }
 
-  return {
+  const response: AdminAppointmentTransitionResponse & {
+    syncInput?: {
+      name: string;
+      date: string;
+      timeSlot: string;
+    };
+  } = {
     appointmentId: input.appointmentId,
     status: input.nextStatus,
   };
+
+  if (input.nextStatus === "CONFIRMED") {
+    response.syncInput = {
+      name: current.client.name,
+      date: dateToDateKey(current.date),
+      timeSlot: timeToTimeSlotKey(current.timeSlot),
+    };
+  }
+
+  return response;
 }
 
 export async function confirmPendingAppointment(
   appointmentId: number,
 ): Promise<AdminAppointmentTransitionResponse> {
-  return prisma.$transaction(async (tx) =>
+  const transitioned = await prisma.$transaction(async (tx) =>
     transitionPendingAppointment(tx, {
       appointmentId,
       nextStatus: "CONFIRMED",
     }),
   );
+
+  if (!transitioned.syncInput) {
+    return transitioned;
+  }
+
+  const syncResult = await syncAppointmentToCalendar({
+    appointmentId: transitioned.appointmentId,
+    name: transitioned.syncInput.name,
+    date: transitioned.syncInput.date,
+    timeSlot: transitioned.syncInput.timeSlot,
+  });
+
+  if (syncResult.status === "SYNC_FAILED") {
+    return {
+      appointmentId: transitioned.appointmentId,
+      status: "SYNC_FAILED",
+      syncReason: syncResult.reason,
+    };
+  }
+
+  return {
+    appointmentId: transitioned.appointmentId,
+    status: "CONFIRMED",
+  };
 }
 
 export async function rejectPendingAppointment(

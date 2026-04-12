@@ -59,6 +59,9 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - en sábado/domingo usa como referencia el lunes siguiente,
      - tag de estado por cita (`Listo`, `En curso`, `Pendiente`),
      - animación de parpadeo para la tag `En curso`.
+   - el dashboard incluye bloque `Pendientes de confirmación` con acciones:
+     - `Confirmar`: transición de `PENDING` con intento de sync a Google Calendar (resultado final `CONFIRMED` o `SYNC_FAILED`),
+     - `Rechazar`: transición de `PENDING` a `REJECTED`.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),
    - `Meses` (`/admin/months` y detalle `/admin/months/[month]` como estado activo por prefijo),

@@ -635,7 +635,8 @@ Reglas obligatorias:
   - muestra las citas con estado `PENDING`,
   - por cada cita muestra nombre de la clienta, teléfono, número de clienta, fecha y hora,
   - permite acciones directas para `Confirmar` y `Rechazar`,
-  - la acción `Confirmar` transiciona la cita a `CONFIRMED`,
+  - la acción `Confirmar` transiciona la cita localmente a `CONFIRMED` y luego intenta crear evento espejo en Google Calendar,
+  - si la sincronización de Calendar falla, la cita queda en `SYNC_FAILED` (activa para reglas de ocupación y recuperable por job de reintento),
   - la acción `Rechazar` transiciona la cita a `REJECTED`,
   - el bloque solo lista citas aún no resueltas manualmente.
 - Bloque `Recordatorios`:
@@ -1099,7 +1100,9 @@ Contrato API:
     - destino debe cumplir reglas de disponibilidad (weekday, slot válido, no pasado, sin conflicto/lock).
   - `POST /api/admin/appointments/[appointmentId]/confirm`:
     - `appointmentId` válido (>0),
-    - solo permite transicionar una cita `PENDING` a `CONFIRMED`.
+    - solo permite transicionar una cita `PENDING`,
+    - intenta sincronizar evento espejo en Google Calendar después de la transición local,
+    - ante fallo de sincronización no revierte la transición local y responde estado `SYNC_FAILED` con motivo.
   - `POST /api/admin/appointments/[appointmentId]/reject`:
     - `appointmentId` válido (>0),
     - solo permite transicionar una cita `PENDING` a `REJECTED`.
@@ -1171,7 +1174,7 @@ Contrato API:
 - Success `PATCH /api/admin/appointments/[appointmentId]/reschedule` (`200`):
   - `{ appointmentId, date, timeSlot, status, syncReason? }`
 - Success `POST /api/admin/appointments/[appointmentId]/confirm` (`200`):
-  - `{ appointmentId, status: "CONFIRMED" }`
+  - `{ appointmentId, status: "CONFIRMED" | "SYNC_FAILED", syncReason? }`
 - Success `POST /api/admin/appointments/[appointmentId]/reject` (`200`):
   - `{ appointmentId, status: "REJECTED" }`
 - Success `POST /api/admin/appointments/[appointmentId]/cancel` (`200`):

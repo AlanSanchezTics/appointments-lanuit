@@ -58,7 +58,8 @@ export type AdminCancelAppointmentResponse = {
 
 export type AdminAppointmentTransitionResponse = {
   appointmentId: number;
-  status: "CONFIRMED" | "REJECTED";
+  status: "CONFIRMED" | "REJECTED" | "SYNC_FAILED";
+  syncReason?: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";
 };
 
 export type AdminCreateAppointmentClientInput = {

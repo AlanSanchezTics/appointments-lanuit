@@ -55,7 +55,8 @@ async function submitPendingTransition(
 
   const payload = (await response.json().catch(() => ({}))) as {
     appointmentId?: number;
-    status?: "CONFIRMED" | "REJECTED";
+    status?: "CONFIRMED" | "REJECTED" | "SYNC_FAILED";
+    syncReason?: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";
     errorCode?: string;
     error?: string;
   };
@@ -66,7 +67,9 @@ async function submitPendingTransition(
 
   return {
     appointmentId: payload.appointmentId ?? appointmentId,
-    status: payload.status ?? (action === "confirm" ? "CONFIRMED" : "REJECTED"),
+    status:
+      payload.status
+      ?? (action === "confirm" ? "CONFIRMED" : "REJECTED"),
   };
 }
 

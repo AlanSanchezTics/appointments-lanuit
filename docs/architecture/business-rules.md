@@ -128,6 +128,8 @@ Business behavior is defined by:
 - Pending review rules:
   - `PENDING` appointments await manual review by admin.
   - Admin may transition `PENDING -> CONFIRMED` or `PENDING -> REJECTED`.
+  - On `PENDING -> CONFIRMED`, system must attempt Google Calendar mirror sync.
+  - If that sync fails, appointment transitions to `SYNC_FAILED` without rolling back the local confirmation lifecycle.
   - If a `PENDING` appointment remains unresolved for 36 hours, the system marks it as `REJECTED` automatically.
 
 ## Cancellation Rules

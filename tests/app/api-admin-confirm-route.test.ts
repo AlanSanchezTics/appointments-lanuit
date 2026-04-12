@@ -87,4 +87,32 @@ describe("POST /api/admin/appointments/[appointmentId]/confirm", () => {
       error: "APPOINTMENT_STATUS_INVALID_TRANSITION",
     });
   });
+
+  it("returns 200 with sync_failed when calendar sync fails", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    confirmPendingAppointmentMock.mockResolvedValueOnce({
+      appointmentId: 15,
+      status: "SYNC_FAILED",
+      syncReason: "CALENDAR_SYNC_FAILED",
+    });
+
+    const { POST } = await import(
+      "@/app/api/admin/appointments/[appointmentId]/confirm/route"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/admin/appointments/15/confirm", {
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({ appointmentId: "15" }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      appointmentId: 15,
+      status: "SYNC_FAILED",
+      syncReason: "CALENDAR_SYNC_FAILED",
+    });
+  });
 });
