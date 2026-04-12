@@ -251,8 +251,10 @@
         "loyaltyUpdateError": "No se pudo actualizar el estado de cliente fiel.",
         "errors": {
           "notFound": "No se encontró el cliente seleccionado.",
-          "validation": "Verifica el nombre y teléfono e intenta nuevamente.",
+          "validation": "Verifica el nombre, teléfono y número de cliente e intenta nuevamente.",
+          "clientNumberInvalid": "Ingresa un número de cliente válido.",
           "phoneAlreadyExists": "Este teléfono ya está asociado a otro cliente.",
+          "clientNumberAlreadyExists": "Este número de cliente ya está en uso.",
           "unknown": "Ocurrió un error inesperado."
         }
       }
@@ -264,12 +266,16 @@
       "namePlaceholder": "Nombre completo",
       "phoneLabel": "Teléfono",
       "phonePlaceholder": "322 123 4567",
+      "clientNumberLabel": "Número de cliente",
+      "clientNumberPlaceholder": "1001",
       "save": "Guardar",
       "saving": "Guardando...",
       "cancel": "Cancelar",
       "errors": {
         "nameTooShort": "El nombre debe tener al menos 3 caracteres.",
-        "phoneInvalid": "El teléfono debe tener 10 dígitos."
+        "phoneInvalid": "El teléfono debe tener 10 dígitos.",
+        "clientNumberInvalid": "Ingresa un número de cliente válido.",
+        "clientNumberAlreadyExists": "Este número de cliente ya está en uso."
       }
     }
   },

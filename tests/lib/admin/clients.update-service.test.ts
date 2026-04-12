@@ -159,14 +159,74 @@ describe("admin client update service", () => {
     });
   });
 
+  it("updates client number", async () => {
+    const { updateAdminClient } = await import("@/lib/admin/clients/update-service");
+
+    clientFindUniqueMock.mockResolvedValueOnce({ id: 16 });
+    clientUpdateMock.mockResolvedValueOnce({
+      id: 16,
+      clientNumber: 1010,
+      name: "Ana Garcia",
+      phone: "3221234567",
+      isLoyal: false,
+      updatedAt: new Date("2026-03-21T12:00:00.000Z"),
+    });
+
+    const response = await updateAdminClient(16, {
+      clientNumber: 1010,
+    });
+
+    expect(clientUpdateMock).toHaveBeenCalledWith({
+      where: {
+        id: 16,
+      },
+      data: {
+        clientNumber: 1010,
+      },
+      select: {
+        id: true,
+        clientNumber: true,
+        name: true,
+        phone: true,
+        isLoyal: true,
+        updatedAt: true,
+      },
+    });
+
+    expect(response).toEqual({
+      clientId: 16,
+      clientNumber: 1010,
+      name: "Ana Garcia",
+      phone: "3221234567",
+      isLoyal: false,
+      updatedAt: "2026-03-21T12:00:00.000Z",
+    });
+  });
+
   it("maps unique phone conflict to CLIENT_PHONE_ALREADY_EXISTS", async () => {
     const { updateAdminClient } = await import("@/lib/admin/clients/update-service");
 
     clientFindUniqueMock.mockResolvedValueOnce({ id: 5 });
-    clientUpdateMock.mockRejectedValueOnce({ code: "P2002" });
+    clientUpdateMock.mockRejectedValueOnce({ code: "P2002", meta: { target: ["phone"] } });
 
     await expect(updateAdminClient(5, { phone: "3221234567" })).rejects.toThrow(
       "CLIENT_PHONE_ALREADY_EXISTS",
+    );
+  });
+
+  it("maps unique client number conflict to CLIENT_NUMBER_ALREADY_EXISTS", async () => {
+    const { updateAdminClient } = await import("@/lib/admin/clients/update-service");
+
+    clientFindUniqueMock.mockResolvedValueOnce({ id: 5 });
+    clientUpdateMock.mockRejectedValueOnce({
+      code: "P2002",
+      meta: {
+        target: ["client_number"],
+      },
+    });
+
+    await expect(updateAdminClient(5, { clientNumber: 1001 })).rejects.toThrow(
+      "CLIENT_NUMBER_ALREADY_EXISTS",
     );
   });
 });

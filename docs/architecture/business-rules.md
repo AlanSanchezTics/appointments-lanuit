@@ -379,11 +379,13 @@ Business behavior is defined by:
 
 - Update policy (`PATCH /api/admin/clients/[clientId]`):
   - Requires valid numeric `clientId`.
-  - Supports partial updates for canonical client name, canonical phone, and loyalty flag.
+  - Supports partial updates for canonical client name, canonical phone, canonical `client_number`, and loyalty flag.
   - Loyalty flag is a manual admin segmentation marker stored in `clients.is_loyal`.
   - Name must satisfy domain identity validation (minimum length).
   - Phone, when provided, must be normalized to exactly 10 digits.
+  - `client_number`, when provided, must be a positive integer (`> 0`).
   - Canonical phone identity remains unique; updates that collide with another client are rejected.
+  - Canonical `client_number` remains unique; updates that collide with another client are rejected.
   - Empty payloads are rejected.
   - If client does not exist, returns `CLIENT_NOT_FOUND` (`404`).
 

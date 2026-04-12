@@ -975,14 +975,16 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
    - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
    - El timeline no debe listar citas con estado `PENDING` ni `REJECTED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
-4. Acción `Editar cliente` abre modal para actualizar `name` y `phone`.
+4. Acción `Editar cliente` abre modal para actualizar `name`, `phone` y `clientNumber`.
 5. Validación local del modal:
    - `name` requerido,
    - largo mínimo `3`.
    - `phone` requerido en formato nacional de 10 dígitos (se normaliza removiendo separadores).
+   - `clientNumber` requerido, entero positivo (`> 0`).
 6. Guardar edición:
    - ejecuta `PATCH /api/admin/clients/[clientId]`,
    - usa `sileo.promise` para notificaciones `loading/success/error`,
+   - si backend responde `CLIENT_NUMBER_ALREADY_EXISTS`, UI muestra toast + error en campo `clientNumber`,
    - en éxito cierra modal y refresca detalle.
 7. Cambios de fidelidad también usan `sileo.promise` para notificaciones `loading/success/error`.
 8. Textos UX del módulo se resuelven por `react-i18next` (es/en).
@@ -1051,11 +1053,13 @@ Contrato API:
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `PATCH /api/admin/clients/[clientId]`:
     - `clientId` numérico positivo,
-    - payload parcial `{ name?, phone?, isLoyal? }`,
+    - payload parcial `{ name?, phone?, clientNumber?, isLoyal? }`,
     - el payload no puede venir vacío,
     - `name`, cuando se envía, requiere mínimo de 3 caracteres,
     - `phone`, cuando se envía, se normaliza a 10 dígitos,
+    - `clientNumber`, cuando se envía, debe ser entero positivo (`> 0`),
     - `phone` no puede colisionar con otro cliente (`CLIENT_PHONE_ALREADY_EXISTS`, `400`),
+    - `clientNumber` no puede colisionar con otro cliente (`CLIENT_NUMBER_ALREADY_EXISTS`, `400`),
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
@@ -1140,11 +1144,11 @@ Contrato API:
   - `totalAppointments` en catálogo cuenta únicamente citas `CONFIRMED`.
 - Success `GET /api/admin/clients/[clientId]` (`200`):
   - `{ client, summary, appointments[], currentDate }`
-  - `client`: `{ clientId, name, phone, isLoyal, createdAt, updatedAt }`
+  - `client`: `{ clientId, clientNumber, name, phone, isLoyal, createdAt, updatedAt }`
   - `summary`: `{ totalAppointments, activeAppointments, cancelledAppointments, futureActiveAppointments, lastAppointmentDate, nextAppointmentDate, nextAppointmentTimeSlot }`
   - `appointments[]`: `{ appointmentId, date, timeSlot, status }`
 - Success `PATCH /api/admin/clients/[clientId]` (`200`):
-  - `{ clientId, name, phone, isLoyal, updatedAt }`
+  - `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`

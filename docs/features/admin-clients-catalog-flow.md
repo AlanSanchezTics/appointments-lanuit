@@ -66,15 +66,17 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 3. Acción `Volver al catálogo` regresa a `/admin/clients`.
 4. Acción `Editar cliente` abre modal de edición.
 
-## Flujo principal UI: edición de cliente (nombre + teléfono)
+## Flujo principal UI: edición de cliente (nombre + teléfono + número de cliente)
 
 1. Admin abre modal `Editar cliente`.
 2. Form valida:
    - nombre mínimo (`>= 3` caracteres),
    - teléfono nacional válido (10 dígitos; se permite captura con separadores y se normaliza).
+   - número de cliente requerido, entero positivo (`> 0`).
 3. Al guardar:
    - dispara `PATCH /api/admin/clients/[clientId]`,
    - muestra notificación con `sileo.promise` (`loading/success/error`),
+   - si backend responde `CLIENT_NUMBER_ALREADY_EXISTS`, UI muestra toast de error + error en el campo `Número de cliente`,
    - en éxito cierra modal y refresca detalle.
 4. Mensajes UX del módulo se resuelven por `react-i18next` (`locales/es|en/admin.json`).
 
@@ -119,15 +121,17 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 
 ## Flujo principal: actualización de cliente
 
-1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, phone?, isLoyal? }`.
+1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, phone?, clientNumber?, isLoyal? }`.
 2. Backend valida sesión y `clientId`.
 3. Backend valida payload:
    - no puede estar vacío,
    - `name` (si viene) debe cumplir mínimo de longitud,
-   - `phone` (si viene) debe normalizarse a 10 dígitos válidos.
-4. Backend actualiza los campos enviados (`name` y/o `phone` y/o `isLoyal`).
+   - `phone` (si viene) debe normalizarse a 10 dígitos válidos,
+   - `clientNumber` (si viene) debe ser entero positivo (`> 0`).
+4. Backend actualiza los campos enviados (`name` y/o `phone` y/o `clientNumber` y/o `isLoyal`).
 5. Si `phone` colisiona con otro cliente, backend responde `CLIENT_PHONE_ALREADY_EXISTS`.
-6. Backend responde payload actualizado `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`.
+6. Si `clientNumber` colisiona con otro cliente, backend responde `CLIENT_NUMBER_ALREADY_EXISTS`.
+7. Backend responde payload actualizado `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`.
 
 ## Reglas de negocio aplicables
 

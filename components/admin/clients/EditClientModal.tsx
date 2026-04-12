@@ -12,6 +12,8 @@ type EditClientModalProps = {
   isSubmitting: boolean;
   initialName: string;
   initialPhone: string;
+  initialClientNumber: number;
+  serverErrorCode: string | null;
   labels: {
     title: string;
     close: string;
@@ -19,14 +21,22 @@ type EditClientModalProps = {
     namePlaceholder: string;
     phoneLabel: string;
     phonePlaceholder: string;
+    clientNumberLabel: string;
+    clientNumberPlaceholder: string;
     save: string;
     saving: string;
     cancel: string;
     nameTooShort: string;
     phoneInvalid: string;
+    clientNumberInvalid: string;
+    clientNumberAlreadyExists: string;
   };
   onClose: () => void;
-  onSubmit: (payload: { name: string; phone: string }) => Promise<void>;
+  onSubmit: (payload: {
+    name: string;
+    phone: string;
+    clientNumber: number;
+  }) => Promise<void>;
 };
 
 export function EditClientModal({
@@ -34,6 +44,8 @@ export function EditClientModal({
   isSubmitting,
   initialName,
   initialPhone,
+  initialClientNumber,
+  serverErrorCode,
   labels,
   onClose,
   onSubmit,
@@ -43,17 +55,28 @@ export function EditClientModal({
     setName,
     phone,
     setPhone,
+    clientNumber,
+    setClientNumber,
     fieldError,
     reset,
+    applyServerError,
     validate,
     getSanitizedPayload,
-  } = useEditClientForm(initialName, initialPhone);
+  } = useEditClientForm(initialName, initialPhone, initialClientNumber);
 
   useEffect(() => {
     if (isOpen) {
-      reset(initialName, initialPhone);
+      reset(initialName, initialPhone, initialClientNumber);
     }
-  }, [initialName, initialPhone, isOpen, reset]);
+  }, [initialName, initialPhone, initialClientNumber, isOpen, reset]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    applyServerError(serverErrorCode);
+  }, [applyServerError, isOpen, serverErrorCode]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,6 +117,22 @@ export function EditClientModal({
           inputMode="numeric"
           autoComplete="tel-national"
           error={fieldError.phone ? labels.phoneInvalid : null}
+          className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
+        />
+
+        <Input
+          id="edit-client-number"
+          label={labels.clientNumberLabel}
+          value={clientNumber}
+          onChange={(event) => setClientNumber(event.target.value)}
+          placeholder={labels.clientNumberPlaceholder}
+          disabled={isSubmitting}
+          inputMode="numeric"
+          error={fieldError.clientNumber
+            ? fieldError.clientNumber === "CLIENT_NUMBER_ALREADY_EXISTS"
+              ? labels.clientNumberAlreadyExists
+              : labels.clientNumberInvalid
+            : null}
           className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
         />
 

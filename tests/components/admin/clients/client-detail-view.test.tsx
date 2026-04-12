@@ -134,14 +134,46 @@ describe("ClientDetailView", () => {
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
+    fireEvent.change(screen.getByLabelText("Número de cliente"), {
+      target: { value: "1002" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     await waitFor(() => {
       expect(updateClientIdentityMock).toHaveBeenCalledWith({
         name: "Ana María Pérez",
         phone: "5512345678",
+        clientNumber: 1002,
       });
       expect(promiseMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("shows inline client number error when backend reports duplication", async () => {
+    const updateClientIdentityMock = vi
+      .fn()
+      .mockRejectedValue(new Error("CLIENT_NUMBER_ALREADY_EXISTS"));
+
+    useClientDetailMock.mockReturnValue({
+      data: initialData,
+      isLoading: false,
+      isUpdating: false,
+      errorCode: null,
+      refresh: vi.fn(),
+      retry: vi.fn(),
+      updateClientIdentity: updateClientIdentityMock,
+      updateLoyalty: vi.fn(),
+    });
+
+    render(<ClientDetailView clientId={42} initialData={initialData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar cliente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Este número de cliente ya está en uso."),
+      ).toBeInTheDocument();
     });
   });
 

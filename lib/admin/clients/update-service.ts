@@ -7,6 +7,29 @@ import type {
   UpdateAdminClientResponse,
 } from "@/lib/admin/clients/types";
 
+function resolveErrorTarget(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError
+    || (typeof error === "object" && error !== null && "meta" in error)
+  ) {
+    return (error as { meta?: { target?: string[] | string } }).meta?.target;
+  }
+
+  return undefined;
+}
+
+function targetIncludes(target: string[] | string | undefined, value: string) {
+  if (Array.isArray(target)) {
+    return target.includes(value);
+  }
+
+  if (typeof target === "string") {
+    return target.includes(value);
+  }
+
+  return false;
+}
+
 export async function updateAdminClient(
   clientId: number,
   payload: UpdateAdminClientPayload,
@@ -41,6 +64,9 @@ export async function updateAdminClient(
       data: {
         ...(payload.name !== undefined ? { name: payload.name } : {}),
         ...(payload.phone !== undefined ? { phone: payload.phone } : {}),
+        ...(payload.clientNumber !== undefined
+          ? { clientNumber: payload.clientNumber }
+          : {}),
         ...(payload.isLoyal !== undefined ? { isLoyal: payload.isLoyal } : {}),
       },
       select: {
@@ -60,7 +86,17 @@ export async function updateAdminClient(
         && "code" in error
         && (error as { code?: string }).code === "P2002")
     ) {
-      throw new Error("CLIENT_PHONE_ALREADY_EXISTS");
+      const target = resolveErrorTarget(error);
+
+      if (targetIncludes(target, "client_number")) {
+        throw new Error("CLIENT_NUMBER_ALREADY_EXISTS");
+      }
+
+      if (targetIncludes(target, "phone")) {
+        throw new Error("CLIENT_PHONE_ALREADY_EXISTS");
+      }
+
+      throw new Error("VALIDATION_ERROR");
     }
 
     throw error;

@@ -46,6 +46,7 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
     getAdminClientDetailMock.mockResolvedValueOnce({
       client: {
         clientId: 42,
+        clientNumber: 1001,
         name: "Ana",
         phone: "5512345678",
         isLoyal: true,
@@ -104,6 +105,7 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
     authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
     updateAdminClientMock.mockResolvedValueOnce({
       clientId: 42,
+      clientNumber: 1001,
       name: "Ana Garcia",
       phone: "5512345678",
       isLoyal: true,
@@ -133,6 +135,41 @@ describe("GET/PATCH /api/admin/clients/[clientId]", () => {
     expect(updateAdminClientMock).toHaveBeenCalledWith(42, {
       name: "Ana Garcia",
       isLoyal: true,
+    });
+  });
+
+  it("returns 200 on PATCH with client number", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    updateAdminClientMock.mockResolvedValueOnce({
+      clientId: 42,
+      clientNumber: 1008,
+      name: "Ana Garcia",
+      phone: "5512345678",
+      isLoyal: true,
+      updatedAt: "2026-03-21T12:00:00.000Z",
+    });
+
+    const { PATCH } = await import("@/app/api/admin/clients/[clientId]/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/clients/42", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientNumber: 1008,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          clientId: "42",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateAdminClientMock).toHaveBeenCalledWith(42, {
+      clientNumber: 1008,
     });
   });
 

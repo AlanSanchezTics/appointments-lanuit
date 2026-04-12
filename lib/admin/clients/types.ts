@@ -111,6 +111,7 @@ export type AdminClientDetailResponse = {
 export type UpdateAdminClientPayload = {
   name?: string;
   phone?: string;
+  clientNumber?: number;
   isLoyal?: boolean;
 };
 

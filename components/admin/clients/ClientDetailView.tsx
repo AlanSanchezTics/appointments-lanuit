@@ -45,6 +45,14 @@ function resolveUpdateErrorKey(errorCode: string) {
     return "clients.detail.notifications.errors.phoneAlreadyExists";
   }
 
+  if (errorCode === "CLIENT_NUMBER_ALREADY_EXISTS") {
+    return "clients.detail.notifications.errors.clientNumberAlreadyExists";
+  }
+
+  if (errorCode === "CLIENT_NUMBER_INVALID") {
+    return "clients.detail.notifications.errors.clientNumberInvalid";
+  }
+
   return "clients.detail.notifications.errors.unknown";
 }
 
@@ -67,6 +75,9 @@ export function ClientDetailView({
     initialData,
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editServerErrorCode, setEditServerErrorCode] = useState<string | null>(
+    null,
+  );
 
   const labels = useMemo(
     () => ({
@@ -86,7 +97,13 @@ export function ClientDetailView({
     [t],
   );
 
-  async function handleUpdateIdentity(payload: { name: string; phone: string }) {
+  async function handleUpdateIdentity(payload: {
+    name: string;
+    phone: string;
+    clientNumber: number;
+  }) {
+    setEditServerErrorCode(null);
+
     try {
       await sileo.promise(updateClientIdentity(payload), {
         loading: {
@@ -105,9 +122,14 @@ export function ClientDetailView({
         },
       });
 
+      setEditServerErrorCode(null);
       setIsEditModalOpen(false);
-    } catch {
-      // handled by toast notification
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+
+      if (code === "CLIENT_NUMBER_ALREADY_EXISTS") {
+        setEditServerErrorCode(code);
+      }
     }
   }
 
@@ -175,7 +197,10 @@ export function ClientDetailView({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => setIsEditModalOpen(true)}
+          onClick={() => {
+            setEditServerErrorCode(null);
+            setIsEditModalOpen(true);
+          }}
         >
           {labels.editCta}
         </Button>
@@ -338,7 +363,12 @@ export function ClientDetailView({
         isSubmitting={isUpdating || isLoading}
         initialName={data.client.name}
         initialPhone={data.client.phone}
-        onClose={() => setIsEditModalOpen(false)}
+        initialClientNumber={data.client.clientNumber}
+        serverErrorCode={editServerErrorCode}
+        onClose={() => {
+          setEditServerErrorCode(null);
+          setIsEditModalOpen(false);
+        }}
         onSubmit={handleUpdateIdentity}
         labels={{
           title: t("clients.editModal.title"),
@@ -347,11 +377,17 @@ export function ClientDetailView({
           namePlaceholder: t("clients.editModal.namePlaceholder"),
           phoneLabel: t("clients.editModal.phoneLabel"),
           phonePlaceholder: t("clients.editModal.phonePlaceholder"),
+          clientNumberLabel: t("clients.editModal.clientNumberLabel"),
+          clientNumberPlaceholder: t("clients.editModal.clientNumberPlaceholder"),
           save: t("clients.editModal.save"),
           saving: t("clients.editModal.saving"),
           cancel: t("clients.editModal.cancel"),
           nameTooShort: t("clients.editModal.errors.nameTooShort"),
           phoneInvalid: t("clients.editModal.errors.phoneInvalid"),
+          clientNumberInvalid: t("clients.editModal.errors.clientNumberInvalid"),
+          clientNumberAlreadyExists: t(
+            "clients.editModal.errors.clientNumberAlreadyExists",
+          ),
         }}
       />
     </main>

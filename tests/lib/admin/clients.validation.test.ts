@@ -151,6 +151,12 @@ describe("admin clients validation", () => {
     });
   });
 
+  it("parses update client payload with client number", () => {
+    expect(parseUpdateAdminClientPayload({ clientNumber: 1002 })).toEqual({
+      clientNumber: 1002,
+    });
+  });
+
   it("rejects update client payload when name is too short", () => {
     expect(() => parseUpdateAdminClientPayload({ name: "An" })).toThrow(
       "CLIENT_NAME_TOO_SHORT",
@@ -160,6 +166,12 @@ describe("admin clients validation", () => {
   it("rejects update client payload when phone is invalid", () => {
     expect(() => parseUpdateAdminClientPayload({ phone: "32212345" })).toThrow(
       "VALIDATION_PHONE_INVALID",
+    );
+  });
+
+  it("rejects update client payload when client number is invalid", () => {
+    expect(() => parseUpdateAdminClientPayload({ clientNumber: 0 })).toThrow(
+      "CLIENT_NUMBER_INVALID",
     );
   });
 
