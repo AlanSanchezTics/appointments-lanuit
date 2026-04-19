@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/public/button";
 import Logo from "@/assets/images/logo.png";
-import { formatMonthLabel } from "@/lib/datetime/mexico-city";
 import { listHomeAvailableMonths } from "@/lib/home/service";
 import { resolveServerLanguage } from "@/lib/i18n/language";
 import { getServerT } from "@/lib/i18n/server";
@@ -52,17 +51,14 @@ export default async function HomePage() {
           </p>
         )}
         <div className="flex flex-col gap-3">
-          {availableMonths.map((month) => (
-            <Link
-              key={month}
-              href={`/citas/${month}/booking`}
-              className={buttonVariants({
-                className: "min-h-12 px-6 text-base font-semibold text-white!",
-              })}
-            >
-              {formatMonthLabel(month, language)}
-            </Link>
-          ))}
+          <Link
+            href="/booking"
+            className={buttonVariants({
+              className: "min-h-12 px-6 text-base font-semibold text-white!",
+            })}
+          >
+            {t("bookingEntry.book")}
+          </Link>
           {!hasAvailableMonths ? (
             <>
               <p className="w-full rounded-[1rem] border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)] mb-[1rem]">
@@ -93,7 +89,7 @@ export default async function HomePage() {
               className: "min-h-12 px-6 text-base font-semibold",
             })}
           >
-            {t("home.cancel")}
+            {t("home.manageOrCancel")}
           </Link>
         </div>
       </section>

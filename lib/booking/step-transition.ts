@@ -1,9 +1,10 @@
 import type { BookingStep, StepTransitionDirection } from "@/lib/booking/types";
 
 const STEP_ORDER: Record<BookingStep, number> = {
-  details: 0,
-  confirm: 1,
-  success: 2,
+  schedule: 0,
+  identity: 1,
+  confirm: 2,
+  success: 3,
 };
 
 export function getTransitionDirection(

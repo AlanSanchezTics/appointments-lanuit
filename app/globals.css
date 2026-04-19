@@ -16,8 +16,8 @@
   --error: #ba1a1a;
   --error-soft: rgba(186, 26, 26, 0.22);
   --error-surface: rgba(255, 218, 214, 0.6);
-  --warning-soft: rgba(228, 159, 83, 0.28);
-  --warning-surface: rgba(255, 220, 188, 0.45);
+  --warning-soft: rgb(230, 188, 18);
+  --warning-surface: rgb(254, 243, 199);
   --shadow-soft: 0 14px 36px rgba(136, 82, 8, 0.14);
   --shadow-button: 0 18px 28px rgba(228, 159, 83, 0.26);
   --font-display: "Montserrat", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
@@ -44,7 +44,7 @@
   --admin-drawer-easing: cubic-bezier(0.22, 1, 0.36, 1);
   --danger: #ba1a1a;
   --success: #16a34a;
-  --warning: #e49f53;
+  --warning: rgb(146, 64, 14);
   --info: #2563eb;
 }
 

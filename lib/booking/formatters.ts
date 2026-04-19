@@ -37,3 +37,16 @@ export function getHighlightedDays(
 
   return days.slice(start, start + 4);
 }
+
+export function formatAccountNumberForDisplay(accountNumber: string) {
+  const trimmed = accountNumber.replace(/\D/g, "");
+
+  if (trimmed.length !== 16) {
+    return accountNumber;
+  }
+
+  return `${trimmed.slice(0, 4)} ${trimmed.slice(4, 8)} ${trimmed.slice(
+    8,
+    12,
+  )} ${trimmed.slice(12)}`;
+}

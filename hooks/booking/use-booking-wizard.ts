@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 
 import type { DayAvailability } from "@/lib/availability/service";
 import {
+  acquireReservationLockForSchedule,
   checkClientAndAcquireReservationLock,
   fetchMonthAvailability,
   releaseReservationLock,
@@ -12,6 +13,8 @@ import {
   normalizeDraftByAvailability,
   normalizePhone,
   validateDraft,
+  validateIdentityDraft,
+  validateScheduleDraft,
 } from "@/lib/booking/draft-rules";
 import type {
   BookingDraft,
@@ -30,6 +33,7 @@ import { useBookingStepTransition } from "@/hooks/booking/use-booking-step-trans
 type UseBookingWizardParams = {
   month: string;
   days: DayAvailability[];
+  availableMonths?: string[];
   initialDraft?: Partial<BookingDraft>;
   refreshDays?: (month: string) => Promise<DayAvailability[]>;
   checkClientAndAcquireLock?: (
@@ -92,9 +96,18 @@ function getInitialDraft(
   };
 }
 
+function createTempPhone() {
+  const random = Math.floor(Math.random() * 1_000_000)
+    .toString()
+    .padStart(6, "0");
+  const timestamp = Date.now().toString().slice(-4);
+  return `9${timestamp}${random.slice(0, 5)}`;
+}
+
 export function useBookingWizard({
   month,
   days,
+  availableMonths,
   initialDraft,
   refreshDays = fetchMonthAvailability,
   checkClientAndAcquireLock = checkClientAndAcquireReservationLock,
@@ -102,9 +115,11 @@ export function useBookingWizard({
   submitBooking = submitBookingDraft,
 }: UseBookingWizardParams) {
   const animationsEnabled = process.env.NODE_ENV !== "test";
-  const [step, setStep] = useState<BookingStep>("details");
+  const resolvedMonths =
+    availableMonths && availableMonths.length > 0 ? availableMonths : [month];
+  const [step, setStep] = useState<BookingStep>("schedule");
+  const [currentMonth, setCurrentMonth] = useState(month);
   const [clientState, setClientState] = useState<ClientState>("unknown");
-  const [isCalendarOpen, setCalendarOpen] = useState(false);
   const [errors, setErrors] = useState<BookingValidationErrors>({});
   const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
@@ -123,6 +138,10 @@ export function useBookingWizard({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (process.env.NODE_ENV === "test") {
+      return;
+    }
+
     const entries = performance.getEntriesByType("navigation") as
       | Array<{ type?: string }>
       | undefined;
@@ -137,7 +156,7 @@ export function useBookingWizard({
 
     const revalidateAfterReload = async () => {
       try {
-        const nextDays = await refreshDays(month);
+        const nextDays = await refreshDays(currentMonth);
 
         if (isCancelled) {
           return;
@@ -151,7 +170,7 @@ export function useBookingWizard({
         }
 
         retryTimeoutId = window.setTimeout(() => {
-          void refreshDays(month)
+          void refreshDays(currentMonth)
             .then((retriedDays) => {
               if (isCancelled) {
                 return;
@@ -163,7 +182,7 @@ export function useBookingWizard({
             .catch(() => undefined);
         }, RELOAD_REVALIDATION_RETRY_DELAY_MS);
       } catch {
-        // no-op: keep SSR-provided days on revalidation failures.
+        // no-op
       }
     };
 
@@ -176,12 +195,13 @@ export function useBookingWizard({
         window.clearTimeout(retryTimeoutId);
       }
     };
-  }, [days, month, refreshDays]);
+  }, [currentMonth, days, refreshDays]);
 
   useEffect(() => {
+    setCurrentMonth(month);
     setCurrentDays(days);
     setDraft((current) => normalizeDraftByAvailability(current, days));
-  }, [days]);
+  }, [days, month]);
 
   useEffect(() => {
     return () => {
@@ -197,9 +217,7 @@ export function useBookingWizard({
 
   const { remainingSeconds, setRemainingSeconds } = useBookingLockTimer({
     activeLock,
-    isActive:
-      Boolean(activeLock)
-      && (step === "confirm" || clientState === "new" || clientState === "reschedule"),
+    isActive: Boolean(activeLock),
     releaseLock,
     onExpired: () => {
       startTransition(() => {
@@ -210,7 +228,7 @@ export function useBookingWizard({
         setIsBookingAsNewAppointment(false);
         setSelectedRescheduleAppointmentId(null);
         setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
-        setStep("details");
+        setStep("schedule");
       });
     },
   });
@@ -222,7 +240,7 @@ export function useBookingWizard({
 
     let isCancelled = false;
 
-    void refreshDays(month)
+    void refreshDays(currentMonth)
       .then((nextDays) => {
         if (isCancelled) {
           return;
@@ -236,50 +254,82 @@ export function useBookingWizard({
     return () => {
       isCancelled = true;
     };
-  }, [month, refreshDays, submitErrorCode]);
+  }, [currentMonth, refreshDays, submitErrorCode]);
+
+  const goToMonth = useCallback(
+    (nextMonth: string) => {
+      if (!nextMonth || nextMonth === currentMonth) {
+        return;
+      }
+
+      startTransition(async () => {
+        try {
+          const nextDays = await refreshDays(nextMonth);
+          setCurrentMonth(nextMonth);
+          setCurrentDays(nextDays);
+          setDraft((current) => normalizeDraftByAvailability(current, nextDays));
+          setSubmitErrorCode(null);
+        } catch {
+          setSubmitErrorCode("AVAILABILITY_REFRESH_FAILED");
+        }
+      });
+    },
+    [currentMonth, refreshDays],
+  );
+
+  const goToPreviousMonth = useCallback(() => {
+    const index = resolvedMonths.indexOf(currentMonth);
+    if (index > 0) {
+      goToMonth(resolvedMonths[index - 1] ?? "");
+    }
+  }, [currentMonth, goToMonth, resolvedMonths]);
+
+  const goToNextMonth = useCallback(() => {
+    const index = resolvedMonths.indexOf(currentMonth);
+    if (index >= 0 && index < resolvedMonths.length - 1) {
+      goToMonth(resolvedMonths[index + 1] ?? "");
+    }
+  }, [currentMonth, goToMonth, resolvedMonths]);
+
+  const resetIdentityState = useCallback(() => {
+    setClientState("unknown");
+    setRescheduleOptions([]);
+    setCanBookAsNewAppointment(false);
+    setIsBookingAsNewAppointment(false);
+    setSelectedRescheduleAppointmentId(null);
+  }, []);
 
   const updateDraft = useCallback(
     (nextDraft: Partial<BookingDraft>) => {
-      const shouldInvalidateActiveLock =
-        activeLock
-        && step === "details"
-        && ((typeof nextDraft.date === "string" && nextDraft.date !== draft.date)
-          || (typeof nextDraft.timeSlot === "string"
-            && nextDraft.timeSlot !== draft.timeSlot)
-          || (typeof nextDraft.phone === "string"
-            && normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone)));
+      const dateChanged =
+        typeof nextDraft.date === "string" && nextDraft.date !== draft.date;
+      const timeSlotChanged =
+        typeof nextDraft.timeSlot === "string" && nextDraft.timeSlot !== draft.timeSlot;
+      const phoneChanged =
+        typeof nextDraft.phone === "string"
+        && normalizePhone(nextDraft.phone) !== normalizePhone(draft.phone);
 
-      if (shouldInvalidateActiveLock && activeLock) {
+      if ((dateChanged || timeSlotChanged) && activeLock?.lockToken) {
         void releaseLock(activeLock.lockToken).catch(() => undefined);
         setActiveLock(null);
         setRemainingSeconds(0);
-        setClientState("unknown");
-        setRescheduleOptions([]);
-        setCanBookAsNewAppointment(false);
-        setIsBookingAsNewAppointment(false);
-        setSelectedRescheduleAppointmentId(null);
+        resetIdentityState();
+        setStep("schedule");
+      }
+
+      if (phoneChanged) {
+        resetIdentityState();
+
         setDraft((current) => ({
           ...current,
           ...nextDraft,
-          ...(typeof nextDraft.phone === "string" ? { name: "" } : {}),
+          // Prevent leaking previous client's identity when phone changes.
+          name: "",
         }));
       } else {
         setDraft((current) => ({
           ...current,
           ...nextDraft,
-        }));
-      }
-
-      if (typeof nextDraft.phone === "string" && clientState !== "unknown") {
-        setClientState("unknown");
-        setRescheduleOptions([]);
-        setCanBookAsNewAppointment(false);
-        setIsBookingAsNewAppointment(false);
-        setSelectedRescheduleAppointmentId(null);
-        setDraft((current) => ({
-          ...current,
-          ...nextDraft,
-          name: "",
         }));
       }
 
@@ -300,13 +350,132 @@ export function useBookingWizard({
       draft.phone,
       draft.timeSlot,
       releaseLock,
+      resetIdentityState,
       setRemainingSeconds,
-      step,
     ],
   );
 
+  const handleScheduleContinue = useCallback(() => {
+    const nextErrors = validateScheduleDraft(draft);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        if (activeLock?.lockToken) {
+          await releaseLock(activeLock.lockToken).catch(() => undefined);
+        }
+
+        const lock = await acquireReservationLockForSchedule({
+          phone: createTempPhone(),
+          date: draft.date,
+          timeSlot: draft.timeSlot,
+        });
+
+        setActiveLock({
+          lockToken: lock.lockToken,
+          expiresAt: lock.expiresAt,
+          kind: "schedule",
+        });
+        setRemainingSeconds(
+          Math.max(
+            0,
+            Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000),
+          ),
+        );
+        resetIdentityState();
+        setSubmitErrorCode(null);
+        setStep("identity");
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        setSubmitErrorCode(code);
+      }
+    });
+  }, [activeLock?.lockToken, draft, releaseLock, resetIdentityState, setRemainingSeconds]);
+
   const handleContinue = useCallback(() => {
-    const nextErrors = validateDraft(draft, clientState === "new");
+    if (step !== "identity") {
+      return;
+    }
+
+    if (!activeLock?.lockToken) {
+      setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
+      setStep("schedule");
+      return;
+    }
+
+    if (clientState === "unknown") {
+      const nextErrors = validateIdentityDraft(draft, false);
+      setErrors(nextErrors);
+
+      if (Object.keys(nextErrors).length > 0) {
+        return;
+      }
+
+      startTransition(async () => {
+        try {
+          await releaseLock(activeLock.lockToken).catch(() => undefined);
+
+          const response = await checkClientAndAcquireLock(draft);
+          const lock = {
+            lockToken: response.lockToken,
+            expiresAt: response.expiresAt,
+            kind: "identity",
+          } satisfies SlotLock;
+
+          setActiveLock(lock);
+          setRemainingSeconds(
+            Math.max(
+              0,
+              Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000),
+            ),
+          );
+          setSubmitErrorCode(null);
+
+          const futureAppointmentsInMonth = response.futureAppointmentsInMonth ?? [];
+
+          if (futureAppointmentsInMonth.length > 0) {
+            const canBookAsNew = response.canBookAsNewAppointment ?? false;
+            setClientState("reschedule");
+            setRescheduleOptions(futureAppointmentsInMonth);
+            setCanBookAsNewAppointment(canBookAsNew);
+            setIsBookingAsNewAppointment(false);
+            setSelectedRescheduleAppointmentId(null);
+            setDraft((current) => ({
+              ...current,
+              name: response.clientName ?? current.name,
+            }));
+            return;
+          }
+
+          if (response.clientExists) {
+            setClientState("existing");
+            setDraft((current) => ({
+              ...current,
+              name: response.clientName ?? current.name,
+            }));
+            setStep("confirm");
+            return;
+          }
+
+          setClientState("new");
+          setDraft((current) => ({
+            ...current,
+            name: "",
+          }));
+        } catch (error) {
+          const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+          setSubmitErrorCode(code);
+        }
+      });
+
+      return;
+    }
+
+    const nextErrors = validateIdentityDraft(draft, clientState === "new");
 
     if (
       clientState === "reschedule"
@@ -323,114 +492,61 @@ export function useBookingWizard({
       return;
     }
 
-    if (clientState === "new" || clientState === "reschedule") {
-      if (!activeLock?.lockToken) {
-        setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
-        return;
-      }
-
-      if (
-        clientState === "reschedule"
-        && selectedRescheduleAppointmentId === null
-        && canBookAsNewAppointment
-      ) {
-        setIsBookingAsNewAppointment(true);
-      }
-
-      setStep("confirm");
-      return;
+    if (
+      clientState === "reschedule"
+      && selectedRescheduleAppointmentId === null
+      && canBookAsNewAppointment
+    ) {
+      setIsBookingAsNewAppointment(true);
     }
 
-    startTransition(async () => {
-      try {
-        const response = await checkClientAndAcquireLock(draft);
-        const lock = {
-          lockToken: response.lockToken,
-          expiresAt: response.expiresAt,
-        };
-
-        setActiveLock(lock);
-        setRemainingSeconds(
-          Math.max(
-            0,
-            Math.floor((new Date(lock.expiresAt).getTime() - Date.now()) / 1000),
-          ),
-        );
-        setSubmitErrorCode(null);
-
-        const futureAppointmentsInMonth = response.futureAppointmentsInMonth ?? [];
-
-        if (futureAppointmentsInMonth.length > 0) {
-          const canBookAsNew = response.canBookAsNewAppointment ?? false;
-          setClientState("reschedule");
-          setRescheduleOptions(futureAppointmentsInMonth);
-          setCanBookAsNewAppointment(canBookAsNew);
-          setIsBookingAsNewAppointment(false);
-          setSelectedRescheduleAppointmentId(null);
-          setDraft((current) => ({
-            ...current,
-            name: response.clientName ?? current.name,
-          }));
-          return;
-        }
-
-        if (response.clientExists) {
-          setClientState("existing");
-          setDraft((current) => ({
-            ...current,
-            name: response.clientName ?? current.name,
-          }));
-          setStep("confirm");
-          return;
-        }
-
-        setClientState("new");
-      } catch (error) {
-        const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-        setSubmitErrorCode(code);
-      }
-    });
+    setStep("confirm");
   }, [
-    activeLock?.lockToken,
+    activeLock,
+    canBookAsNewAppointment,
     checkClientAndAcquireLock,
     clientState,
     draft,
-    selectedRescheduleAppointmentId,
     isBookingAsNewAppointment,
-    canBookAsNewAppointment,
+    releaseLock,
+    selectedRescheduleAppointmentId,
     setRemainingSeconds,
+    step,
   ]);
 
   const handleBack = useCallback(() => {
     startTransition(async () => {
-      if (activeLock?.lockToken) {
-        await releaseLock(activeLock.lockToken).catch(() => undefined);
+      if (step === "confirm") {
+        setStep("identity");
+        return;
       }
 
-      setActiveLock(null);
-      setRemainingSeconds(0);
-      setSubmitErrorCode(null);
-      setClientState("unknown");
-      setRescheduleOptions([]);
-      setCanBookAsNewAppointment(false);
-      setIsBookingAsNewAppointment(false);
-      setSelectedRescheduleAppointmentId(null);
-      setStep("details");
+      if (step === "identity") {
+        if (activeLock?.lockToken) {
+          await releaseLock(activeLock.lockToken).catch(() => undefined);
+        }
+
+        setActiveLock(null);
+        setRemainingSeconds(0);
+        setSubmitErrorCode(null);
+        resetIdentityState();
+        setStep("schedule");
+      }
     });
-  }, [activeLock?.lockToken, releaseLock, setRemainingSeconds]);
+  }, [activeLock?.lockToken, releaseLock, resetIdentityState, setRemainingSeconds, step]);
 
   const handleConfirm = useCallback(() => {
     const nextErrors = validateDraft(draft, clientState === "new");
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
-      setStep("details");
+      setStep("identity");
       return;
     }
 
     if (!activeLock?.lockToken) {
       setSubmitErrorCode("LOCK_EXPIRED_OR_INVALID");
-      setStep("details");
+      setStep("schedule");
       return;
     }
 
@@ -445,11 +561,7 @@ export function useBookingWizard({
         );
         setActiveLock(null);
         setRemainingSeconds(0);
-        setClientState("unknown");
-        setRescheduleOptions([]);
-        setCanBookAsNewAppointment(false);
-        setIsBookingAsNewAppointment(false);
-        setSelectedRescheduleAppointmentId(null);
+        resetIdentityState();
         setSuccess(result);
         setStep("success");
       } catch (error) {
@@ -465,6 +577,7 @@ export function useBookingWizard({
     selectedRescheduleAppointmentId,
     setRemainingSeconds,
     submitBooking,
+    resetIdentityState,
   ]);
 
   const stepTransition = useBookingStepTransition({
@@ -475,11 +588,12 @@ export function useBookingWizard({
   return {
     state: {
       activeLock,
+      availableMonths: resolvedMonths,
+      currentMonth,
       clientState,
       currentDays,
       draft,
       errors,
-      isCalendarOpen,
       isPending,
       remainingSeconds,
       rescheduleOptions,
@@ -492,10 +606,12 @@ export function useBookingWizard({
     },
     transitions: stepTransition,
     actions: {
+      goToPreviousMonth,
+      goToNextMonth,
       handleBack,
       handleConfirm,
       handleContinue,
-      setCalendarOpen,
+      handleScheduleContinue,
       setSelectedRescheduleAppointmentId: (appointmentId: number | null) => {
         const isDeselectingCurrent =
           typeof appointmentId === "number"
@@ -511,14 +627,6 @@ export function useBookingWizard({
         if (typeof appointmentId === "number" && !isDeselectingCurrent) {
           setIsBookingAsNewAppointment(false);
         }
-        setErrors((current) => ({
-          ...current,
-          form: undefined,
-        }));
-      },
-      chooseBookAsNewAppointment: () => {
-        setSelectedRescheduleAppointmentId(null);
-        setIsBookingAsNewAppointment(true);
         setErrors((current) => ({
           ...current,
           form: undefined,

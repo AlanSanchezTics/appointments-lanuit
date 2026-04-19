@@ -18,7 +18,7 @@ Business behavior is defined by:
 - A fixed weekday/time-slot model.
 - Booking and cancellation eligibility rules.
 - 15-calendar-day threshold as UX suggestion trigger in public booking flow when same-month active future appointments exist.
-- Temporary slot holding during booking confirmation.
+- Temporary slot holding during public booking flow (from end of step 1 until confirmation/expiration).
 - A single source of truth for appointment state.
 - All time-based rules are evaluated using a fixed business timezone (`America/Mexico_City`).
 
@@ -38,7 +38,7 @@ Business behavior is defined by:
   - Uses domain states (`PENDING`, `CONFIRMED`, `REJECTED`, `CANCELLED`, `SYNC_FAILED`).
 
 - Reservation Lock
-  - Temporary hold used during booking confirmation to prevent concurrent slot capture.
+  - Temporary hold used during booking flow (step 1 -> step 2 -> step 3) to prevent concurrent slot capture.
   - Locks expire automatically after a fixed time window and stop blocking availability once expired.
 
 - Active Month
@@ -70,7 +70,7 @@ Business behavior is defined by:
   - `REJECTED` and `CANCELLED` appointments do not count toward occupancy or conflict decisions.
 
 - Temporary reservation lock
-  - A slot can be temporarily held during booking confirmation.
+  - A slot can be temporarily held from the end of step 1 and kept across identity/confirmation while valid.
   - While active, a lock blocks availability for that slot.
   - On unexpected page exit (`refresh`, tab close, external navigation), frontend should attempt early lock release via `pagehide + sendBeacon` to a dedicated idempotent endpoint.
   - On `reload` navigation, frontend should revalidate month availability immediately (no-store) and perform one short retry to reduce transient stale availability after best-effort lock release.
@@ -620,8 +620,8 @@ Business behavior is defined by:
 
 - Requesting bookings in past or inactive months must be rejected.
 - Root-entry routing (`/`) behavior:
-  - root renders a welcome entry view with month CTAs and cancellation CTA.
-  - month CTAs must include only active eligible months (`>= currentMonth`) with at least one available slot.
+  - root renders a welcome entry view with primary CTA to `/booking` and secondary cancellation CTA.
+  - booking month selection happens inside `/booking` (active eligible months `>= currentMonth` with at least one available slot).
   - if no months satisfy that filter, root keeps the same welcome layout and shows unavailable-agenda messaging while preserving cancellation CTA.
 - Two users trying to secure the same slot at nearly the same time can result in only one successful booking.
 - A lock can expire while the user is confirming; confirmation must fail and force reselection.

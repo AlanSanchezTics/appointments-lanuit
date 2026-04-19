@@ -28,7 +28,9 @@ vi.mock("@/lib/i18n/server", () => ({
       "home.subtitle":
         "¡No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde!",
       "home.orSeparator": "- o -",
+      "home.bookNow": "Agendar cita",
       "home.cancel": "Cancelar cita",
+      "home.manageOrCancel": "Consultar o cancelar cita",
       "home.unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",
       "home.unavailableMessage":
         "Agenda no disponible por el momento, contactanos por WhatsApp para más información.",
@@ -42,27 +44,19 @@ vi.mock("@/lib/home/service", () => ({
   listHomeAvailableMonths: vi.fn(),
 }));
 
-vi.mock("@/lib/datetime/mexico-city", () => ({
-  formatMonthLabel: vi.fn((month: string) => month),
-}));
-
 const listHomeAvailableMonthsMock = vi.mocked(listHomeAvailableMonths);
 
 describe("home page", () => {
-  it("renders month entry links and cancellation CTA", async () => {
+  it("renders booking and cancellation CTAs", async () => {
     listHomeAvailableMonthsMock.mockResolvedValueOnce(["2026-03", "2026-04"]);
 
     render(await HomePage());
 
-    expect(screen.getByRole("link", { name: "2026-03" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Agendar cita" })).toHaveAttribute(
       "href",
-      "/citas/2026-03/booking",
+      "/booking",
     );
-    expect(screen.getByRole("link", { name: "2026-04" })).toHaveAttribute(
-      "href",
-      "/citas/2026-04/booking",
-    );
-    expect(screen.getByRole("link", { name: "Cancelar cita" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Consultar o cancelar cita" })).toHaveAttribute(
       "href",
       "/citas/cancelar",
     );
@@ -78,7 +72,7 @@ describe("home page", () => {
         "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Cancelar cita" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Consultar o cancelar cita" })).toHaveAttribute(
       "href",
       "/citas/cancelar",
     );

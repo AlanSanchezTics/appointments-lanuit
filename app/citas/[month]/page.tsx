@@ -11,5 +11,5 @@ type MonthEntryPageProps = {
 
 export default async function MonthEntryPage({ params }: MonthEntryPageProps) {
   const { month } = await params;
-  redirect(`/citas/${month}/booking`);
+  redirect(`/booking?month=${month}`);
 }

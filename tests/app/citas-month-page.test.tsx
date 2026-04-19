@@ -21,9 +21,8 @@ describe("month view", () => {
       />,
     );
 
-    expect(screen.getByText("Paso 1 de 2")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Agendar cita/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Abrir calendario/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Siguiente/i })).toBeInTheDocument();
+    expect(screen.getByText("Paso 1 de 3")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Selecciona la fecha y hora de tu cita/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Siguiente$/i })).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-import { BookingPendingConfirmationStep } from "@/components/booking/booking-confirm-step";
+import { BookingPendingConfirmationStep } from "@/components/booking/booking-pending-confirmation-step";
 import { Button } from "@/components/ui/public/button";
 import { useBookingSuccess } from "@/hooks/booking/use-booking-success";
 import { formatPhoneForDisplay } from "@/lib/booking/formatters";

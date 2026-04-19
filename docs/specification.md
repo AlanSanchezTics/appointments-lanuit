@@ -55,8 +55,8 @@ Restricciones:
   - `home.welcome`,
   - `home.title`,
   - `home.subtitle`,
-  - lista de botones por mes disponible (`/citas/YYYY-MM/booking`),
-  - acción de cancelación (`/citas/cancelar`).
+  - CTA primaria `Agendar cita` (`/booking`),
+  - CTA secundaria `Consultar o cancelar cita` (`/citas/cancelar`).
 - Un mes disponible para la vista de `/` debe cumplir simultáneamente:
   - `status=ACTIVE` en `active_months`,
   - mes actual o futuro (`>= currentMonth`),
@@ -163,10 +163,11 @@ Regla general:
    - Resolución de idioma: preferencia persistida (`cookie/localStorage`) -> idioma del dispositivo -> fallback `es`.
    - La preferencia manual del usuario tiene prioridad sobre el idioma del dispositivo.
 
-1. Usuario selecciona un mes desde `/` y navega a `/citas/YYYY-MM/booking`.
-2. La ruta `/citas/YYYY-MM` se mantiene como compatibilidad y redirige a `/citas/YYYY-MM/booking`.
-3. En el paso 1 del wizard selecciona día y horario, e ingresa teléfono.
-4. Al avanzar, backend valida teléfono y realiza `check + lock` temporal (`TTL = 10 minutos`):
+1. Usuario selecciona `Agendar cita` desde `/` y navega a `/booking`.
+2. Las rutas `/citas/YYYY-MM` y `/citas/YYYY-MM/booking` se mantienen como compatibilidad y redirigen a `/booking?month=YYYY-MM`.
+3. En el paso 1 del wizard selecciona día y horario.
+4. Al avanzar desde paso 1, backend genera lock temporal (`TTL = 10 minutos`) para `date + timeSlot`.
+5. En el paso 2 del wizard captura teléfono y backend ejecuta `check + lock` para ese teléfono:
    - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
    - Si el cliente tiene citas futuras activas en el mismo mes y la nueva fecha queda a menos de 15 días naturales de al menos una de ellas, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
    - Si no existe ninguna cita activa del mes dentro de ese umbral (<15 días), UI avanza directo a confirmación (sin vista de sugerencia).
@@ -177,9 +178,9 @@ Regla general:
    - Mientras UI está en selección de cita a reagendar, se muestra un bloque resumen con `name`, `phone`, `date` y `timeSlot` actualmente seleccionados, antes de la lista de citas activas del mes.
    - En este estado se ocultan los controles del paso 1 para cambiar `date`, `timeSlot` y `phone`.
    - En esa misma vista, `Regresar` no debe navegar a `/`; debe ejecutar una regresión interna equivalente a `Editar información` (liberar lock activo y volver a edición del paso 1).
-   - Si el cliente no existe, UI solicita nombre y luego avanza a confirmación usando el lock ya creado.
-5. Si el lock no puede crearse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
-6. Usuario confirma cita (paso 2 del wizard).
+   - Si el cliente no existe, UI solicita nombre en el paso 2 y luego avanza a confirmación usando lock vigente.
+6. Si el lock no puede crearse o renovarse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
+7. Usuario confirma cita (paso 3 del wizard).
 7. Backend:
    - Inicia transacción.
    - Limpia locks expirados.
@@ -222,15 +223,17 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 
 - Enfoque mobile-first obligatorio (desktop muestra un contenedor tipo móvil).
 - El flujo visual de reserva queda compuesto por 4 vistas:
-  - Entrada global (`/`): branding + listado de meses disponibles (CTA por mes) + CTA secundaria `Cancelar cita`.
-  - Paso 1 (`/citas/YYYY-MM/booking`): selección de día/hora y captura de teléfono (nombre inline solo para cliente nuevo tras `check + lock`).
-    - CTA secundaria `Volver` regresa al inicio público (`/`) en estado normal.
-    - Si el paso 1 está en la vista de sugerencia/reagendado (con lock activo), `Volver` ejecuta regreso interno al estado editable del paso 1 (mismo comportamiento que `Editar información` en paso 2).
-  - Paso 2 (`/citas/YYYY-MM/booking`): confirmación de datos con contador de lock temporal.
+  - Entrada global (`/`): branding + CTA primaria `Agendar cita` + CTA secundaria `Consultar o cancelar cita`.
+  - Paso 1 (`/booking`): selección de día/hora + navegación de meses activos futuros + lock temporal al continuar.
+    - CTA secundaria `Volver` regresa al inicio público (`/`).
+  - Paso 2 (`/booking`): identificación (`phone`) y `name` condicional (solo cliente nuevo).
+    - `Volver` regresa al paso 1 y libera lock vigente.
+  - Paso 3 (`/booking`): confirmación de datos con contador de lock temporal.
+    - `Editar información` regresa al paso 2 (identificación) sin liberar lock; el lock sigue vigente hasta confirmar, expirar o abandonar el flujo.
     - Título dinámico:
       - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.
       - clienta existente: saludo de retorno actual (`welcomeBack`) definido por i18n.
-  - Paso 3 (`/citas/YYYY-MM/booking`): éxito local.
+  - Éxito (`/booking`): estado final local.
     - Para clienta fiel (`CONFIRMED`) o cita `SYNC_FAILED`: intento automático único para abrir WhatsApp al entrar al paso + CTA visible de fallback para reenviar.
     - Para clienta no fiel: CTA principal `Enviar comprobante` y CTA secundario `Volver`.
     - CTA `Volver`/`Regresar al inicio` regresa al inicio público (`/`).
@@ -249,7 +252,8 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
   - estados de foco visibles,
   - errores inline por campo/contexto.
 - Requisito visual del selector de días en Paso 1:
-  - debe renderizar todos los días disponibles del mes en una lista horizontal desplazable,
+  - debe renderizar un calendario mensual (grilla por semanas) con todos los días del mes,
+  - los días sin disponibilidad deben mostrarse deshabilitados,
   - el día seleccionado debe mantenerse resaltado visualmente.
 
 Mensaje base para cita `CONFIRMED`:
@@ -326,7 +330,7 @@ Requisitos obligatorios:
 
 Locking temporal adicional:
 
-- Tabla `reservation_locks` para bloquear slot durante el paso de confirmación.
+- Tabla `reservation_locks` para bloquear slot durante el flujo de reserva (desde el final del paso 1 hasta confirmación/expiración/salida).
 - `TTL` fijo de 10 minutos por lock.
 - El frontend debe intentar liberar lock en salida inesperada (`refresh`, cierre de pestaña o navegación fuera del flujo) usando `pagehide + sendBeacon` hacia `POST /api/reservar/lock/release-beacon`.
 - Este envío es best-effort y no garantiza entrega; el TTL sigue siendo el respaldo obligatorio de liberación.

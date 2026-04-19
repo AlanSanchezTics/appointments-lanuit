@@ -34,6 +34,43 @@ export function validateDraft(
   return nextErrors;
 }
 
+export function validateScheduleDraft(
+  draft: BookingDraft,
+): BookingValidationErrors {
+  const nextErrors: BookingValidationErrors = {};
+
+  if (!draft.date) {
+    nextErrors.date = "DATE_REQUIRED";
+  }
+
+  if (!draft.timeSlot) {
+    nextErrors.timeSlot = "TIME_SLOT_REQUIRED";
+  }
+
+  if (nextErrors.date || nextErrors.timeSlot) {
+    nextErrors.form = "FORM_INCOMPLETE";
+  }
+
+  return nextErrors;
+}
+
+export function validateIdentityDraft(
+  draft: BookingDraft,
+  requiresName: boolean,
+): BookingValidationErrors {
+  const nextErrors: BookingValidationErrors = {};
+
+  if (!/^[0-9]{10}$/.test(normalizePhone(draft.phone))) {
+    nextErrors.phone = "PHONE_INVALID";
+  }
+
+  if (requiresName && draft.name.trim().length < 3) {
+    nextErrors.name = "NAME_REQUIRED";
+  }
+
+  return nextErrors;
+}
+
 export function normalizeDraftByAvailability(
   draft: BookingDraft,
   days: DayAvailability[],

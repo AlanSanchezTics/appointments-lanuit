@@ -5,10 +5,12 @@ import { useTranslation } from "react-i18next";
 
 import { BookingConfirmStep } from "@/components/booking/booking-confirm-step";
 import { BookingSuccessStep } from "@/components/booking/booking-success-step";
-import { BookingWizardStep1 } from "@/components/booking/booking-wizard-step1";
-import { CalendarModal } from "@/components/booking/calendar-modal";
+import { BookingWizardStepIdentity } from "@/components/booking/booking-wizard-step-identity";
+import { BookingWizardStepSchedule } from "@/components/booking/booking-wizard-step-schedule";
 import { useBookingWizard } from "@/hooks/booking/use-booking-wizard";
 import type { DayAvailability } from "@/lib/availability/service";
+import { formatMonthLabel } from "@/lib/datetime/mexico-city";
+import type { AppLanguage } from "@/lib/i18n/config";
 import { translateApiError } from "@/lib/i18n/translate";
 import type {
   BookingDraft,
@@ -23,6 +25,7 @@ import type {
 type BookingWizardProps = {
   month: string;
   days: DayAvailability[];
+  availableMonths?: string[];
   initialDraft?: Partial<BookingDraft>;
   refreshDays?: (month: string) => Promise<DayAvailability[]>;
   checkClientAndAcquireLock?: (
@@ -43,6 +46,8 @@ type RenderStepParams = {
   currentDays: DayAvailability[];
   errors: BookingValidationErrors;
   month: string;
+  monthLabel: string;
+  availableMonths: string[];
   translatedSubmitError: string | null;
   isPending: boolean;
   clientState: "unknown" | "existing" | "new" | "reschedule";
@@ -54,8 +59,10 @@ type RenderStepParams = {
   remainingSeconds: number;
   success: BookingSuccess | null;
   onContinue: () => void;
+  onContinueFromSchedule: () => void;
   onDraftChange: (nextDraft: Partial<BookingDraft>) => void;
-  onOpenCalendar: () => void;
+  onPreviousMonth: () => void;
+  onNextMonth: () => void;
   onSelectRescheduleAppointment: (appointmentId: number) => void;
   onWhatsAppRedirect: (url: string) => void;
   onBack: () => void;
@@ -65,6 +72,7 @@ type RenderStepParams = {
 export function BookingWizard({
   month,
   days,
+  availableMonths,
   initialDraft,
   refreshDays,
   checkClientAndAcquireLock,
@@ -72,7 +80,8 @@ export function BookingWizard({
   submitBooking,
   onWhatsAppRedirect,
 }: BookingWizardProps) {
-  const { t } = useTranslation(["common", "errors"]);
+  const { i18n, t } = useTranslation(["common", "errors"]);
+  const language: AppLanguage = i18n.language.startsWith("en") ? "en" : "es";
   const handleWhatsAppRedirect = useCallback(
     (url: string) => {
       if (onWhatsAppRedirect) {
@@ -87,6 +96,7 @@ export function BookingWizard({
   const { state, actions, transitions } = useBookingWizard({
     month,
     days,
+    availableMonths,
     initialDraft,
     refreshDays,
     checkClientAndAcquireLock,
@@ -103,7 +113,9 @@ export function BookingWizard({
     draft: state.draft,
     currentDays: state.currentDays,
     errors: state.errors,
-    month,
+    month: state.currentMonth,
+    monthLabel: formatMonthLabel(state.currentMonth, language),
+    availableMonths: state.availableMonths,
     translatedSubmitError,
     isPending: state.isPending,
     clientState: state.clientState,
@@ -115,8 +127,10 @@ export function BookingWizard({
     remainingSeconds: state.remainingSeconds,
     success: state.success,
     onContinue: actions.handleContinue,
+    onContinueFromSchedule: actions.handleScheduleContinue,
     onDraftChange: actions.updateDraft,
-    onOpenCalendar: () => actions.setCalendarOpen(true),
+    onPreviousMonth: actions.goToPreviousMonth,
+    onNextMonth: actions.goToNextMonth,
     onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
     onBack: actions.handleBack,
     onConfirm: actions.handleConfirm,
@@ -128,7 +142,9 @@ export function BookingWizard({
         draft: state.draft,
         currentDays: state.currentDays,
         errors: state.errors,
-        month,
+        month: state.currentMonth,
+        monthLabel: formatMonthLabel(state.currentMonth, language),
+        availableMonths: state.availableMonths,
         translatedSubmitError,
         isPending: state.isPending,
         clientState: state.clientState,
@@ -140,9 +156,12 @@ export function BookingWizard({
         remainingSeconds: state.remainingSeconds,
         success: state.success,
         onContinue: actions.handleContinue,
+        onContinueFromSchedule: actions.handleScheduleContinue,
         onDraftChange: actions.updateDraft,
-        onOpenCalendar: () => actions.setCalendarOpen(true),
-        onSelectRescheduleAppointment: actions.setSelectedRescheduleAppointmentId,
+        onPreviousMonth: actions.goToPreviousMonth,
+        onNextMonth: actions.goToNextMonth,
+        onSelectRescheduleAppointment:
+          actions.setSelectedRescheduleAppointmentId,
         onBack: actions.handleBack,
         onConfirm: actions.handleConfirm,
         onWhatsAppRedirect: handleWhatsAppRedirect,
@@ -157,7 +176,9 @@ export function BookingWizard({
             data-current-step={state.step}
             data-testid="booking-step-container"
             data-transition-direction={transitions.transitionDirection}
-            data-transitioning={transitions.isStepTransitioning ? "true" : "false"}
+            data-transitioning={
+              transitions.isStepTransitioning ? "true" : "false"
+            }
             data-visible-step={transitions.visibleStep}
             className="relative min-h-[40rem] overflow-hidden md:min-h-[42rem]"
           >
@@ -189,24 +210,6 @@ export function BookingWizard({
           </div>
         </div>
       </section>
-
-      <CalendarModal
-        days={state.currentDays}
-        isOpen={state.isCalendarOpen}
-        month={month}
-        onClose={() => actions.setCalendarOpen(false)}
-        onSelect={(date) => {
-          const nextDay =
-            state.currentDays.find((day) => day.date === date) ?? null;
-          actions.updateDraft({
-            date,
-            timeSlot: nextDay?.slots.includes(state.draft.timeSlot ?? "")
-              ? state.draft.timeSlot
-              : (nextDay?.slots[0] ?? null),
-          });
-        }}
-        selectedDate={state.draft.date}
-      />
     </>
   );
 }
@@ -217,6 +220,8 @@ function renderStep({
   currentDays,
   errors,
   month,
+  monthLabel,
+  availableMonths,
   translatedSubmitError,
   isPending,
   clientState,
@@ -228,34 +233,53 @@ function renderStep({
   remainingSeconds,
   success,
   onContinue,
+  onContinueFromSchedule,
   onDraftChange,
-  onOpenCalendar,
+  onPreviousMonth,
+  onNextMonth,
   onSelectRescheduleAppointment,
   onBack,
   onConfirm,
   onWhatsAppRedirect,
 }: RenderStepParams) {
-  if (step === "details") {
+  if (step === "schedule") {
     return (
-      <BookingWizardStep1
+      <BookingWizardStepSchedule
+        month={month}
+        monthLabel={monthLabel}
+        availableMonths={availableMonths}
         days={currentDays}
         errorMessage={translatedSubmitError}
         draft={draft}
         errors={errors}
-        month={month}
-        onContinue={onContinue}
-        onBack={onBack}
+        onContinue={onContinueFromSchedule}
         onDraftChange={onDraftChange}
-        onOpenCalendar={onOpenCalendar}
+        onPreviousMonth={onPreviousMonth}
+        onNextMonth={onNextMonth}
+        isPending={isPending}
+      />
+    );
+  }
+
+  if (step === "identity") {
+    return (
+      <BookingWizardStepIdentity
+        draft={draft}
+        errors={errors}
         isPending={isPending}
         showNameField={clientState === "new"}
-        hasActiveLock={(clientState === "new" || clientState === "reschedule") && Boolean(activeLock)}
+        hasActiveLock={Boolean(activeLock)}
+        remainingSeconds={remainingSeconds}
+        clientState={clientState}
         rescheduleOptions={rescheduleOptions}
         canBookAsNewAppointment={canBookAsNewAppointment}
         isBookingAsNewAppointment={isBookingAsNewAppointment}
         selectedRescheduleAppointmentId={selectedRescheduleAppointmentId}
         onSelectRescheduleAppointment={onSelectRescheduleAppointment}
-        remainingSeconds={remainingSeconds}
+        errorMessage={translatedSubmitError}
+        onDraftChange={onDraftChange}
+        onContinue={onContinue}
+        onBack={onBack}
       />
     );
   }
@@ -284,7 +308,7 @@ function renderStep({
       onWhatsAppRedirect={onWhatsAppRedirect}
       success={success}
       onBack={() => {
-        window.location.assign("/");
+        window.location.assign("/booking");
       }}
     />
   );

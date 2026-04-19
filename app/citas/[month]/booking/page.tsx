@@ -1,31 +1,17 @@
-import { notFound } from "next/navigation";
-
-import { MonthView } from "@/components/booking/month-view";
-import { getMonthAvailability } from "@/lib/availability/service";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type BookingWizardPageProps = {
+type BookingWizardRedirectPageProps = {
   params: Promise<{
     month: string;
   }>;
 };
 
-export default async function BookingWizardPage({
+export default async function BookingWizardRedirectPage({
   params,
-}: BookingWizardPageProps) {
+}: BookingWizardRedirectPageProps) {
   const { month } = await params;
-
-  try {
-    const days = await getMonthAvailability(month);
-
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-[412px] items-center justify-center">
-        <MonthView month={month} days={days} />
-      </main>
-    );
-  } catch {
-    notFound();
-  }
+  redirect(`/booking?month=${month}`);
 }

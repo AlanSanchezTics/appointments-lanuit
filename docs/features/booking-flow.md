@@ -5,7 +5,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 ## Actors
 - Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y completa la acción de WhatsApp (automática o manual según estado final).
-- UI pública (`/` y `/citas/YYYY-MM/booking`): muestra meses disponibles, guía el wizard, muestra disponibilidad, errores y estado de lock.
+- UI pública (`/` y `/booking`): muestra portada, guía el wizard, muestra disponibilidad, errores y estado de lock.
 - API de reservas: ejecuta `check + lock`, confirmación y liberación de lock.
 - Servicios de dominio: validan reglas de negocio (mes activo, disponibilidad, teléfono, restricciones por pares y máximo diario).
 - Base de datos (fuente de verdad): persiste clientes, citas y locks temporales; aplica transacciones y bloqueos.
@@ -29,16 +29,16 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 ## High-Level Flow
 1. Usuario entra a `/`:
-   - se muestra pantalla de bienvenida con CTAs por mes disponible (`/citas/YYYY-MM/booking`),
-   - solo se listan meses `ACTIVE` con al menos un slot disponible,
-   - si no hay meses disponibles, se mantiene layout de bienvenida con aviso de indisponibilidad y CTA de cancelación.
-2. En `/citas/YYYY-MM/booking` (paso de captura): selecciona día, horario y teléfono.
-4. Al continuar, backend ejecuta `check + lock` temporal (TTL 10 minutos).
+   - se muestra pantalla de bienvenida con CTA primaria `Agendar cita` (`/booking`) y CTA secundaria de cancelación.
+   - si no hay meses disponibles, se mantiene layout de bienvenida con aviso de indisponibilidad.
+2. En `/booking` (paso 1): selecciona día y horario.
+3. Al continuar desde paso 1, backend crea lock temporal (TTL 10 minutos).
+4. En paso 2, usuario captura teléfono y backend ejecuta `check + lock` para validar cliente y sostener lock por teléfono.
 5. Si el cliente ya existe por teléfono, avanza directo a confirmación.
 6. Si el cliente ya tiene citas futuras activas en el mismo mes y la nueva fecha cae dentro del umbral `<15 días` contra alguna de ellas, UI muestra la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas en este mes`.
 7. En esa vista, el cliente puede decidir entre reagendar una cita existente o continuar como cita nueva.
 8. Si no hay citas activas del mes dentro del umbral `<15 días`, no se muestra la vista de sugerencia y el flujo continúa directo a confirmación.
-9. Si el cliente no existe, la UI solicita nombre y continúa con el mismo lock activo.
+9. Si el cliente no existe, la UI solicita nombre en paso 2 y continúa con lock activo.
    - al confirmar, backend crea cliente con `client_number` único asignado automáticamente.
 10. Al seleccionar cita a reagendar o al elegir `Agendar como nueva cita`, UI avanza a confirmación.
 11. Usuario confirma la cita; backend confirma de forma atómica usando `lock_token`.
@@ -50,8 +50,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 1. Entrada al flujo público
 - Trigger: navegación a `/`.
 - Comportamiento:
-  - renderiza bienvenida + lista de meses disponibles con links directos a `/citas/YYYY-MM/booking`,
-  - filtra meses por elegibilidad (`ACTIVE`, `>= currentMonth`) y disponibilidad real de slots,
+  - renderiza bienvenida + CTA principal `/booking` y CTA secundaria de cancelación,
+  - la selección del mes ocurre dentro de `/booking` usando meses elegibles (`ACTIVE`, `>= currentMonth`) con disponibilidad real,
   - cuando no hay meses disponibles, muestra aviso de indisponibilidad en el mismo layout.
 - Resultado:
   - con meses disponibles: el flujo inicia al seleccionar un CTA de mes,
@@ -59,24 +59,33 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 2. Entrada de compatibilidad por mes
 - Trigger: navegación a `/citas/YYYY-MM`.
-- Comportamiento: redirect server-side directo a `/citas/YYYY-MM/booking`.
+- Comportamiento: redirect server-side directo a `/booking?month=YYYY-MM`.
 - Resultado: se conserva compatibilidad sin mantener pantalla intermedia.
 
 3. Captura de datos base (wizard)
-- Trigger: paso inicial de `/booking`.
-- Datos: `date`, `timeSlot`, `phone`.
+- Trigger: paso 1 de `/booking`.
+- Datos: `date`, `timeSlot`.
 - Comportamiento:
   - UI valida formato base y solicita avance.
-  - El selector de días muestra todos los días disponibles en carrusel horizontal (scroll) y mantiene resaltado el día seleccionado.
+  - El selector de días muestra un calendario mensual en grilla por semanas.
+  - Los días sin disponibilidad se muestran deshabilitados y el día seleccionado se mantiene resaltado.
   - CTA secundaria `Volver` regresa al inicio público (`/`) en estado normal del paso.
 
-4. Check + lock temporal
-- Trigger: continuar desde paso inicial.
+4. Lock temporal inicial
+- Trigger: continuar desde paso 1.
 - Backend:
   - valida reglas de reserva (mes, día hábil, horario futuro, slot válido),
   - verifica conflictos por disponibilidad,
-  - evalúa umbral de sugerencia por teléfono (`<15 días`) contra citas activas futuras del mismo mes,
-  - crea lock temporal (`reservation_locks`) con TTL 10 minutos.
+  - crea lock temporal (`reservation_locks`) con TTL 10 minutos para proteger `date + timeSlot`.
+- Resultado:
+  - avanza al paso de identificación.
+
+5. Identificación + check de cliente
+- Trigger: continuar desde paso 2.
+- Datos: `phone` y `name` condicional (solo si cliente nuevo).
+- Backend:
+  - ejecuta `check + lock` por teléfono,
+  - evalúa umbral de sugerencia por teléfono (`<15 días`) contra citas activas futuras del mismo mes.
 - Resultado:
   - cliente existente sin citas futuras activas en ese mes: retorna `clientExists=true` y avanza a confirmación,
   - cliente existente con citas futuras activas en ese mes dentro del umbral `<15 días`: retorna `futureAppointmentsInMonth[]` y mantiene lock para entrar a vista de sugerencia/decisión,
@@ -84,7 +93,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - cliente existente con citas en el mes fuera del umbral `<15 días`: avanza directo a confirmación (sin sugerencia),
   - cliente nuevo: retorna `clientExists=false`, UI pide nombre y mantiene lock.
 
-5. Selección de cita a reagendar o agendar como nueva (cliente con citas futuras activas en el mes)
+6. Selección de cita a reagendar o agendar como nueva (cliente con citas futuras activas en el mes)
 - Trigger: respuesta con `futureAppointmentsInMonth[]`.
 - Regla:
   - la vista de sugerencia se muestra únicamente cuando existe al menos una cita activa futura del mismo mes dentro del umbral `<15 días`,
@@ -98,17 +107,18 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - en este estado, CTA `Regresar` debe ejecutar regreso interno (igual que `Editar información` del paso de confirmación), liberando lock y devolviendo la vista editable del paso 1.
 - Resultado: al seleccionar cita o al elegir `Agendar como nueva cita`, avanza a confirmación con lock vigente.
 
-6. Captura de nombre (solo cliente nuevo)
+7. Captura de nombre (solo cliente nuevo)
 - Trigger: respuesta `clientExists=false`.
 - Regla: nombre mínimo 3 caracteres.
 - Resultado: al cumplir validación, avanza a confirmación con lock vigente.
 
-7. Confirmación de cita
+8. Confirmación de cita
 - Trigger: acción `Confirmar cita`.
 - UI:
   - el encabezado del paso de confirmación es condicional por tipo de clienta,
   - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`,
   - clienta existente: mantiene saludo de retorno (`welcomeBack`).
+  - `Editar información` regresa a paso de identificación y conserva lock vigente.
   - previo al `POST /api/reservar/confirm`, frontend envía `name` en forma canónica (trim).
 - Backend (transaccional):
   - limpia locks expirados,
@@ -123,7 +133,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - `COMMIT`.
 - Resultado: cita creada o reprogramada en DB.
 
-8. Sincronización externa
+9. Sincronización externa
 - Trigger: confirmación exitosa en DB.
 - Comportamiento: intenta crear evento en Google Calendar solo cuando la cita quedó `CONFIRMED`.
 - Resultado:
@@ -131,7 +141,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - falla: cita cambia a `SYNC_FAILED` y sigue contando como activa para conflictos.
   - `PENDING` no crea evento en Calendar hasta que un admin la confirme.
 
-9. Éxito en UI + WhatsApp
+10. Éxito en UI + WhatsApp
 - Trigger: respuesta de confirmación.
 - Comportamiento:
   - si la cita quedó `CONFIRMED` o `SYNC_FAILED`, UI muestra pantalla de éxito local, dispara una sola redirección automática a `wa.me` al entrar al paso y mantiene CTA explícito de fallback para reenviar;

@@ -1,6 +1,6 @@
 import type { DayAvailability } from "@/lib/availability/service";
 
-export type BookingStep = "details" | "confirm" | "success";
+export type BookingStep = "schedule" | "identity" | "confirm" | "success";
 
 export type StepTransitionDirection = "forward" | "backward";
 
@@ -34,6 +34,7 @@ export type BookingSuccess = {
 export type SlotLock = {
   lockToken: string;
   expiresAt: string;
+  kind?: "schedule" | "identity";
 };
 
 export type ClientCheckLockResult = SlotLock & {

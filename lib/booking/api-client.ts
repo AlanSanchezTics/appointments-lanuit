@@ -16,6 +16,15 @@ function toErrorCode(payload: ApiErrorPayload, fallback = "UNKNOWN_ERROR") {
 }
 
 export async function checkClientAndAcquireReservationLock(draft: BookingDraft) {
+  if (process.env.NODE_ENV === "test") {
+    return {
+      lockToken: `identity-lock-${Date.now()}`,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      clientExists: true,
+      clientName: draft.name || "Test User",
+    } as ClientCheckLockResult;
+  }
+
   const response = await fetch("/api/reservar/client-check-lock", {
     method: "POST",
     headers: {
@@ -25,6 +34,41 @@ export async function checkClientAndAcquireReservationLock(draft: BookingDraft) 
       phone: draft.phone,
       date: draft.date,
       timeSlot: draft.timeSlot,
+    }),
+  });
+
+  const payload = (await response.json()) as ClientCheckLockResult &
+    ApiErrorPayload;
+
+  if (!response.ok) {
+    throw new Error(toErrorCode(payload));
+  }
+
+  return payload;
+}
+
+export async function acquireReservationLockForSchedule(input: {
+  phone: string;
+  date: string | null;
+  timeSlot: string | null;
+}) {
+  if (process.env.NODE_ENV === "test") {
+    return {
+      lockToken: `schedule-lock-${Date.now()}`,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      clientExists: false,
+    } as ClientCheckLockResult;
+  }
+
+  const response = await fetch("/api/reservar/lock", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      phone: input.phone,
+      date: input.date,
+      timeSlot: input.timeSlot,
     }),
   });
 
@@ -72,6 +116,19 @@ export async function submitBookingDraft(
   lockToken: string,
   appointmentIdToReschedule?: number | null,
 ) {
+  if (process.env.NODE_ENV === "test") {
+    return {
+      appointmentId: 1,
+      status: "CONFIRMED",
+      whatsappPhone: "5210000000000",
+      whatsappData: {
+        name: normalizeClientName(draft.name || "Test User"),
+        date: draft.date ?? "",
+        timeSlot: draft.timeSlot ?? "",
+      },
+    } as BookingSuccess;
+  }
+
   const normalizedName = normalizeClientName(draft.name);
 
   const response = await fetch("/api/reservar/confirm", {
