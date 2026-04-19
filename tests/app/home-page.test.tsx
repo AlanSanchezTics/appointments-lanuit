@@ -28,7 +28,7 @@ vi.mock("@/lib/i18n/server", () => ({
       "home.subtitle":
         "¡No dejes pasar el tiempo y agenda tu cita antes de que sea demasiado tarde!",
       "home.orSeparator": "- o -",
-      "home.bookNow": "Agendar cita",
+      "bookingEntry.book": "Agendar cita",
       "home.cancel": "Cancelar cita",
       "home.manageOrCancel": "Consultar o cancelar cita",
       "home.unavailableHint": "En cuanto haya nuevos meses activos podrás continuar con tu reserva desde aquí.",

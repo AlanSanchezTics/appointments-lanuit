@@ -22,7 +22,11 @@ describe("month view", () => {
     );
 
     expect(screen.getByText("Paso 1 de 3")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Selecciona la fecha y hora de tu cita/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: /Para comenzar, Selecciona la fecha y hora/i,
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Siguiente$/i })).toBeInTheDocument();
   });
 });

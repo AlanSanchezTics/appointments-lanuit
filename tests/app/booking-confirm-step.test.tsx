@@ -10,8 +10,15 @@ const days = [
   },
 ];
 
+async function continueToConfirmStep() {
+  fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+  await screen.findByLabelText(/tel[eé]fono|phone/i);
+  fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+  await screen.findByText("Confirmar detalles");
+}
+
 describe("booking confirm step", () => {
-  it("shows selected details and preserves the draft when returning to step 1", async () => {
+  it("shows selected details and preserves the draft when returning to identity step", async () => {
     const checkClientAndAcquireLock = vi.fn().mockResolvedValue({
       lockToken: "lock-1",
       expiresAt: "2099-03-13T12:10:00.000Z",
@@ -35,18 +42,17 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-
-    expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
+    await continueToConfirmStep();
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument();
     expect(screen.getByText("551 234 5678")).toBeInTheDocument();
     expect(screen.getByText("09:00 AM")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("link", { name: /Editar información/i }));
+    const releaseLockCallsBeforeBack = releaseLock.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: /Editar información/i }));
 
     expect(await screen.findByDisplayValue("5512345678")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("Ana Garcia")).not.toBeInTheDocument();
-    expect(releaseLock).toHaveBeenCalledWith("lock-1");
+    expect(releaseLock.mock.calls.length).toBe(releaseLockCallsBeforeBack);
   });
 
   it("maps backend booking conflicts into inline feedback", async () => {
@@ -75,8 +81,7 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar detalles");
+    await continueToConfirmStep();
     fireEvent.click(
       await screen.findByRole("button", { name: "Confirmar cita" }),
     );
@@ -110,7 +115,9 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await screen.findByLabelText(/tel[eé]fono|phone/i);
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
     await waitFor(() => {
       expect(releaseLock).toHaveBeenCalledWith("lock-1");
     });
@@ -162,7 +169,9 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await screen.findByLabelText(/tel[eé]fono|phone/i);
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
     await screen.findByText("Ya tienes citas activas en este mes");
     fireEvent.click(screen.getByRole("button", { name: /10:00 AM/i }));
     await waitFor(() => {
@@ -233,7 +242,9 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await screen.findByLabelText(/tel[eé]fono|phone/i);
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
     await screen.findByText("Ya tienes citas activas en este mes");
     const continueAsNewButton = await screen.findByRole("button", {
       name: /Continuar como nueva cita/i,
@@ -278,12 +289,17 @@ describe("booking confirm step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
     const continueButton = await screen.findByRole("button", {
-      name: /Siguiente/i,
+      name: /^Siguiente$/i,
     });
     await waitFor(() => {
       expect(continueButton).toBeEnabled();
+    });
+    fireEvent.click(continueButton);
+    const nameInput = await screen.findByPlaceholderText(/ej\. ana garc[ií]a/i);
+    fireEvent.change(nameInput, {
+      target: { value: "Mariana Perez" },
     });
     fireEvent.click(continueButton);
 

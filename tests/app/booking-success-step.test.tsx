@@ -10,6 +10,16 @@ const days = [
   },
 ];
 
+async function continueToConfirmStep() {
+  fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+  await screen.findByLabelText(/tel[eé]fono|phone/i);
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: /^Siguiente$/i })).toBeEnabled();
+  });
+  fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+  await screen.findByText("Confirmar detalles");
+}
+
 describe("booking success step", () => {
   it("auto-redirects to WhatsApp once on success for SYNC_FAILED and keeps CTA as fallback", async () => {
     const onWhatsAppRedirect = vi.fn();
@@ -46,8 +56,7 @@ describe("booking success step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar detalles");
+    await continueToConfirmStep();
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
@@ -108,8 +117,7 @@ describe("booking success step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar detalles");
+    await continueToConfirmStep();
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     await waitFor(() => {
@@ -151,24 +159,25 @@ describe("booking success step", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Siguiente/i }));
-    await screen.findByText("Confirmar detalles");
+    await continueToConfirmStep();
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: /Ya casi estamos listas; solo nos queda un paso por realizar\./i,
+        name: /Ya casi estamos listas; solo nos queda un paso por realizar/i,
       }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText(/Tu cita ya se encuentra prerregistrada\./i),
+      screen.getByText(
+        /Para asegurar la cita es necesario que realices un depósito de \$200/i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Enviar comprobante" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Volver" }),
+      screen.getByRole("button", { name: "Agendar otra cita" }),
     ).toBeInTheDocument();
     expect(onWhatsAppRedirect).not.toHaveBeenCalled();
 

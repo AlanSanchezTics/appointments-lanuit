@@ -14,6 +14,13 @@ const days = [
   },
 ];
 
+async function clickNextWhenReady() {
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: /^Siguiente$/i })).toBeEnabled();
+  });
+  fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+}
+
 describe("booking wizard", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -21,7 +28,7 @@ describe("booking wizard", () => {
     vi.unstubAllGlobals();
   });
 
-  it("validates schedule step before continuing", () => {
+  it("validates schedule step before continuing", async () => {
     render(
       <BookingWizard
         days={days}
@@ -30,7 +37,7 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(screen.getByText("Selecciona un día disponible.")).toBeInTheDocument();
     expect(
@@ -57,7 +64,7 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(
       await screen.findByRole("heading", { name: "Cuéntanos un poco sobre ti" }),
@@ -66,7 +73,7 @@ describe("booking wizard", () => {
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
     expect(screen.queryByLabelText("Nombre completo")).not.toBeInTheDocument();
@@ -90,20 +97,20 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByLabelText("Teléfono")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(await screen.findByLabelText("Nombre completo")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Nombre completo"), {
       target: { value: "An" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(
       screen.getByText("Ingresa tu nombre completo."),
@@ -139,13 +146,13 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByLabelText("Teléfono")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Editar información/i }));
@@ -154,7 +161,7 @@ describe("booking wizard", () => {
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5598765432" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(await screen.findByLabelText("Nombre completo")).toBeInTheDocument();
     expect(screen.queryByText("Confirmar detalles")).not.toBeInTheDocument();
@@ -178,25 +185,25 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByLabelText("Teléfono")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Teléfono"), {
       target: { value: "5598765432" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByLabelText("Nombre completo")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Nombre completo"), {
       target: { value: "Cliente Nueva" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Editar información/i }));
     expect(await screen.findByLabelText("Teléfono")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
     expect(
       screen.queryByText("El bloqueo temporal expiró. Selecciona de nuevo tu horario."),
@@ -231,11 +238,11 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     fireEvent.change(await screen.findByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(
       await screen.findByText("Ya tienes citas activas en este mes"),
@@ -270,15 +277,15 @@ describe("booking wizard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
     fireEvent.change(await screen.findByLabelText("Teléfono"), {
       target: { value: "5512345678" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     const nameInput = await screen.findByLabelText("Nombre completo");
     fireEvent.change(nameInput, { target: { value: "Ana Garcia" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Siguiente$/i }));
+    await clickNextWhenReady();
 
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
 

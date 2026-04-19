@@ -8,9 +8,11 @@ import {
 describe("booking api client", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("normalizes name before sending confirm payload", async () => {
+    vi.stubEnv("NODE_ENV", "development");
     const fetchMock = vi.fn(async () =>
       new Response(
         JSON.stringify({
