@@ -271,7 +271,16 @@ export function BookingWizardStepIdentity({
           onClick={onContinue}
           type="button"
         >
-          {isPending ? t("booking.wait") : continueButtonLabel}
+          {isPending ? (
+            t("booking.wait")
+          ) : (
+            <>
+              <span>{continueButtonLabel}</span>
+              <span aria-hidden="true" className="ml-2">
+                →
+              </span>
+            </>
+          )}
         </Button>
 
         <div className="flex justify-center">

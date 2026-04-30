@@ -51,6 +51,7 @@ type RenderStepParams = {
   translatedSubmitError: string | null;
   isPending: boolean;
   clientState: "unknown" | "existing" | "new" | "reschedule";
+  clientIsLoyal: boolean | null;
   rescheduleOptions: RescheduleOption[];
   canBookAsNewAppointment: boolean;
   isBookingAsNewAppointment: boolean;
@@ -119,6 +120,7 @@ export function BookingWizard({
     translatedSubmitError,
     isPending: state.isPending,
     clientState: state.clientState,
+    clientIsLoyal: state.clientIsLoyal,
     rescheduleOptions: state.rescheduleOptions,
     canBookAsNewAppointment: state.canBookAsNewAppointment,
     isBookingAsNewAppointment: state.isBookingAsNewAppointment,
@@ -148,6 +150,7 @@ export function BookingWizard({
         translatedSubmitError,
         isPending: state.isPending,
         clientState: state.clientState,
+        clientIsLoyal: state.clientIsLoyal,
         rescheduleOptions: state.rescheduleOptions,
         canBookAsNewAppointment: state.canBookAsNewAppointment,
         isBookingAsNewAppointment: state.isBookingAsNewAppointment,
@@ -225,6 +228,7 @@ function renderStep({
   translatedSubmitError,
   isPending,
   clientState,
+  clientIsLoyal,
   rescheduleOptions,
   canBookAsNewAppointment,
   isBookingAsNewAppointment,
@@ -289,6 +293,7 @@ function renderStep({
       <BookingConfirmStep
         draft={draft}
         isNewClient={clientState === "new"}
+        isNonLoyal={clientState === "new" || clientIsLoyal === false}
         errorMessage={translatedSubmitError}
         isPending={isPending}
         remainingSeconds={remainingSeconds}

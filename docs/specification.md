@@ -181,6 +181,9 @@ Regla general:
    - Si el cliente no existe, UI solicita nombre en el paso 2 y luego avanza a confirmación usando lock vigente.
 6. Si el lock no puede crearse o renovarse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
 7. Usuario confirma cita (paso 3 del wizard).
+   - CTA principal del paso 3:
+     - clienta fiel: `Confirmar cita`,
+     - clienta no fiel: `Siguiente`.
 7. Backend:
    - Inicia transacción.
    - Limpia locks expirados.
@@ -229,6 +232,9 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
   - Paso 2 (`/booking`): identificación (`phone`) y `name` condicional (solo cliente nuevo).
     - `Volver` regresa al paso 1 y libera lock vigente.
   - Paso 3 (`/booking`): confirmación de datos con contador de lock temporal.
+    - CTA principal condicional:
+      - clienta fiel: `Confirmar cita`,
+      - clienta no fiel: `Siguiente`.
     - `Editar información` regresa al paso 2 (identificación) sin liberar lock; el lock sigue vigente hasta confirmar, expirar o abandonar el flujo.
     - Título dinámico:
       - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`.

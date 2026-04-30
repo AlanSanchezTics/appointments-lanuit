@@ -18,6 +18,7 @@ import LockMessage from "./lock-message";
 type BookingConfirmStepProps = {
   draft: BookingDraft;
   isNewClient: boolean;
+  isNonLoyal: boolean;
   errorMessage: string | null;
   isPending: boolean;
   remainingSeconds: number;
@@ -28,6 +29,7 @@ type BookingConfirmStepProps = {
 export function BookingConfirmStep({
   draft,
   isNewClient,
+  isNonLoyal,
   errorMessage,
   isPending,
   remainingSeconds,
@@ -113,6 +115,13 @@ export function BookingConfirmStep({
         >
           {isPending ? (
             t("booking.wait")
+          ) : isNonLoyal ? (
+            <>
+              <span>{t("booking.next")}</span>
+              <span aria-hidden="true" className="ml-2">
+                →
+              </span>
+            </>
           ) : (
             <>
               <FontAwesomeIcon icon={faCheckCircle} />

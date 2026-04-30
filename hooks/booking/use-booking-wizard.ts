@@ -120,6 +120,7 @@ export function useBookingWizard({
   const [step, setStep] = useState<BookingStep>("schedule");
   const [currentMonth, setCurrentMonth] = useState(month);
   const [clientState, setClientState] = useState<ClientState>("unknown");
+  const [clientIsLoyal, setClientIsLoyal] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<BookingValidationErrors>({});
   const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
   const [success, setSuccess] = useState<BookingSuccess | null>(null);
@@ -293,6 +294,7 @@ export function useBookingWizard({
 
   const resetIdentityState = useCallback(() => {
     setClientState("unknown");
+    setClientIsLoyal(null);
     setRescheduleOptions([]);
     setCanBookAsNewAppointment(false);
     setIsBookingAsNewAppointment(false);
@@ -440,6 +442,7 @@ export function useBookingWizard({
           if (futureAppointmentsInMonth.length > 0) {
             const canBookAsNew = response.canBookAsNewAppointment ?? false;
             setClientState("reschedule");
+            setClientIsLoyal(response.isLoyal ?? true);
             setRescheduleOptions(futureAppointmentsInMonth);
             setCanBookAsNewAppointment(canBookAsNew);
             setIsBookingAsNewAppointment(false);
@@ -453,6 +456,7 @@ export function useBookingWizard({
 
           if (response.clientExists) {
             setClientState("existing");
+            setClientIsLoyal(response.isLoyal ?? true);
             setDraft((current) => ({
               ...current,
               name: response.clientName ?? current.name,
@@ -462,6 +466,7 @@ export function useBookingWizard({
           }
 
           setClientState("new");
+          setClientIsLoyal(false);
           setDraft((current) => ({
             ...current,
             name: "",
@@ -591,6 +596,7 @@ export function useBookingWizard({
       availableMonths: resolvedMonths,
       currentMonth,
       clientState,
+      clientIsLoyal,
       currentDays,
       draft,
       errors,

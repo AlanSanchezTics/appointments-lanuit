@@ -108,7 +108,7 @@
     "paymentConcept": "En CONCEPTO agrega tu nombre y apellido",
     "paymentImportant": "IMPORTANTE",
     "paymentAlert": "Si en 24hrs no recibimos el comprobante de tu depósito, tu cita no será confirmada y el espacio será reabierto para alguien más.",
-    "detailsOfYourAppointment": "Detalles de tu cita",
+    "detailsOfYourAppointment": "Resumen de tu cita",
     "copiedText": "Texto copiado"
   },
   "cancel": {
@@ -143,7 +143,7 @@
   },
   "whatsapp": {
     "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\n\nPuedes revisar, editar o cancelar tu cita en el siguiente enlace {{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._",
-    "pendingMessageTemplate": "Hola Pau! Soy {{name}} ✨\n\n🧾 Adjunto el comprobante del depósito de mi cita (_*{{date}} a las {{time}}*_).\n\nEspero tu confirmación. ¡Gracias!",
+    "pendingMessageTemplate": "Hola Pau! Soy {{name}} ✨\n\nMe interesa agendar una cita para el *{{date}} a las {{time}}*\n🧾 Adjunto el comprobante del depósito.\n\nEspero tu confirmación. ¡Gracias!",
     "cancelMessageTemplate": "❌ *CITA CANCELADA*\n_{{date}} a las {{time}}_\n\nUna disculpa, no podré asistir a esta cita. Gracias!\n"
   }
 }

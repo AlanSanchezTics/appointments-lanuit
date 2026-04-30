@@ -224,7 +224,16 @@ export function BookingWizardStepSchedule({
           onClick={onContinue}
           type="button"
         >
-          {isPending ? t("booking.wait") : t("booking.next")}
+          {isPending ? (
+            t("booking.wait")
+          ) : (
+            <>
+              <span>{t("booking.next")}</span>
+              <span aria-hidden="true" className="ml-2">
+                →
+              </span>
+            </>
+          )}
         </Button>
         <div className="flex justify-center">
           <Link

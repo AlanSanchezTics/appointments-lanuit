@@ -122,6 +122,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
         select: {
           id: true,
           name: true,
+          isLoyal: true,
         },
       });
 
@@ -193,6 +194,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
       return {
         lock,
         clientExists: Boolean(existingClient),
+        isLoyal: existingClient?.isLoyal,
         clientName: existingClient?.name,
         futureAppointmentsInMonth: suggestedFutureAppointmentsInMonth,
         canBookAsNewAppointment: suggestedFutureAppointmentsInMonth.length > 0,
@@ -207,6 +209,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
     lockToken: result.lock.lockToken,
     expiresAt: result.lock.expiresAt,
     clientExists: result.clientExists,
+    isLoyal: result.isLoyal,
     clientName: result.clientName,
     futureAppointmentsInMonth: result.futureAppointmentsInMonth,
     canBookAsNewAppointment: result.canBookAsNewAppointment,

@@ -289,7 +289,7 @@ describe("booking wizard", () => {
 
     expect(await screen.findByText("Confirmar detalles")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
 
     await waitFor(() => {
       expect(

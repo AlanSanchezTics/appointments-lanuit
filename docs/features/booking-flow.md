@@ -113,11 +113,16 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Resultado: al cumplir validación, avanza a confirmación con lock vigente.
 
 8. Confirmación de cita
-- Trigger: acción `Confirmar cita`.
+- Trigger:
+  - clienta fiel: acción `Confirmar cita`,
+  - clienta no fiel: acción `Siguiente`.
 - UI:
   - el encabezado del paso de confirmación es condicional por tipo de clienta,
   - clienta nueva: `Hola {Nombre}, Bienvenida a La Nuit Nail Studio! ✨`,
   - clienta existente: mantiene saludo de retorno (`welcomeBack`).
+  - CTA principal condicional:
+    - clienta fiel: `Confirmar cita`,
+    - clienta no fiel: `Siguiente`.
   - `Editar información` regresa a paso de identificación y conserva lock vigente.
   - previo al `POST /api/reservar/confirm`, frontend envía `name` en forma canónica (trim).
 - Backend (transaccional):

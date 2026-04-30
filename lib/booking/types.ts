@@ -39,6 +39,7 @@ export type SlotLock = {
 
 export type ClientCheckLockResult = SlotLock & {
   clientExists: boolean;
+  isLoyal?: boolean;
   clientName?: string;
   futureAppointmentsInMonth?: RescheduleOption[];
   canBookAsNewAppointment?: boolean;

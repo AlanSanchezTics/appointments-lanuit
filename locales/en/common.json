@@ -143,7 +143,7 @@
   },
   "whatsapp": {
     "messageTemplate": "Appointment booked successfully!\n🗓️ *{{date}} at {{time}}*\n\nYou can review, edit, or cancel your appointment at the following link {{appurl}}\n\n⚠️ _If you can’t attend your appointment and don’t notify at least 24 hours in advance, an extra $200 fee will be applied to your next appointment (equivalent to the deposit)._",
-    "pendingMessageTemplate": "Hi Pau! I'm {{name}} ✨\n\n🧾 I’m attaching the deposit receipt for my appointment (_*{{date}} at {{time}}*_).\n\nI look forward to your confirmation. Thank you!",
+    "pendingMessageTemplate": "Hi Pau! I'm {{name}} ✨\n\nI'd like to book an appointment for *{{date}} at {{time}}*\n🧾 I'm attaching the deposit receipt.\n\nI look forward to your confirmation. Thank you!",
     "cancelMessageTemplate": "❌ *APPOINTMENT CANCELED*\n_{{date}} at {{time}}_\n\nSorry, I won’t be able to attend this appointment. Thank you!\n"
   }
 }
