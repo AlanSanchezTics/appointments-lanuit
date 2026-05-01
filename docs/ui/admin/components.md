@@ -561,8 +561,9 @@ Uso:
 El agente debe:
 
 - usar exclusivamente citas activas (`CONFIRMED`, `SYNC_FAILED`) ya resueltas por backend
-- abrir WhatsApp en nueva pestaña con URL codificada
-- registrar tracking de recordatorio por endpoint admin antes de abrir WhatsApp
+- abrir la URL final de WhatsApp con URL codificada de forma síncrona durante el click/tap
+- evitar pestañas intermedias en blanco
+- registrar tracking de recordatorio por endpoint admin después de abrir WhatsApp
 - deshabilitar la acción cuando `reminderSent=true` y mostrar tooltip de `ya enviado`
 - usar `sileo` para feedback (`success`, `warning`, `error`)
 - resolver todos los textos por `react-i18next`

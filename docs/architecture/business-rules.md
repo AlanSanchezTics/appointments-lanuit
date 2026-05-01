@@ -278,6 +278,8 @@ Business behavior is defined by:
   - Each row includes: customer initials avatar, `name`, `clientNumber`, `phone`, `timeSlot`.
   - Each row exposes action `Enviar recordatorio` that opens WhatsApp in a new tab using:
     - `https://wa.me/52{phone}?text={encodedMessage}`.
+  - To support mobile browsers, the UI must open the final WhatsApp URL synchronously during the user click/tap and must not open an intermediate blank tab.
+  - Reminder tracking runs after the WhatsApp opening; if tracking fails, the UI must show the corresponding notification without closing or changing the WhatsApp tab.
   - Reminder tracking must persist one unique record per (`appointmentId`, `reminderType`) and reject duplicates with conflict semantics.
   - When a reminder already exists for (`appointmentId`, `reminderType`), dashboard action must render disabled and display tooltip indicating reminder was already sent.
   - Supported reminder types:

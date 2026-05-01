@@ -668,8 +668,10 @@ Reglas obligatorias:
   - cada cita expone la acción `Enviar recordatorio` (icono).
   - cuando el recordatorio de ese tipo ya fue enviado para la cita, la acción debe renderizarse deshabilitada y mostrar tooltip indicando que ya fue enviado.
   - al ejecutar la acción:
-    - frontend construye y abre `https://wa.me/52{phone}?text={encodedMessage}` en nueva pestaña (`noopener,noreferrer`),
-    - frontend registra la acción en backend mediante endpoint admin dedicado.
+    - frontend construye `https://wa.me/52{phone}?text={encodedMessage}`,
+    - frontend abre la URL final de WhatsApp de forma síncrona durante el click/tap para evitar bloqueo de popups en navegadores móviles y no debe abrir una pestaña intermedia en blanco,
+    - frontend registra la acción en backend mediante endpoint admin dedicado como side effect posterior a la apertura,
+    - si el registro falla, frontend muestra la notificación de error correspondiente sin cerrar ni modificar la pestaña de WhatsApp ya abierta.
   - plantilla de mensaje por tipo:
     - `NEXT_DAY`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el día de *mañana a las {Hora}*🗓️.\nNos vemos mañana✨`,
     - `NEXT_WEEK`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{Día de la semana}, {Día} de {Mes} a las {Hora}*🗓️.\nNos vemos la próxima semana✨`.
