@@ -89,15 +89,14 @@ export function formatLongDate(date: string, language: AppLanguage = "es") {
   }).format(parsedDate);
   const longDateParts = new Intl.DateTimeFormat(locale, {
     timeZone: REQUIRED_TIMEZONE,
-    dateStyle: "long",
+    day: "numeric",
+    month: "long",
   }).formatToParts(parsedDate);
   const longDate = longDateParts
     .map((part) => (part.type === "month" ? capitalize(part.value) : part.value))
     .join("");
-  const normalizedLongDate =
-    language === "es" ? longDate.replace(/ de (\d{4})$/, " $1") : longDate;
 
-  return `${capitalize(weekday)}, ${normalizedLongDate}`;
+  return `${capitalize(weekday)}, ${longDate}`;
 }
 
 export function formatMonthLabel(month: string, language: AppLanguage = "es") {

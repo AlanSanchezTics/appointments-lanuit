@@ -133,8 +133,8 @@
         "alreadySentTooltip": "Este recordatorio ya fue enviado."
       },
       "whatsapp": {
-        "nextDayMessage": "Hola *{{name}}* ✨\nNos vemos *mañana a las {{time}}*!",
-        "nextWeekMessage": "Hola *{{name}}*, qué tal! ✨\nTe recuerdo que tienes una cita el *{{weekday}}, {{day}} de {{month}} a las {{time}}*.\nNos vemos la próxima semana🙌🏻"
+        "nextDayMessage": "Hola! ✨\nNos vemos *mañana a las {{time}}*!",
+        "nextWeekMessage": "Hola qué tal! ✨\nTe recuerdo que tienes una cita el *{{weekday}}, {{day}} de {{month}} a las {{time}}*.\nNos vemos la próxima semana🙌🏻"
       },
       "notifications": {
         "sentTitle": "Recordatorio listo para enviar",

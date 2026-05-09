@@ -142,7 +142,7 @@
     "phone": "Teléfono"
   },
   "whatsapp": {
-    "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\n\nPuedes revisar, editar o cancelar tu cita en el siguiente enlace {{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._",
+    "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\nPuedes revisar, modificar o cancelar tu cita en el siguiente enlace:\n{{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita._",
     "pendingMessageTemplate": "Hola Pau! Soy {{name}} ✨\n\nMe interesa agendar una cita para el *{{date}} a las {{time}}*\n🧾 Adjunto el comprobante del depósito.\n\nEspero tu confirmación. ¡Gracias!",
     "cancelMessageTemplate": "❌ *CITA CANCELADA*\n_{{date}} a las {{time}}_\n\nUna disculpa, no podré asistir a esta cita. Gracias!\n"
   }
