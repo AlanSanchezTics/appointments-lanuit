@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { Montserrat } from "next/font/google";
 
 import Favicon from "@/assets/images/favicon.png";
+import Logo from "@/assets/images/logo.png";
+import AppleIcon from "@/assets/images/apple-icon.png";
 import { GlobalLanguageFab } from "@/components/i18n/global-language-fab";
 import { I18nProvider } from "@/components/i18n/i18n-provider";
 import { resolveServerLanguage } from "@/lib/i18n/language";
@@ -27,7 +29,11 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("metadata.title"),
     description: t("metadata.description"),
     icons: {
-      icon: Favicon.src,
+      icon: [
+        { url: Logo.src, sizes: "any" },
+        { url: Favicon.src, sizes: "800x800", type: "image/png" },
+      ],
+      apple: [{ url: AppleIcon.src, sizes: "180x180", type: "image/png" }],
     },
   };
 }
