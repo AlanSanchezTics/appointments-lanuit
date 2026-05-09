@@ -67,6 +67,8 @@
     "wait": "One moment...",
     "back": "Back",
     "confirmTitle": "Confirm Details",
+    "loyalConfirmTitle": "Review that all information is correct before confirming your appointment",
+    "nonLoyalConfirmTitle": "Review that all information is correct and press \"Next\" to continue",
     "welcomeNew": "Hi {{name}}! Welcome ✨",
     "welcomeBack": "Hi {{name}}, great to have you back ✨",
     "name": "Name",

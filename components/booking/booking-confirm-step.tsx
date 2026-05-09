@@ -52,8 +52,12 @@ export function BookingConfirmStep({
         </h2>
       </header>
 
-      <p className="text-sm font-medium text-[var(--muted)] mb-[0.5rem]">
-        {t("booking.confirmTitle")}
+      <p className="flex items-center text-center justify-center gap-1 rounded-3xl border border-[var(--warning-soft)] bg-[var(--warning-surface)] px-4 py-3 text-sm text-[var(--accent-dark)] mb-[0.5rem]">
+        {t(
+          isNonLoyal
+            ? "booking.nonLoyalConfirmTitle"
+            : "booking.loyalConfirmTitle",
+        )}
       </p>
       <section className="rounded-[1.15rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_8px_24px_rgba(99,93,90,0.08)] mb-[1rem]">
         <dl className="space-y-5">

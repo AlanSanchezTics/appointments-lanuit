@@ -67,6 +67,8 @@
     "wait": "Un momento...",
     "back": "Regresar",
     "confirmTitle": "Confirmar detalles",
+    "loyalConfirmTitle": "Revisa que toda la información sea correcta antes de confirmar tu cita",
+    "nonLoyalConfirmTitle": "Revisa que toda la información sea correcta y presiona \"Siguiente\" para continuar",
     "welcomeNew": "Hola {{name}}! Bienvenida ✨",
     "welcomeBack": "Hola {{name}}, qué gusto tenerte de vuelta ✨",
     "name": "Nombre",
