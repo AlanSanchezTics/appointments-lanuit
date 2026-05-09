@@ -34,7 +34,6 @@ export interface DashboardReminderItem {
   date: string;
   timeSlot: string;
   reminderType: DashboardReminderType;
-  reminderSent: boolean;
 }
 
 export interface WeeklyOccupancySummary {

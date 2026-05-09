@@ -666,24 +666,14 @@ Reglas obligatorias:
     - teléfono formateado,
     - hora de cita.
   - cada cita expone la acción `Enviar recordatorio` (icono).
-  - cuando el recordatorio de ese tipo ya fue enviado para la cita, la acción debe renderizarse deshabilitada y mostrar tooltip indicando que ya fue enviado.
   - al ejecutar la acción:
     - frontend construye `https://wa.me/52{phone}?text={encodedMessage}`,
-    - frontend abre la URL final de WhatsApp de forma síncrona durante el click/tap para evitar bloqueo de popups en navegadores móviles y no debe abrir una pestaña intermedia en blanco,
-    - frontend registra la acción en backend mediante endpoint admin dedicado como side effect posterior a la apertura,
-    - si el registro falla, frontend muestra la notificación de error correspondiente sin cerrar ni modificar la pestaña de WhatsApp ya abierta.
+    - frontend abre la URL final de WhatsApp de forma síncrona durante el click/tap para evitar bloqueo de popups en navegadores móviles y no debe abrir una pestaña intermedia en blanco.
   - plantilla de mensaje por tipo:
     - `NEXT_DAY`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el día de *mañana a las {Hora}*🗓️.\nNos vemos mañana✨`,
     - `NEXT_WEEK`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{Día de la semana}, {Día} de {Mes} a las {Hora}*🗓️.\nNos vemos la próxima semana✨`.
-  - control de duplicado:
-    - no se permite reenviar el mismo tipo de recordatorio para la misma cita (`appointmentId + reminderType`).
-  - trazabilidad persistida por envío:
-    - `appointmentId`,
-    - `reminderType` (`NEXT_DAY` | `NEXT_WEEK`),
-    - `targetPhone`,
-    - `message`,
-    - `sentByAdminUserId` (cuando exista en sesión),
-    - `openedAt`.
+  - reenvío:
+    - se permite reenviar recordatorios sin límite para la misma cita y tipo.
 - Tarjeta `Tip del día`:
   - muestra título `Tip del día`,
   - muestra un tip operativo diario resuelto desde catálogo CSV en `assets/`,
@@ -746,24 +736,8 @@ Reglas obligatorias:
 
 ### 15.4.1 Contrato API recordatorios admin
 
-- Endpoint:
-  - `POST /api/admin/appointments/[appointmentId]/reminders`
-- Request body:
-  - `reminderType`: `NEXT_DAY | NEXT_WEEK`
-  - `targetPhone`: string de 10 dígitos normalizados
-  - `message`: texto final a enviar por WhatsApp
-- Response success (`200`):
-  - `appointmentId`,
-  - `reminderType`,
-  - `targetPhone`,
-  - `message`,
-  - `sentByAdminUserId`,
-  - `openedAt` (ISO)
-- Errores funcionales:
-  - `ADMIN_UNAUTHORIZED` (`401`),
-  - `APPOINTMENT_NOT_FOUND` (`404`),
-  - `APPOINTMENT_REMINDER_ALREADY_SENT` (`409`),
-  - errores de validación/parse (`400`).
+- No aplica en el flujo actual del dashboard.
+- El envío de recordatorio se resuelve en frontend mediante apertura directa de URL de WhatsApp.
 
 ### 15.5 Contrato i18n admin
 

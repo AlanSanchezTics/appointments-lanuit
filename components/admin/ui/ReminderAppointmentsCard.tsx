@@ -36,12 +36,7 @@ export function ReminderAppointmentsCard({
   nextWeekItems,
 }: ReminderAppointmentsCardProps) {
   const { t } = useTranslation("admin");
-  const {
-    activeTooltipKey,
-    busyKey,
-    sendReminder,
-    showAlreadySentTooltip,
-  } = useReminderAppointments({ language, t });
+  const { sendReminder } = useReminderAppointments({ language, t });
 
   function renderSection(
     title: string,
@@ -67,15 +62,12 @@ export function ReminderAppointmentsCard({
           <div className="space-y-2.5">
             {items.map((item) => {
               const reminderKey = `${item.appointmentId}:${item.reminderType}`;
-              const itemBusy = busyKey === reminderKey;
-              const isDisabled = itemBusy || item.reminderSent;
-              const actionTooltip = item.reminderSent
-                ? t("dashboard.reminders.actions.alreadySentTooltip")
-                : t("dashboard.reminders.actions.sendAriaLabel", {
-                    name: item.name,
-                  });
-              const shouldShowTooltip =
-                item.reminderSent && activeTooltipKey === reminderKey;
+              const actionTooltip = t(
+                "dashboard.reminders.actions.sendAriaLabel",
+                {
+                  name: item.name,
+                },
+              );
 
               return (
                 <article
@@ -103,31 +95,14 @@ export function ReminderAppointmentsCard({
                   <span className="relative inline-flex">
                     <button
                       type="button"
-                      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-accent)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] ${isDisabled ? "cursor-not-allowed opacity-60" : "hover:bg-[var(--admin-inactive-bg)]"}`}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-accent)] transition hover:bg-[var(--admin-inactive-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]"
                       aria-label={actionTooltip}
-                      aria-disabled={isDisabled}
                       onClick={() => {
-                        if (item.reminderSent) {
-                          showAlreadySentTooltip(reminderKey);
-                          return;
-                        }
-
-                        if (!itemBusy) {
-                          void sendReminder(item);
-                        }
+                        void sendReminder(item);
                       }}
                     >
                       <AdminIcon icon={adminIcons.sendReminder} />
                     </button>
-
-                    {shouldShowTooltip ? (
-                      <span
-                        role="tooltip"
-                        className="pointer-events-none absolute right-0 top-11 z-10 w-48 rounded-md bg-[var(--admin-text-primary)] px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
-                      >
-                        {actionTooltip}
-                      </span>
-                    ) : null}
                   </span>
                 </article>
               );

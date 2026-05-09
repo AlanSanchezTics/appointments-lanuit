@@ -541,7 +541,6 @@ Cada elemento de reminders debe incluir:
 - `date`
 - `timeSlot`
 - `reminderType` (`NEXT_DAY` | `NEXT_WEEK`)
-- `reminderSent` (`boolean`)
 
 ### Style
 
@@ -563,8 +562,7 @@ El agente debe:
 - usar exclusivamente citas activas (`CONFIRMED`, `SYNC_FAILED`) ya resueltas por backend
 - abrir la URL final de WhatsApp con URL codificada de forma síncrona durante el click/tap
 - evitar pestañas intermedias en blanco
-- registrar tracking de recordatorio por endpoint admin después de abrir WhatsApp
-- deshabilitar la acción cuando `reminderSent=true` y mostrar tooltip de `ya enviado`
+- permitir reenvío ilimitado de recordatorios para una misma cita
 - usar `sileo` para feedback (`success`, `warning`, `error`)
 - resolver todos los textos por `react-i18next`
 
@@ -578,7 +576,6 @@ El agente no debe:
 
 - componente reusable ubicado en `components/admin/ui/ReminderAppointmentsCard.tsx`
 - integración en `app/admin/page.tsx`
-- endpoint de soporte: `POST /api/admin/appointments/[appointmentId]/reminders`
 
 ### Documentation Note
 

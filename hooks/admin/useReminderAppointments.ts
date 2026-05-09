@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import type { TFunction } from "i18next";
-import { sileo } from "sileo";
 
 import {
   formatTimeSlotLabel,
@@ -45,35 +43,6 @@ function resolveDayAndMonth(date: string, language: AppLanguage) {
   return { day, month };
 }
 
-async function trackReminder(
-  appointmentId: number,
-  payload: {
-    reminderType: DashboardReminderType;
-    targetPhone: string;
-    message: string;
-  },
-) {
-  const response = await fetch(
-    `/api/admin/appointments/${appointmentId}/reminders`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  const body = (await response.json().catch(() => ({}))) as {
-    errorCode?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(body.errorCode ?? body.error ?? "UNKNOWN_ERROR");
-  }
-}
-
 type UseReminderAppointmentsInput = {
   language: AppLanguage;
   t: TFunction<"admin">;
@@ -83,14 +52,7 @@ export function useReminderAppointments({
   language,
   t,
 }: UseReminderAppointmentsInput) {
-  const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [activeTooltipKey, setActiveTooltipKey] = useState<string | null>(null);
-
   async function sendReminder(item: DashboardReminderItem) {
-    const busyId = `${item.appointmentId}:${item.reminderType}`;
-
-    setBusyKey(busyId);
-
     const timeLabel = formatTimeSlotLabel(item.timeSlot, language);
     const weekday = resolveWeekday(item.date, language);
     const { day, month } = resolveDayAndMonth(item.date, language);
@@ -112,67 +74,10 @@ export function useReminderAppointments({
       message,
     });
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-
-    try {
-      await trackReminder(item.appointmentId, {
-        reminderType: item.reminderType,
-        targetPhone: item.phone,
-        message,
-      });
-
-      sileo.success({
-        title: t("dashboard.reminders.notifications.sentTitle"),
-        description: t("dashboard.reminders.notifications.sentDescription", {
-          name: item.name,
-        }),
-      });
-    } catch (error) {
-      const errorCode =
-        error instanceof Error ? error.message : "UNKNOWN_ERROR";
-
-      if (errorCode === "APPOINTMENT_REMINDER_ALREADY_SENT") {
-        sileo.warning({
-          title: t("dashboard.reminders.notifications.alreadySentTitle"),
-          description: t(
-            "dashboard.reminders.notifications.alreadySentDescription",
-          ),
-        });
-        return;
-      }
-
-      if (errorCode === "ADMIN_UNAUTHORIZED") {
-        sileo.error({
-          title: t("dashboard.reminders.notifications.unauthorizedTitle"),
-          description: t(
-            "dashboard.reminders.notifications.unauthorizedDescription",
-          ),
-        });
-        return;
-      }
-
-      sileo.error({
-        title: t("dashboard.reminders.notifications.errorTitle"),
-        description: t("dashboard.reminders.notifications.errorDescription"),
-      });
-    } finally {
-      setBusyKey(null);
-    }
-  }
-
-  function showAlreadySentTooltip(reminderKey: string) {
-    setActiveTooltipKey(reminderKey);
-    window.setTimeout(() => {
-      setActiveTooltipKey((current) =>
-        current === reminderKey ? null : current,
-      );
-    }, 1800);
+    window.location.assign(whatsappUrl);
   }
 
   return {
-    activeTooltipKey,
-    busyKey,
     sendReminder,
-    showAlreadySentTooltip,
   };
 }

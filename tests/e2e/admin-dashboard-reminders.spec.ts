@@ -212,7 +212,7 @@ e2eSuite("admin dashboard reminders e2e", () => {
     await prisma.$disconnect();
   });
 
-  test("logs in, renders reminder sections, and tracks reminder sends without opening WhatsApp", async ({
+  test("logs in, renders reminder sections, and opens WhatsApp reminder link", async ({
     page,
   }) => {
     if (seededReminders.length < 2) {
@@ -265,39 +265,7 @@ e2eSuite("admin dashboard reminders e2e", () => {
 
     await expect(sendReminderButton).toBeVisible();
 
-    const reminderRequestPromise = page.waitForRequest((request) => {
-      return (
-        request.url().includes(`/api/admin/appointments/${nextDayReminder.appointmentId}/reminders`) &&
-        request.method() === "POST"
-      );
-    });
-
-    const reminderResponsePromise = page.waitForResponse((response) => {
-      return (
-        response.url().includes(`/api/admin/appointments/${nextDayReminder.appointmentId}/reminders`) &&
-        response.request().method() === "POST"
-      );
-    });
-
     await sendReminderButton.click();
-
-    const reminderRequest = await reminderRequestPromise;
-    const reminderResponse = await reminderResponsePromise;
-
-    expect(reminderResponse.ok()).toBeTruthy();
-
-    const requestBody = reminderRequest.postDataJSON() as {
-      reminderType: "NEXT_DAY" | "NEXT_WEEK";
-      targetPhone: string;
-      message: string;
-    };
-
-    expect(requestBody).toMatchObject({
-      reminderType: "NEXT_DAY",
-      targetPhone: nextDayReminder.phone,
-    });
-    expect(requestBody.message).toContain(nextDayReminder.clientName);
-    expect(requestBody.message).toContain("mañana");
 
     await expect.poll(async () => {
       return page.evaluate(() => {

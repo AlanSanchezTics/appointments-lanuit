@@ -170,15 +170,6 @@ async function listReminderAppointmentsByDate(
       id: true,
       date: true,
       timeSlot: true,
-      appointmentReminders: {
-        where: {
-          reminderType,
-        },
-        select: {
-          id: true,
-        },
-        take: 1,
-      },
       client: {
         select: {
           clientNumber: true,
@@ -201,7 +192,6 @@ async function listReminderAppointmentsByDate(
     name: row.client.name,
     phone: row.client.phone,
     reminderType,
-    reminderSent: row.appointmentReminders.length > 0,
   }));
 }
 
