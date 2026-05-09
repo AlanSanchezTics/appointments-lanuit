@@ -208,7 +208,7 @@ export function BookAppointmentModal({
       return;
     }
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    window.location.assign(whatsappUrl);
   }
 
   return (
