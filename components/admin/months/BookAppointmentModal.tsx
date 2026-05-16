@@ -180,13 +180,23 @@ export function BookAppointmentModal({
     }
 
     const dateValue = parseDateOnly(successResult.date);
+    const capitalizeFirst = (value: string) =>
+      value.length > 0 ? value[0].toUpperCase() + value.slice(1) : value;
+
     const whatsappDateLabel = new Intl.DateTimeFormat(locale, {
       timeZone: "America/Mexico_City",
       weekday: "long",
       day: "numeric",
       month: "long",
-      year: "numeric",
-    }).format(dateValue);
+    })
+      .formatToParts(dateValue)
+      .map((part) =>
+        part.type === "weekday" || part.type === "month"
+          ? capitalizeFirst(part.value)
+          : part.value,
+      )
+      .join("");
+
     const whatsappTimeLabel = formatTimeSlotLabel(
       successResult.timeSlot,
       language,
