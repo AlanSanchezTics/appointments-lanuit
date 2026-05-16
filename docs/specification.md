@@ -674,6 +674,27 @@ Reglas obligatorias:
     - `NEXT_WEEK`: `Hola *{Nombre}*!\nSolo para recordarte que tienes tu cita agendada el próximo *{Día de la semana}, {Día} de {Mes} a las {Hora}*🗓️.\nNos vemos la próxima semana✨`.
   - reenvío:
     - se permite reenviar recordatorios sin límite para la misma cita y tipo.
+- Bloque `Recordatorios de retoque`:
+  - se muestra debajo de `Recordatorios` solo cuando existe al menos una clienta candidata.
+  - objetivo: enfocar clientas sin cita confirmada futura para impulsar agendado de retoque.
+  - fuente de candidatas:
+    - punto de partida: clientas con cita hace exactamente 21 días (`currentDate - 21`) en estado `CONFIRMED` o `SYNC_FAILED`,
+    - deduplicación por clienta (`clientId`),
+    - ventana retrospectiva evaluada: citas entre `D-20` y `D` (la cita base de `D-21` no bloquea por sí misma),
+    - ventana prospectiva evaluada: citas entre `D` y `D+31`.
+  - criterio de omisión:
+    - si existe al menos una cita `CONFIRMED` en retrospectiva o prospectiva, se omite.
+  - criterio de candidatura:
+    - si no existe ninguna `CONFIRMED` en ambas ventanas, la clienta es candidata,
+    - incluye casos sin citas en ventanas o con citas únicamente en estados distintos de `CONFIRMED`.
+  - por cada fila se muestra:
+    - avatar de iniciales, nombre, número de clienta, teléfono y referencia de última cita (`D-21`).
+  - acción por fila:
+    - abre WhatsApp de forma síncrona con URL final `https://wa.me/52{phone}?text={encodedMessage}`.
+  - mensaje fijo:
+    - `Hola qué tal! ✨\nLa siguiente semana se cumple el mes de tus uñas, agendamos tu retoque? 😉`
+  - reenvío:
+    - se permite reenviar sin límite, igual que el bloque de recordatorios estándar.
 - Tarjeta `Tip del día`:
   - muestra título `Tip del día`,
   - muestra un tip operativo diario resuelto desde catálogo CSV en `assets/`,

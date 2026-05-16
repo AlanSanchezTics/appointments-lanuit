@@ -147,6 +147,20 @@
         "errorDescription": "Please try again in a moment."
       }
     },
+    "retouchReminders": {
+      "title": "Retouch reminders",
+      "subtitle": "Clients without confirmed appointments",
+      "candidates": {
+        "title": "Clients"
+      },
+      "lastAppointmentLabel": "Last appointment: {{month}} {{day}}",
+      "whatsapp": {
+        "message": "Hi ✨\nNext week marks a month since your last appointment, shall we schedule your retouch? 😉"
+      },
+      "actions": {
+        "sendAriaLabel": "Send retouch reminder to {{name}}"
+      }
+    },
     "metrics": {
       "appointmentsToday": "Appointments today",
       "pending": "Pending",

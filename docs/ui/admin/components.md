@@ -586,6 +586,64 @@ El agente no debe:
 
 ---
 
+## Component: RetouchReminderCard
+
+### Purpose
+
+Mostrar en el dashboard admin las clientas candidatas a recordatorio de retoque cuando no tienen cita confirmada en las ventanas de validación.
+
+### Structure
+
+- contenedor base tipo card con el mismo patrón visual de `ReminderAppointmentsCard`
+- encabezado con título y subtítulo
+- sección única `Clientas candidatas`
+- listado de filas por clienta con:
+  - avatar de iniciales
+  - nombre de clienta
+  - número de clienta
+  - teléfono
+  - referencia de última cita (`D-21`)
+  - acción iconográfica `Enviar recordatorio de retoque`
+
+### Data / Props Contract
+
+- `items: RetouchReminderItem[]`
+
+Cada elemento incluye:
+
+- `clientId`
+- `clientNumber`
+- `name`
+- `phone`
+- `lastAppointmentDate`
+- `candidateReason`
+
+### Usage
+
+Uso:
+
+- bloque del dashboard `/admin`
+- ubicación obligatoria: inmediatamente debajo de `ReminderAppointmentsCard`
+- condición de render: solo cuando `items.length > 0`
+
+### Rules
+
+El agente debe:
+
+- reutilizar componentes/tokens del sistema admin existente
+- abrir URL final de WhatsApp de forma síncrona durante click/tap
+- usar el mensaje fijo de negocio para retoque
+- permitir reenvío ilimitado
+- resolver labels del bloque vía `react-i18next`
+
+El agente no debe:
+
+- mostrar el bloque cuando no hay candidatas
+- introducir estilos ad hoc fuera de tokens/admin system
+- mezclar este bloque con flujo público
+
+---
+
 ## Component: ListItem
 
 ### Purpose

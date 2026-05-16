@@ -9,6 +9,7 @@ Definir la secuencia operativa para desplegar, validar y revertir el bloque de `
 Este runbook aplica únicamente al rollout de la funcionalidad de recordatorios del panel admin:
 
 - bloque visual `Recordatorios` en `/admin`
+- bloque visual `Recordatorios de retoque` en `/admin`
 - acción `Enviar recordatorio`
 - endpoint de tracking de recordatorios
 - persistencia asociada para evitar reenvíos duplicados
@@ -33,6 +34,7 @@ Antes de desplegar, validar que las siguientes dependencias estén listas:
 6. Dataset mínimo para smoke:
    - al menos 1 cita `CONFIRMED` o `SYNC_FAILED` para `NEXT_DAY`,
    - al menos 1 cita `CONFIRMED` o `SYNC_FAILED` para `NEXT_WEEK`.
+   - al menos 1 clienta candidata para `Recordatorios de retoque` (sin `CONFIRMED` en retrospectiva/prospectiva según regla de negocio).
 
 ## Orden de despliegue
 
@@ -55,6 +57,7 @@ Ejecutar los siguientes checks en staging y repetir en producción tras el despl
 - Iniciar sesión en `/admin/login`.
 - Abrir `/admin`.
 - Confirmar que el bloque `Recordatorios` está visible.
+- Confirmar que el bloque `Recordatorios de retoque` aparece únicamente cuando hay candidatas.
 - Confirmar que aparecen las secciones `Mañana` y `Próxima semana`.
 - Confirmar que cada cita muestra:
   - nombre,
@@ -69,6 +72,7 @@ Ejecutar los siguientes checks en staging y repetir en producción tras el despl
 - Confirmar que se abre una nueva pestaña o ventana con el flujo de WhatsApp esperado.
 - Confirmar que el tracking de recordatorio se registra correctamente.
 - Confirmar que la UI no queda bloqueada y el dashboard sigue navegable.
+- En `Recordatorios de retoque`, confirmar que el click abre WhatsApp con el mensaje fijo de retoque.
 
 ### 3. Idempotencia visible
 

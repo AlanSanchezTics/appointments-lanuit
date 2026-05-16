@@ -52,6 +52,12 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - cada fila incluye `avatar`, `nombre`, `número de cliente`, `teléfono` y `hora`,
      - acción por fila `Enviar recordatorio` que abre la URL final de `wa.me` de forma síncrona durante el click/tap,
      - se permite reenviar recordatorios sin límite para la misma cita.
+   - debajo de `Recordatorios`, el dashboard incluye bloque `Recordatorios de retoque` cuando hay candidatas:
+     - candidatas base: clientas con cita en `D-21` (`CONFIRMED` o `SYNC_FAILED`), deduplicadas por clienta,
+     - si existe alguna cita `CONFIRMED` entre `(D-21, D]` o `[D, D+31]`, la clienta se omite,
+     - si no existe `CONFIRMED` en ambas ventanas, la clienta se considera candidata (incluyendo citas en estados no confirmados),
+     - cada fila incluye `avatar`, `nombre`, `número de cliente`, `teléfono` y referencia de última cita,
+     - acción por fila abre WhatsApp con mensaje fijo de retoque y permite reenvío ilimitado.
    - el dashboard incluye bloque `Agenda de Hoy` en formato timeline con:
      - título `Agenda de Hoy` o `Agenda para el Lunes` si hoy es sábado/domingo,
      - icono en encabezado con enlace a `/admin/months/[currentMonth]`,

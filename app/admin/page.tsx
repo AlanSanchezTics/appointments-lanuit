@@ -10,6 +10,7 @@ import { DailyTipCard } from "@/components/admin/ui/DailyTipCard";
 import { DashboardGreetingCard } from "@/components/admin/ui/DashboardGreetingCard";
 import { PendingAppointmentsCard } from "@/components/admin/ui/PendingAppointmentsCard";
 import { ReminderAppointmentsCard } from "@/components/admin/ui/ReminderAppointmentsCard";
+import { RetouchReminderCard } from "@/components/admin/ui/RetouchReminderCard";
 import { TodayAgendaTimelineCard } from "@/components/admin/ui/TodayAgendaTimelineCard";
 import { WeeklyOccupancyCard } from "@/components/admin/ui/WeeklyOccupancyCard";
 import { getAdminDashboardWeeklyOccupancy } from "@/lib/admin/dashboard/service";
@@ -113,6 +114,9 @@ export default async function AdminDashboardPage() {
           nextDayItems={weeklyOccupancy.reminders.nextDay}
           nextWeekItems={weeklyOccupancy.reminders.nextWeek}
         />
+        {weeklyOccupancy.retouchReminders.length > 0 && (
+          <RetouchReminderCard items={weeklyOccupancy.retouchReminders} />
+        )}
 
         {weeklyOccupancy.pendingAppointments.length > 0 && (
           <PendingAppointmentsCard

@@ -11,6 +11,7 @@ import { getDailyTipSelection } from "./daily-tip";
 import type {
   DashboardReminderItem,
   DashboardReminderType,
+  RetouchReminderItem,
   WeeklyOccupancySummary,
 } from "./types";
 
@@ -195,6 +196,140 @@ async function listReminderAppointmentsByDate(
   }));
 }
 
+async function listRetouchReminderCandidates(
+  currentDateKey: string,
+): Promise<RetouchReminderItem[]> {
+  const currentDate = parseDateKeyToUtcDate(currentDateKey);
+  const date21DaysAgo = addUtcDays(currentDate, -21);
+  const date31DaysAhead = addUtcDays(currentDate, 31);
+  const date21DaysAgoKey = toDateKey(date21DaysAgo);
+  const date31DaysAheadKey = toDateKey(date31DaysAhead);
+
+  const baseAppointments = await prisma.appointment.findMany({
+    where: {
+      status: {
+        in: ACTIVE_APPOINTMENT_STATUSES,
+      },
+      date: {
+        gte: date21DaysAgo,
+        lt: addUtcDays(date21DaysAgo, 1),
+      },
+    },
+    select: {
+      clientId: true,
+      client: {
+        select: {
+          clientNumber: true,
+          name: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: [
+      { client: { clientNumber: "asc" } },
+      { id: "asc" },
+    ],
+  });
+
+  const uniqueClients = new Map<
+    number,
+    {
+      clientNumber: number;
+      name: string;
+      phone: string;
+    }
+  >();
+  for (const appointment of baseAppointments) {
+    if (!uniqueClients.has(appointment.clientId)) {
+      uniqueClients.set(appointment.clientId, {
+        clientNumber: appointment.client.clientNumber,
+        name: appointment.client.name,
+        phone: appointment.client.phone,
+      });
+    }
+  }
+
+  const clientIds = Array.from(uniqueClients.keys());
+  if (clientIds.length === 0) {
+    return [];
+  }
+
+  const clientAppointments = await prisma.appointment.findMany({
+    where: {
+      clientId: {
+        in: clientIds,
+      },
+      date: {
+        gt: date21DaysAgo,
+        lte: date31DaysAhead,
+      },
+    },
+    select: {
+      clientId: true,
+      date: true,
+      status: true,
+    },
+  });
+
+  const byClient = new Map<
+    number,
+    Array<{
+      date: string;
+      status: AppointmentStatus;
+    }>
+  >();
+  for (const appointment of clientAppointments) {
+    const key = toDateKey(appointment.date);
+    const bucket = byClient.get(appointment.clientId) ?? [];
+    bucket.push({
+      date: key,
+      status: appointment.status,
+    });
+    byClient.set(appointment.clientId, bucket);
+  }
+
+  const candidates: RetouchReminderItem[] = [];
+
+  for (const clientId of clientIds) {
+    const client = uniqueClients.get(clientId);
+    if (!client) {
+      continue;
+    }
+
+    const appointments = byClient.get(clientId) ?? [];
+    const retrospective = appointments.filter(
+      (item) => item.date <= currentDateKey,
+    );
+    const prospective = appointments.filter(
+      (item) => item.date >= currentDateKey && item.date <= date31DaysAheadKey,
+    );
+    const hasConfirmedInRetrospective = retrospective.some(
+      (item) => item.status === "CONFIRMED",
+    );
+    const hasConfirmedInProspective = prospective.some(
+      (item) => item.status === "CONFIRMED",
+    );
+
+    if (hasConfirmedInRetrospective || hasConfirmedInProspective) {
+      continue;
+    }
+
+    const hasAppointmentsInWindows = appointments.length > 0;
+    candidates.push({
+      clientId,
+      clientNumber: client.clientNumber,
+      name: client.name,
+      phone: client.phone,
+      lastAppointmentDate: date21DaysAgoKey,
+      candidateReason: hasAppointmentsInWindows
+        ? "ONLY_NON_CONFIRMED_APPOINTMENTS"
+        : "NO_CONFIRMED_IN_31_DAYS",
+    });
+  }
+
+  return candidates.sort((a, b) => a.clientNumber - b.clientNumber);
+}
+
 function getBusinessWeekDays(mondayKey: string) {
   const monday = parseDateKeyToUtcDate(mondayKey);
   return Array.from({ length: 5 }, (_, index) => toDateKey(addUtcDays(monday, index)));
@@ -222,6 +357,7 @@ export async function getAdminDashboardWeeklyOccupancy(
     pendingAppointments,
     nextDayReminders,
     nextWeekReminders,
+    retouchReminders,
     dailyTip,
   ] = await Promise.all([
     groupActiveAppointmentsByDate(currentMondayKey, nextMondayKey),
@@ -230,6 +366,7 @@ export async function getAdminDashboardWeeklyOccupancy(
     listPendingAppointments(),
     listReminderAppointmentsByDate(nextDayKey, "NEXT_DAY"),
     listReminderAppointmentsByDate(nextWeekKey, "NEXT_WEEK"),
+    listRetouchReminderCandidates(currentDateKey),
     getDailyTipSelection(language, now),
   ]);
 
@@ -285,6 +422,7 @@ export async function getAdminDashboardWeeklyOccupancy(
       nextDay: nextDayReminders,
       nextWeek: nextWeekReminders,
     },
+    retouchReminders,
     dailyTip,
     currentWeekOccupancyPercent,
     previousWeekOccupancyPercent,

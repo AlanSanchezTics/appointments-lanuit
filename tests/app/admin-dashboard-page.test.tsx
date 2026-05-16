@@ -8,6 +8,8 @@ import { Card } from "@/components/admin/ui/Card";
 import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
 import { PendingAppointmentsCard } from "@/components/admin/ui/PendingAppointmentsCard";
+import { ReminderAppointmentsCard } from "@/components/admin/ui/ReminderAppointmentsCard";
+import { RetouchReminderCard } from "@/components/admin/ui/RetouchReminderCard";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 
 vi.mock("next/navigation", () => ({
@@ -49,6 +51,33 @@ describe("admin dashboard page", () => {
           <Card>
             <h2>Próximas secciones</h2>
           </Card>
+          <ReminderAppointmentsCard
+            language="es"
+            nextDayItems={[
+              {
+                appointmentId: 92,
+                clientNumber: 2233,
+                date: "2026-03-31",
+                timeSlot: "10:00",
+                name: "Brenda Ruiz",
+                phone: "5511112222",
+                reminderType: "NEXT_DAY",
+              },
+            ]}
+            nextWeekItems={[]}
+          />
+          <RetouchReminderCard
+            items={[
+              {
+                clientId: 77,
+                clientNumber: 3311,
+                name: "Nora Diaz",
+                phone: "5510009999",
+                lastAppointmentDate: "2026-03-09",
+                candidateReason: "NO_CONFIRMED_IN_31_DAYS",
+              },
+            ]}
+          />
           <PendingAppointmentsCard
             language="es"
             items={[
@@ -75,9 +104,22 @@ describe("admin dashboard page", () => {
     expect(screen.getByTestId("sidebar-item-clients")).toBeInTheDocument();
     expect(screen.getByText("Navegación")).toBeInTheDocument();
     expect(screen.getByText("Próximas secciones")).toBeInTheDocument();
+    expect(screen.getByText("Recordatorios")).toBeInTheDocument();
+    expect(screen.getByText("Recordatorios de retoque")).toBeInTheDocument();
     expect(screen.getByText("Pendientes de confirmación")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Rechazar" })).toBeInTheDocument();
+    const reminderTitle = screen.getByRole("heading", {
+      level: 2,
+      name: "Recordatorios",
+    });
+    const retouchTitle = screen.getByRole("heading", {
+      level: 2,
+      name: "Recordatorios de retoque",
+    });
+    expect(
+      reminderTitle.compareDocumentPosition(retouchTitle) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(document.querySelector('svg[data-icon="calendar-day"]')).toBeInTheDocument();
     expect(document.querySelector('svg[data-icon="calendar-days"]')).toBeInTheDocument();
   });

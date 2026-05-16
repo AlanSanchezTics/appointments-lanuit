@@ -147,6 +147,20 @@
         "errorDescription": "Intenta nuevamente en unos momentos."
       }
     },
+    "retouchReminders": {
+      "title": "Recordatorios de retoque",
+      "subtitle": "Clientas sin cita confirmada",
+      "candidates": {
+        "title": "Clientas"
+      },
+      "lastAppointmentLabel": "Última cita: {{day}} de {{month}}",
+      "whatsapp": {
+        "message": "Hola qué tal! ✨\nLa siguiente semana se cumple el mes de tus uñas, agendamos tu retoque? 😉"
+      },
+      "actions": {
+        "sendAriaLabel": "Enviar recordatorio de retoque a {{name}}"
+      }
+    },
     "metrics": {
       "appointmentsToday": "Citas hoy",
       "pending": "Pendientes",

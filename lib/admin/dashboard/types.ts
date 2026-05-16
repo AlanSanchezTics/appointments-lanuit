@@ -36,6 +36,19 @@ export interface DashboardReminderItem {
   reminderType: DashboardReminderType;
 }
 
+export type RetouchReminderCandidateReason =
+  | "NO_CONFIRMED_IN_31_DAYS"
+  | "ONLY_NON_CONFIRMED_APPOINTMENTS";
+
+export interface RetouchReminderItem {
+  clientId: number;
+  clientNumber: number;
+  name: string;
+  phone: string;
+  lastAppointmentDate: string;
+  candidateReason: RetouchReminderCandidateReason;
+}
+
 export interface WeeklyOccupancySummary {
   days: WeeklyOccupancyDay[];
   busiestDay: WeeklyOccupancyDay;
@@ -52,6 +65,7 @@ export interface WeeklyOccupancySummary {
     nextDay: DashboardReminderItem[];
     nextWeek: DashboardReminderItem[];
   };
+  retouchReminders: RetouchReminderItem[];
   dailyTip: DailyTip;
   currentWeekOccupancyPercent: number;
   previousWeekOccupancyPercent: number;

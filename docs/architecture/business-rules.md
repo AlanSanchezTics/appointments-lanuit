@@ -285,6 +285,29 @@ Business behavior is defined by:
     - `NEXT_WEEK`.
   - Reminder copy and notifications are frontend-resolved through `react-i18next`.
 
+- Retouch reminders widget policy:
+  - Dashboard includes `Recordatorios de retoque` block below the standard reminders block.
+  - Visibility rule:
+    - render only when at least one candidate client exists.
+  - Candidate source:
+    - base set is clients with appointment exactly at `currentDate - 21 days` in states `CONFIRMED` or `SYNC_FAILED`.
+    - base set is deduplicated by client.
+  - Evaluation windows:
+    - retrospective: `(D-21, D]`,
+    - prospective: `[D, D+31]`.
+  - Confirmed-appointment rule:
+    - only `CONFIRMED` is treated as scheduled/locking status for candidate filtering.
+    - if at least one `CONFIRMED` exists in retrospective or prospective window, client is omitted.
+    - if no `CONFIRMED` exists in both windows, client remains candidate (including cases with only non-confirmed states).
+  - Row payload includes:
+    - `clientId`, `clientNumber`, `name`, `phone`, `lastAppointmentDate`, `candidateReason`.
+  - Output ordering:
+    - ascending by `clientNumber`.
+  - Action:
+    - opens WhatsApp synchronously with fixed reminder copy.
+  - Re-send policy:
+    - unlimited re-send allowed.
+
 ## Admin Months Catalog Rules
 
 - Scope:
