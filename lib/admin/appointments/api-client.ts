@@ -9,7 +9,7 @@ import type {
   AdminRescheduleAppointmentPayload,
   AdminRescheduleAppointmentResponse,
 } from "@/lib/admin/appointments/types";
-import { normalizeClientName } from "@/lib/shared/client-name";
+import { normalizeClientAlias, normalizeClientName } from "@/lib/shared/client-name";
 
 type AdminCreateAppointmentInlinePayload = {
   month: string;
@@ -37,6 +37,7 @@ function normalizeCreateAppointmentPayload(
     client: {
       ...payload.client,
       name: normalizeClientName(payload.client.name),
+      alias: normalizeClientAlias(payload.client.alias) ?? undefined,
     },
   };
 }

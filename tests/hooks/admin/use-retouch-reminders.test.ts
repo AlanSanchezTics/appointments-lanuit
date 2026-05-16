@@ -12,7 +12,7 @@ describe("useRetouchReminders", () => {
       },
     });
 
-    const t = vi.fn(() => "Hola qué tal! ✨\nLa siguiente semana se cumple el mes de tus uñas, agendamos tu retoque? 😉");
+    const t = vi.fn(() => "Hola Ana ✨\nLa siguiente semana se cumple el mes de tus uñas, agendamos tu retoque? 😉");
     const { result } = renderHook(() => useRetouchReminders({ t: t as never }));
     result.current.sendRetouchReminder({
       clientId: 10,
@@ -24,9 +24,11 @@ describe("useRetouchReminders", () => {
     });
 
     expect(assignMock).toHaveBeenCalledTimes(1);
-    expect(t).toHaveBeenCalledWith("dashboard.retouchReminders.whatsapp.message");
+    expect(t).toHaveBeenCalledWith("dashboard.retouchReminders.whatsapp.message", {
+      name: "Ana",
+    });
     expect(assignMock).toHaveBeenCalledWith(
-      "https://wa.me/525512345678?text=Hola%20qu%C3%A9%20tal!%20%E2%9C%A8%0ALa%20siguiente%20semana%20se%20cumple%20el%20mes%20de%20tus%20u%C3%B1as%2C%20agendamos%20tu%20retoque%3F%20%F0%9F%98%89",
+      "https://wa.me/525512345678?text=Hola%20Ana%20%E2%9C%A8%0ALa%20siguiente%20semana%20se%20cumple%20el%20mes%20de%20tus%20u%C3%B1as%2C%20agendamos%20tu%20retoque%3F%20%F0%9F%98%89",
     );
   });
 });

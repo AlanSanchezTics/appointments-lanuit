@@ -12,7 +12,7 @@ const SEARCH_LIMIT = 8;
 
 type SearchStatus = "idle" | "debouncing" | "loading" | "results" | "empty" | "error";
 
-type SearchClient = Pick<AdminClientSearchItem, "clientId" | "name" | "phone" | "clientNumber" | "isLoyal">;
+type SearchClient = Pick<AdminClientSearchItem, "clientId" | "name" | "alias" | "phone" | "clientNumber" | "isLoyal">;
 
 function normalizeErrorCode(error: unknown) {
   if (error instanceof Error && error.message.trim().length > 0) {

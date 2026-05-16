@@ -13,6 +13,7 @@ export interface TodayAgendaItem {
   appointmentId: number;
   timeSlot: string;
   name: string;
+  alias?: string | null;
   phone: string;
   status: TodayAgendaStatus;
 }
@@ -30,6 +31,7 @@ export interface DashboardReminderItem {
   appointmentId: number;
   clientNumber: number;
   name: string;
+  alias?: string | null;
   phone: string;
   date: string;
   timeSlot: string;
@@ -44,6 +46,7 @@ export interface RetouchReminderItem {
   clientId: number;
   clientNumber: number;
   name: string;
+  alias?: string | null;
   phone: string;
   lastAppointmentDate: string;
   candidateReason: RetouchReminderCandidateReason;

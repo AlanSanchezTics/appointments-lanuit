@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 export type PersistedAppointment = {
   id: number;
   name: string;
+  alias: string | null;
   phone: string;
   date: string;
   timeSlot: string;
@@ -45,12 +46,14 @@ function mapAppointment(row: {
   clientId: number;
   client: {
     name: string;
+    alias: string | null;
     phone: string;
   };
 }) {
   return {
     id: row.id,
     name: row.client.name,
+    alias: row.client.alias,
     phone: row.client.phone,
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
@@ -117,6 +120,7 @@ export async function findActiveAppointmentByPhone(phone: string, dateFloor: str
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -149,6 +153,7 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -183,6 +188,7 @@ export async function listCancelableFutureAppointmentsByPhoneInMonth(
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -202,6 +208,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
       id: number;
       client_id: number;
       name: string;
+      alias: string | null;
       phone: string;
       date: Date;
       time_slot: Date;
@@ -209,7 +216,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -230,6 +237,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
   return {
     id: record.id,
     name: record.name,
+    alias: record.alias,
     phone: record.phone,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),

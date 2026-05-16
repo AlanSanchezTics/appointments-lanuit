@@ -38,7 +38,9 @@ describe("GET /api/admin/clients/search", () => {
       clients: [
         {
           clientId: 1,
+          clientNumber: 1001,
           name: "Ana Garcia",
+          alias: null,
           phone: "5512345678",
           isLoyal: true,
         },
@@ -57,7 +59,9 @@ describe("GET /api/admin/clients/search", () => {
       clients: [
         {
           clientId: 1,
+          clientNumber: 1001,
           name: "Ana Garcia",
+          alias: null,
           phone: "5512345678",
           isLoyal: true,
         },

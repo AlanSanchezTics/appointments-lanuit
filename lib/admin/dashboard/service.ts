@@ -131,6 +131,7 @@ async function listPendingAppointments(): Promise<AdminPendingAppointmentItem[]>
         select: {
           clientNumber: true,
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -148,6 +149,7 @@ async function listPendingAppointments(): Promise<AdminPendingAppointmentItem[]>
     date: toDateKey(row.date),
     timeSlot: row.timeSlot.toISOString().slice(11, 16),
     name: row.client.name,
+    alias: row.client.alias,
     phone: row.client.phone,
   }));
 }
@@ -175,6 +177,7 @@ async function listReminderAppointmentsByDate(
         select: {
           clientNumber: true,
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -191,6 +194,7 @@ async function listReminderAppointmentsByDate(
     date: toDateKey(row.date),
     timeSlot: row.timeSlot.toISOString().slice(11, 16),
     name: row.client.name,
+    alias: row.client.alias,
     phone: row.client.phone,
     reminderType,
   }));
@@ -221,6 +225,7 @@ async function listRetouchReminderCandidates(
         select: {
           clientNumber: true,
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -236,6 +241,7 @@ async function listRetouchReminderCandidates(
     {
       clientNumber: number;
       name: string;
+      alias: string | null;
       phone: string;
     }
   >();
@@ -244,6 +250,7 @@ async function listRetouchReminderCandidates(
       uniqueClients.set(appointment.clientId, {
         clientNumber: appointment.client.clientNumber,
         name: appointment.client.name,
+        alias: appointment.client.alias,
         phone: appointment.client.phone,
       });
     }
@@ -319,6 +326,7 @@ async function listRetouchReminderCandidates(
       clientId,
       clientNumber: client.clientNumber,
       name: client.name,
+      alias: client.alias,
       phone: client.phone,
       lastAppointmentDate: date21DaysAgoKey,
       candidateReason: hasAppointmentsInWindows
@@ -393,6 +401,7 @@ export async function getAdminDashboardWeeklyOccupancy(
     appointmentId: appointment.id,
     timeSlot: appointment.timeSlot,
     name: appointment.name,
+    alias: appointment.alias,
     phone: appointment.phone,
     status: resolveAgendaStatus(
       appointment.date,

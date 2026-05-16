@@ -11,6 +11,7 @@ type EditClientModalProps = {
   isOpen: boolean;
   isSubmitting: boolean;
   initialName: string;
+  initialAlias: string | null;
   initialPhone: string;
   initialClientNumber: number;
   serverErrorCode: string | null;
@@ -19,6 +20,8 @@ type EditClientModalProps = {
     close: string;
     nameLabel: string;
     namePlaceholder: string;
+    aliasLabel: string;
+    aliasPlaceholder: string;
     phoneLabel: string;
     phonePlaceholder: string;
     clientNumberLabel: string;
@@ -27,6 +30,7 @@ type EditClientModalProps = {
     saving: string;
     cancel: string;
     nameTooShort: string;
+    aliasTooLong: string;
     phoneInvalid: string;
     clientNumberInvalid: string;
     clientNumberAlreadyExists: string;
@@ -34,6 +38,7 @@ type EditClientModalProps = {
   onClose: () => void;
   onSubmit: (payload: {
     name: string;
+    alias: string | null;
     phone: string;
     clientNumber: number;
   }) => Promise<void>;
@@ -43,6 +48,7 @@ export function EditClientModal({
   isOpen,
   isSubmitting,
   initialName,
+  initialAlias,
   initialPhone,
   initialClientNumber,
   serverErrorCode,
@@ -53,6 +59,8 @@ export function EditClientModal({
   const {
     name,
     setName,
+    alias,
+    setAlias,
     phone,
     setPhone,
     clientNumber,
@@ -62,13 +70,18 @@ export function EditClientModal({
     applyServerError,
     validate,
     getSanitizedPayload,
-  } = useEditClientForm(initialName, initialPhone, initialClientNumber);
+  } = useEditClientForm(
+    initialName,
+    initialAlias,
+    initialPhone,
+    initialClientNumber,
+  );
 
   useEffect(() => {
     if (isOpen) {
-      reset(initialName, initialPhone, initialClientNumber);
+      reset(initialName, initialAlias, initialPhone, initialClientNumber);
     }
-  }, [initialName, initialPhone, initialClientNumber, isOpen, reset]);
+  }, [initialAlias, initialClientNumber, initialName, initialPhone, isOpen, reset]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -133,6 +146,17 @@ export function EditClientModal({
               ? labels.clientNumberAlreadyExists
               : labels.clientNumberInvalid
             : null}
+          className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
+        />
+
+        <Input
+          id="edit-client-alias"
+          label={labels.aliasLabel}
+          value={alias}
+          onChange={(event) => setAlias(event.target.value)}
+          placeholder={labels.aliasPlaceholder}
+          disabled={isSubmitting}
+          error={fieldError.alias ? labels.aliasTooLong : null}
           className="!h-11 !rounded-xl !bg-[var(--admin-surface)] !px-3 !py-0 !text-sm !font-medium !tracking-normal !text-[var(--admin-text-primary)]"
         />
 

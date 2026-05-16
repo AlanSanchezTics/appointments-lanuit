@@ -4,6 +4,7 @@ export type AdminClientSearchItem = {
   clientId: number;
   clientNumber: number;
   name: string;
+  alias?: string | null;
   phone: string;
   isLoyal: boolean;
 };
@@ -48,6 +49,7 @@ export type AdminClientCatalogItem = {
   clientId: number;
   clientNumber: number;
   name: string;
+  alias?: string | null;
   phone: string;
   isLoyal: boolean;
   createdAt: string;
@@ -90,6 +92,7 @@ export type AdminClientDetailResponse = {
     clientId: number;
     clientNumber: number;
     name: string;
+    alias?: string | null;
     phone: string;
     isLoyal: boolean;
     createdAt: string;
@@ -110,6 +113,7 @@ export type AdminClientDetailResponse = {
 
 export type UpdateAdminClientPayload = {
   name?: string;
+  alias?: string | null;
   phone?: string;
   clientNumber?: number;
   isLoyal?: boolean;
@@ -119,6 +123,7 @@ export type UpdateAdminClientResponse = {
   clientId: number;
   clientNumber: number;
   name: string;
+  alias?: string | null;
   phone: string;
   isLoyal: boolean;
   updatedAt: string;

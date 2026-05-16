@@ -9,6 +9,7 @@ import {
   ADMIN_CLIENT_CATALOG_SORT_VALUES,
   ADMIN_CLIENT_CATALOG_STATUS_VALUES,
 } from "@/lib/admin/clients/types";
+import { normalizeClientAlias } from "@/lib/shared/client-name";
 
 const MIN_QUERY_LENGTH = 2;
 const DEFAULT_LIMIT = 8;
@@ -52,6 +53,13 @@ const UPDATE_CLIENT_SCHEMA = z.object({
     .trim()
     .min(3, "CLIENT_NAME_TOO_SHORT")
     .max(100, "CLIENT_NAME_TOO_LONG")
+    .optional(),
+  alias: z
+    .union([
+      z.string().max(100, "CLIENT_ALIAS_TOO_LONG"),
+      z.null(),
+    ])
+    .transform((value) => (typeof value === "string" ? normalizeClientAlias(value) : null))
     .optional(),
   phone: z
     .string()

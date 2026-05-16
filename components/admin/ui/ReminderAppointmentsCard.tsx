@@ -86,6 +86,7 @@ export function ReminderAppointmentsCard({
                       {`#${item.clientNumber}`}
                       {" ・ "}
                       {formatPhoneForDisplay(item.phone)}
+                      {item.alias ? ` ・ ${item.alias}` : ""}
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-[var(--admin-accent)]">
                       {formatTimeSlotLabel(item.timeSlot, language)}

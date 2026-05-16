@@ -133,8 +133,8 @@
         "alreadySentTooltip": "This reminder was already sent."
       },
       "whatsapp": {
-        "nextDayMessage": "Hi *{{name}}* ✨\nSee you *tomorrow at {{time}}*!",
-        "nextWeekMessage": "Hi *{{name}}*, how are you? ✨\nJust a reminder that you have an appointment on *{{weekday}}, {{day}} of {{month}} at {{time}}*.\nSee you next week 🙌🏻"
+        "nextDayMessage": "Hi {{name}} ✨\nSee you *tomorrow at {{time}}*!",
+        "nextWeekMessage": "Hi {{name}} ✨\nJust a reminder that you have an appointment on *{{weekday}}, {{day}} of {{month}} at {{time}}*.\nSee you next week 🙌🏻"
       },
       "notifications": {
         "sentTitle": "Reminder ready to send",
@@ -155,7 +155,7 @@
       },
       "lastAppointmentLabel": "Last appointment: {{month}} {{day}}",
       "whatsapp": {
-        "message": "Hi ✨\nNext week marks a month since your last appointment, shall we schedule your retouch? 😉"
+        "message": "Hi {{name}} ✨\nNext week marks a month since your last appointment, shall we schedule your retouch? 😉"
       },
       "actions": {
         "sendAriaLabel": "Send retouch reminder to {{name}}"
@@ -230,7 +230,8 @@
         "edit": "Edit client"
       },
       "identity": {
-        "clientNumber": "Client number"
+        "clientNumber": "Client number",
+        "alias": "Alias"
       },
       "summary": {
         "totalAppointments": "Total appointments",
@@ -278,6 +279,8 @@
       "close": "Close client edit",
       "nameLabel": "Name",
       "namePlaceholder": "Full name",
+      "aliasLabel": "Alias",
+      "aliasPlaceholder": "Nickname or short name",
       "phoneLabel": "Phone",
       "phonePlaceholder": "322 123 4567",
       "clientNumberLabel": "Client number",
@@ -287,6 +290,7 @@
       "cancel": "Cancel",
       "errors": {
         "nameTooShort": "Name must contain at least 3 characters.",
+        "aliasTooLong": "Alias cannot exceed 100 characters.",
         "phoneInvalid": "Phone must contain 10 digits.",
         "clientNumberInvalid": "Enter a valid client number.",
         "clientNumberAlreadyExists": "This client number is already in use."
@@ -582,6 +586,7 @@
       "placeholders": {
         "searchClient": "Ex. Mariana Valenzuela",
         "newClientName": "Full name",
+        "newClientAlias": "Alias (optional)",
         "newClientPhone": "Phone",
         "newClientNumber": "Client number"
       },

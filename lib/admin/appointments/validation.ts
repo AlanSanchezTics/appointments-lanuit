@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseAdminMonthKey } from "@/lib/admin/months/validation";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import type { AdminCreateAppointmentPayload } from "@/lib/admin/appointments/types";
+import { normalizeClientAlias } from "@/lib/shared/client-name";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -76,6 +77,10 @@ const CREATE_APPOINTMENT_SCHEMA = z
     client: z
       .object({
         name: z.string(),
+        alias: z
+          .string()
+          .max(100, "CLIENT_ALIAS_TOO_LONG")
+          .optional(),
         phone: z.string(),
         clientNumber: z
           .number()
@@ -121,6 +126,7 @@ export function parseAdminCreateAppointmentPayload(payload: unknown): AdminCreat
     timeSlot: parsed.timeSlot,
     client: {
       name: parsed.client.name,
+      alias: normalizeClientAlias(parsed.client.alias) ?? undefined,
       phone: parsed.client.phone,
       clientNumber: parsed.client.clientNumber,
     },

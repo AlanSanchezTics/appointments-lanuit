@@ -30,6 +30,11 @@ export function buildClientSearchWhere(query: string): Prisma.ClientWhereInput {
           contains: normalizedQuery,
         },
       },
+      {
+        alias: {
+          contains: normalizedQuery,
+        },
+      },
       ...(hasPhoneQuery
         ? [
             {
@@ -71,20 +76,33 @@ export function isActiveAppointment(status: AppointmentStatus) {
   return ACTIVE_APPOINTMENT_STATUSES.includes(status);
 }
 
-export function rankClient(query: string, client: { name: string; phone: string }) {
+export function rankClient(query: string, client: {
+  name: string;
+  alias: string | null;
+  phone: string;
+}) {
   const { normalizedQuery, normalizedPhoneQuery } = normalizeClientQuery(query);
   const lowerQuery = normalizedQuery.toLowerCase();
   const lowerName = client.name.toLowerCase();
+  const lowerAlias = client.alias?.toLowerCase() ?? "";
 
   if (!lowerQuery && !normalizedPhoneQuery) {
     return 2;
   }
 
-  if (lowerName.startsWith(lowerQuery) || client.phone.startsWith(normalizedPhoneQuery)) {
+  if (
+    lowerName.startsWith(lowerQuery)
+    || lowerAlias.startsWith(lowerQuery)
+    || client.phone.startsWith(normalizedPhoneQuery)
+  ) {
     return 0;
   }
 
-  if (lowerName.includes(lowerQuery) || client.phone.includes(normalizedPhoneQuery)) {
+  if (
+    lowerName.includes(lowerQuery)
+    || lowerAlias.includes(lowerQuery)
+    || client.phone.includes(normalizedPhoneQuery)
+  ) {
     return 1;
   }
 

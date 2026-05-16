@@ -8,6 +8,7 @@ import { Modal } from "@/components/admin/ui/Modal";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { LanguageSelector } from "@/components/i18n/language-selector";
 import { formatPhoneForDisplay } from "@/lib/booking/formatters";
+import { resolveClientDisplayName } from "@/lib/shared/client-name";
 import { useGlobalClientSearch } from "@/hooks/admin/layout/useGlobalClientSearch";
 
 interface AppHeaderProps {
@@ -55,6 +56,7 @@ function GlobalClientSearchResult({
   client: {
     clientId: number;
     name: string;
+    alias?: string | null;
     phone: string;
     clientNumber: number;
     isLoyal: boolean;
@@ -79,6 +81,7 @@ function GlobalClientSearchResult({
         </span>
         <span className="block truncate text-xs font-medium text-[var(--admin-text-secondary)]">
           #{client.clientNumber} · {formatPhoneForDisplay(client.phone)}
+          {client.alias ? ` · ${client.alias}` : ""}
         </span>
       </span>
       {client.isLoyal ? (
@@ -231,7 +234,7 @@ export function AppHeader({ sectionTitleKey, onMenuClick }: AppHeaderProps) {
                     onSelect={handleSelectClient}
                     loyalBadgeLabel={t("header.search.loyalBadge")}
                     resultAriaLabel={t("header.search.resultAriaLabel", {
-                      name: client.name,
+                      name: resolveClientDisplayName(client),
                     })}
                   />
                 ))}

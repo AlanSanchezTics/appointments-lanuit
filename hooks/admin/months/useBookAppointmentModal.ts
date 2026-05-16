@@ -45,6 +45,7 @@ export function useBookAppointmentModal(month: string) {
   const [isSearchingClients, setIsSearchingClients] = useState(false);
   const [selectedClient, setSelectedClient] = useState<AdminClientSearchItem | null>(null);
   const [newClientName, setNewClientName] = useState("");
+  const [newClientAlias, setNewClientAlias] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientNumber, setNewClientNumber] = useState("");
   const [hasInitializedClientNumberSuggestion, setHasInitializedClientNumberSuggestion] = useState(false);
@@ -88,6 +89,7 @@ export function useBookAppointmentModal(month: string) {
     setSearchResults([]);
     setSelectedClient(null);
     setNewClientName("");
+    setNewClientAlias("");
     setNewClientPhone("");
     setNewClientNumber("");
     setHasInitializedClientNumberSuggestion(false);
@@ -199,6 +201,7 @@ export function useBookAppointmentModal(month: string) {
     setIsSearchingClients(false);
     setSelectedClient(null);
     setNewClientName("");
+    setNewClientAlias("");
     setNewClientPhone("");
     setNewClientNumber("");
     setHasInitializedClientNumberSuggestion(false);
@@ -396,6 +399,7 @@ export function useBookAppointmentModal(month: string) {
             timeSlot: selectedTimeSlot,
             client: {
               name: normalizeClientName(newClientName),
+              alias: newClientAlias.trim().length > 0 ? newClientAlias.trim() : undefined,
               phone: newClientPhone.trim(),
               ...(newClientNumber.trim().length > 0
                 ? { clientNumber: Number(newClientNumber.trim()) }
@@ -420,6 +424,7 @@ export function useBookAppointmentModal(month: string) {
     isSubmitting,
     month,
     newClientName,
+    newClientAlias,
     newClientNumber,
     newClientPhone,
     selectedClient,
@@ -446,6 +451,7 @@ export function useBookAppointmentModal(month: string) {
     isSearchingClients,
     selectedClient,
     newClientName,
+    newClientAlias,
     newClientPhone,
     newClientNumber,
     successResult,
@@ -468,6 +474,9 @@ export function useBookAppointmentModal(month: string) {
         ...current,
         name: undefined,
       }));
+    },
+    setNewClientAlias: (value: string) => {
+      setNewClientAlias(value);
     },
     setNewClientPhone: (value: string) => {
       setNewClientPhone(value);

@@ -1,0 +1,2 @@
+ALTER TABLE `clients`
+  ADD COLUMN `alias` VARCHAR(100) NULL AFTER `name`;

@@ -38,7 +38,11 @@ import { validateBookingRules, bookingSchema } from "@/lib/validation/appointmen
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
-import { areEquivalentClientNames } from "@/lib/shared/client-name";
+import {
+  areEquivalentClientNames,
+  normalizeClientAlias,
+  resolveClientDisplayName,
+} from "@/lib/shared/client-name";
 
 function getMonthRange(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -78,6 +82,7 @@ async function resolveClientForCreate(
         id: true,
         clientNumber: true,
         name: true,
+        alias: true,
         phone: true,
       },
     });
@@ -104,15 +109,18 @@ async function resolveClientForCreate(
       id: true,
       clientNumber: true,
       name: true,
+      alias: true,
       phone: true,
     },
   });
 
-  const client = existingClient ?? await createClientWithUniqueClientNumber(tx, {
-    phone: parsed.phone,
-    name: parsed.name,
-    preferredClientNumber: input.client.clientNumber,
-  });
+  const client = existingClient
+    ?? await createClientWithUniqueClientNumber(tx, {
+      phone: parsed.phone,
+      name: parsed.name,
+      preferredClientNumber: input.client.clientNumber,
+      alias: normalizeClientAlias(input.client.alias),
+    });
 
   if (!areEquivalentClientNames(client.name, parsed.name)) {
     throw new Error("CLIENT_NAME_MISMATCH");
@@ -145,7 +153,8 @@ export async function getAdminDayAgenda(input: {
       date: appointment.date,
       timeSlot: appointment.timeSlot,
       status: appointment.status,
-      name: appointment.name,
+      name: resolveClientDisplayName(appointment),
+      alias: appointment.alias,
       phone: appointment.phone,
     })),
     blockedSlots: blockedSlots.map((blockedSlot) => ({
@@ -246,7 +255,7 @@ export async function createAdminAppointment(
 
   const syncResult = await syncAppointmentToCalendar({
     appointmentId: created.appointmentId,
-    name: created.client.name,
+    name: resolveClientDisplayName(created.client),
     date: input.date,
     timeSlot: input.timeSlot,
   });
@@ -265,6 +274,7 @@ export async function createAdminAppointment(
       clientId: created.client.id,
       clientNumber: created.client.clientNumber,
       name: created.client.name,
+      alias: created.client.alias,
       phone: created.client.phone,
     },
   };

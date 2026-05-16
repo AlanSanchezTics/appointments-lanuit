@@ -30,6 +30,7 @@ describe("BookAppointmentModal", () => {
         isSearchingClients={false}
         selectedClient={null}
         newClientName="Maria Perez"
+        newClientAlias=""
         newClientPhone="5511112233"
         newClientNumber="1001"
         successResult={null}
@@ -40,6 +41,7 @@ describe("BookAppointmentModal", () => {
         onSearchQueryChange={vi.fn()}
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
+        onNewClientAliasChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
         onNewClientNumberChange={vi.fn()}
         onSubmit={onSubmit}
@@ -72,6 +74,7 @@ describe("BookAppointmentModal", () => {
         isSearchingClients={false}
         selectedClient={null}
         newClientName=""
+        newClientAlias=""
         newClientPhone=""
         newClientNumber=""
         successResult={{
@@ -83,6 +86,7 @@ describe("BookAppointmentModal", () => {
             clientId: 1,
             clientNumber: 1001,
             name: "Ana Garcia",
+            alias: null,
             phone: "5512345678",
           },
         }}
@@ -93,6 +97,7 @@ describe("BookAppointmentModal", () => {
         onSearchQueryChange={vi.fn()}
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
+        onNewClientAliasChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
         onNewClientNumberChange={vi.fn()}
         onSubmit={vi.fn()}
@@ -124,6 +129,7 @@ describe("BookAppointmentModal", () => {
         isSearchingClients={false}
         selectedClient={null}
         newClientName=""
+        newClientAlias=""
         newClientPhone=""
         newClientNumber=""
         successResult={null}
@@ -134,6 +140,7 @@ describe("BookAppointmentModal", () => {
         onSearchQueryChange={vi.fn()}
         onSelectClient={vi.fn()}
         onNewClientNameChange={vi.fn()}
+        onNewClientAliasChange={vi.fn()}
         onNewClientPhoneChange={vi.fn()}
         onNewClientNumberChange={vi.fn()}
         onSubmit={vi.fn()}

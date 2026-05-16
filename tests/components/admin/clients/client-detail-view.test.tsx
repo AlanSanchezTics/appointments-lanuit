@@ -26,6 +26,7 @@ const initialData: AdminClientDetailResponse = {
     clientId: 42,
     clientNumber: 1001,
     name: "Ana Pérez",
+    alias: null,
     phone: "5512345678",
     isLoyal: false,
     createdAt: "2026-02-01T00:00:00.000Z",
@@ -142,6 +143,7 @@ describe("ClientDetailView", () => {
     await waitFor(() => {
       expect(updateClientIdentityMock).toHaveBeenCalledWith({
         name: "Ana María Pérez",
+        alias: null,
         phone: "5512345678",
         clientNumber: 1002,
       });

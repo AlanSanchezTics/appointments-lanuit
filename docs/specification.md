@@ -126,6 +126,11 @@ Regla general:
 - Formato persistido obligatorio: 10 dígitos numéricos.
 - En UI se permite captura con separadores (espacios/guiones/paréntesis), pero backend normaliza a 10 dígitos antes de validar y persistir.
 - Nombre mínimo: 3 caracteres.
+- Alias de cliente:
+  - campo opcional en `clients.alias` (`VARCHAR(100)`, nullable),
+  - se normaliza con `trim`,
+  - si queda vacío, se persiste `null`,
+  - no requiere unicidad.
 - El cliente se identifica por teléfono.
 - Un teléfono no puede estar asociado a más de un nombre.
 - La validación de nombre canónico por teléfono debe ignorar espacios al inicio y final del texto (trim en ambos valores) para evitar falsos `CLIENT_NAME_MISMATCH`.
@@ -203,6 +208,7 @@ Regla general:
 10. Acción WhatsApp en éxito:
     - cuando la cita quedó `CONFIRMED` o `SYNC_FAILED`, la UI realiza un intento automático único de redirección a `wa.me` al entrar al paso de éxito y mantiene el botón `Enviar confirmación por WhatsApp` como fallback manual visible;
     - cuando la cita quedó `PENDING`, la acción permanece explícita con `Enviar comprobante`.
+    - En flujo público, cuando el mensaje requiere nombre de cliente, frontend usa siempre `name` canónico (no `alias`).
     - El frontend compone el texto final localizado.
     - El backend no debe devolver texto final de UX; solo códigos estables y payload estructurado.
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
@@ -982,6 +988,7 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
    - Las métricas de `total/pasadas/futuras` contabilizan únicamente citas `CONFIRMED`.
    - El timeline no debe listar citas con estado `PENDING` ni `REJECTED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
+4. UI muestra identidad con prioridad visual en `alias` (si existe) y mantiene visible `name` canónico como referencia.
 4. Acción `Editar cliente` abre modal para actualizar `name`, `phone` y `clientNumber`.
 5. Validación local del modal:
    - `name` requerido,
@@ -990,6 +997,7 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
    - `clientNumber` requerido, entero positivo (`> 0`).
 6. Guardar edición:
    - ejecuta `PATCH /api/admin/clients/[clientId]`,
+   - incluye edición de `name`, `alias`, `phone` y `clientNumber`,
    - usa `sileo.promise` para notificaciones `loading/success/error`,
    - si backend responde `CLIENT_NUMBER_ALREADY_EXISTS`, UI muestra toast + error en campo `clientNumber`,
    - en éxito cierra modal y refresca detalle.

@@ -15,6 +15,7 @@ export async function searchAdminClients(
       id: true,
       clientNumber: true,
       name: true,
+      alias: true,
       phone: true,
       isLoyal: true,
       updatedAt: true,
@@ -41,6 +42,7 @@ export async function searchAdminClients(
       clientId: row.id,
       clientNumber: row.clientNumber,
       name: row.name,
+      alias: row.alias,
       phone: row.phone,
       isLoyal: row.isLoyal,
     } satisfies AdminClientSearchItem));

@@ -51,6 +51,7 @@ export async function updateAdminClient(
     id: number;
     clientNumber: number;
     name: string;
+    alias: string | null;
     phone: string;
     isLoyal: boolean;
     updatedAt: Date;
@@ -63,6 +64,7 @@ export async function updateAdminClient(
       },
       data: {
         ...(payload.name !== undefined ? { name: payload.name } : {}),
+        ...(payload.alias !== undefined ? { alias: payload.alias } : {}),
         ...(payload.phone !== undefined ? { phone: payload.phone } : {}),
         ...(payload.clientNumber !== undefined
           ? { clientNumber: payload.clientNumber }
@@ -73,6 +75,7 @@ export async function updateAdminClient(
         id: true,
         clientNumber: true,
         name: true,
+        alias: true,
         phone: true,
         isLoyal: true,
         updatedAt: true,
@@ -106,6 +109,7 @@ export async function updateAdminClient(
     clientId: updatedClient.id,
     clientNumber: updatedClient.clientNumber,
     name: updatedClient.name,
+    alias: updatedClient.alias,
     phone: updatedClient.phone,
     isLoyal: updatedClient.isLoyal,
     updatedAt: updatedClient.updatedAt.toISOString(),

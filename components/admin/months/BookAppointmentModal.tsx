@@ -21,6 +21,7 @@ import type { AdminCreateAppointmentResponse } from "@/lib/admin/appointments/ty
 import type { AdminBlockableDay } from "@/lib/admin/blocked-spaces/types";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
 import type { BaseTimeSlot } from "@/lib/constants/slots";
+import { resolveClientDisplayName } from "@/lib/shared/client-name";
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 
 type ClientMode = "existing" | "new";
@@ -50,6 +51,7 @@ type BookAppointmentModalProps = {
   isSearchingClients: boolean;
   selectedClient: AdminClientSearchItem | null;
   newClientName: string;
+  newClientAlias: string;
   newClientPhone: string;
   newClientNumber: string;
   successResult: AdminCreateAppointmentResponse | null;
@@ -60,6 +62,7 @@ type BookAppointmentModalProps = {
   onSearchQueryChange: (query: string) => void;
   onSelectClient: (client: AdminClientSearchItem) => void;
   onNewClientNameChange: (name: string) => void;
+  onNewClientAliasChange: (alias: string) => void;
   onNewClientPhoneChange: (phone: string) => void;
   onNewClientNumberChange: (clientNumber: string) => void;
   onSubmit: () => void;
@@ -87,6 +90,7 @@ export function BookAppointmentModal({
   isSearchingClients,
   selectedClient,
   newClientName,
+  newClientAlias,
   newClientPhone,
   newClientNumber,
   successResult,
@@ -97,6 +101,7 @@ export function BookAppointmentModal({
   onSearchQueryChange,
   onSelectClient,
   onNewClientNameChange,
+  onNewClientAliasChange,
   onNewClientPhoneChange,
   onNewClientNumberChange,
   onSubmit,
@@ -121,7 +126,7 @@ export function BookAppointmentModal({
     ? t("monthsDetail.bookModal.actions.submitting")
     : t("monthsDetail.bookModal.actions.submit");
   const selectedClientLabel = selectedClient
-    ? `${selectedClient.name} · #${selectedClient.clientNumber} · ${formatPhoneForDisplay(selectedClient.phone)}`
+    ? `${resolveClientDisplayName(selectedClient)} · #${selectedClient.clientNumber} · ${formatPhoneForDisplay(selectedClient.phone)}`
     : t("monthsDetail.bookModal.placeholders.searchClient");
 
   useEffect(() => {
@@ -202,7 +207,6 @@ export function BookAppointmentModal({
       language,
     ).toLowerCase();
     const message = t("monthsDetail.bookModal.success.whatsappMessage", {
-      name: successResult.client.name,
       date: whatsappDateLabel,
       time: whatsappTimeLabel,
     });
@@ -541,6 +545,7 @@ export function BookAppointmentModal({
                                 >
                                   #{client.clientNumber} ·{" "}
                                   {formatPhoneForDisplay(client.phone)}
+                                  {client.alias ? ` · ${client.alias}` : ""}
                                 </p>
                               </button>
                             ))}
@@ -600,6 +605,21 @@ export function BookAppointmentModal({
                       ? t("monthsDetail.bookModal.errors.phoneRequired")
                       : null
                   }
+                />
+                <Input
+                  id="admin-book-new-client-alias"
+                  value={newClientAlias}
+                  onChange={(event) =>
+                    onNewClientAliasChange(event.target.value)
+                  }
+                  label={t(
+                    "monthsDetail.bookModal.placeholders.newClientAlias",
+                  )}
+                  placeholder={t(
+                    "monthsDetail.bookModal.placeholders.newClientAlias",
+                  )}
+                  disabled={isSubmitting}
+                  icon={<AdminIcon icon={adminIcons.client} tone="secondary" />}
                 />
                 <Input
                   id="admin-book-new-client-number"

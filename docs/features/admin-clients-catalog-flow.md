@@ -66,11 +66,12 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 3. Acción `Volver al catálogo` regresa a `/admin/clients`.
 4. Acción `Editar cliente` abre modal de edición.
 
-## Flujo principal UI: edición de cliente (nombre + teléfono + número de cliente)
+## Flujo principal UI: edición de cliente (nombre + alias + teléfono + número de cliente)
 
 1. Admin abre modal `Editar cliente`.
 2. Form valida:
    - nombre mínimo (`>= 3` caracteres),
+   - alias opcional (máximo 100 caracteres, trim),
    - teléfono nacional válido (10 dígitos; se permite captura con separadores y se normaliza).
    - número de cliente requerido, entero positivo (`> 0`).
 3. Al guardar:
@@ -121,21 +122,23 @@ Describir el flujo operativo del módulo de catálogo de clientes admin para con
 
 ## Flujo principal: actualización de cliente
 
-1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, phone?, clientNumber?, isLoyal? }`.
+1. Admin solicita `PATCH /api/admin/clients/[clientId]` con payload parcial `{ name?, alias?, phone?, clientNumber?, isLoyal? }`.
 2. Backend valida sesión y `clientId`.
 3. Backend valida payload:
    - no puede estar vacío,
    - `name` (si viene) debe cumplir mínimo de longitud,
+   - `alias` (si viene) debe tener máximo 100 caracteres; si queda vacío tras `trim`, se persiste `null`,
    - `phone` (si viene) debe normalizarse a 10 dígitos válidos,
    - `clientNumber` (si viene) debe ser entero positivo (`> 0`).
-4. Backend actualiza los campos enviados (`name` y/o `phone` y/o `clientNumber` y/o `isLoyal`).
+4. Backend actualiza los campos enviados (`name` y/o `alias` y/o `phone` y/o `clientNumber` y/o `isLoyal`).
 5. Si `phone` colisiona con otro cliente, backend responde `CLIENT_PHONE_ALREADY_EXISTS`.
 6. Si `clientNumber` colisiona con otro cliente, backend responde `CLIENT_NUMBER_ALREADY_EXISTS`.
-7. Backend responde payload actualizado `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`.
+7. Backend responde payload actualizado `{ clientId, clientNumber, name, alias, phone, isLoyal, updatedAt }`.
 
 ## Reglas de negocio aplicables
 
 - Cliente se identifica por `phone` (canónico por fila en `clients`).
+- `alias` es opcional y se usa como nombre de visualización preferido; fallback a `name`.
 - Cliente tiene `client_number` único e incremental (se permiten huecos).
 - Fidelidad es una marca administrativa manual persistida en `clients.is_loyal`.
 - Cita futura para filtros de catálogo: `date > currentDate`.

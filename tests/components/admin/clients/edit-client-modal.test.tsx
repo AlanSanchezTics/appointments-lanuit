@@ -8,6 +8,8 @@ const labels = {
   close: "Cerrar edición de cliente",
   nameLabel: "Nombre",
   namePlaceholder: "Nombre completo",
+  aliasLabel: "Alias",
+  aliasPlaceholder: "Apodo o nombre corto",
   phoneLabel: "Teléfono",
   phonePlaceholder: "322 123 4567",
   clientNumberLabel: "Número de cliente",
@@ -16,6 +18,7 @@ const labels = {
   saving: "Guardando...",
   cancel: "Cancelar",
   nameTooShort: "El nombre debe tener al menos 3 caracteres.",
+  aliasTooLong: "El alias no puede exceder 100 caracteres.",
   phoneInvalid: "El teléfono debe tener 10 dígitos.",
   clientNumberInvalid: "Ingresa un número de cliente válido.",
   clientNumberAlreadyExists: "Este número de cliente ya está en uso.",
@@ -30,6 +33,7 @@ describe("EditClientModal", () => {
         isOpen
         isSubmitting={false}
         initialName="Ana"
+        initialAlias={null}
         initialPhone="5512345678"
         initialClientNumber={1001}
         serverErrorCode={null}
@@ -60,6 +64,7 @@ describe("EditClientModal", () => {
         isOpen
         isSubmitting={false}
         initialName="Ana"
+        initialAlias={null}
         initialPhone="5512345678"
         initialClientNumber={1001}
         serverErrorCode={null}
@@ -77,6 +82,7 @@ describe("EditClientModal", () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
         name: "Ana María",
+        alias: null,
         phone: "5512345678",
         clientNumber: 1001,
       });
@@ -91,6 +97,7 @@ describe("EditClientModal", () => {
         isOpen
         isSubmitting={false}
         initialName="Ana"
+        initialAlias={null}
         initialPhone="5512345678"
         initialClientNumber={1001}
         serverErrorCode={null}
@@ -121,6 +128,7 @@ describe("EditClientModal", () => {
         isOpen
         isSubmitting={false}
         initialName="Ana"
+        initialAlias={null}
         initialPhone="5512345678"
         initialClientNumber={1001}
         serverErrorCode={null}
@@ -151,6 +159,7 @@ describe("EditClientModal", () => {
         isOpen
         isSubmitting={false}
         initialName="Ana"
+        initialAlias={null}
         initialPhone="5512345678"
         initialClientNumber={1001}
         serverErrorCode="CLIENT_NUMBER_ALREADY_EXISTS"

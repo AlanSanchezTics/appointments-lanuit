@@ -1795,6 +1795,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         isSearchingClients={bookAppointmentModal.isSearchingClients}
         selectedClient={bookAppointmentModal.selectedClient}
         newClientName={bookAppointmentModal.newClientName}
+        newClientAlias={bookAppointmentModal.newClientAlias}
         newClientPhone={bookAppointmentModal.newClientPhone}
         newClientNumber={bookAppointmentModal.newClientNumber}
         successResult={bookAppointmentModal.successResult}
@@ -1805,6 +1806,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
         onSearchQueryChange={bookAppointmentModal.setSearchQuery}
         onSelectClient={bookAppointmentModal.selectClient}
         onNewClientNameChange={bookAppointmentModal.setNewClientName}
+        onNewClientAliasChange={bookAppointmentModal.setNewClientAlias}
         onNewClientPhoneChange={bookAppointmentModal.setNewClientPhone}
         onNewClientNumberChange={bookAppointmentModal.setNewClientNumber}
         onSubmit={() => void handleCreateAdminAppointment()}

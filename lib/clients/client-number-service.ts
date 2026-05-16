@@ -80,6 +80,7 @@ export async function createClientWithUniqueClientNumber(
   tx: Prisma.TransactionClient,
   input: {
     name: string;
+    alias?: string | null;
     phone: string;
     preferredClientNumber?: number;
   },
@@ -99,6 +100,7 @@ export async function createClientWithUniqueClientNumber(
       return await tx.client.create({
         data: {
           name: input.name,
+          alias: input.alias,
           phone: input.phone,
           clientNumber,
         },

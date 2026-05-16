@@ -4,6 +4,7 @@ import type { TFunction } from "i18next";
 
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 import type { RetouchReminderItem } from "@/lib/admin/dashboard/types";
+import { resolveClientDisplayName } from "@/lib/shared/client-name";
 
 type UseRetouchRemindersInput = {
   t: TFunction<"admin">;
@@ -11,7 +12,9 @@ type UseRetouchRemindersInput = {
 
 export function useRetouchReminders({ t }: UseRetouchRemindersInput) {
   function sendRetouchReminder(item: RetouchReminderItem) {
-    const message = t("dashboard.retouchReminders.whatsapp.message");
+    const message = t("dashboard.retouchReminders.whatsapp.message", {
+      name: resolveClientDisplayName(item),
+    });
     const whatsappUrl = buildWhatsappUrlFromMessage({
       phone: `52${item.phone}`,
       message,

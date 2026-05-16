@@ -36,6 +36,7 @@ function resolveUpdateErrorKey(errorCode: string) {
   if (
     errorCode === "VALIDATION_ERROR" ||
     errorCode === "CLIENT_NAME_TOO_SHORT" ||
+    errorCode === "CLIENT_ALIAS_TOO_LONG" ||
     errorCode === "VALIDATION_PHONE_INVALID"
   ) {
     return "clients.detail.notifications.errors.validation";
@@ -93,12 +94,14 @@ export function ClientDetailView({
       loyaltyDisabled: t("clients.detail.loyalty.disabled"),
       loyaltyToggleLabel: t("clients.detail.loyalty.toggleLabel"),
       clientNumber: t("clients.detail.identity.clientNumber"),
+      alias: t("clients.detail.identity.alias"),
     }),
     [t],
   );
 
   async function handleUpdateIdentity(payload: {
     name: string;
+    alias: string | null;
     phone: string;
     clientNumber: number;
   }) {
@@ -214,6 +217,11 @@ export function ClientDetailView({
           <h1 className="text-2xl font-bold text-[var(--admin-text-primary)] mb-0.5">
             {data.client.name}
           </h1>
+          {data.client.alias ? (
+            <p className="text-xs font-medium text-[var(--admin-text-secondary)]">
+              {data.client.alias}
+            </p>
+          ) : null}
           <p className="text-base font-medium text-[var(--admin-text-secondary)] inline-flex items-center">
             <span className="mr-1 inline-flex" aria-hidden>
               <AdminIcon icon={adminIcons.phone} tone="secondary" />
@@ -362,6 +370,7 @@ export function ClientDetailView({
         isOpen={isEditModalOpen}
         isSubmitting={isUpdating || isLoading}
         initialName={data.client.name}
+        initialAlias={data.client.alias ?? null}
         initialPhone={data.client.phone}
         initialClientNumber={data.client.clientNumber}
         serverErrorCode={editServerErrorCode}
@@ -375,16 +384,23 @@ export function ClientDetailView({
           close: t("clients.editModal.close"),
           nameLabel: t("clients.editModal.nameLabel"),
           namePlaceholder: t("clients.editModal.namePlaceholder"),
+          aliasLabel: t("clients.editModal.aliasLabel"),
+          aliasPlaceholder: t("clients.editModal.aliasPlaceholder"),
           phoneLabel: t("clients.editModal.phoneLabel"),
           phonePlaceholder: t("clients.editModal.phonePlaceholder"),
           clientNumberLabel: t("clients.editModal.clientNumberLabel"),
-          clientNumberPlaceholder: t("clients.editModal.clientNumberPlaceholder"),
+          clientNumberPlaceholder: t(
+            "clients.editModal.clientNumberPlaceholder",
+          ),
           save: t("clients.editModal.save"),
           saving: t("clients.editModal.saving"),
           cancel: t("clients.editModal.cancel"),
           nameTooShort: t("clients.editModal.errors.nameTooShort"),
+          aliasTooLong: t("clients.editModal.errors.aliasTooLong"),
           phoneInvalid: t("clients.editModal.errors.phoneInvalid"),
-          clientNumberInvalid: t("clients.editModal.errors.clientNumberInvalid"),
+          clientNumberInvalid: t(
+            "clients.editModal.errors.clientNumberInvalid",
+          ),
           clientNumberAlreadyExists: t(
             "clients.editModal.errors.clientNumberAlreadyExists",
           ),

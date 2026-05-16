@@ -70,7 +70,10 @@ export function RetouchReminderCard({ items }: RetouchReminderCardProps) {
           <div className="space-y-2.5">
             {items.map((item) => {
               const locale = i18n.language === "en" ? "en-US" : "es-MX";
-              const { day, month } = resolveDayAndMonth(item.lastAppointmentDate, locale);
+              const { day, month } = resolveDayAndMonth(
+                item.lastAppointmentDate,
+                locale,
+              );
 
               return (
                 <article
@@ -89,6 +92,7 @@ export function RetouchReminderCard({ items }: RetouchReminderCardProps) {
                       {`#${item.clientNumber}`}
                       {" ・ "}
                       {formatPhoneForDisplay(item.phone)}
+                      {item.alias ? ` ・ ${item.alias}` : ""}
                     </p>
                     <p className="mt-0.5 text-xs font-semibold text-[var(--admin-accent)]">
                       {t("dashboard.retouchReminders.lastAppointmentLabel", {
@@ -101,9 +105,12 @@ export function RetouchReminderCard({ items }: RetouchReminderCardProps) {
                   <button
                     type="button"
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-accent)] transition hover:bg-[var(--admin-inactive-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]"
-                    aria-label={t("dashboard.retouchReminders.actions.sendAriaLabel", {
-                      name: item.name,
-                    })}
+                    aria-label={t(
+                      "dashboard.retouchReminders.actions.sendAriaLabel",
+                      {
+                        name: item.name,
+                      },
+                    )}
                     onClick={() => {
                       sendRetouchReminder(item);
                     }}

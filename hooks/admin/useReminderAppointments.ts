@@ -13,6 +13,7 @@ import type {
   DashboardReminderType,
 } from "@/lib/admin/dashboard/types";
 import type { AppLanguage } from "@/lib/i18n/config";
+import { resolveClientDisplayName } from "@/lib/shared/client-name";
 
 function resolveLocale(language: AppLanguage) {
   return language === "en" ? "en-US" : "es-MX";
@@ -61,7 +62,7 @@ export function useReminderAppointments({
         ? "dashboard.reminders.whatsapp.nextDayMessage"
         : "dashboard.reminders.whatsapp.nextWeekMessage",
       {
-        name: item.name,
+        name: resolveClientDisplayName(item),
         time: timeLabel,
         weekday,
         day,

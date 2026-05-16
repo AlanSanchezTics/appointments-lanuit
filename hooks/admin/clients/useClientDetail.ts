@@ -50,7 +50,12 @@ export function useClientDetail({ clientId, initialData }: UseClientDetailInput)
   }, [clientId, refresh]);
 
   const updateClientIdentity = useCallback(
-    async (payload: { name: string; phone: string; clientNumber: number }) => {
+    async (payload: {
+      name: string;
+      alias: string | null;
+      phone: string;
+      clientNumber: number;
+    }) => {
       await updateClient(payload);
     },
     [updateClient],

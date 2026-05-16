@@ -45,7 +45,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - selector de horarios disponibles por día,
    - selector de cliente con dos modalidades:
      - cliente existente por búsqueda remota,
-     - alta inline de cliente nuevo (nombre + teléfono + `client_number` sugerido editable),
+    - alta inline de cliente nuevo (nombre + alias opcional + teléfono + `client_number` sugerido editable),
    - CTA `Agendar cita` para ejecutar alta en backend.
 14. Al confirmar `Agendar cita`:
    - backend crea la cita y ejecuta sync de calendario según reglas de dominio,
@@ -171,7 +171,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
 - Endpoint de búsqueda de clientes:
   - `GET /api/admin/clients/search?query=<texto>&limit=<n>`
   - requiere sesión admin (`401 ADMIN_UNAUTHORIZED`).
-  - responde `{ query, total, clients[] }` con `clients[] = { clientId, clientNumber, name, phone }`.
+  - responde `{ query, total, clients[] }` con `clients[] = { clientId, clientNumber, name, alias, phone }`.
 - Endpoint de sugerencia de número de cliente:
   - `GET /api/admin/clients/next-number`
   - requiere sesión admin (`401 ADMIN_UNAUTHORIZED`).
@@ -182,8 +182,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
   - soporta payload con cliente existente:
     - `{ date, timeSlot, clientId }`
   - soporta payload con alta inline de cliente:
-    - `{ date, timeSlot, client: { name, phone, clientNumber? } }`
+    - `{ date, timeSlot, client: { name, alias?, phone, clientNumber? } }`
     - frontend debe enviar `client.name` en forma canónica (trim) para evitar espacios residuales.
+    - frontend envía `client.alias` opcional; backend normaliza trim y persiste `null` cuando queda vacío.
   - reglas de dominio aplicadas:
     - `month` registrado y `ACTIVE`,
     - disponibilidad del slot (ocupación + locks + bloqueos manuales + reglas direccionales),

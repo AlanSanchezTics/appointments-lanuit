@@ -6,6 +6,7 @@ export type AdminDayAgendaItem = {
   date: string;
   timeSlot: string;
   name: string;
+  alias?: string | null;
   phone: string;
   status: "CONFIRMED" | "SYNC_FAILED";
 };
@@ -16,6 +17,7 @@ export type AdminPendingAppointmentItem = {
   date: string;
   timeSlot: string;
   name: string;
+  alias?: string | null;
   phone: string;
 };
 
@@ -64,6 +66,7 @@ export type AdminAppointmentTransitionResponse = {
 
 export type AdminCreateAppointmentClientInput = {
   name: string;
+  alias?: string;
   phone: string;
   clientNumber?: number;
 };
@@ -93,6 +96,7 @@ export type AdminCreateAppointmentResponse = {
     clientId: number;
     clientNumber: number;
     name: string;
+    alias?: string | null;
     phone: string;
   };
   syncReason?: "CALENDAR_NOT_CONFIGURED" | "CALENDAR_SYNC_FAILED";

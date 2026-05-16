@@ -8,6 +8,7 @@ export type PersistedAdminAgendaAppointment = {
   timeSlot: string;
   status: "CONFIRMED" | "SYNC_FAILED";
   name: string;
+  alias: string | null;
   phone: string;
   googleEventId: string | null;
 };
@@ -38,6 +39,7 @@ function mapAgendaAppointment(row: {
   googleEventId: string | null;
   client: {
     name: string;
+    alias: string | null;
     phone: string;
   };
 }) {
@@ -47,6 +49,7 @@ function mapAgendaAppointment(row: {
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     status: toActiveAppointmentStatus(row.status),
     name: row.client.name,
+    alias: row.client.alias,
     phone: row.client.phone,
     googleEventId: row.googleEventId,
   } satisfies PersistedAdminAgendaAppointment;
@@ -64,6 +67,7 @@ export async function listActiveAppointmentsByDate(date: string) {
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },
@@ -93,6 +97,7 @@ export async function findActiveAppointmentByIdInMonthForUpdate(
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },

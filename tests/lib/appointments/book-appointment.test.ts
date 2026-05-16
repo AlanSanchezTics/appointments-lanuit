@@ -103,7 +103,7 @@ describe("bookAppointment", () => {
       phone: "5512345679",
     });
     clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
-    createMock.mockResolvedValueOnce({ id: 42, client: { name: "Bety Ruiz" } });
+    createMock.mockResolvedValueOnce({ id: 42, client: { name: "Bety Ruiz", alias: null } });
 
     const { bookAppointment } = await import("@/lib/appointments/book-appointment");
     const result = await bookAppointment(

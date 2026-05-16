@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 
 type EditClientFieldError = {
   name: string | null;
+  alias: string | null;
   phone: string | null;
   clientNumber: string | null;
 };
@@ -18,14 +19,17 @@ function normalizeClientNumber(value: string) {
 
 export function useEditClientForm(
   initialName: string,
+  initialAlias: string | null,
   initialPhone: string,
   initialClientNumber: number,
 ) {
   const [name, setNameState] = useState(initialName);
+  const [alias, setAliasState] = useState(initialAlias ?? "");
   const [phone, setPhoneState] = useState(initialPhone);
   const [clientNumber, setClientNumberState] = useState(String(initialClientNumber));
   const [fieldError, setFieldError] = useState<EditClientFieldError>({
     name: null,
+    alias: null,
     phone: null,
     clientNumber: null,
   });
@@ -42,12 +46,13 @@ export function useEditClientForm(
 
       return (
         name.trim().length >= 3
+        && alias.trim().length <= 100
         && /^[0-9]{10}$/.test(normalizePhone(phone))
         && Number.isSafeInteger(parsedClientNumber)
         && parsedClientNumber > 0
       );
     },
-    [name, phone, clientNumber],
+    [alias, clientNumber, name, phone],
   );
 
   const setName = useCallback((value: string) => {
@@ -63,6 +68,14 @@ export function useEditClientForm(
     setFieldError((previous) => ({
       ...previous,
       phone: null,
+    }));
+  }, []);
+
+  const setAlias = useCallback((value: string) => {
+    setAliasState(value);
+    setFieldError((previous) => ({
+      ...previous,
+      alias: null,
     }));
   }, []);
 
@@ -87,14 +100,17 @@ export function useEditClientForm(
 
   const reset = useCallback((
     nextName: string,
+    nextAlias: string | null,
     nextPhone: string,
     nextClientNumber: number,
   ) => {
     setNameState(nextName);
+    setAliasState(nextAlias ?? "");
     setPhoneState(nextPhone);
     setClientNumberState(String(nextClientNumber));
     setFieldError({
       name: null,
+      alias: null,
       phone: null,
       clientNumber: null,
     });
@@ -108,12 +124,16 @@ export function useEditClientForm(
 
     const nextError: EditClientFieldError = {
       name: null,
+      alias: null,
       phone: null,
       clientNumber: null,
     };
 
     if (trimmedName.length < 3) {
       nextError.name = "CLIENT_NAME_TOO_SHORT";
+    }
+    if (alias.trim().length > 100) {
+      nextError.alias = "CLIENT_ALIAS_TOO_LONG";
     }
 
     if (!/^[0-9]{10}$/.test(normalizedPhone)) {
@@ -128,32 +148,36 @@ export function useEditClientForm(
       nextError.clientNumber = "CLIENT_NUMBER_INVALID";
     }
 
-    if (nextError.name || nextError.phone || nextError.clientNumber) {
+    if (nextError.name || nextError.alias || nextError.phone || nextError.clientNumber) {
       setFieldError(nextError);
       return false;
     }
 
     setFieldError({
       name: null,
+      alias: null,
       phone: null,
       clientNumber: null,
     });
     return true;
-  }, [name, phone, clientNumber]);
+  }, [alias, clientNumber, name, phone]);
 
   const getSanitizedPayload = useCallback(() => {
     const parsedClientNumber = Number(normalizeClientNumber(clientNumber));
 
     return {
       name: name.trim(),
+      alias: alias.trim().length > 0 ? alias.trim() : null,
       phone: normalizePhone(phone),
       clientNumber: parsedClientNumber,
     };
-  }, [name, phone, clientNumber]);
+  }, [alias, clientNumber, name, phone]);
 
   return {
     name,
     setName,
+    alias,
+    setAlias,
     phone,
     setPhone,
     clientNumber,

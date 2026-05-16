@@ -31,6 +31,7 @@ Business behavior is defined by:
   - Identified by phone number.
   - Has a unique incremental `client_number` assigned at creation time.
   - Has one canonical name associated with that phone.
+  - May define an optional `alias` (not unique) used for admin display and admin-originated messaging.
   - May be flagged as loyal for admin catalog and detail views.
 
 - Appointment
@@ -100,6 +101,7 @@ Business behavior is defined by:
   - Name must be at least 3 characters.
   - Customer is resolved by phone.
   - A phone cannot map to multiple names.
+  - Alias does not participate in identity validation and never overrides canonical phone-name consistency checks.
   - Name comparison for phone identity must ignore leading/trailing whitespace (trim on both values).
   - New customers always receive a unique positive `client_number`.
   - Public booking assigns `client_number` automatically from the next available value.
@@ -125,6 +127,7 @@ Business behavior is defined by:
   - Public confirmation without `appointmentIdToReschedule` creates the new appointment in `CONFIRMED` for loyal customers and `PENDING` for non-loyal customers.
   - `PENDING` appointments do not create a calendar event until they are later confirmed.
   - Public success-step WhatsApp behavior:
+    - Whenever WhatsApp text needs a client name in public flow, UI/backend payload must use canonical `name` (not `alias`).
     - `CONFIRMED` and `SYNC_FAILED`: UI performs one automatic WhatsApp redirect attempt when success view is entered, and keeps a visible manual CTA fallback.
     - `PENDING`: WhatsApp action remains explicit/manual (`Enviar comprobante`).
 
