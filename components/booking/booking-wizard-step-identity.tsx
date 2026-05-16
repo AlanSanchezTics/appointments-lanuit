@@ -9,7 +9,6 @@ import {
 } from "@/lib/datetime/mexico-city";
 import {
   formatPhoneForDisplay,
-  formatRemainingTime,
 } from "@/lib/booking/formatters";
 import type { AppLanguage } from "@/lib/i18n/config";
 import { translateValidationError } from "@/lib/i18n/translate";

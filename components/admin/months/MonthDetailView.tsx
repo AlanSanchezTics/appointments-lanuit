@@ -536,6 +536,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     };
   }, [
     data.month,
+    data.slotMode,
     dayAgendaModal.agenda,
     dayAgendaModal.editingAppointmentId,
     editDate,

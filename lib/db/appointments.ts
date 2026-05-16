@@ -260,6 +260,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
       id: number;
       client_id: number;
       name: string;
+      alias: string | null;
       phone: string;
       date: Date;
       time_slot: Date;
@@ -267,7 +268,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -290,6 +291,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
   return {
     id: record.id,
     name: record.name,
+    alias: record.alias,
     phone: record.phone,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),
@@ -317,6 +319,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
       id: number;
       client_id: number;
       name: string;
+      alias: string | null;
       phone: string;
       date: Date;
       time_slot: Date;
@@ -324,7 +327,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -341,6 +344,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
   return records.map((record) => ({
     id: record.id,
     name: record.name,
+    alias: record.alias,
     phone: record.phone,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),
@@ -366,6 +370,7 @@ export async function listMonthAppointments(monthStart: string, monthEndExclusiv
       client: {
         select: {
           name: true,
+          alias: true,
           phone: true,
         },
       },
