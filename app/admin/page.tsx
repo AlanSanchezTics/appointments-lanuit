@@ -58,30 +58,6 @@ export default async function AdminDashboardPage() {
           })}
         />
 
-        <WeeklyOccupancyCard
-          language={language}
-          data={weeklyOccupancy}
-          title={t("dashboard.weeklyOccupancy.title", { ns: "admin" })}
-          versusLabel={t("dashboard.weeklyOccupancy.versusPreviousWeek", {
-            ns: "admin",
-          })}
-          dayAppointmentsTooltip={t(
-            "dashboard.weeklyOccupancy.dayAppointmentsTooltip",
-            {
-              ns: "admin",
-            },
-          )}
-        />
-
-        {hasWeeklyAppointments ? (
-          <BusiestDayCard
-            language={language}
-            day={weeklyOccupancy.busiestDay}
-            title={t("dashboard.busiestDay.title", { ns: "admin" })}
-            subtitle={t("dashboard.busiestDay.subtitle", { ns: "admin" })}
-          />
-        ) : null}
-
         <DailyOccupancyCard
           data={weeklyOccupancy.dailyOccupancy}
           title={t(dailyOccupancyTitleKey, { ns: "admin" })}
@@ -109,11 +85,14 @@ export default async function AdminDashboardPage() {
           })}
         />
 
-        <ReminderAppointmentsCard
-          language={language}
-          nextDayItems={weeklyOccupancy.reminders.nextDay}
-          nextWeekItems={weeklyOccupancy.reminders.nextWeek}
-        />
+        {(weeklyOccupancy.reminders.nextDay.length > 0 ||
+          weeklyOccupancy.reminders.nextWeek.length > 0) && (
+          <ReminderAppointmentsCard
+            language={language}
+            nextDayItems={weeklyOccupancy.reminders.nextDay}
+            nextWeekItems={weeklyOccupancy.reminders.nextWeek}
+          />
+        )}
         {weeklyOccupancy.retouchReminders.length > 0 && (
           <RetouchReminderCard items={weeklyOccupancy.retouchReminders} />
         )}
@@ -124,6 +103,31 @@ export default async function AdminDashboardPage() {
             items={weeklyOccupancy.pendingAppointments}
           />
         )}
+
+        <WeeklyOccupancyCard
+          language={language}
+          data={weeklyOccupancy}
+          title={t("dashboard.weeklyOccupancy.title", { ns: "admin" })}
+          versusLabel={t("dashboard.weeklyOccupancy.versusPreviousWeek", {
+            ns: "admin",
+          })}
+          dayAppointmentsTooltip={t(
+            "dashboard.weeklyOccupancy.dayAppointmentsTooltip",
+            {
+              ns: "admin",
+            },
+          )}
+        />
+
+        {hasWeeklyAppointments ? (
+          <BusiestDayCard
+            language={language}
+            day={weeklyOccupancy.busiestDay}
+            title={t("dashboard.busiestDay.title", { ns: "admin" })}
+            subtitle={t("dashboard.busiestDay.subtitle", { ns: "admin" })}
+          />
+        ) : null}
+
         <DailyTipCard
           title={t("dashboard.dailyTip.title", { ns: "admin" })}
           tip={weeklyOccupancy.dailyTip}
