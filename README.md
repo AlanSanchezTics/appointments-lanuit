@@ -173,8 +173,10 @@ tests/                # Tests de integración y e2e
 - `docs/specification.md`: fuente de verdad funcional.
 - `docs/architecture/`: contratos de arquitectura (routing, API, reglas de negocio).
 - `docs/features/`: flujos funcionales (booking, cancel y admin).
+- `docs/architecture/spec-driven-development.md`: politica de adopcion de Spec Kit y jerarquia documental.
 - `docs/ui/admin/`: design system del panel administrativo.
 - `docs/runbooks/`: operación y mantenimiento.
+- `.specify/` y `specs/`: artefactos de trabajo para desarrollo guiado por especificacion.
 
 ## Notas de publicación
 

@@ -601,3 +601,30 @@ Notification Contract Check:
 - i18n applied in admin notifications: Yes/No
 - Alternative notification systems introduced: Yes/No
 ```
+
+## Spec Kit / Spec-Driven Development
+
+Spec Kit is allowed as a per-change workflow layer in this repository.
+It does not replace `docs/specification.md`, `docs/architecture/*`, or `docs/features/*`.
+
+Required rules:
+
+- `docs/specification.md` remains the permanent product contract.
+- `specs/*` is a temporary working area for the change in progress.
+- Any behavior, validation, state, integration, UI/UX, API, or persistence change must include an explicit documentation impact note.
+- When product behavior changes, the matching `docs/specification.md` and feature/architecture docs must be updated in the same workstream.
+- Spec Kit artifacts must never be treated as the source of truth when they conflict with `docs/*`.
+- Use the local constitution in `.specify/memory/constitution.md` and the template overrides in `.specify/templates/overrides/` when working with Spec Kit.
+
+Recommended flow for new feature work:
+
+1. Write or update the feature spec under `specs/<feature>/spec.md`.
+2. Clarify ambiguous behavior before planning.
+3. Build the implementation plan and task list.
+4. Implement in small, testable increments.
+5. Reconcile the implementation back into `docs/` before closing the work.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
