@@ -37,6 +37,7 @@
       "dashboard": "Dashboard",
       "months": "Months",
       "clients": "Clients",
+      "appointmentLogs": "Appointment logs",
       "default": "Admin panel"
     }
   },
@@ -48,6 +49,7 @@
     "dashboard": "Dashboard",
     "months": "Months",
     "clients": "Clients",
+    "appointmentLogs": "Appointment logs",
     "comingSoon": "Coming soon",
     "logout": "Sign out"
   },
@@ -644,6 +646,48 @@
         "shareSuccess": "Schedule shared",
         "copyError": "Unable to copy the link."
       }
+    }
+  }
+  ,
+  "appointmentLogs": {
+    "filters": {
+      "clientLabel": "Client",
+      "clientPlaceholder": "Name, alias, or phone",
+      "actionTypeLabel": "Action type",
+      "actionTypePlaceholder": "All",
+      "monthLabel": "Appointment month",
+      "actionDateFromLabel": "Date from",
+      "actionDateToLabel": "Date to",
+      "apply": "Apply filters",
+      "clear": "Clear",
+      "actionTypeOptions": {
+        "PENDING": "Appointment requested",
+        "CONFIRMED": "Appointment confirmed",
+        "CANCELLED": "Appointment cancelled",
+        "REJECTED": "Appointment rejected"
+      }
+    },
+    "export": {
+      "button": "Export PDF"
+    },
+    "table": {
+      "title": "Appointment history",
+      "total": "{{count}} records",
+      "empty": "There are no events for the selected filters.",
+      "previous": "Previous",
+      "next": "Next",
+      "paginationSummary": "Page {{page}} of {{totalPages}} · {{total}} events",
+      "headers": {
+        "appointmentNumber": "Appointment no.",
+        "client": "Client",
+        "action": "Action",
+        "appointmentDateTime": "Appointment date/time",
+        "actionDateTime": "Action date/time",
+        "actor": "Actor"
+      }
+    },
+    "errors": {
+      "loadFailed": "Unable to load appointment logs."
     }
   }
 }

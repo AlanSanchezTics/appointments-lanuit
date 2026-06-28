@@ -6,6 +6,7 @@ const listBookableMonthsMock = vi.fn();
 const transactionMock = vi.fn();
 const appointmentUpdateMock = vi.fn(async () => undefined);
 const txAppointmentUpdateManyMock = vi.fn(async () => undefined);
+const txAppointmentLogCreateManyMock = vi.fn(async () => ({ count: 0 }));
 
 vi.mock("@/lib/db/appointments", () => ({
   findCancelableFutureAppointmentsByIdsForUpdate:
@@ -39,6 +40,9 @@ describe("cancelAppointment", () => {
         appointment: {
           updateMany: txAppointmentUpdateManyMock,
         },
+        appointmentLog: {
+          createMany: txAppointmentLogCreateManyMock,
+        },
       }),
     );
   });
@@ -47,8 +51,11 @@ describe("cancelAppointment", () => {
     findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
+        clientId: 44,
         name: "Ana Garcia",
+        alias: null,
         phone: "5512345678",
+        clientNumber: 1001,
         date: "2026-03-18",
         timeSlot: "13:00",
         status: "CONFIRMED",
@@ -56,8 +63,11 @@ describe("cancelAppointment", () => {
       },
       {
         id: 45,
+        clientId: 45,
         name: "Ana Garcia",
+        alias: null,
         phone: "5512345678",
+        clientNumber: 1001,
         date: "2026-03-26",
         timeSlot: "10:00",
         status: "CONFIRMED",
@@ -101,6 +111,16 @@ describe("cancelAppointment", () => {
         googleEventId: null,
       },
     });
+    expect(txAppointmentLogCreateManyMock).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          appointmentId: 44,
+          actionType: "CANCELLED",
+          actorType: "CLIENT",
+          clientId: 44,
+        }),
+      ]),
+    });
     expect(result).toEqual({
       cancelledAppointments: [
         {
@@ -119,8 +139,11 @@ describe("cancelAppointment", () => {
     findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
+        clientId: 44,
         name: "Ana Garcia",
+        alias: null,
         phone: "5512345678",
+        clientNumber: 1001,
         date: "2026-03-18",
         timeSlot: "13:00",
         status: "CONFIRMED",
@@ -145,8 +168,11 @@ describe("cancelAppointment", () => {
     findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 44,
+        clientId: 44,
         name: "Ana Garcia",
+        alias: null,
         phone: "5512345678",
+        clientNumber: 1001,
         date: "2026-03-12",
         timeSlot: "13:00",
         status: "CONFIRMED",
@@ -173,8 +199,11 @@ describe("cancelAppointment", () => {
     findCancelableFutureAppointmentsByIdsForUpdateMock.mockResolvedValueOnce([
       {
         id: 46,
+        clientId: 46,
         name: "Ana Garcia",
+        alias: null,
         phone: "5512345678",
+        clientNumber: 1001,
         date: "2026-03-20",
         timeSlot: "13:00",
         status: "SYNC_FAILED",

@@ -48,7 +48,9 @@ export async function POST(
       ...(await request.json()),
       month,
     });
-    const response = await createAdminAppointment(payload);
+    const response = await createAdminAppointment(payload, new Date(), {
+      type: "ADMIN",
+    });
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {

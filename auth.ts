@@ -55,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           return {
             id: String(admin.id),
-            name: admin.username,
+            name: admin.name,
           };
         } catch (error) {
           if (!(error instanceof Error)) {

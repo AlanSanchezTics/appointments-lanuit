@@ -25,6 +25,7 @@ const findManyMock = vi.fn();
 const findFirstMock = vi.fn();
 const updateMock = vi.fn();
 const createMock = vi.fn();
+const appointmentLogCreateMock = vi.fn();
 const clientCreateMock = vi.fn();
 const clientAggregateMock = vi.fn();
 const clientFindUniqueMock = vi.fn();
@@ -43,6 +44,9 @@ vi.mock("@/lib/db/prisma", () => ({
     $transaction: transactionMock,
     appointment: {
       update: updateMock,
+    },
+    appointmentLog: {
+      create: appointmentLogCreateMock,
     },
   },
 }));
@@ -83,6 +87,9 @@ describe("bookAppointment", () => {
           update: updateMock,
           create: createMock,
         },
+        appointmentLog: {
+          create: appointmentLogCreateMock,
+        },
         client: {
           create: clientCreateMock,
           aggregate: clientAggregateMock,
@@ -100,6 +107,7 @@ describe("bookAppointment", () => {
       id: 21,
       clientNumber: 1,
       name: "Bety Ruiz",
+      alias: null,
       phone: "5512345679",
     });
     clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
@@ -143,6 +151,14 @@ describe("bookAppointment", () => {
         timeSlot: "09:00",
       },
     });
+    expect(appointmentLogCreateMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        appointmentId: 42,
+        actionType: "CONFIRMED",
+        actorType: "CLIENT",
+        clientId: 21,
+      }),
+    });
   });
 
   it("returns SLOT_NOT_AVAILABLE when the candidate time slot is blocked by active appointments", async () => {
@@ -183,6 +199,7 @@ describe("bookAppointment", () => {
       id: 33,
       clientNumber: 1,
       name: "Ana Lopez",
+      alias: null,
       phone: "5512345678",
     });
     clientAggregateMock.mockResolvedValueOnce({ _max: { clientNumber: 0 } });
@@ -237,6 +254,7 @@ describe("bookAppointment", () => {
       id: 12,
       clientNumber: 1,
       name: "Ana Lopez",
+      alias: null,
       phone: "5512345678",
       isLoyal: true,
     });

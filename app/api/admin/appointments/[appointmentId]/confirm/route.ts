@@ -38,7 +38,9 @@ export async function POST(request: Request, { params }: AdminConfirmRouteProps)
   try {
     const { appointmentId: rawAppointmentId } = await params;
     const appointmentId = parseAppointmentIdParam(rawAppointmentId);
-    const response = await confirmPendingAppointment(appointmentId);
+    const response = await confirmPendingAppointment(appointmentId, {
+      type: "ADMIN",
+    });
 
     return NextResponse.json(response);
   } catch (error) {

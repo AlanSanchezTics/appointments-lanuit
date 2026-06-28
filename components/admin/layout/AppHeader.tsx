@@ -29,6 +29,10 @@ function resolveHeaderIcon(sectionTitleKey: string) {
     return adminIcons.clients;
   }
 
+  if (sectionTitleKey === "header.sectionTitle.appointmentLogs") {
+    return adminIcons.filter;
+  }
+
   return adminIcons.menu;
 }
 

@@ -82,6 +82,8 @@ describe("POST /api/admin/months/[month]/appointments", () => {
       date: "2026-03-21",
       timeSlot: "10:00",
       clientId: 1,
+    }, expect.any(Date), {
+      type: "ADMIN",
     });
   });
 
@@ -131,6 +133,8 @@ describe("POST /api/admin/months/[month]/appointments", () => {
         name: "Maria Perez",
         phone: "5511112233",
       },
+    }, expect.any(Date), {
+      type: "ADMIN",
     });
   });
 

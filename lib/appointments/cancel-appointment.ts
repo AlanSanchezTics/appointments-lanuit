@@ -7,6 +7,7 @@ import { findCancelableFutureAppointmentsByIdsForUpdate } from "@/lib/db/appoint
 import type { PersistedAppointment } from "@/lib/db/appointments";
 import { prisma } from "@/lib/db/prisma";
 import { cancelSchema } from "@/lib/validation/cancel";
+import { createAppointmentLogEvents } from "@/lib/admin/appointment-logs/service";
 
 export async function cancelAppointment(rawInput: unknown, now = new Date()) {
   const input = cancelSchema.parse(rawInput);
@@ -58,6 +59,18 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
         status: "CANCELLED",
       },
     });
+
+    await createAppointmentLogEvents(
+      tx,
+      eligibleAppointments.map((appointment) => ({
+        appointmentId: appointment.id,
+        actionType: "CANCELLED",
+        actor: {
+          type: "CLIENT" as const,
+        },
+        clientId: appointment.clientId,
+      })),
+    );
 
     return eligibleAppointments;
   });

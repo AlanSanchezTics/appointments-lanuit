@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db/prisma";
 
 export type PersistedAdminAgendaAppointment = {
   id: number;
+  clientId: number;
+  clientNumber: number;
   date: string;
   timeSlot: string;
   status: "CONFIRMED" | "SYNC_FAILED";
@@ -33,11 +35,14 @@ function toActiveAppointmentStatus(
 
 function mapAgendaAppointment(row: {
   id: number;
+  clientId: number;
   date: Date;
   timeSlot: Date;
   status: AppointmentStatus;
   googleEventId: string | null;
   client: {
+    id: number;
+    clientNumber: number;
     name: string;
     alias: string | null;
     phone: string;
@@ -45,6 +50,8 @@ function mapAgendaAppointment(row: {
 }) {
   return {
     id: row.id,
+    clientId: row.clientId,
+    clientNumber: row.client.clientNumber,
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     status: toActiveAppointmentStatus(row.status),
@@ -66,6 +73,8 @@ export async function listActiveAppointmentsByDate(date: string) {
     include: {
       client: {
         select: {
+          id: true,
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,
@@ -96,6 +105,8 @@ export async function findActiveAppointmentByIdInMonthForUpdate(
     include: {
       client: {
         select: {
+          id: true,
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,

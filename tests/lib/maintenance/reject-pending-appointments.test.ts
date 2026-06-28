@@ -15,22 +15,69 @@ describe("rejectPendingAppointmentsInBatches", () => {
     expect(cutoff.toISOString()).toBe("2026-03-13T00:00:00.000Z");
   });
 
-  it("rejects pending appointments in batches and stops when the last batch is partial", async () => {
+  it("rejects pending appointments in batches and writes system logs", async () => {
     const findMany = vi
       .fn()
-      .mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
-      .mockResolvedValueOnce([{ id: 3 }]);
+      .mockResolvedValueOnce([
+        {
+          id: 1,
+          clientId: 10,
+          date: new Date("2026-03-10T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T09:00:00.000Z"),
+          client: {
+            clientNumber: 1001,
+            name: "Ana Garcia",
+            alias: null,
+            phone: "5512345678",
+          },
+        },
+        {
+          id: 2,
+          clientId: 11,
+          date: new Date("2026-03-10T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T10:00:00.000Z"),
+          client: {
+            clientNumber: 1002,
+            name: "Ana Garcia",
+            alias: null,
+            phone: "5512345678",
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 3,
+          clientId: 12,
+          date: new Date("2026-03-10T00:00:00.000Z"),
+          timeSlot: new Date("1970-01-01T11:00:00.000Z"),
+          client: {
+            clientNumber: 1003,
+            name: "Ana Garcia",
+            alias: null,
+            phone: "5512345678",
+          },
+        },
+      ]);
     const updateMany = vi
       .fn()
       .mockResolvedValueOnce({ count: 2 })
       .mockResolvedValueOnce({ count: 1 });
-
-    const result = await rejectPendingAppointmentsInBatches(
-      {
+    const createMany = vi.fn().mockResolvedValue({ count: 2 });
+    const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
         appointment: {
           findMany,
           updateMany,
         },
+        appointmentLog: {
+          createMany,
+        },
+      }),
+    );
+
+    const result = await rejectPendingAppointmentsInBatches(
+      {
+        $transaction: transaction,
       },
       {
         olderThanHours: 36,
@@ -57,6 +104,17 @@ describe("rejectPendingAppointmentsInBatches", () => {
       take: 2,
       select: {
         id: true,
+        clientId: true,
+        date: true,
+        timeSlot: true,
+        client: {
+          select: {
+            clientNumber: true,
+            name: true,
+            alias: true,
+            phone: true,
+          },
+        },
       },
     });
     expect(updateMany).toHaveBeenNthCalledWith(1, {
@@ -69,6 +127,22 @@ describe("rejectPendingAppointmentsInBatches", () => {
       data: {
         status: "REJECTED",
       },
+    });
+    expect(createMany).toHaveBeenNthCalledWith(1, {
+      data: [
+        expect.objectContaining({
+          appointmentId: 1,
+          actionType: "REJECTED",
+          actorType: "SYSTEM",
+          clientId: 10,
+        }),
+        expect.objectContaining({
+          appointmentId: 2,
+          actionType: "REJECTED",
+          actorType: "SYSTEM",
+          clientId: 11,
+        }),
+      ],
     });
     expect(updateMany).toHaveBeenNthCalledWith(2, {
       where: {
@@ -86,13 +160,22 @@ describe("rejectPendingAppointmentsInBatches", () => {
   it("returns a no-op summary when no pending appointments match the cutoff", async () => {
     const findMany = vi.fn().mockResolvedValueOnce([]);
     const updateMany = vi.fn();
-
-    const result = await rejectPendingAppointmentsInBatches(
-      {
+    const createMany = vi.fn();
+    const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
         appointment: {
           findMany,
           updateMany,
         },
+        appointmentLog: {
+          createMany,
+        },
+      }),
+    );
+
+    const result = await rejectPendingAppointmentsInBatches(
+      {
+        $transaction: transaction,
       },
       {
         olderThanHours: 36,
@@ -107,16 +190,14 @@ describe("rejectPendingAppointmentsInBatches", () => {
       batchSize: 100,
     });
     expect(updateMany).not.toHaveBeenCalled();
+    expect(createMany).not.toHaveBeenCalled();
   });
 
   it("rejects invalid configuration", async () => {
     await expect(
       rejectPendingAppointmentsInBatches(
         {
-          appointment: {
-            findMany: vi.fn(),
-            updateMany: vi.fn(),
-          },
+          $transaction: vi.fn(),
         },
         {
           olderThanHours: 0,
@@ -128,10 +209,7 @@ describe("rejectPendingAppointmentsInBatches", () => {
     await expect(
       rejectPendingAppointmentsInBatches(
         {
-          appointment: {
-            findMany: vi.fn(),
-            updateMany: vi.fn(),
-          },
+          $transaction: vi.fn(),
         },
         {
           olderThanHours: 36,

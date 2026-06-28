@@ -9,6 +9,7 @@ export type PersistedAppointment = {
   name: string;
   alias: string | null;
   phone: string;
+  clientNumber: number;
   date: string;
   timeSlot: string;
   status: AppointmentStatus;
@@ -45,6 +46,7 @@ function mapAppointment(row: {
   googleEventId: string | null;
   clientId: number;
   client: {
+    clientNumber: number;
     name: string;
     alias: string | null;
     phone: string;
@@ -55,6 +57,7 @@ function mapAppointment(row: {
     name: row.client.name,
     alias: row.client.alias,
     phone: row.client.phone,
+    clientNumber: row.client.clientNumber,
     date: dateToDateKey(row.date),
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     status: row.status,
@@ -119,6 +122,7 @@ export async function findActiveAppointmentByPhone(phone: string, dateFloor: str
     include: {
       client: {
         select: {
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,
@@ -152,6 +156,7 @@ export async function findConfirmedFutureAppointmentByPhoneInMonth(
     include: {
       client: {
         select: {
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,
@@ -187,6 +192,7 @@ export async function listCancelableFutureAppointmentsByPhoneInMonth(
     include: {
       client: {
         select: {
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,
@@ -207,6 +213,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
     Array<{
       id: number;
       client_id: number;
+      client_number: number;
       name: string;
       alias: string | null;
       phone: string;
@@ -216,7 +223,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.client_number, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -239,6 +246,7 @@ export async function findActiveAppointmentByPhoneForUpdate(
     name: record.name,
     alias: record.alias,
     phone: record.phone,
+    clientNumber: record.client_number,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),
     status: record.status,
@@ -259,6 +267,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
     Array<{
       id: number;
       client_id: number;
+      client_number: number;
       name: string;
       alias: string | null;
       phone: string;
@@ -268,7 +277,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.client_number, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -293,6 +302,7 @@ export async function findConfirmedFutureAppointmentByIdForUpdate(
     name: record.name,
     alias: record.alias,
     phone: record.phone,
+    clientNumber: record.client_number,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),
     status: record.status,
@@ -318,6 +328,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
     Array<{
       id: number;
       client_id: number;
+      client_number: number;
       name: string;
       alias: string | null;
       phone: string;
@@ -327,7 +338,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
       google_event_id: string | null;
     }>
   >`
-    SELECT a.id, a.client_id, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
+    SELECT a.id, a.client_id, c.client_number, c.name, c.alias, c.phone, a.date, a.time_slot, a.status, a.google_event_id
     FROM appointments a
     INNER JOIN clients c
       ON c.id = a.client_id
@@ -346,6 +357,7 @@ export async function findCancelableFutureAppointmentsByIdsForUpdate(
     name: record.name,
     alias: record.alias,
     phone: record.phone,
+    clientNumber: record.client_number,
     date: dateToDateKey(record.date),
     timeSlot: timeToTimeSlotKey(record.time_slot),
     status: record.status,

@@ -1,32 +1,70 @@
 export type PendingAppointmentRejectionClient = {
-  appointment: {
-    findMany: (input: {
-      where: {
-        status: "PENDING";
-        createdAt: {
-          lt: Date;
+  $transaction: <T>(
+    callback: (tx: {
+      appointment: {
+        findMany: (input: {
+          where: {
+            status: "PENDING";
+            createdAt: {
+              lt: Date;
+            };
+          };
+          orderBy: {
+            id: "asc";
+          };
+          take: number;
+          select: {
+            id: true;
+            clientId: true;
+            date: true;
+            timeSlot: true;
+            client: {
+              select: {
+                clientNumber: true;
+                name: true;
+                alias: true;
+                phone: true;
+              };
+            };
+          };
+        }) => Promise<
+          Array<{
+            id: number;
+            clientId: number;
+            date: Date;
+            timeSlot: Date;
+            client: {
+              clientNumber: number;
+              name: string;
+              alias: string | null;
+              phone: string;
+            };
+          }>
+        >;
+        updateMany: (input: {
+          where: {
+            id: {
+              in: number[];
+            };
+            status: "PENDING";
+          };
+          data: {
+            status: "REJECTED";
+          };
+        }) => Promise<{ count: number }>;
+      };
+        appointmentLog: {
+          createMany: (input: {
+            data: Array<{
+              appointmentId: number;
+              actionType: "REJECTED";
+              actorType: "SYSTEM";
+              clientId: number;
+            }>;
+          }) => Promise<{ count: number }>;
         };
-      };
-      orderBy: {
-        id: "asc";
-      };
-      take: number;
-      select: {
-        id: true;
-      };
-    }) => Promise<Array<{ id: number }>>;
-    updateMany: (input: {
-      where: {
-        id: {
-          in: number[];
-        };
-        status: "PENDING";
-      };
-      data: {
-        status: "REJECTED";
-      };
-    }) => Promise<{ count: number }>;
-  };
+      }) => Promise<T>,
+  ) => Promise<T>;
 };
 
 export function getPendingAppointmentRejectionCutoff(
@@ -53,42 +91,68 @@ export async function rejectPendingAppointmentsInBatches(
   let rejected = 0;
 
   while (true) {
-    const rows = await client.appointment.findMany({
-      where: {
-        status: "PENDING",
-        createdAt: {
-          lt: cutoff,
+    const rows = await client.$transaction(async (tx) => {
+      const batchRows = await tx.appointment.findMany({
+        where: {
+          status: "PENDING",
+          createdAt: {
+            lt: cutoff,
+          },
         },
-      },
-      orderBy: {
-        id: "asc",
-      },
-      take: input.batchSize,
-      select: {
-        id: true,
-      },
+        orderBy: {
+          id: "asc",
+        },
+        take: input.batchSize,
+        select: {
+          id: true,
+          clientId: true,
+          date: true,
+          timeSlot: true,
+          client: {
+            select: {
+              clientNumber: true,
+              name: true,
+              alias: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      if (batchRows.length === 0) {
+        return batchRows;
+      }
+
+      const ids = batchRows.map((row) => row.id);
+      const result = await tx.appointment.updateMany({
+        where: {
+          id: {
+            in: ids,
+          },
+          status: "PENDING",
+        },
+        data: {
+          status: "REJECTED",
+        },
+      });
+
+      if (result.count > 0) {
+        await tx.appointmentLog.createMany({
+          data: batchRows.map((row) => ({
+            appointmentId: row.id,
+            actionType: "REJECTED" as const,
+            actorType: "SYSTEM" as const,
+            clientId: row.clientId,
+          })),
+        });
+      }
+
+      rejected += result.count;
+
+      return batchRows;
     });
 
-    if (rows.length === 0) {
-      break;
-    }
-
-    const ids = rows.map((row) => row.id);
-    const result = await client.appointment.updateMany({
-      where: {
-        id: {
-          in: ids,
-        },
-        status: "PENDING",
-      },
-      data: {
-        status: "REJECTED",
-      },
-    });
-
-    rejected += result.count;
-
-    if (rows.length < input.batchSize) {
+    if (rows.length === 0 || rows.length < input.batchSize) {
       break;
     }
   }

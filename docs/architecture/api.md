@@ -172,6 +172,45 @@ Error conventions:
 
 ---
 
+## Admin Appointment Logs Endpoint
+
+`GET /api/admin/appointment-logs` is the global admin audit endpoint for appointment lifecycle logs.
+
+Ownership:
+
+- Capability namespace: `admin/appointment-logs`.
+- Consumer: authenticated admin UI route `/admin/appointment-logs`.
+- Route handler responsibility: parse query parameters, enforce authenticated active admin access, call appointment log domain services, and return JSON or PDF response.
+- Domain responsibility: filtering, pagination, immutable log retrieval, PDF data preparation, and validation semantics that must remain correct outside HTTP.
+
+Supported query contract:
+
+- `page`: positive integer.
+- `pageSize`: positive integer in range `1..100`, default `20`.
+- `client`: optional client name or phone search text.
+- `actionType`: optional `PENDING`, `CONFIRMED`, `CANCELLED`, or `REJECTED`.
+- `month`: optional appointment month in `YYYY-MM`, interpreted against the linked appointment date.
+- `actionDateFrom`: optional `YYYY-MM-DD`.
+- `actionDateTo`: optional `YYYY-MM-DD`.
+- `format`: optional `json` or `pdf`.
+
+Response modes:
+
+- JSON mode returns paginated rows plus pagination metadata and normalized applied filters.
+- PDF mode (`format=pdf`) returns `Content-Type: application/pdf` and exports the same filtered evidence set with visible columns, applied filters, and generation date/time.
+- PDF export is limited to `1,000` filtered rows; larger result sets return `EXPORT_LIMIT_EXCEEDED` with HTTP `422` and no partial PDF.
+
+Required error codes:
+
+- `ADMIN_UNAUTHORIZED` for unauthenticated admin requests.
+- `VALIDATION_ERROR` for invalid filters or pagination.
+- `UNSUPPORTED_EXPORT_FORMAT` for unsupported `format` values.
+- `EXPORT_LIMIT_EXCEEDED` (`422`) when a PDF export would exceed `1,000` rows.
+
+Existing booking, cancellation, approval, and rejection endpoint contracts must not change for this feature. Appointment log creation is an internal side effect after successful domain state transitions.
+
+---
+
 ## Evolution and Versioning Considerations
 
 - Avoid introducing versioning (`/v1`, `/v2`) unless strictly necessary.

@@ -128,6 +128,27 @@ export function formatDayOfMonthLabel(date: string) {
   return dayLabelFormatter.format(parseDateOnly(date));
 }
 
+export function formatAppointmentLogTableDateTime(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    timeZone: REQUIRED_TIMEZONE,
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(date);
+
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  const month = capitalize(getPart("month").replace(".", ""));
+  const dayPeriod = getPart("dayPeriod").replace(/[^a-z]/gi, "").toLowerCase();
+
+  return `${getPart("day")}-${month}-${getPart("year")} ${getPart("hour")}:${getPart("minute")} ${dayPeriod}`;
+}
+
 export function formatTimeSlotLabel(timeSlot: string, language: AppLanguage = "es") {
   const { hour, minute } = parseTimeSlot(timeSlot);
   const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;

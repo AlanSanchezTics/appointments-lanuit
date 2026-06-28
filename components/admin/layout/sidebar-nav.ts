@@ -4,7 +4,7 @@ import { adminIcons } from "@/components/admin/ui/admin-icons";
 
 export type SidebarMatchMode = "exact" | "prefix";
 
-export type SidebarNavItemId = "dashboard" | "months" | "clients";
+export type SidebarNavItemId = "dashboard" | "months" | "clients" | "appointmentLogs";
 
 export interface SidebarNavItem {
   id: SidebarNavItemId;
@@ -35,6 +35,13 @@ export const ADMIN_SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
     labelKey: "sidebar.clients",
     icon: adminIcons.clients,
     href: "/admin/clients",
+    matchMode: "prefix",
+  },
+  {
+    id: "appointmentLogs",
+    labelKey: "sidebar.appointmentLogs",
+    icon: adminIcons.filter,
+    href: "/admin/appointment-logs",
     matchMode: "prefix",
   },
 ];

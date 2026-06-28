@@ -38,7 +38,9 @@ export async function POST(request: Request, { params }: AdminRejectRouteProps) 
   try {
     const { appointmentId: rawAppointmentId } = await params;
     const appointmentId = parseAppointmentIdParam(rawAppointmentId);
-    const response = await rejectPendingAppointment(appointmentId);
+    const response = await rejectPendingAppointment(appointmentId, {
+      type: "ADMIN",
+    });
 
     return NextResponse.json(response);
   } catch (error) {

@@ -37,6 +37,7 @@
       "dashboard": "Dashboard",
       "months": "Meses",
       "clients": "Clientes",
+      "appointmentLogs": "Log de citas",
       "default": "Panel administrativo"
     }
   },
@@ -48,6 +49,7 @@
     "dashboard": "Dashboard",
     "months": "Meses",
     "clients": "Clientes",
+    "appointmentLogs": "Log de citas",
     "comingSoon": "Próximamente",
     "logout": "Cerrar sesión"
   },
@@ -644,6 +646,48 @@
         "shareSuccess": "Agenda compartida",
         "copyError": "No se pudo copiar el enlace."
       }
+    }
+  }
+  ,
+  "appointmentLogs": {
+    "filters": {
+      "clientLabel": "Cliente",
+      "clientPlaceholder": "Nombre, alias o teléfono",
+      "actionTypeLabel": "Tipo de acción",
+      "actionTypePlaceholder": "Todas",
+      "monthLabel": "Mes de la cita",
+      "actionDateFromLabel": "Fecha desde",
+      "actionDateToLabel": "Fecha hasta",
+      "apply": "Aplicar filtros",
+      "clear": "Limpiar",
+      "actionTypeOptions": {
+        "PENDING": "Cita solicitada",
+        "CONFIRMED": "Cita confirmada",
+        "CANCELLED": "Cita cancelada",
+        "REJECTED": "Cita rechazada"
+      }
+    },
+    "export": {
+      "button": "Exportar PDF"
+    },
+    "table": {
+      "title": "Historial de citas",
+      "total": "{{count}} registros",
+      "empty": "No hay eventos para los filtros seleccionados.",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "paginationSummary": "Página {{page}} de {{totalPages}} · {{total}} eventos",
+      "headers": {
+        "appointmentNumber": "No. de cita",
+        "client": "cliente",
+        "action": "Acción",
+        "appointmentDateTime": "Fecha/Hora de cita",
+        "actionDateTime": "Fecha/Hora de acción",
+        "actor": "Actor"
+      }
+    },
+    "errors": {
+      "loadFailed": "No se pudo cargar el log de citas."
     }
   }
 }

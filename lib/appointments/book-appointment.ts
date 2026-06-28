@@ -23,6 +23,7 @@ import {
   areEquivalentClientNames,
   normalizeClientName,
 } from "@/lib/shared/client-name";
+import { createAppointmentLogEvent } from "@/lib/admin/appointment-logs/service";
 import {
   bookingSchema,
   confirmBookingWithLockSchema,
@@ -153,7 +154,7 @@ async function createAppointmentInTransaction(
   const status: AppointmentCreationStatus =
     input.status ?? (client.isLoyal ? "CONFIRMED" : "PENDING");
 
-  return tx.appointment.create({
+  const appointment = await tx.appointment.create({
     data: {
       clientId: client.id,
       date: new Date(`${input.date}T00:00:00.000Z`),
@@ -169,6 +170,17 @@ async function createAppointmentInTransaction(
       },
     },
   });
+
+  await createAppointmentLogEvent(tx, {
+    appointmentId: appointment.id,
+    actionType: status,
+    actor: {
+      type: "CLIENT",
+    },
+    clientId: client.id,
+  });
+
+  return appointment;
 }
 
 async function rescheduleAppointmentInTransaction(

@@ -38,7 +38,9 @@ export async function POST(request: Request, { params }: AdminCancelRouteProps) 
     const { appointmentId: rawAppointmentId } = await params;
     const appointmentId = parseAppointmentIdParam(rawAppointmentId);
     const payload = parseAdminCancelPayload(await request.json());
-    const response = await cancelAdminAppointment(appointmentId, payload);
+    const response = await cancelAdminAppointment(appointmentId, payload, {
+      type: "ADMIN",
+    });
 
     return NextResponse.json(response);
   } catch (error) {

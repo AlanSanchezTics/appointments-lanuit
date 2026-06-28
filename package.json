@@ -21,6 +21,7 @@
     "appointments:retry-sync-failed": "node --env-file-if-exists=.env scripts/retry-sync-failed-appointments.mjs",
     "appointments:import-historic": "node --env-file-if-exists=.env scripts/import-appointments-historic.mjs",
     "appointments:import-historic:apply": "node --env-file-if-exists=.env scripts/import-appointments-historic.mjs --apply",
+    "appointment-logs:backfill": "node --env-file-if-exists=.env scripts/backfill-appointment-logs.mjs",
     "blocked-slots:retry-sync-failed": "node --env-file-if-exists=.env scripts/retry-sync-failed-blocked-slots.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

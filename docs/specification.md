@@ -466,6 +466,31 @@ Tabla: admin_users
 - UNIQUE(username)
 - INDEX(status)
 
+Tabla: appointment_logs
+
+- id (PK)
+- appointment_id INT FK -> appointments.id
+- action_type ENUM('PENDING','CONFIRMED','CANCELLED','REJECTED')
+- actor_type ENUM('SYSTEM','ADMIN','CLIENT')
+- client_id INT FK -> clients.id
+- created_at DATETIME
+
+Reglas de integridad y auditoría:
+
+- `appointment_logs` es append-only desde la aplicación.
+- No existe edición ni borrado de eventos de log en v1.
+- Se ejecuta un backfill histórico una sola vez para las citas existentes al momento de liberar el feature, usando un cutoff de despliegue para evitar duplicados.
+- Los datos de cita y cliente se resuelven por relación en tiempo de consulta.
+- Si no existe actor identificable, se persiste `actor_type=SYSTEM`.
+
+Índices:
+
+- INDEX(created_at)
+- INDEX(action_type)
+- INDEX(actor_type)
+- INDEX(client_id)
+- INDEX(appointment_id)
+
 ---
 
 ## 11. Casos Edge
@@ -484,6 +509,9 @@ Tabla: admin_users
 12. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
 13. Cambio de mes (00:00 America/Mexico_City) con `active_months` desactualizada → el job de reconciliación debe reactivar ventana vigente y desactivar meses pasados.
 14. Intento de acceso a `/admin/*` sin sesión válida → redirección obligatoria a `/admin/login`.
+15. Acción de cita sin actor identificable → registrar evento de auditoría con actor `Sistema`.
+16. Consulta de logs de citas sin sesión admin válida → rechazar acceso y no exponer datos.
+17. Exportación PDF de logs sin resultados → generar PDF válido con filtros aplicados, fecha de generación y estado vacío.
 
 ---
 
@@ -493,7 +521,7 @@ Tabla: admin_users
 2. Google Calendar es sistema espejo.
 3. No existen traslapes.
 4. Regla direccional por pares y máximo 3 citas activas por día.
-5. En flujo público: máximo una cita activa futura por teléfono en el mismo mes (se permiten citas futuras en meses distintos). En admin: se permiten múltiples citas futuras por cliente.
+5. En flujo público: se permiten múltiples citas activas futuras por teléfono en el mismo mes; cuando existen citas activas futuras del mismo mes dentro del umbral de 15 días naturales, el sistema muestra una sugerencia de UX para reagendar o continuar como nueva cita. En admin: se permiten múltiples citas futuras por cliente.
 6. Solo lunes a viernes.
 7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
 8. Solo meses `ACTIVE` y nunca meses pasados.
@@ -501,6 +529,7 @@ Tabla: admin_users
 10. Cancelación libera horario.
 11. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
 12. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
+13. Los eventos de auditoría de citas son inmutables y se generan prospectivamente solo después de liberar el feature.
 
 ## 13. Stack de tecnologías
 
@@ -562,6 +591,7 @@ Reglas obligatorias:
 - Navegación mínima visible del shell:
   - `Dashboard` -> `/admin`
   - `Meses` -> `/admin/months` (activo también para `/admin/months/[month]`)
+  - `Logs de citas` -> `/admin/appointment-logs`
   - `Clientes` visible como deshabilitado (sin navegación funcional en esta fase).
 - Acción global `Cerrar sesión`:
   - visible al final del sidebar,
@@ -580,7 +610,74 @@ Reglas obligatorias:
   - permite limpiar el término de búsqueda,
   - muestra estados de `loading`, `empty` y `error` sin abandonar el shell actual.
 
-### 15.1.2 Dashboard (`/admin`) – bloque de ocupación semanal
+### 15.1.2 Logs de citas (`/admin/appointment-logs`)
+
+- Alcance:
+  - El apartado permite auditoría, trazabilidad interna, detección de abuso y validación de responsabilidades sobre acciones de citas.
+  - Solo usuarios admin autenticados y activos pueden acceder a la ruta y a su API.
+- Eventos registrados:
+  - `PENDING` -> `Cita solicitada`.
+  - `CONFIRMED` -> `Cita confirmada`.
+  - `CANCELLED` -> `Cita cancelada`.
+  - `REJECTED` -> `Cita rechazada`.
+  - Registro:
+    - Cada transición exitosa posterior a la liberación del feature genera exactamente un evento append-only.
+    - El rechazo automático de citas `PENDING` vencidas también genera evento `REJECTED` con actor `Sistema`.
+    - Las citas existentes al momento de liberar el feature reciben un evento histórico inicial generado por el backfill una sola vez, siempre que no tengan ya historial.
+    - El backfill usa actor `Sistema` y se ejecuta con un cutoff de despliegue para delimitar el universo histórico.
+  - Los contratos existentes de agendar, cancelar, aprobar y rechazar no cambian; el log se agrega como side effect interno tras una transición exitosa.
+- El actor se clasifica como `Sistema`, `Admin` o `Cliente`.
+- Si no hay actor identificable, el actor visible debe ser `Sistema`.
+- El actor visible de la tabla es la categoría, no el nombre individual del usuario.
+- Tabla:
+  - columnas visibles:
+    - `No. de cita`,
+    - `cliente`,
+    - `Acción`,
+    - `Fecha/Hora de cita`,
+    - `Fecha/Hora de acción`,
+    - `Actor`.
+  - Las columnas de fecha/hora se muestran en formato legible para admin: `DD-MMM-YYYY hh:mm am/pm` en zona `America/Mexico_City` (por ejemplo, `14-Ago-2026 06:00 pm`).
+  - La columna de actor se muestra al final de la tabla.
+  - Debe permitir paginación.
+  - Debe permitir filtros por:
+    - cliente por nombre o teléfono,
+    - mes de la cita,
+    - fecha de acción,
+    - estado/tipo de acción.
+- La UI del apartado no expone una acción de exportación en esta fase.
+- Contrato i18n/UI:
+  - Todo texto visible del admin debe resolverse mediante `react-i18next`.
+  - La vista debe componerse con `components/admin/ui/` y respetar `docs/ui/admin/*`.
+  - El flujo público de booking/cancelación no debe adoptar componentes ni tokens del admin.
+
+### 15.1.3 API de logs de citas
+
+- Endpoint global:
+  - `GET /api/admin/appointment-logs`
+- Acceso:
+  - Requiere sesión admin autenticada y activa.
+- Filtros soportados:
+  - `client` (nombre o teléfono),
+  - `actionType` (`PENDING`, `CONFIRMED`, `CANCELLED`, `REJECTED`),
+  - `month` (`YYYY-MM`, filtrado por mes de la cita),
+  - `actionDateFrom`,
+  - `actionDateTo`.
+  - Paginación:
+    - `page`,
+    - `pageSize` con valor por defecto `20` y rango permitido `1..100`.
+  - Exportación:
+    - `format=pdf` genera un archivo PDF con los mismos filtros.
+    - El PDF exporta hasta `1,000` filas filtradas.
+    - Si los filtros coinciden con más de `1,000` filas, la API responde `EXPORT_LIMIT_EXCEEDED` con HTTP `422` y no genera PDF parcial.
+    - Sin `format` o con `format=json`, devuelve JSON paginado.
+  - Errores:
+    - acceso sin sesión -> `ADMIN_UNAUTHORIZED`,
+    - filtros inválidos -> `VALIDATION_ERROR`,
+    - formato de exportación no soportado -> `UNSUPPORTED_EXPORT_FORMAT`,
+    - exportación con más de `1,000` resultados -> `EXPORT_LIMIT_EXCEEDED` (`422`).
+
+### 15.1.4 Dashboard (`/admin`) – bloque de ocupación semanal
 
 - La parte superior del dashboard debe incluir una tarjeta `Ocupación semanal`.
 - La parte superior del dashboard debe incluir un bloque destacado `Día más ocupado`.
@@ -1014,6 +1111,7 @@ Contrato API:
   - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
+  - `GET /api/admin/appointment-logs?client=<text>&actionType=PENDING|CONFIRMED|CANCELLED|REJECTED&actionDateFrom=YYYY-MM-DD&actionDateTo=YYYY-MM-DD&page=<n>&pageSize=<n>&format=json|pdf`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
   - `POST /api/admin/months/[month]/appointments`
   - `PATCH /api/admin/months/[month]/status`
@@ -1076,6 +1174,16 @@ Contrato API:
     - `phone` no puede colisionar con otro cliente (`CLIENT_PHONE_ALREADY_EXISTS`, `400`),
     - `clientNumber` no puede colisionar con otro cliente (`CLIENT_NUMBER_ALREADY_EXISTS`, `400`),
     - cliente inexistente responde `CLIENT_NOT_FOUND` (`404`).
+  - `GET /api/admin/appointment-logs`:
+    - requiere sesión admin autenticada y activa,
+    - `client` opcional busca por nombre de cliente o teléfono normalizado/parcial,
+    - `actionType` permitido: `PENDING|CONFIRMED|CANCELLED|REJECTED`,
+    - `actionDateFrom` y `actionDateTo`, cuando se envían, deben cumplir formato `YYYY-MM-DD` y se interpretan en zona `America/Mexico_City`,
+    - `page` entero positivo (base 1),
+    - `pageSize` entero positivo en rango `1..100`, default `20`,
+    - `format` permitido: `json|pdf`,
+    - formato no soportado responde `UNSUPPORTED_EXPORT_FORMAT`,
+    - `format=pdf` exporta hasta `1,000` filas filtradas; si el resultado filtrado supera ese límite responde `EXPORT_LIMIT_EXCEEDED` (`422`).
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
     - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone, clientNumber? } }`,
@@ -1164,6 +1272,17 @@ Contrato API:
   - `appointments[]`: `{ appointmentId, date, timeSlot, status }`
 - Success `PATCH /api/admin/clients/[clientId]` (`200`):
   - `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`
+- Success `GET /api/admin/appointment-logs` JSON (`200`):
+  - `{ items, pagination, filters }`
+  - `items[]`: `{ id, appointmentNumber, client, actionType, actionLabel, appointmentDateTime, actor, actionDateTime }`
+  - `client`: `{ name, alias, phone, clientNumber }`
+  - `actor`: `{ type, label }`
+  - `pagination`: `{ page, pageSize, totalItems, totalPages }`
+  - `filters`: `{ client, actionType, month, actionDateFrom, actionDateTo }`
+- Success `GET /api/admin/appointment-logs?format=pdf` (`200`):
+  - `Content-Type: application/pdf`
+  - PDF con columnas visibles, filtros aplicados y fecha/hora de generación.
+  - Si el resultado filtrado excede `1,000` filas, responde error `EXPORT_LIMIT_EXCEEDED` (`422`) en lugar de PDF parcial.
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`

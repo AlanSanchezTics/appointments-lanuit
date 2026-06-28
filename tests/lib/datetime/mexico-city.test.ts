@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatAppointmentLogTableDateTime,
   formatLongDate,
   getCurrentDateKey,
   getCurrentMonthKey,
@@ -35,5 +36,11 @@ describe("mexico city datetime", () => {
 
   it("formats spanish long date without year", () => {
     expect(formatLongDate("2026-04-13", "es")).toBe("Lunes, 13 de Abril");
+  });
+
+  it("formats appointment log table datetimes for admin display", () => {
+    expect(formatAppointmentLogTableDateTime("2026-08-14T18:00:00-06:00")).toBe(
+      "14-Ago-2026 06:00 pm",
+    );
   });
 });

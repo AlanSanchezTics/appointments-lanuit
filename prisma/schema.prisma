@@ -15,6 +15,19 @@ enum AppointmentStatus {
   REJECTED
 }
 
+enum AppointmentLogActionType {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+}
+
+enum AppointmentLogActorType {
+  SYSTEM
+  ADMIN
+  CLIENT
+}
+
 enum ActiveMonthStatus {
   ACTIVE
   INACTIVE
@@ -57,11 +70,30 @@ model Appointment {
   createdAt            DateTime              @default(now()) @map("created_at")
   updatedAt            DateTime              @updatedAt @map("updated_at")
   client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointmentLogs      AppointmentLog[]
 
   @@index([date, timeSlot])
   @@index([clientId, status])
   @@index([date])
   @@map("appointments")
+}
+
+model AppointmentLog {
+  id            Int                      @id @default(autoincrement())
+  appointmentId Int                      @map("appointment_id")
+  actionType    AppointmentLogActionType @map("action_type")
+  actorType     AppointmentLogActorType  @map("actor_type")
+  clientId      Int                      @map("client_id")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  appointment   Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  client        Client                   @relation(fields: [clientId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([createdAt])
+  @@index([actionType, createdAt])
+  @@index([actorType])
+  @@index([clientId])
+  @@index([appointmentId])
+  @@map("appointment_logs")
 }
 
 model Client {
@@ -74,6 +106,7 @@ model Client {
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   appointments Appointment[]
+  appointmentLogs AppointmentLog[]
 
   @@map("clients")
 }

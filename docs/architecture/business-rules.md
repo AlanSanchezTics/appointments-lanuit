@@ -38,6 +38,11 @@ Business behavior is defined by:
   - Represents a scheduled service at a date and time slot.
   - Uses domain states (`PENDING`, `CONFIRMED`, `REJECTED`, `CANCELLED`, `SYNC_FAILED`).
 
+- Appointment Log Event
+  - Immutable audit record for appointment lifecycle actions.
+  - Records who performed the action, when it happened, which appointment was affected, and the client snapshot required for later evidence review.
+  - Created prospectively only after the appointment log feature is released.
+
 - Reservation Lock
   - Temporary hold used during booking flow (step 1 -> step 2 -> step 3) to prevent concurrent slot capture.
   - Locks expire automatically after a fixed time window and stop blocking availability once expired.
@@ -80,6 +85,11 @@ Business behavior is defined by:
 
 - Mirror integration principle
   - External calendar synchronization mirrors domain state but does not define source-of-truth booking validity.
+
+- Audit log integrity principle
+  - Appointment lifecycle audit logs are append-only evidence.
+  - Application flows must not expose edit or delete behavior for audit events.
+  - Audit event display data must remain readable even if related appointment, client, or admin records change later.
 
 - Referential integrity policy
   - `appointments.client_id -> clients.id` uses cascading referential actions (`ON DELETE CASCADE`, `ON UPDATE CASCADE`).
@@ -137,6 +147,40 @@ Business behavior is defined by:
   - On `PENDING -> CONFIRMED`, system must attempt Google Calendar mirror sync.
   - If that sync fails, appointment transitions to `SYNC_FAILED` without rolling back the local confirmation lifecycle.
   - If a `PENDING` appointment remains unresolved for 36 hours, the system marks it as `REJECTED` automatically.
+
+## Appointment Audit Log Rules
+
+- Scope:
+  - Appointment audit logs support internal traceability, abuse detection, responsibility validation, and evidence export.
+  - Only authenticated active admin users may consult appointment logs.
+
+- Event creation:
+  - A successful transition to `PENDING` creates a `Cita solicitada` event.
+  - A successful transition to `CONFIRMED` creates a `Cita confirmada` event.
+  - A successful transition to `CANCELLED` creates a `Cita cancelada` event.
+  - A successful transition to `REJECTED` creates a `Cita rechazada` event.
+  - Automatic pending-expiration rejection also creates a `Cita rechazada` event with actor `Sistema`.
+  - Events are created only for transitions that occur after the feature is released.
+  - The system performs a one-time historical backfill for appointments that already existed before release, using the deployment cutoff as the boundary and skipping appointments that already have log rows.
+
+- Actor rules:
+  - Valid actor categories are client, admin, and system.
+  - If the actor cannot be identified, the event must use `Sistema`.
+  - Automated transitions, including automatic pending rejection, must use the system actor.
+
+- Evidence data:
+  - Each event must preserve appointment id, action type, actor category, action date/time, and client reference.
+  - Appointment date/time is resolved through the linked appointment record.
+  - Client name, alias, phone, and client number are resolved through the linked client record.
+
+- Consultation and export:
+  - JSON list pagination must default to `pageSize=20` and enforce `pageSize` in range `1..100`.
+  - PDF export must use the filtered result set and is limited to `1,000` rows.
+  - If a PDF export would include more than `1,000` rows, the system must reject the export with `EXPORT_LIMIT_EXCEEDED` instead of generating a partial file.
+
+- Immutability:
+  - Appointment log events are append-only.
+  - Admin UI and public flows must not provide edit/delete actions for log rows.
 
 ## Cancellation Rules
 

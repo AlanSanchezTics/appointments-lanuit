@@ -1,0 +1,26 @@
+CREATE TABLE `appointment_logs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `appointment_id` INT NOT NULL,
+  `action_type` ENUM('PENDING','CONFIRMED','CANCELLED','REJECTED') NOT NULL,
+  `appointment_date` DATE NOT NULL,
+  `appointment_time_slot` TIME(0) NOT NULL,
+  `actor_type` ENUM('PUBLIC_CLIENT','ADMIN_USER','SYSTEM') NOT NULL,
+  `actor_display_name` VARCHAR(100) NOT NULL,
+  `actor_admin_user_id` INT NULL,
+  `actor_client_id` INT NULL,
+  `client_id` INT NULL,
+  `client_name` VARCHAR(100) NOT NULL,
+  `client_alias` VARCHAR(100) NULL,
+  `client_phone` VARCHAR(10) NOT NULL,
+  `client_number` INT NULL,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+  INDEX `appointment_logs_created_at_idx`(`created_at`),
+  INDEX `appointment_logs_action_type_created_at_idx`(`action_type`, `created_at`),
+  INDEX `appointment_logs_actor_type_actor_display_name_idx`(`actor_type`, `actor_display_name`),
+  INDEX `appointment_logs_client_phone_idx`(`client_phone`),
+  INDEX `appointment_logs_client_name_idx`(`client_name`),
+  INDEX `appointment_logs_client_number_idx`(`client_number`),
+  INDEX `appointment_logs_appointment_id_idx`(`appointment_id`),
+  PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

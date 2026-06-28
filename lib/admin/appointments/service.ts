@@ -39,6 +39,10 @@ import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { createClientWithUniqueClientNumber } from "@/lib/clients/client-number-service";
 import {
+  createAppointmentLogEvent,
+} from "@/lib/admin/appointment-logs/service";
+import type { AppointmentLogActorInput } from "@/lib/admin/appointment-logs/types";
+import {
   areEquivalentClientNames,
   normalizeClientAlias,
   resolveClientDisplayName,
@@ -169,6 +173,9 @@ export async function getAdminDayAgenda(input: {
 export async function createAdminAppointment(
   input: AdminCreateAppointmentPayload,
   now = new Date(),
+  actor: AppointmentLogActorInput = {
+    type: "SYSTEM",
+  },
 ): Promise<AdminCreateAppointmentResponse> {
   const registration = await findRegisteredMonth(input.month);
 
@@ -242,6 +249,13 @@ export async function createAdminAppointment(
         select: {
           id: true,
         },
+      });
+
+      await createAppointmentLogEvent(tx, {
+        appointmentId: appointment.id,
+        actionType: "CONFIRMED",
+        actor,
+        clientId: resolvedClient.id,
       });
 
       return {
@@ -436,6 +450,9 @@ export async function rescheduleAdminAppointment(
 export async function cancelAdminAppointment(
   appointmentId: number,
   input: AdminCancelAppointmentPayload,
+  actor: AppointmentLogActorInput = {
+    type: "SYSTEM",
+  },
 ): Promise<AdminCancelAppointmentResponse> {
   const registration = await findRegisteredMonth(input.month);
 
@@ -457,6 +474,13 @@ export async function cancelAdminAppointment(
     }
 
     await cancelAppointmentById(tx, current.id);
+
+    await createAppointmentLogEvent(tx, {
+      appointmentId: current.id,
+      actionType: "CANCELLED",
+      actor,
+      clientId: current.clientId,
+    });
 
     return current;
   });
@@ -493,6 +517,7 @@ async function transitionPendingAppointment(
   input: {
     appointmentId: number;
     nextStatus: "CONFIRMED" | "REJECTED";
+    actor: AppointmentLogActorInput;
   },
 ): Promise<
   AdminAppointmentTransitionResponse & {
@@ -514,7 +539,11 @@ async function transitionPendingAppointment(
       timeSlot: true,
       client: {
         select: {
+          id: true,
+          clientNumber: true,
           name: true,
+          alias: true,
+          phone: true,
         },
       },
     },
@@ -561,16 +590,27 @@ async function transitionPendingAppointment(
     };
   }
 
+  await createAppointmentLogEvent(tx, {
+    appointmentId: current.id,
+    actionType: input.nextStatus,
+    actor: input.actor,
+    clientId: current.client.id,
+  });
+
   return response;
 }
 
 export async function confirmPendingAppointment(
   appointmentId: number,
+  actor: AppointmentLogActorInput = {
+    type: "SYSTEM",
+  },
 ): Promise<AdminAppointmentTransitionResponse> {
   const transitioned = await prisma.$transaction(async (tx) =>
     transitionPendingAppointment(tx, {
       appointmentId,
       nextStatus: "CONFIRMED",
+      actor,
     }),
   );
 
@@ -601,11 +641,15 @@ export async function confirmPendingAppointment(
 
 export async function rejectPendingAppointment(
   appointmentId: number,
+  actor: AppointmentLogActorInput = {
+    type: "SYSTEM",
+  },
 ): Promise<AdminAppointmentTransitionResponse> {
   return prisma.$transaction(async (tx) =>
     transitionPendingAppointment(tx, {
       appointmentId,
       nextStatus: "REJECTED",
+      actor,
     }),
   );
 }

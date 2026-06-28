@@ -34,6 +34,13 @@ function resolveSectionTitleKey(pathname: string) {
     return "header.sectionTitle.clients";
   }
 
+  if (
+    pathname === "/admin/appointment-logs" ||
+    pathname.startsWith("/admin/appointment-logs/")
+  ) {
+    return "header.sectionTitle.appointmentLogs";
+  }
+
   return "header.sectionTitle.default";
 }
 

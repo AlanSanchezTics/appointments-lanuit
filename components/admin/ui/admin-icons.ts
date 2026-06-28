@@ -37,6 +37,8 @@ import {
   faStar,
   faLightbulb,
   faPaperPlane,
+  faFilePdf,
+  faFilter,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faCalendar as farCalendar,
@@ -97,4 +99,6 @@ export const adminIcons = {
   busiestDay: faStar,
   dailyTip: faLightbulb,
   sendReminder: faPaperPlane,
+  filePdf: faFilePdf,
+  filter: faFilter,
 } as const;
