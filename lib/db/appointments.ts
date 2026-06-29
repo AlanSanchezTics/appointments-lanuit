@@ -381,6 +381,7 @@ export async function listMonthAppointments(monthStart: string, monthEndExclusiv
     include: {
       client: {
         select: {
+          clientNumber: true,
           name: true,
           alias: true,
           phone: true,

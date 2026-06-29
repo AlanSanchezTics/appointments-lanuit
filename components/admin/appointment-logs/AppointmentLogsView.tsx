@@ -10,7 +10,10 @@ import { Select } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { AdminIcon } from "@/components/admin/ui/AdminIcon";
 import { useAppointmentLogs } from "@/hooks/admin/appointment-logs/useAppointmentLogs";
-import type { AdminAppointmentLogsResponse } from "@/lib/admin/appointment-logs/types";
+import type {
+  AdminAppointmentLogsResponse,
+  AppointmentLogActionType,
+} from "@/lib/admin/appointment-logs/types";
 import { formatPhoneForDisplay } from "@/lib/booking/formatters";
 import { formatAppointmentLogTableDateTime } from "@/lib/datetime/mexico-city";
 
@@ -26,6 +29,12 @@ const ACTION_TYPE_OPTIONS = [
   "MODIFIED",
 ] as const;
 
+function isAppointmentLogActionType(
+  value: string,
+): value is AppointmentLogActionType {
+  return ACTION_TYPE_OPTIONS.includes(value as AppointmentLogActionType);
+}
+
 export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
   const { t } = useTranslation("admin");
   const {
@@ -39,7 +48,9 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
   } = useAppointmentLogs({ initialData });
 
   const [client, setClient] = useState(filters.client);
-  const [actionType, setActionType] = useState(filters.actionType ?? "");
+  const [actionType, setActionType] = useState<AppointmentLogActionType | "">(
+    filters.actionType ?? "",
+  );
   const [month, setMonth] = useState(filters.month ?? "");
   const [actionDateFrom, setActionDateFrom] = useState(
     filters.actionDateFrom ?? "",
@@ -83,7 +94,9 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                 label={t("appointmentLogs.filters.actionTypeLabel")}
                 value={actionType}
                 options={actionTypeOptions}
-                onChange={setActionType}
+                onChange={(value) =>
+                  setActionType(isAppointmentLogActionType(value) ? value : "")
+                }
                 showPlaceholder
                 placeholder={t("appointmentLogs.filters.actionTypePlaceholder")}
                 className="h-[56px] px-6 pr-10"

@@ -12,7 +12,7 @@ export interface SelectProps extends Omit<
   React.SelectHTMLAttributes<HTMLSelectElement>,
   "onChange"
 > {
-  label: string;
+  label?: string;
   value: string;
   options: SelectOption[];
   onChange: (value: string) => void;
@@ -21,7 +21,7 @@ export interface SelectProps extends Omit<
 }
 
 export function Select({
-  label,
+  label = "",
   value,
   options,
   onChange,

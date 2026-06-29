@@ -69,6 +69,7 @@ export async function authenticateAdminCredentials(rawPayload: unknown) {
     select: {
       id: true,
       username: true,
+      name: true,
       passwordHash: true,
       passwordSalt: true,
       status: true,
@@ -105,6 +106,7 @@ export async function authenticateAdminCredentials(rawPayload: unknown) {
   return {
     id: user.id,
     username: user.username,
+    name: user.name,
   };
 }
 

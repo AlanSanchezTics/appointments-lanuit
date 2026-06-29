@@ -24,6 +24,7 @@ export default async function AdminAppointmentLogsPage({
   const initialData = await getAdminAppointmentLogs({
     client: query.client,
     actionType: query.actionType,
+    month: query.month,
     actionDateFrom: query.actionDateFrom,
     actionDateTo: query.actionDateTo,
     page: query.page,

@@ -49,6 +49,7 @@ describe("admin auth service", () => {
     findUniqueMock.mockResolvedValueOnce({
       id: 1,
       username: "admin",
+      name: "Admin User",
       passwordHash: hash,
       passwordSalt: salt,
       status: "active",
@@ -63,6 +64,7 @@ describe("admin auth service", () => {
     expect(admin).toEqual({
       id: 1,
       username: "admin",
+      name: "Admin User",
     });
     expect(updateMock).toHaveBeenCalledOnce();
   });

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import type { AppointmentStatus } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
@@ -25,6 +26,7 @@ import {
   isPublicAppointmentFuture,
 } from "@/lib/my-appointments/rules";
 import type {
+  MyAppointmentLookupItem,
   MyAppointmentsCancelResult,
   MyAppointmentsLookupResult,
   MyAppointmentsRescheduleResult,
@@ -45,6 +47,14 @@ function timeToTimeSlotKey(value: Date) {
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
+}
+
+function toPublicLookupStatus(status: AppointmentStatus): MyAppointmentLookupItem["status"] {
+  if (status === "PENDING" || status === "CONFIRMED" || status === "SYNC_FAILED") {
+    return status;
+  }
+
+  throw new Error("INVALID_APPOINTMENT_STATUS");
 }
 
 async function listFutureAppointmentsByPhone(phone: string, now = new Date()) {
@@ -79,7 +89,7 @@ async function listFutureAppointmentsByPhone(phone: string, now = new Date()) {
       phone: record.client.phone,
       date: dateToDateKey(record.date),
       timeSlot: timeToTimeSlotKey(record.timeSlot),
-      status: record.status,
+      status: toPublicLookupStatus(record.status),
     }))
     .filter((appointment) => isPublicAppointmentFuture(appointment, now));
 }
@@ -376,7 +386,7 @@ async function validateRescheduleDestination(
       monthConfig.slotMode,
     );
 
-    if (!availableSlots.includes(input.timeSlot)) {
+    if (!availableSlots.some((slot) => slot === input.timeSlot)) {
       throw new Error("SLOT_NOT_AVAILABLE");
     }
   } catch (error) {
