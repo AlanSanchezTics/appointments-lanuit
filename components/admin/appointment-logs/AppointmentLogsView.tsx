@@ -23,6 +23,7 @@ const ACTION_TYPE_OPTIONS = [
   "CONFIRMED",
   "CANCELLED",
   "REJECTED",
+  "MODIFIED",
 ] as const;
 
 export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
@@ -200,7 +201,9 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                           ? "bg-[color-mix(in_srgb,var(--error)_18%,white)] text-[var(--error)]"
                           : row.actionType === "PENDING"
                             ? "bg-[color-mix(in_srgb,var(--warning)_18%,white)] text-[var(--warning)]"
-                            : "bg-[color-mix(in_srgb,var(--success)_18%,white)] text-[var(--success)]"
+                            : row.actionType === "MODIFIED"
+                              ? "bg-[color-mix(in_srgb,var(--info)_18%,white)] text-[var(--info)]"
+                              : "bg-[color-mix(in_srgb,var(--success)_18%,white)] text-[var(--success)]"
                     }`}
                 >
                   {row.actionType === "REJECTED"
@@ -209,9 +212,11 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                       ? "❌"
                       : row.actionType === "PENDING"
                         ? "⏳"
-                        : "✅"}
+                        : row.actionType === "MODIFIED"
+                          ? "🔄"
+                          : "✅"}
                   &nbsp;&nbsp;
-                  {row.actionLabel}
+                  {t(row.actionLabel)}
                 </div>
               </div>
 
@@ -242,6 +247,14 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                         row.appointmentDateTime,
                       )}
                     </p>
+                    {row.actionType === "MODIFIED" &&
+                    row.previousAppointmentDateTime ? (
+                      <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                        {formatAppointmentLogTableDateTime(
+                          row.previousAppointmentDateTime,
+                        )}
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--admin-text-secondary)]">
@@ -259,7 +272,7 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                       {t("appointmentLogs.table.headers.actor")}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[var(--admin-text-primary)]">
-                      {row.actor.label}
+                      {t(row.actor.label)}
                     </p>
                   </div>
                 </div>
@@ -331,7 +344,9 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                           ? "bg-[color-mix(in_srgb,var(--error)_18%,white)] text-[var(--error)]"
                           : row.actionType === "PENDING"
                             ? "bg-[color-mix(in_srgb,var(--warning)_18%,white)] text-[var(--warning)]"
-                            : "bg-[color-mix(in_srgb,var(--success)_18%,white)] text-[var(--success)]"
+                            : row.actionType === "MODIFIED"
+                              ? "bg-[color-mix(in_srgb,var(--info)_18%,white)] text-[var(--info)]"
+                              : "bg-[color-mix(in_srgb,var(--success)_18%,white)] text-[var(--success)]"
                     }`}
                     >
                       {row.actionType === "REJECTED"
@@ -340,19 +355,35 @@ export function AppointmentLogsView({ initialData }: AppointmentLogsViewProps) {
                           ? "❌"
                           : row.actionType === "PENDING"
                             ? "⏳"
-                            : "✅"}
+                            : row.actionType === "MODIFIED"
+                              ? "🔄"
+                              : "✅"}
                       &nbsp;&nbsp;
-                      {row.actionLabel}
+                      {t(row.actionLabel)}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-center text-[var(--admin-text-primary)]">
-                    {formatAppointmentLogTableDateTime(row.appointmentDateTime)}
+                    <div>
+                      <div>
+                        {formatAppointmentLogTableDateTime(
+                          row.appointmentDateTime,
+                        )}
+                      </div>
+                      {row.actionType === "MODIFIED" &&
+                      row.previousAppointmentDateTime ? (
+                        <div className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                          {formatAppointmentLogTableDateTime(
+                            row.previousAppointmentDateTime,
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-center text-[var(--admin-text-primary)]">
                     {formatAppointmentLogTableDateTime(row.actionDateTime)}
                   </td>
                   <td className="px-3 py-3 text-center text-[var(--admin-text-primary)]">
-                    {row.actor.label}
+                    {t(row.actor.label)}
                   </td>
                 </tr>
               ))}

@@ -24,10 +24,21 @@ describe("admin appointment logs service", () => {
       "@/lib/admin/appointment-logs/service"
     );
 
-    expect(mapAppointmentLogLabel("PENDING")).toBe("Cita solicitada");
-    expect(mapAppointmentLogLabel("CONFIRMED")).toBe("Cita confirmada");
-    expect(mapAppointmentLogLabel("CANCELLED")).toBe("Cita cancelada");
-    expect(mapAppointmentLogLabel("REJECTED")).toBe("Cita rechazada");
+    expect(mapAppointmentLogLabel("PENDING")).toBe(
+      "appointmentLogs.filters.actionTypeOptions.PENDING",
+    );
+    expect(mapAppointmentLogLabel("CONFIRMED")).toBe(
+      "appointmentLogs.filters.actionTypeOptions.CONFIRMED",
+    );
+    expect(mapAppointmentLogLabel("CANCELLED")).toBe(
+      "appointmentLogs.filters.actionTypeOptions.CANCELLED",
+    );
+    expect(mapAppointmentLogLabel("REJECTED")).toBe(
+      "appointmentLogs.filters.actionTypeOptions.REJECTED",
+    );
+    expect(mapAppointmentLogLabel("MODIFIED")).toBe(
+      "appointmentLogs.filters.actionTypeOptions.MODIFIED",
+    );
   });
 
   it("creates immutable appointment log rows with Sistema fallback", async () => {
@@ -48,6 +59,12 @@ describe("admin appointment logs service", () => {
           type: "SYSTEM",
         },
         clientId: 55,
+        payload: {
+          appointment: {
+            date: "2026-06-27",
+            timeSlot: "10:00",
+          },
+        },
       },
     );
 
@@ -55,6 +72,12 @@ describe("admin appointment logs service", () => {
       data: {
         appointmentId: 10,
         actionType: "REJECTED",
+        payload: {
+          appointment: {
+            date: "2026-06-27",
+            timeSlot: "10:00",
+          },
+        },
         actorType: "SYSTEM",
         clientId: 55,
       },
@@ -67,12 +90,22 @@ describe("admin appointment logs service", () => {
       {
         id: 7,
         appointmentId: 44,
-        actionType: "CONFIRMED",
+        actionType: "MODIFIED",
         actorType: "ADMIN",
         createdAt: new Date("2026-06-27T18:30:00.000Z"),
         appointment: {
           date: new Date("2026-06-27T00:00:00.000Z"),
           timeSlot: new Date("1970-01-01T10:00:00.000Z"),
+        },
+        payload: {
+          appointment: {
+            date: "2026-06-27",
+            timeSlot: "10:00",
+          },
+          previous: {
+            date: "2026-06-20",
+            timeSlot: "14:00",
+          },
         },
         client: {
           name: "Ana Lopez",
@@ -167,12 +200,13 @@ describe("admin appointment logs service", () => {
             phone: "5512345678",
             clientNumber: 1200,
           },
-          actionType: "CONFIRMED",
-          actionLabel: "Cita confirmada",
+          actionType: "MODIFIED",
+          actionLabel: "appointmentLogs.filters.actionTypeOptions.MODIFIED",
           appointmentDateTime: "2026-06-27T10:00:00-06:00",
+          previousAppointmentDateTime: "2026-06-20T14:00:00-06:00",
           actor: {
             type: "ADMIN",
-            label: "Admin",
+            label: "appointmentLogs.actors.ADMIN",
           },
           actionDateTime: "2026-06-27T12:30:00-06:00",
         },

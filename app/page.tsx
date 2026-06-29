@@ -83,7 +83,7 @@ export default async function HomePage() {
             {t("home.orSeparator")}
           </p>
           <Link
-            href="/citas/cancelar"
+            href="/my-appointments"
             className={buttonVariants({
               variant: "secondary",
               className: "min-h-12 px-6 text-base font-semibold",

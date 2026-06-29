@@ -58,7 +58,7 @@ describe("home page", () => {
     );
     expect(screen.getByRole("link", { name: "Consultar o cancelar cita" })).toHaveAttribute(
       "href",
-      "/citas/cancelar",
+      "/my-appointments",
     );
   });
 
@@ -74,7 +74,7 @@ describe("home page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Consultar o cancelar cita" })).toHaveAttribute(
       "href",
-      "/citas/cancelar",
+      "/my-appointments",
     );
   });
 });

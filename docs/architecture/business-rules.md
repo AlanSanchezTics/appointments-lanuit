@@ -10,13 +10,13 @@ This document captures domain behavior, constraints, states, and decision rules 
 
 The system manages appointments for a single professional.
 
-The core domain objective is to allow customers to book and cancel appointments under strict availability, time, and identity constraints, while preserving schedule consistency and avoiding conflicts.
+The core domain objective is to allow customers to book, consult, modify, and cancel appointments under strict availability, time, and identity constraints, while preserving schedule consistency and avoiding conflicts.
 
 Business behavior is defined by:
 
 - Appointment scheduling windows based on active months.
 - A fixed weekday/time-slot model.
-- Booking and cancellation eligibility rules.
+- Booking, cancellation, and self-service modification eligibility rules.
 - 15-calendar-day threshold as UX suggestion trigger in public booking flow when same-month active future appointments exist.
 - Temporary slot holding during public booking flow (from end of step 1 until confirmation/expiration).
 - A single source of truth for appointment state.
@@ -41,6 +41,8 @@ Business behavior is defined by:
 - Appointment Log Event
   - Immutable audit record for appointment lifecycle actions.
   - Records who performed the action, when it happened, which appointment was affected, and the client snapshot required for later evidence review.
+  - Stores event evidence in a single `payload` JSON object.
+  - For reschedules, `payload` must preserve the visible previous and new schedule snapshots.
   - Created prospectively only after the appointment log feature is released.
 
 - Reservation Lock
@@ -48,7 +50,7 @@ Business behavior is defined by:
   - Locks expire automatically after a fixed time window and stop blocking availability once expired.
 
 - Active Month
-  - Calendar month that is explicitly enabled for booking and cancellation flows.
+  - Calendar month that is explicitly enabled for booking and destination reschedule availability flows.
 
 ## Core Concepts
 
@@ -158,6 +160,7 @@ Business behavior is defined by:
   - A successful transition to `PENDING` creates a `Cita solicitada` event.
   - A successful transition to `CONFIRMED` creates a `Cita confirmada` event.
   - A successful transition to `CANCELLED` creates a `Cita cancelada` event.
+  - A successful reschedule creates a `Cita modificada` event.
   - A successful transition to `REJECTED` creates a `Cita rechazada` event.
   - Automatic pending-expiration rejection also creates a `Cita rechazada` event with actor `Sistema`.
   - Events are created only for transitions that occur after the feature is released.
@@ -170,7 +173,8 @@ Business behavior is defined by:
 
 - Evidence data:
   - Each event must preserve appointment id, action type, actor category, action date/time, and client reference.
-  - Appointment date/time is resolved through the linked appointment record.
+  - Events must preserve the schedule evidence required to understand the action even if the appointment is moved later.
+  - `MODIFIED` must preserve both previous and new date/time.
   - Client name, alias, phone, and client number are resolved through the linked client record.
 
 - Consultation and export:
@@ -182,17 +186,29 @@ Business behavior is defined by:
   - Appointment log events are append-only.
   - Admin UI and public flows must not provide edit/delete actions for log rows.
 
+## Public My Appointments Rules
+
+- Public appointment self-service entry route is `/my-appointments`.
+- Legacy `/citas/cancelar` redirects to `/my-appointments`.
+- Lookup by phone returns future appointments for the phone even when no public action remains available.
+- Lookup ignores the `active_months` status of the appointment's current month.
+- Public consultation in `/my-appointments` is read-only until the client chooses an action.
+- Public management action area exposes cancellation and modification affordances for the selected appointment.
+- An appointment may be:
+  - modifiable only,
+  - cancelable only,
+  - or eligible for both actions.
+- A future appointment that is outside both public time windows must still appear in lookup as blocked, with a UI warning that web changes or cancellations are no longer available.
+
 ## Cancellation Rules
 
 - A cancellation request is allowed only when the appointment is:
   - In `CONFIRMED` or `SYNC_FAILED` state.
   - In the future (not past date).
-  - Inside an active month.
   - At least 24 hours away from the current local time.
 - Cancellation lookup by phone must return all future appointments that satisfy those conditions so the user can choose one or more to cancel.
 - Cancellation execution in public flow must allow cancelling one or multiple selected appointments in the same request.
-- Public cancellation entry route is `/citas/cancelar`.
-- Legacy `/cancelar` may remain as compatibility redirect to `/citas/cancelar`.
+- Public cancellation executes inside `/my-appointments`.
 
 - Cancellation effects:
   - Each selected appointment state changes to `CANCELLED`.
@@ -205,6 +221,28 @@ Business behavior is defined by:
 - Not allowed:
   - Cancelling past appointments.
   - Cancelling appointments with less than 24 hours remaining via the web cancellation flow.
+
+## Public Reschedule Rules
+
+- A public reschedule request is allowed only when the appointment is:
+  - In `PENDING`, `CONFIRMED`, or `SYNC_FAILED` state.
+  - In the future.
+  - At least 3 hours away from the current local time.
+- Public reschedule preserves the same appointment record (`appointments.id`).
+- Public reschedule updates `date` and `timeSlot` to the newly selected slot.
+- Destination slot selection follows the same public booking availability rules:
+  - target month must be bookable,
+  - target day must be valid,
+  - target slot must be available under occupancy, locks, daily capacity, and slot-mode rules.
+- Public reschedule must not apply `isLoyal` logic or the 15-day booking suggestion branch.
+- For source appointments in `CONFIRMED` or `SYNC_FAILED`:
+  - system attempts calendar mirror re-sync for the new schedule,
+  - if sync succeeds, the updated appointment stores the resulting `googleEventId` and ends in `CONFIRMED`,
+  - if sync fails, the local reschedule remains valid and the appointment ends in `SYNC_FAILED`.
+- For source appointments in `PENDING`:
+  - the reschedule does not trigger calendar sync,
+  - `googleEventId` remains `null`,
+  - the appointment remains `PENDING`.
 
 - SYNC_FAILED recovery:
   - A scheduled maintenance job may retry external sync for appointments in `SYNC_FAILED`.

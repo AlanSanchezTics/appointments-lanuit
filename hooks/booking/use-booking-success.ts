@@ -41,13 +41,13 @@ export function useBookingSuccess({
           time: formattedTime,
         })
         : translate("whatsapp.messageTemplate", {
-          date: formattedDate,
-          time: formattedTime,
-          appurl:
-            typeof window === "undefined"
-              ? "/"
-              : window.location.origin,
-        });
+            date: formattedDate,
+            time: formattedTime,
+            appurl:
+              typeof window === "undefined"
+              ? "/my-appointments"
+              : `${window.location.origin}/my-appointments`,
+          });
 
     onWhatsAppRedirect(
       buildWhatsappUrlFromMessage({

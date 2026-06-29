@@ -188,7 +188,7 @@ Supported query contract:
 - `page`: positive integer.
 - `pageSize`: positive integer in range `1..100`, default `20`.
 - `client`: optional client name or phone search text.
-- `actionType`: optional `PENDING`, `CONFIRMED`, `CANCELLED`, or `REJECTED`.
+- `actionType`: optional `PENDING`, `CONFIRMED`, `CANCELLED`, `MODIFIED`, or `REJECTED`.
 - `month`: optional appointment month in `YYYY-MM`, interpreted against the linked appointment date.
 - `actionDateFrom`: optional `YYYY-MM-DD`.
 - `actionDateTo`: optional `YYYY-MM-DD`.
@@ -208,6 +208,44 @@ Required error codes:
 - `EXPORT_LIMIT_EXCEEDED` (`422`) when a PDF export would exceed `1,000` rows.
 
 Existing booking, cancellation, approval, and rejection endpoint contracts must not change for this feature. Appointment log creation is an internal side effect after successful domain state transitions.
+
+---
+
+## Public My Appointments Endpoints
+
+`/api/my-appointments/*` owns the unified public self-service capability for consulting, cancelling, and rescheduling existing appointments.
+
+Ownership:
+
+- Capability namespace: `my-appointments`.
+- Consumer: public UI route `/my-appointments`.
+- Route handler responsibility: parse body/query input, call appointment-management domain services, and map stable errors.
+- Domain responsibility: eligibility evaluation, availability validation, transactional cancellation/reschedule, and audit side effects.
+
+Supported contracts:
+
+- `POST /api/my-appointments/lookup`
+  - input: `{ phone }`
+  - returns future appointments for that phone with their current public actionability state
+  - source lookup ignores `active_months`
+- `POST /api/my-appointments/cancel`
+  - input: `{ phone, appointmentIds[] }`
+  - applies web cancellation rule `>= 24 hours`
+- `POST /api/my-appointments/reschedule`
+  - input: `{ phone, appointmentId, month, date, timeSlot }`
+  - applies web reschedule rule `>= 3 hours`
+  - preserves the same appointment identity
+  - destination slot follows the public booking availability model
+  - must not apply `isLoyal` logic or the 15-day booking suggestion branch
+
+Required error semantics:
+
+- `PHONE_INVALID` for invalid phone input
+- `APPOINTMENT_NOT_FOUND` when no eligible appointment is found or the target appointment no longer matches the flow
+- `APPOINTMENT_IS_COMING_SOON` when cancellation fails due to the 24-hour rule
+- `APPOINTMENT_NOT_MODIFIABLE` when reschedule fails due to the 3-hour rule or state mismatch
+- `SLOT_NOT_AVAILABLE` when the target slot is no longer available
+- `VALIDATION_ERROR` for malformed or semantically invalid payloads
 
 ---
 

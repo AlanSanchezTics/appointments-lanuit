@@ -256,6 +256,12 @@ export async function createAdminAppointment(
         actionType: "CONFIRMED",
         actor,
         clientId: resolvedClient.id,
+        payload: {
+          appointment: {
+            date: input.date,
+            timeSlot: input.timeSlot,
+          },
+        },
       });
 
       return {
@@ -475,12 +481,18 @@ export async function cancelAdminAppointment(
 
     await cancelAppointmentById(tx, current.id);
 
-    await createAppointmentLogEvent(tx, {
-      appointmentId: current.id,
-      actionType: "CANCELLED",
-      actor,
-      clientId: current.clientId,
-    });
+  await createAppointmentLogEvent(tx, {
+    appointmentId: current.id,
+    actionType: "CANCELLED",
+    actor,
+    clientId: current.clientId,
+    payload: {
+      appointment: {
+        date: current.date,
+        timeSlot: current.timeSlot,
+      },
+    },
+  });
 
     return current;
   });
@@ -595,6 +607,12 @@ async function transitionPendingAppointment(
     actionType: input.nextStatus,
     actor: input.actor,
     clientId: current.client.id,
+    payload: {
+      appointment: {
+        date: dateToDateKey(current.date),
+        timeSlot: timeToTimeSlotKey(current.timeSlot),
+      },
+    },
   });
 
   return response;

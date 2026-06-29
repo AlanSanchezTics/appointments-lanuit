@@ -1,14 +1,17 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import CitasCancelPage from "@/app/citas/cancelar/page";
+const redirectMock = vi.fn((url: string) => {
+  throw new Error(`REDIRECT:${url}`);
+});
+
+vi.mock("next/navigation", () => ({
+  redirect: redirectMock,
+}));
 
 describe("/citas/cancelar page", () => {
-  it("renders the cancellation wizard first step", () => {
-    render(<CitasCancelPage />);
+  it("redirects to /my-appointments", async () => {
+    const pageModule = await import("@/app/citas/cancelar/page");
 
-    expect(screen.getByText("Paso 1 de 3")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Cancelar cita" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Buscar cita" })).toBeInTheDocument();
+    expect(() => pageModule.default()).toThrow("REDIRECT:/my-appointments");
   });
 });

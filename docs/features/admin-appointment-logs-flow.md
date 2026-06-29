@@ -69,6 +69,7 @@ Log rows are generated as side effects of successful appointment state transitio
 - `PENDING` -> `Cita solicitada`.
 - `CONFIRMED` -> `Cita confirmada`.
 - `CANCELLED` -> `Cita cancelada`.
+- `MODIFIED` -> `Cita modificada`.
 - `REJECTED` -> `Cita rechazada`.
 - Automated pending-expiration rejection also creates `Cita rechazada` with actor `Sistema`.
 - On release, a one-time backfill creates baseline log rows for appointments that already existed before the deployment cutoff, skipping any appointment that already has history. The backfill uses actor `Sistema`.
@@ -80,6 +81,8 @@ Existing booking, cancellation, approval, and rejection API contracts do not cha
 - Logs are immutable.
 - Logs continue prospectively after the release-cutoff backfill completes.
 - Missing or unknown actor is displayed as `Sistema`.
+- `MODIFIED` rows must preserve readable previous and new schedule evidence even if the appointment changes again later.
+- Ese snapshot se persiste en `appointment_logs.payload`.
 - JSON pagination uses default `pageSize=20` and enforces `pageSize` in range `1..100`.
 - Month filtering matches the appointment month (`YYYY-MM`) using the appointment date, not the log creation date.
 - Admin UI text must use `react-i18next`.
@@ -96,7 +99,7 @@ Existing booking, cancellation, approval, and rejection API contracts do not cha
 ## Acceptance Criteria
 
 - Only authenticated active admin users can access the section.
-- New events are registered for request, confirm, cancel, and reject actions.
+- New events are registered for request, confirm, cancel, modify, and reject actions.
 - Log records are immutable.
 - Table supports filtering and pagination.
 - Appointments existing before release receive a one-time baseline audit row through the backfill process.

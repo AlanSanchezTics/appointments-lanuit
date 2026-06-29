@@ -20,6 +20,7 @@ enum AppointmentLogActionType {
   CONFIRMED
   CANCELLED
   REJECTED
+  MODIFIED
 }
 
 enum AppointmentLogActorType {
@@ -82,6 +83,7 @@ model AppointmentLog {
   id            Int                      @id @default(autoincrement())
   appointmentId Int                      @map("appointment_id")
   actionType    AppointmentLogActionType @map("action_type")
+  payload       Json
   actorType     AppointmentLogActorType  @map("actor_type")
   clientId      Int                      @map("client_id")
   createdAt     DateTime                 @default(now()) @map("created_at")

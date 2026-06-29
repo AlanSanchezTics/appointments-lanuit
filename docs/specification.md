@@ -56,13 +56,13 @@ Restricciones:
   - `home.title`,
   - `home.subtitle`,
   - CTA primaria `Agendar cita` (`/booking`),
-  - CTA secundaria `Consultar o cancelar cita` (`/citas/cancelar`).
+  - CTA secundaria `Mis citas` (`/my-appointments`).
 - Un mes disponible para la vista de `/` debe cumplir simultáneamente:
   - `status=ACTIVE` en `active_months`,
   - mes actual o futuro (`>= currentMonth`),
   - al menos un horario disponible en `getMonthAvailability(month)`.
 - Meses inactivos o sin cupo no deben mostrarse como CTA en `/`.
-- Si no existe ningún mes disponible bajo esas reglas, `/` mantiene el layout de bienvenida y muestra aviso de indisponibilidad, conservando la acción de cancelación.
+- Si no existe ningún mes disponible bajo esas reglas, `/` mantiene el layout de bienvenida y muestra aviso de indisponibilidad, conservando la acción hacia `Mis citas`.
 
 ---
 
@@ -160,8 +160,8 @@ Regla general:
    - Renderiza botones por mes disponible con destino `/citas/YYYY-MM/booking`.
    - Solo se listan meses `ACTIVE` con al menos un horario disponible.
    - Meses sin cupo o inactivos no se muestran.
-   - Si no hay meses disponibles, se muestra aviso de indisponibilidad en el mismo layout y se mantiene CTA `Cancelar cita`.
-   - El botón de cancelación en `/` apunta a `/citas/cancelar`.
+   - Si no hay meses disponibles, se muestra aviso de indisponibilidad en el mismo layout y se mantiene CTA `Mis citas`.
+   - El CTA secundario en `/` apunta a `/my-appointments`.
    - La selección de idioma (`es`/`en`) permanece disponible en todo el producto:
      - flujo público: selector tipo FAB global,
      - panel admin autenticado (`/admin/*` excepto `/admin/login`): selector integrado al `appHeader`.
@@ -232,7 +232,7 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 
 - Enfoque mobile-first obligatorio (desktop muestra un contenedor tipo móvil).
 - El flujo visual de reserva queda compuesto por 4 vistas:
-  - Entrada global (`/`): branding + CTA primaria `Agendar cita` + CTA secundaria `Consultar o cancelar cita`.
+  - Entrada global (`/`): branding + CTA primaria `Agendar cita` + CTA secundaria `Mis citas`.
   - Paso 1 (`/booking`): selección de día/hora + navegación de meses activos futuros + lock temporal al continuar.
     - CTA secundaria `Volver` regresa al inicio público (`/`).
   - Paso 2 (`/booking`): identificación (`phone`) y `name` condicional (solo cliente nuevo).
@@ -273,7 +273,7 @@ Mensaje base para cita `CONFIRMED`:
     ¡Cita agendada con éxito!
     🗓️ *{Fecha} a las {Hora}*
 
-    Puedes revisar, editar o cancelar tu cita en el siguiente enlace {appurl}
+    Puedes revisar, editar o cancelar tu cita en el siguiente enlace {appurl}/my-appointments
     ⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._
 
 El mensaje debe codificarse usando encodeURIComponent.
@@ -289,42 +289,81 @@ Mensaje base para cita `PENDING`:
 
 ---
 
-## 8. Flujo de Cancelación
+## 8. Flujo de Mis Citas
 
-1. Usuario ingresa teléfono.
-2. Sistema busca citas cancelables con estas condiciones simultáneas:
-   - Estatus `CONFIRMED` o `SYNC_FAILED`.
-   - Fecha futura (`date > hoy` en zona `America/Mexico_City`).
-   - Dentro de un mes `ACTIVE` en `active_months`.
-   - La cita debe estar al menos a 24 horas de distancia; si faltan menos de 24 horas, no se permite cancelación por este medio.
-3. Si existen coincidencias, se muestra la lista de citas futuras cancelables vinculadas al teléfono para que el cliente elija una o varias.
-   - `Cancelar cita` (sobre la selección).
-   - `Regresar al inicio`.
-4. Usuario confirma cancelación de la selección.
-5. Backend:
-   - Cambia estado a `CANCELLED` para cada cita seleccionada.
-   - Elimina evento en Google Calendar por cada cita seleccionada que tenga `google_event_id`.
-6. UI muestra el mensaje final:
+1. Usuario ingresa a `/my-appointments`.
+2. El sistema muestra un formulario para capturar teléfono.
+   - La vista reutiliza el mismo sistema visual público de `/booking` y del flujo de cancelación:
+     - `booking-mobile-shell`,
+     - jerarquía por pasos,
+     - tipografía, tarjetas y botones consistentes con el flujo público.
+3. Usuario ingresa su teléfono.
+4. Sistema busca citas futuras vinculadas al teléfono capturado.
+5. El lookup:
+   - normaliza el teléfono a 10 dígitos,
+   - ignora el estado de `active_months` de la cita origen,
+   - devuelve citas futuras aunque alguna ya no permita acciones por ventana de tiempo,
+   - puede incluir citas en `PENDING`, `CONFIRMED` y `SYNC_FAILED`.
+6. Usuario selecciona la cita que desea gestionar.
+7. El sistema mantiene un área de acciones vinculada a la cita seleccionada con:
+   - `Cancelar cita`
+   - `Modificar cita`
+   - cuando una acción no aplica para la cita seleccionada, debe mostrarse como no disponible sin ocultar el estado real de la cita.
+   - cuando una cita ya no permita cambios ni cancelación por ventana de tiempo, debe mostrarse bloqueada con advertencia explícita.
+
+### 8.1 Rama de Cancelación
+
+1. Una cita es cancelable solo si cumple simultáneamente:
+   - estado `CONFIRMED` o `SYNC_FAILED`,
+   - fecha futura (`date > hoy` en `America/Mexico_City`),
+   - al menos 24 horas de anticipación.
+2. La cancelación pública en `/my-appointments` no depende de que el mes de la cita siga en `active_months`.
+3. Si existen coincidencias cancelables, el usuario puede seleccionar una o varias y confirmar la acción.
+4. Backend:
+   - cambia estado a `CANCELLED` para cada cita seleccionada,
+   - elimina evento en Google Calendar por cada cita seleccionada que tenga `google_event_id`.
+5. UI muestra el mensaje final:
    - `Tu cita ha sido cancelada con exito`.
-   - Cuando existe `whatsappUrl`, la UI realiza un intento automático único de redirección a `https://wa.me/?text=...` al entrar al paso de éxito.
-   - Muestra CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `https://wa.me/?text=...` con el mensaje:
-     - `❌ *CITA CANCELADA*`
-     - `_[date] a las [time]_`
-     - (línea en blanco)
-     - `Una disculpa, no podré asistir a esta cita. Gracias!`
-   - El mensaje se construye con la fecha/hora de la cita cancelada y se codifica con `encodeURIComponent`.
-   - Muestra CTA secundaria `Volver al inicio` con navegación a `/`.
-7. Todos los horarios cancelados vuelven a estar disponibles automáticamente.
+   - cuando existe `whatsappUrl`, la UI realiza un intento automático único de redirección a `https://wa.me/?text=...` al entrar al paso de éxito.
+   - muestra CTA primaria `Notificar por WhatsApp` como fallback manual visible.
+   - muestra CTA secundaria `Volver al inicio` con navegación a `/`.
+6. Todos los horarios cancelados vuelven a estar disponibles automáticamente.
+
+### 8.2 Rama de Modificación
+
+1. Una cita es modificable solo si cumple simultáneamente:
+   - estado `PENDING`, `CONFIRMED` o `SYNC_FAILED`,
+   - fecha futura,
+   - al menos 3 horas de anticipación.
+2. El flujo visual de modificación es similar a `/booking` para elegir nueva fecha y nuevo horario.
+3. En esta rama no aplican:
+   - validaciones de `isLoyal`,
+   - sugerencia o restricción UX por citas futuras activas dentro de 15 días.
+4. El slot destino debe estar disponible bajo las mismas reglas de disponibilidad del flujo público de booking.
+5. Backend:
+   - preserva el mismo `appointments.id`,
+   - actualiza `date`,
+   - actualiza `timeSlot`,
+   - si la cita origen está en `CONFIRMED` o `SYNC_FAILED`, intenta resincronizar Google Calendar y reemplaza `google_event_id` si cambia,
+   - si la sincronización falla, conserva la reprogramación local y deja la cita en `SYNC_FAILED`,
+   - si la cita origen está en `PENDING`, mantiene `google_event_id = null` y no intenta sincronización.
+6. Una modificación exitosa registra un evento `Cita modificada` con actor `Cliente`.
+   - El log persiste evidencia del horario vigente y, para modificaciones, del horario anterior y nuevo dentro de `appointment_logs.payload`.
+7. UI muestra el mensaje final de reprogramación:
+   - realiza un intento automático único de redirección a WhatsApp al entrar al paso de éxito,
+   - usa `whatsapp.messageTemplate`,
+   - muestra CTA visible `Enviar confirmación por WhatsApp` como fallback manual.
+
+### 8.3 Compatibilidad de Rutas
+
+- `/my-appointments` es la ruta pública canónica para consultar, modificar o cancelar citas.
+- `/citas/cancelar` deja de ser flujo primario y redirige a `/my-appointments`.
 
 Notas de contrato:
 
 - Los errores backend deben devolverse como códigos estables (`errorCode`).
 - El frontend traduce `errorCode` al idioma activo.
 - El backend no retorna mensajes localizados de UX final.
-
-No se pueden cancelar citas pasadas en el flujo público (`/citas/cancelar`).
-
-Las citas `SYNC_FAILED` sí son cancelables en flujo público si cumplen las mismas reglas temporales (mes activo + cita futura + ventana >= 24 horas).
 
 ---
 
@@ -470,7 +509,8 @@ Tabla: appointment_logs
 
 - id (PK)
 - appointment_id INT FK -> appointments.id
-- action_type ENUM('PENDING','CONFIRMED','CANCELLED','REJECTED')
+- action_type ENUM('PENDING','CONFIRMED','CANCELLED','REJECTED','MODIFIED')
+- payload JSON
 - actor_type ENUM('SYSTEM','ADMIN','CLIENT')
 - client_id INT FK -> clients.id
 - created_at DATETIME
@@ -480,7 +520,9 @@ Reglas de integridad y auditoría:
 - `appointment_logs` es append-only desde la aplicación.
 - No existe edición ni borrado de eventos de log en v1.
 - Se ejecuta un backfill histórico una sola vez para las citas existentes al momento de liberar el feature, usando un cutoff de despliegue para evitar duplicados.
-- Los datos de cita y cliente se resuelven por relación en tiempo de consulta.
+- Los datos de cliente pueden resolverse por relación en tiempo de consulta.
+- `payload` debe preservar el horario legible asociado al evento.
+- En `MODIFIED`, `payload` debe incluir `appointment`, `previous` y `next` para no depender solo del estado actual de la cita.
 - Si no existe actor identificable, se persiste `actor_type=SYSTEM`.
 
 Índices:
@@ -504,14 +546,15 @@ Reglas de integridad y auditoría:
 7. Manipulación frontend → Backend recalcula.
 8. Cancelación simultánea y nueva reserva → Resolver vía transacciones.
 9. Cambio horario verano → Usar siempre America/Mexico_City.
-10. Intento de cancelar una cita con menos de 24 horas de anticipación → Rechazar en flujo web de cancelación.
-11. Lock temporal expirado durante confirmación → Rechazar (`LOCK_EXPIRED_OR_INVALID`) y pedir reselección.
-12. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
-13. Cambio de mes (00:00 America/Mexico_City) con `active_months` desactualizada → el job de reconciliación debe reactivar ventana vigente y desactivar meses pasados.
-14. Intento de acceso a `/admin/*` sin sesión válida → redirección obligatoria a `/admin/login`.
-15. Acción de cita sin actor identificable → registrar evento de auditoría con actor `Sistema`.
-16. Consulta de logs de citas sin sesión admin válida → rechazar acceso y no exponer datos.
-17. Exportación PDF de logs sin resultados → generar PDF válido con filtros aplicados, fecha de generación y estado vacío.
+10. Intento de cancelar una cita con menos de 24 horas de anticipación → Rechazar en flujo web de `/my-appointments`.
+11. Intento de modificar una cita con menos de 3 horas de anticipación → Rechazar en flujo web de `/my-appointments`.
+12. Lock temporal expirado durante confirmación → Rechazar (`LOCK_EXPIRED_OR_INVALID`) y pedir reselección.
+13. Dos usuarios intentando lockear el mismo slot → Solo un lock vigente gana.
+14. Cambio de mes (00:00 America/Mexico_City) con `active_months` desactualizada → el job de reconciliación debe reactivar ventana vigente y desactivar meses pasados.
+15. Intento de acceso a `/admin/*` sin sesión válida → redirección obligatoria a `/admin/login`.
+16. Acción de cita sin actor identificable → registrar evento de auditoría con actor `Sistema`.
+17. Consulta de logs de citas sin sesión admin válida → rechazar acceso y no exponer datos.
+18. Exportación PDF de logs sin resultados → generar PDF válido con filtros aplicados, fecha de generación y estado vacío.
 
 ---
 
@@ -527,7 +570,9 @@ Reglas de integridad y auditoría:
 8. Solo meses `ACTIVE` y nunca meses pasados.
 9. Confirmación atómica.
 10. Cancelación libera horario.
-11. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
+11. Modificación pública preserva el mismo `appointments.id`.
+12. Modificación pública no aplica `isLoyal` ni la sugerencia de 15 días.
+13. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
 12. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
 13. Los eventos de auditoría de citas son inmutables y se generan prospectivamente solo después de liberar el feature.
 
@@ -619,16 +664,19 @@ Reglas obligatorias:
   - `PENDING` -> `Cita solicitada`.
   - `CONFIRMED` -> `Cita confirmada`.
   - `CANCELLED` -> `Cita cancelada`.
+  - `MODIFIED` -> `Cita modificada`.
   - `REJECTED` -> `Cita rechazada`.
   - Registro:
     - Cada transición exitosa posterior a la liberación del feature genera exactamente un evento append-only.
     - El rechazo automático de citas `PENDING` vencidas también genera evento `REJECTED` con actor `Sistema`.
     - Las citas existentes al momento de liberar el feature reciben un evento histórico inicial generado por el backfill una sola vez, siempre que no tengan ya historial.
     - El backfill usa actor `Sistema` y se ejecuta con un cutoff de despliegue para delimitar el universo histórico.
-  - Los contratos existentes de agendar, cancelar, aprobar y rechazar no cambian; el log se agrega como side effect interno tras una transición exitosa.
+  - Los contratos existentes de agendar, cancelar, modificar, aprobar y rechazar evolucionan solo donde el flujo lo requiere; el log se agrega como side effect interno tras una transición exitosa.
 - El actor se clasifica como `Sistema`, `Admin` o `Cliente`.
 - Si no hay actor identificable, el actor visible debe ser `Sistema`.
 - El actor visible de la tabla es la categoría, no el nombre individual del usuario.
+- Cuando la acción sea `Cita modificada`, el log debe conservar evidencia legible del horario anterior y del horario nuevo.
+- Esa evidencia se persiste dentro de `appointment_logs.payload`, no en columnas snapshot separadas.
 - Tabla:
   - columnas visibles:
     - `No. de cita`,
@@ -645,11 +693,11 @@ Reglas obligatorias:
     - mes de la cita,
     - fecha de acción,
     - estado/tipo de acción.
-- La UI del apartado no expone una acción de exportación en esta fase.
+- Debe permitir exportación PDF sobre el resultado filtrado.
 - Contrato i18n/UI:
   - Todo texto visible del admin debe resolverse mediante `react-i18next`.
   - La vista debe componerse con `components/admin/ui/` y respetar `docs/ui/admin/*`.
-  - El flujo público de booking/cancelación no debe adoptar componentes ni tokens del admin.
+  - El flujo público de booking/my-appointments no debe adoptar componentes ni tokens del admin.
 
 ### 15.1.3 API de logs de citas
 
@@ -659,7 +707,7 @@ Reglas obligatorias:
   - Requiere sesión admin autenticada y activa.
 - Filtros soportados:
   - `client` (nombre o teléfono),
-  - `actionType` (`PENDING`, `CONFIRMED`, `CANCELLED`, `REJECTED`),
+  - `actionType` (`PENDING`, `CONFIRMED`, `CANCELLED`, `MODIFIED`, `REJECTED`),
   - `month` (`YYYY-MM`, filtrado por mes de la cita),
   - `actionDateFrom`,
   - `actionDateTo`.
@@ -1111,7 +1159,10 @@ Contrato API:
   - `GET /api/admin/clients/catalog?query=<text>&status=ALL|WITH_FUTURE_APPOINTMENTS|WITHOUT_FUTURE_APPOINTMENTS|LOYAL&sort=RECENT|NAME_ASC|NAME_DESC|APPOINTMENTS_DESC&page=<n>&pageSize=<n>`
   - `GET /api/admin/clients/[clientId]`
   - `PATCH /api/admin/clients/[clientId]`
-  - `GET /api/admin/appointment-logs?client=<text>&actionType=PENDING|CONFIRMED|CANCELLED|REJECTED&actionDateFrom=YYYY-MM-DD&actionDateTo=YYYY-MM-DD&page=<n>&pageSize=<n>&format=json|pdf`
+  - `GET /api/admin/appointment-logs?client=<text>&actionType=PENDING|CONFIRMED|CANCELLED|MODIFIED|REJECTED&actionDateFrom=YYYY-MM-DD&actionDateTo=YYYY-MM-DD&page=<n>&pageSize=<n>&format=json|pdf`
+  - `POST /api/my-appointments/lookup`
+  - `POST /api/my-appointments/cancel`
+  - `POST /api/my-appointments/reschedule`
   - `GET /api/admin/months/[month]` (`month` en formato `YYYY-MM`)
   - `POST /api/admin/months/[month]/appointments`
   - `PATCH /api/admin/months/[month]/status`
@@ -1177,13 +1228,28 @@ Contrato API:
   - `GET /api/admin/appointment-logs`:
     - requiere sesión admin autenticada y activa,
     - `client` opcional busca por nombre de cliente o teléfono normalizado/parcial,
-    - `actionType` permitido: `PENDING|CONFIRMED|CANCELLED|REJECTED`,
+    - `actionType` permitido: `PENDING|CONFIRMED|CANCELLED|MODIFIED|REJECTED`,
     - `actionDateFrom` y `actionDateTo`, cuando se envían, deben cumplir formato `YYYY-MM-DD` y se interpretan en zona `America/Mexico_City`,
     - `page` entero positivo (base 1),
     - `pageSize` entero positivo en rango `1..100`, default `20`,
     - `format` permitido: `json|pdf`,
     - formato no soportado responde `UNSUPPORTED_EXPORT_FORMAT`,
     - `format=pdf` exporta hasta `1,000` filas filtradas; si el resultado filtrado supera ese límite responde `EXPORT_LIMIT_EXCEEDED` (`422`).
+  - `POST /api/my-appointments/lookup`:
+    - payload `{ phone }`,
+    - normaliza teléfono a 10 dígitos,
+    - ignora `active_months` para la cita origen,
+    - devuelve solo citas futuras elegibles para al menos una acción pública.
+  - `POST /api/my-appointments/cancel`:
+    - payload `{ phone, appointmentIds[] }`,
+    - aplica la regla web de cancelación con ventana mínima de 24 horas,
+    - no exige mes `ACTIVE` para la cita origen.
+  - `POST /api/my-appointments/reschedule`:
+    - payload `{ phone, appointmentId, month, date, timeSlot }`,
+    - aplica la regla web de modificación con ventana mínima de 3 horas,
+    - preserva el mismo `appointments.id`,
+    - el slot destino debe cumplir reglas de disponibilidad del booking público,
+    - no aplica `isLoyal` ni la sugerencia de 15 días.
   - `POST /api/admin/months/[month]/appointments`:
     - payload con cliente existente: `{ date, timeSlot, clientId }`,
     - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone, clientNumber? } }`,
@@ -1274,15 +1340,24 @@ Contrato API:
   - `{ clientId, clientNumber, name, phone, isLoyal, updatedAt }`
 - Success `GET /api/admin/appointment-logs` JSON (`200`):
   - `{ items, pagination, filters }`
-  - `items[]`: `{ id, appointmentNumber, client, actionType, actionLabel, appointmentDateTime, actor, actionDateTime }`
+  - `items[]`: `{ id, appointmentNumber, client, actionType, actionLabel, appointmentDateTime, previousAppointmentDateTime?, actor, actionDateTime }`
   - `client`: `{ name, alias, phone, clientNumber }`
   - `actor`: `{ type, label }`
   - `pagination`: `{ page, pageSize, totalItems, totalPages }`
   - `filters`: `{ client, actionType, month, actionDateFrom, actionDateTo }`
+  - cuando `actionType=MODIFIED`, el resultado debe incluir evidencia legible del horario anterior y del horario nuevo.
 - Success `GET /api/admin/appointment-logs?format=pdf` (`200`):
   - `Content-Type: application/pdf`
   - PDF con columnas visibles, filtros aplicados y fecha/hora de generación.
   - Si el resultado filtrado excede `1,000` filas, responde error `EXPORT_LIMIT_EXCEEDED` (`422`) en lugar de PDF parcial.
+- Success `POST /api/my-appointments/lookup` (`200`):
+  - `{ appointments[] }`
+  - `appointments[]`: `{ appointmentId, name, phone, date, timeSlot, status, canCancel, canModify, isBlocked, blockedReason? }`
+- Success `POST /api/my-appointments/cancel` (`200`):
+  - `{ cancelledAppointments[] }`
+  - `cancelledAppointments[]`: `{ appointmentId, status, syncReason? }`
+- Success `POST /api/my-appointments/reschedule` (`200`):
+  - `{ appointmentId, status, date, timeSlot, syncReason? }`
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`

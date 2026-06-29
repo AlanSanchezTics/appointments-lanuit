@@ -178,6 +178,12 @@ async function createAppointmentInTransaction(
       type: "CLIENT",
     },
     clientId: client.id,
+    payload: {
+      appointment: {
+        date: input.date,
+        timeSlot: input.timeSlot,
+      },
+    },
   });
 
   return appointment;

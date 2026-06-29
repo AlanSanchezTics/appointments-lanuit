@@ -293,6 +293,38 @@ export async function updateCalendarEventSummary(input: { eventId: string; summa
   }
 }
 
+export async function updateCalendarEvent(input: {
+  eventId: string;
+  name: string;
+  date: string;
+  timeSlot: string;
+}) {
+  try {
+    const { calendar, calendarId } = getCalendarClient();
+    const range = getCalendarDateTimeRange(input);
+
+    await calendar.events.patch({
+      calendarId,
+      eventId: input.eventId,
+      requestBody: {
+        summary: input.name,
+        start: {
+          dateTime: range.start,
+          timeZone: REQUIRED_TIMEZONE,
+        },
+        end: {
+          dateTime: range.end,
+          timeZone: REQUIRED_TIMEZONE,
+        },
+      },
+    });
+
+    return input.eventId;
+  } catch (error) {
+    normalizeGoogleCalendarError(error);
+  }
+}
+
 export async function updateBlockedSlotCalendarEventSummary(input: { eventId: string; summary: string }) {
   try {
     const { calendar, calendarId } = getBlockedCalendarClient();

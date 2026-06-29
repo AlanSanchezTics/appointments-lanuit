@@ -650,6 +650,11 @@
   }
   ,
   "appointmentLogs": {
+    "actors": {
+      "SYSTEM": "System",
+      "ADMIN": "Admin",
+      "CLIENT": "Client"
+    },
     "filters": {
       "clientLabel": "Client",
       "clientPlaceholder": "Name, alias, or phone",
@@ -664,7 +669,8 @@
         "PENDING": "Appointment requested",
         "CONFIRMED": "Appointment confirmed",
         "CANCELLED": "Appointment cancelled",
-        "REJECTED": "Appointment rejected"
+        "REJECTED": "Appointment rejected",
+        "MODIFIED": "Appointment modified"
       }
     },
     "export": {
@@ -674,6 +680,7 @@
       "title": "Appointment history",
       "total": "{{count}} records",
       "empty": "There are no events for the selected filters.",
+      "previousAppointmentDateTime": "Previous: {{dateTime}}",
       "previous": "Previous",
       "next": "Next",
       "paginationSummary": "Page {{page}} of {{totalPages}} · {{total}} events",

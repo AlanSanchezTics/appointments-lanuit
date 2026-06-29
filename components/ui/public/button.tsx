@@ -1,5 +1,5 @@
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "disabled" | "destructive";
 };
 
 type ButtonVariantsOptions = {
@@ -14,6 +14,10 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     "border border-[var(--border)] bg-[var(--surface-strong)] text-[var(--foreground)] hover:border-[var(--accent)] focus-visible:outline-[var(--accent)]",
   ghost:
     "border border-transparent bg-transparent text-[var(--muted)] hover:text-[var(--foreground)] focus-visible:outline-[var(--accent)]",
+  disabled:
+    "border border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100 focus-visible:outline-gray-300",
+  destructive:
+    "border border-transparent bg-[color-mix(in_srgb,var(--error)_18%,white)] text-[var(--error)] hover:brightness-95 focus-visible:outline-[var(--error-dark)]",
 };
 
 const baseButtonClasses =
@@ -35,7 +39,10 @@ export function Button({
   return (
     <button
       type={type}
-      className={buttonVariants({ variant, className })}
+      className={buttonVariants({
+        variant: props.disabled ? "disabled" : variant,
+        className,
+      })}
       {...props}
     />
   );

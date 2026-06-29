@@ -9,9 +9,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("legacy /cancelar page", () => {
-  it("redirects to /citas/cancelar", async () => {
+  it("redirects to /my-appointments", async () => {
     const pageModule = await import("@/app/cancelar/page");
 
-    expect(() => pageModule.default()).toThrow("REDIRECT:/citas/cancelar");
+    expect(() => pageModule.default()).toThrow("REDIRECT:/my-appointments");
   });
 });

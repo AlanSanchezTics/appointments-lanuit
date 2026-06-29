@@ -650,6 +650,11 @@
   }
   ,
   "appointmentLogs": {
+    "actors": {
+      "SYSTEM": "Sistema",
+      "ADMIN": "Admin",
+      "CLIENT": "Cliente"
+    },
     "filters": {
       "clientLabel": "Cliente",
       "clientPlaceholder": "Nombre, alias o teléfono",
@@ -664,7 +669,8 @@
         "PENDING": "Cita solicitada",
         "CONFIRMED": "Cita confirmada",
         "CANCELLED": "Cita cancelada",
-        "REJECTED": "Cita rechazada"
+        "REJECTED": "Cita rechazada",
+        "MODIFIED": "Cita modificada"
       }
     },
     "export": {
@@ -674,6 +680,7 @@
       "title": "Historial de citas",
       "total": "{{count}} registros",
       "empty": "No hay eventos para los filtros seleccionados.",
+      "previousAppointmentDateTime": "Anterior: {{dateTime}}",
       "previous": "Anterior",
       "next": "Siguiente",
       "paginationSummary": "Página {{page}} de {{totalPages}} · {{total}} eventos",

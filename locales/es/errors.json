@@ -11,6 +11,7 @@
     "CLIENT_NAME_MISMATCH": "Este teléfono ya está registrado con otro nombre.",
     "APPOINTMENT_NOT_FOUND": "No encontramos una cita confirmada futura en meses habilitados.",
     "APPOINTMENT_IS_COMING_SOON": "Ya no es posible cancelar tu cita por este medio. Contáctanos directamente para más información.",
+    "APPOINTMENT_NOT_MODIFIABLE": "Ya no es posible modificar tu cita por este medio. Contáctanos directamente para más información.",
     "VALIDATION_ERROR": "Revisa los datos ingresados e intenta nuevamente.",
     "UNKNOWN_ERROR": "No se pudo completar la operación. Intenta de nuevo."
   },

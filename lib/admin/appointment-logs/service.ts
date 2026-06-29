@@ -7,6 +7,7 @@ import type {
   AdminAppointmentLogsItem,
   AdminAppointmentLogsResponse,
   AppointmentLogActorType,
+  AppointmentLogPayload,
   CreateAppointmentLogInput,
 } from "@/lib/admin/appointment-logs/types";
 
@@ -61,32 +62,60 @@ function combineDateAndTime(date: Date, timeSlot: Date) {
   return `${date.toISOString().slice(0, 10)}T${timeSlot.toISOString().slice(11, 16)}:00${getMexicoCityOffsetString()}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readScheduleSnapshot(
+  value: unknown,
+): AppointmentLogPayload["appointment"] | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const date = typeof value.date === "string" ? value.date : null;
+  const timeSlot = typeof value.timeSlot === "string" ? value.timeSlot : null;
+
+  if (!date || !timeSlot) {
+    return null;
+  }
+
+  return { date, timeSlot };
+}
+
+function readAppointmentSnapshot(
+  payload: Prisma.JsonValue | null,
+  fallbackDate: Date,
+  fallbackTimeSlot: Date,
+) {
+  if (isRecord(payload)) {
+    const snapshot = readScheduleSnapshot(payload.appointment);
+
+    if (snapshot) {
+      return snapshot;
+    }
+  }
+
+  return {
+    date: fallbackDate.toISOString().slice(0, 10),
+    timeSlot: fallbackTimeSlot.toISOString().slice(11, 16),
+  };
+}
+
+function readPreviousAppointmentSnapshot(payload: Prisma.JsonValue | null) {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  return readScheduleSnapshot(payload.previous);
+}
+
 function mapActionLabel(actionType: string) {
-  if (actionType === "PENDING") {
-    return "Cita solicitada";
-  }
-
-  if (actionType === "CONFIRMED") {
-    return "Cita confirmada";
-  }
-
-  if (actionType === "CANCELLED") {
-    return "Cita cancelada";
-  }
-
-  return "Cita rechazada";
+  return `appointmentLogs.filters.actionTypeOptions.${actionType}`;
 }
 
 function mapActorLabel(actorType: AppointmentLogActorType) {
-  if (actorType === "SYSTEM") {
-    return "Sistema";
-  }
-
-  if (actorType === "ADMIN") {
-    return "Admin";
-  }
-
-  return "Cliente";
+  return `appointmentLogs.actors.${actorType}`;
 }
 
 function buildWhere(filters: AdminAppointmentLogsFilters): Prisma.AppointmentLogWhereInput {
@@ -181,6 +210,7 @@ function mapAppointmentLogItem(row: {
     date: Date;
     timeSlot: Date;
   };
+  payload: Prisma.JsonValue | null;
   client: {
     name: string;
     alias: string | null;
@@ -188,6 +218,13 @@ function mapAppointmentLogItem(row: {
     clientNumber: number | null;
   };
 }): AdminAppointmentLogsItem {
+  const appointmentSnapshot = readAppointmentSnapshot(
+    row.payload,
+    row.appointment.date,
+    row.appointment.timeSlot,
+  );
+  const previousAppointmentSnapshot = readPreviousAppointmentSnapshot(row.payload);
+
   return {
     id: row.id,
     appointmentNumber: row.appointmentId,
@@ -199,7 +236,16 @@ function mapAppointmentLogItem(row: {
     },
     actionType: row.actionType as AdminAppointmentLogsItem["actionType"],
     actionLabel: mapActionLabel(row.actionType),
-    appointmentDateTime: combineDateAndTime(row.appointment.date, row.appointment.timeSlot),
+    appointmentDateTime: combineDateAndTime(
+      new Date(`${appointmentSnapshot.date}T00:00:00.000Z`),
+      new Date(`1970-01-01T${appointmentSnapshot.timeSlot}:00.000Z`),
+    ),
+    previousAppointmentDateTime: previousAppointmentSnapshot
+      ? combineDateAndTime(
+          new Date(`${previousAppointmentSnapshot.date}T00:00:00.000Z`),
+          new Date(`1970-01-01T${previousAppointmentSnapshot.timeSlot}:00.000Z`),
+        )
+      : null,
     actor: {
       type: row.actorType,
       label: mapActorLabel(row.actorType),
@@ -216,6 +262,7 @@ export async function createAppointmentLogEvent(
     data: {
       appointmentId: input.appointmentId,
       actionType: input.actionType,
+      payload: input.payload,
       actorType: input.actor.type,
       clientId: input.clientId,
     },
@@ -234,6 +281,7 @@ export async function createAppointmentLogEvents(
     data: inputs.map((input) => ({
       appointmentId: input.appointmentId,
       actionType: input.actionType,
+      payload: input.payload,
       actorType: input.actor.type,
       clientId: input.clientId,
     })),

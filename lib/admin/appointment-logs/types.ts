@@ -2,7 +2,8 @@ export type AppointmentLogActionType =
   | "PENDING"
   | "CONFIRMED"
   | "CANCELLED"
-  | "REJECTED";
+  | "REJECTED"
+  | "MODIFIED";
 
 export type AppointmentLogActorType =
   | "SYSTEM"
@@ -39,6 +40,7 @@ export type AdminAppointmentLogsItem = {
   actionType: AppointmentLogActionType;
   actionLabel: string;
   appointmentDateTime: string;
+  previousAppointmentDateTime?: string | null;
   actor: {
     type: AppointmentLogActorType;
     label: string;
@@ -70,9 +72,21 @@ export type AppointmentLogActorInput =
       type: "CLIENT";
     };
 
+export type AppointmentLogScheduleSnapshot = {
+  date: string;
+  timeSlot: string;
+};
+
+export type AppointmentLogPayload = {
+  appointment: AppointmentLogScheduleSnapshot;
+  previous?: AppointmentLogScheduleSnapshot;
+  next?: AppointmentLogScheduleSnapshot;
+};
+
 export type CreateAppointmentLogInput = {
   appointmentId: number;
   actionType: AppointmentLogActionType;
   actor: AppointmentLogActorInput;
   clientId: number;
+  payload: AppointmentLogPayload;
 };

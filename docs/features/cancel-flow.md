@@ -1,12 +1,12 @@
 # Cancellation Flow
 
 ## Purpose
-Describir el flujo end-to-end de cancelación de citas para que sea verificable funcionalmente, incluyendo criterios de elegibilidad, validaciones, transición de estados y efectos del sistema.
+Describir la rama de cancelación dentro del flujo público `/my-appointments`, incluyendo criterios de elegibilidad, validaciones, transición de estados y efectos del sistema.
 
 ## Actors
 - Usuario final: inicia la cancelación capturando su teléfono y confirma la acción.
-- UI de cancelación (`/citas/cancelar`): guía el wizard de 3 pasos, muestra datos de cita elegible, errores y confirmación final.
-- API de cancelación: expone búsqueda de cita cancelable y ejecución de cancelación.
+- UI pública (`/my-appointments`): guía el lookup por teléfono, muestra la cita elegible y permite confirmar cancelación.
+- API de cancelación: expone búsqueda de cita cancelable y ejecución de cancelación dentro del namespace de `/api/my-appointments`.
 - Servicios de dominio: evalúan elegibilidad de cancelación y aplican transición de estado.
 - Base de datos (fuente de verdad): persiste el cambio de estado a `CANCELLED`.
 - Google Calendar: integración espejo para eliminar el evento externo cuando existe `google_event_id`.
@@ -16,11 +16,10 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Debe existir una cita cancelable que cumpla simultáneamente:
 - Estado `CONFIRMED` o `SYNC_FAILED`.
 - Fecha futura respecto a `hoy` en `America/Mexico_City`.
-- Mes activo (`ACTIVE`) dentro de `active_months`.
 - Distancia mínima de 24 horas para permitir cancelación por este medio web.
 
 ## High-Level Flow
-1. Usuario abre `/citas/cancelar`.
+1. Usuario abre `/my-appointments`.
 2. En el paso 1, captura teléfono y solicita búsqueda.
 3. Backend busca citas cancelables con reglas de elegibilidad.
 4. Si hay coincidencias, UI muestra lista de citas futuras cancelables y permite seleccionar una o varias.
@@ -31,7 +30,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Step-by-Step Flow
 1. Entrada al flujo
-- Trigger: navegación a `/citas/cancelar`.
+- Trigger: navegación a `/my-appointments` o redirect desde `/citas/cancelar`.
 - Resultado: UI muestra paso de búsqueda por teléfono.
 
 2. Búsqueda por teléfono
@@ -39,7 +38,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Validación inicial UI: formato de teléfono de 10 dígitos.
 - Backend:
 - Normaliza y valida teléfono.
-- Busca cita `CONFIRMED` o `SYNC_FAILED` futura dentro de meses activos.
+- Busca cita `CONFIRMED` o `SYNC_FAILED` futura elegible para cancelación, sin depender de `active_months`.
 - Evalúa restricción de 24 horas mínimas.
 - Resultado:
 - Si cumple: retorna `appointments[]` con `appointmentId`, nombre, teléfono, fecha, hora y estatus (`CONFIRMED` o `SYNC_FAILED`).
@@ -51,7 +50,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Usuario confirma la cancelación.
 
 4. Ejecución de cancelación
-- Trigger: solicitud de cancelación con `appointmentIds[]` y `phone`.
+- Trigger: solicitud de cancelación con `appointmentIds[]` y `phone` hacia `/api/my-appointments/cancel`.
 - Backend:
 - Ubica cada cita seleccionada bajo condiciones del flujo de cancelación.
 - Cambia estado de cada cita seleccionada a `CANCELLED`.
@@ -75,7 +74,6 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Elegibilidad de cita en búsqueda:
 - Debe existir cita `CONFIRMED` o `SYNC_FAILED`.
 - Debe ser futura (`date > hoy` en zona de negocio).
-- Debe pertenecer a un mes activo.
 - Debe cumplir ventana mínima de 24 horas para cancelación web.
 - Confirmación de cancelación:
 - Debe corresponder a una selección no vacía de `appointmentIds` y al teléfono de citas elegibles dentro del flujo.
@@ -94,7 +92,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 - Teléfono inválido en UI o backend: rechazo por validación.
 - No existe cita elegible para ese teléfono: `APPOINTMENT_NOT_FOUND`.
 - Cita dentro de las próximas 24 horas: rechazo de cancelación web.
-- Cita fuera de meses activos o no futura: no elegible para el flujo.
+- Cita no futura: no elegible para el flujo.
 - Cita ya no cancelable al confirmar (cambio concurrente de estado o datos): `APPOINTMENT_NOT_FOUND`.
 - Selección vacía en paso de revisión: UI impide continuar y solicita elegir al menos una cita.
 - Falla al eliminar evento en Google Calendar:
@@ -110,7 +108,7 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 ## Edge Cases
 - Usuario busca con teléfono válido pero sin cita (`CONFIRMED` o `SYNC_FAILED`) futura elegible.
 - Usuario intenta cancelar cita en umbral cercano de tiempo y queda fuera de la regla de 24h.
-- Cita existe pero mes quedó inactivo: flujo la trata como no elegible.
+- Cita existe en un mes inactivo pero sigue siendo futura y cumple 24h: la cancelación sigue siendo elegible.
 - Cita ya fue cancelada por otro intento antes de confirmar acción en UI.
 - El usuario selecciona varias citas y solo una deja de ser elegible antes de confirmar: la operación completa se rechaza para mantener consistencia de selección.
 - Falla de red después de que backend canceló: UI puede no mostrar éxito inmediato aunque la cancelación ya exista.
@@ -118,10 +116,10 @@ Describir el flujo end-to-end de cancelación de citas para que sea verificable 
 
 ## Observations
 - La especificación exige que la cancelación web solo proceda con al menos 24 horas de anticipación.
-- La ruta canónica del flujo público de cancelación es `/citas/cancelar`.
-- La ruta legacy `/cancelar` queda como compatibilidad mediante redirect hacia `/citas/cancelar`.
+- La ruta canónica del flujo público de gestión es `/my-appointments`.
+- `/citas/cancelar` queda como compatibilidad mediante redirect hacia `/my-appointments`.
 - En el flujo actual, esta regla se valida en dos puntos:
-  - Durante la búsqueda (`/api/cancelar/buscar`) para decidir si la UI puede avanzar al paso de confirmación.
-  - Durante la ejecución (`/api/cancelar`) para evitar que una cita pase a no elegible por cambio de tiempo entre búsqueda y confirmación.
+  - Durante la búsqueda (`/api/my-appointments/lookup`) para decidir si la UI puede avanzar al paso de confirmación.
+  - Durante la ejecución (`/api/my-appointments/cancel`) para evitar que una cita pase a no elegible por cambio de tiempo entre búsqueda y confirmación.
 - El contrato de cancelación pública soporta selección múltiple: lookup retorna `appointments[]` y confirmación recibe `appointmentIds[]`.
 - El código de error para la regla de 24 horas es `APPOINTMENT_IS_COMING_SOON`.

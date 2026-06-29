@@ -50,7 +50,7 @@ type AvailabilityPayload = {
 async function getBookableSlot(request: APIRequestContext) {
   const today = new Date();
   const minDate = new Date(today);
-  minDate.setUTCDate(minDate.getUTCDate() + 2);
+  minDate.setUTCDate(minDate.getUTCDate() + 4);
   const minDateKey = getMexicoCityDateKey(minDate);
 
   for (const month of getMonthCandidates(3)) {
@@ -125,9 +125,9 @@ test.afterAll(async () => {
 test("home exposes cancellation entrypoint", async ({ page }) => {
   await page.goto("/");
 
-  const cancelLink = page.getByRole("link", { name: "Cancelar cita" });
+  const cancelLink = page.getByRole("link", { name: "Consultar o cancelar cita" });
   await expect(cancelLink).toBeVisible();
-  await expect(cancelLink).toHaveAttribute("href", "/citas/cancelar");
+  await expect(cancelLink).toHaveAttribute("href", "/my-appointments");
 });
 
 test("booking can be cancelled through the public endpoints", async ({ request }) => {
@@ -135,7 +135,7 @@ test("booking can be cancelled through the public endpoints", async ({ request }
     name: "E2E Cancel",
   });
 
-  const lookupResponse = await request.post("/api/cancelar/buscar", {
+  const lookupResponse = await request.post("/api/my-appointments/lookup", {
     data: {
       phone: appointment.phone,
     },
@@ -150,7 +150,7 @@ test("booking can be cancelled through the public endpoints", async ({ request }
     throw new Error("No cancelable appointments returned by lookup");
   }
 
-  const cancellationResponse = await request.post("/api/cancelar", {
+  const cancellationResponse = await request.post("/api/my-appointments/cancel", {
     data: {
       phone: appointment.phone,
       appointmentIds: [appointmentId],
@@ -176,39 +176,13 @@ test("user completes cancellation wizard in three steps", async ({
     name: "E2E Wizard Cancel",
   });
 
-  await page.route("https://wa.me/**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "text/html",
-      body: "<html><body>ok</body></html>",
-    });
-  });
+  await page.goto("/my-appointments");
+  await page.locator("#my-appointments-phone").fill(appointment.phone);
+  await page.getByRole("button", { name: "Buscar citas" }).click();
 
-  await page.goto("/citas/cancelar");
-  await page.locator("#cancel-phone").fill(appointment.phone);
-  await page.getByRole("button", { name: "Buscar cita" }).click();
-
-  await expect(page.getByRole("heading", { name: /Confirmar Cancelaci.n/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Volver" })).toBeVisible();
-  await page.getByRole("button", { name: /\d{2}:\d{2}\s?(AM|PM)/i }).first().click();
-
+  await expect(page.getByRole("heading", { name: /Selecciona una cita/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancelar cita" })).toBeVisible();
   await page.getByRole("button", { name: "Cancelar cita" }).click();
 
-  let autoRedirected = true;
-  try {
-    await page.waitForURL(/https:\/\/wa\.me\//, { timeout: 4000 });
-  } catch {
-    autoRedirected = false;
-  }
-
-  if (!autoRedirected) {
-    await expect(
-      page.getByRole("heading", {
-        name: /Tu cita ha sido cancelada con .xito/i,
-      }),
-    ).toBeVisible();
-    await page.getByRole("link", { name: "Notificar por WhatsApp" }).click();
-  }
-
-  await expect(page).toHaveURL(/https:\/\/wa\.me\//);
+  await expect(page.getByRole("heading", { name: /La cita fue cancelada\./i })).toBeVisible();
 });

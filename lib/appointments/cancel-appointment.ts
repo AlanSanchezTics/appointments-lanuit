@@ -69,6 +69,12 @@ export async function cancelAppointment(rawInput: unknown, now = new Date()) {
           type: "CLIENT" as const,
         },
         clientId: appointment.clientId,
+        payload: {
+          appointment: {
+            date: appointment.date,
+            timeSlot: appointment.timeSlot,
+          },
+        },
       })),
     );
 

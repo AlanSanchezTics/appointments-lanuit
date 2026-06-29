@@ -11,6 +11,7 @@
     "CLIENT_NAME_MISMATCH": "This phone is already registered with another name.",
     "APPOINTMENT_NOT_FOUND": "We couldn't find a future confirmed appointment in enabled months.",
     "APPOINTMENT_IS_COMING_SOON": "It is no longer possible to cancel your appointment through this channel. Contact us directly for more information.",
+    "APPOINTMENT_NOT_MODIFIABLE": "It is no longer possible to modify your appointment through this channel. Contact us directly for more information.",
     "VALIDATION_ERROR": "Please review your input and try again.",
     "UNKNOWN_ERROR": "The operation could not be completed. Please try again."
   },

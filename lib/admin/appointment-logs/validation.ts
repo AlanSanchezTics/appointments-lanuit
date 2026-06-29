@@ -5,7 +5,13 @@ import type { AdminAppointmentLogsQuery } from "@/lib/admin/appointment-logs/typ
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
 
-const ACTION_TYPES = ["PENDING", "CONFIRMED", "CANCELLED", "REJECTED"] as const;
+const ACTION_TYPES = [
+  "PENDING",
+  "CONFIRMED",
+  "CANCELLED",
+  "REJECTED",
+  "MODIFIED",
+] as const;
 const EXPORT_FORMATS = ["json", "pdf"] as const;
 
 function readParam(value: string | string[] | undefined) {
