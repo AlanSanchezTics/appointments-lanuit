@@ -76,6 +76,15 @@ function normalizeStatus(status) {
   return String(status).trim().toUpperCase();
 }
 
+function buildAppointmentPayload(appointment) {
+  return {
+    appointment: {
+      date: appointment.date.toISOString().slice(0, 10),
+      timeSlot: appointment.timeSlot.toISOString().slice(11, 16),
+    },
+  };
+}
+
 function printUsage() {
   console.log(
     [
@@ -142,6 +151,8 @@ async function main() {
         select: {
           id: true,
           status: true,
+          date: true,
+          timeSlot: true,
           createdAt: true,
           updatedAt: true,
           clientId: true,
@@ -180,6 +191,7 @@ async function main() {
           return {
             appointmentId: appointment.id,
             actionType,
+            payload: buildAppointmentPayload(appointment),
             actorType: "SYSTEM",
             clientId: appointment.clientId,
             createdAt,
@@ -232,4 +244,9 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   }
 }
 
-export { actionDateForAppointment, mapStatusToActionType, normalizeStatus };
+export {
+  actionDateForAppointment,
+  buildAppointmentPayload,
+  mapStatusToActionType,
+  normalizeStatus,
+};
