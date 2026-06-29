@@ -203,6 +203,7 @@ Regla general:
    - Elimina lock temporal consumido.
    - Commit.
 8. Si la cita quedó `CONFIRMED`, crea evento en Google Calendar.
+  - El título (`summary`) del evento debe usar siempre el `name` canónico completo del cliente (no `alias`).
 9. UI muestra pantalla local de éxito (paso 3 del wizard).
    - Si la cita quedó `PENDING`, la UI muestra el mensaje `Ya estamos casi listas` con la explicación de que la cita quedó pre-registrada y requiere envío del comprobante por WhatsApp para terminar de agendar.
 10. Acción WhatsApp en éxito:

@@ -275,7 +275,7 @@ export async function createAdminAppointment(
 
   const syncResult = await syncAppointmentToCalendar({
     appointmentId: created.appointmentId,
-    name: resolveClientDisplayName(created.client),
+    name: created.client.name,
     date: input.date,
     timeSlot: input.timeSlot,
   });
@@ -481,18 +481,18 @@ export async function cancelAdminAppointment(
 
     await cancelAppointmentById(tx, current.id);
 
-  await createAppointmentLogEvent(tx, {
-    appointmentId: current.id,
-    actionType: "CANCELLED",
-    actor,
-    clientId: current.clientId,
-    payload: {
-      appointment: {
-        date: current.date,
-        timeSlot: current.timeSlot,
+    await createAppointmentLogEvent(tx, {
+      appointmentId: current.id,
+      actionType: "CANCELLED",
+      actor,
+      clientId: current.clientId,
+      payload: {
+        appointment: {
+          date: current.date,
+          timeSlot: current.timeSlot,
+        },
       },
-    },
-  });
+    });
 
     return current;
   });

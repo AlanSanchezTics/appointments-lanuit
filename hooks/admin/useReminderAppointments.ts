@@ -62,7 +62,7 @@ export function useReminderAppointments({
         ? "dashboard.reminders.whatsapp.nextDayMessage"
         : "dashboard.reminders.whatsapp.nextWeekMessage",
       {
-        name: resolveClientDisplayName(item),
+        name: resolveClientDisplayName(item, true),
         time: timeLabel,
         weekday,
         day,

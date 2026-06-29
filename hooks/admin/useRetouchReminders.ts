@@ -13,7 +13,7 @@ type UseRetouchRemindersInput = {
 export function useRetouchReminders({ t }: UseRetouchRemindersInput) {
   function sendRetouchReminder(item: RetouchReminderItem) {
     const message = t("dashboard.retouchReminders.whatsapp.message", {
-      name: resolveClientDisplayName(item),
+      name: resolveClientDisplayName(item, true),
     });
     const whatsappUrl = buildWhatsappUrlFromMessage({
       phone: `52${item.phone}`,

@@ -142,6 +142,12 @@ describe("admin appointments service", () => {
         actionType: "CONFIRMED",
         actorType: "SYSTEM",
         clientId: 71,
+        payload: {
+          appointment: {
+            date: "2026-03-21",
+            timeSlot: "10:00",
+          },
+        },
       },
     });
   });

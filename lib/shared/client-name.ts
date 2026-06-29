@@ -18,7 +18,7 @@ export function areEquivalentClientNames(left: string, right: string) {
 export function resolveClientDisplayName(input: {
   name: string;
   alias?: string | null;
-}) {
+}, splitName = false) {
   const normalizedAlias = normalizeClientAlias(input.alias);
-  return normalizedAlias ?? input.name;
+  return normalizedAlias ?? (splitName ? input.name.split(" ")[0] : input.name);
 }
