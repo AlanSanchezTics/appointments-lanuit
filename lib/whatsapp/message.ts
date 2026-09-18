@@ -1,5 +1,5 @@
 export function getWhatsappPhone() {
-  return process.env.WHATSAPP_PHONE ?? "+523223833722";
+  return process.env.WHATSAPP_PHONE ?? "+523222276318";
 }
 
 export function getAppUrl() {
