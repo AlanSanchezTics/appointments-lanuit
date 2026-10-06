@@ -88,7 +88,7 @@
     "confirmSuccessTitle": "¡Todo listo, {{name}}!",
     "confirmSuccessBody": "Tu cita ha sido agendada con éxito.",
     "pendingTitle": "Ya casi estamos listas; solo nos queda un paso por realizar",
-    "pendingDescription": "Para asegurar la cita es necesario que realices un depósito de $200 💰",
+    "pendingDescription": "Para asegurar la cita es necesario que realices un depósito de $350 💰",
     "pendingSendReceipt": "Enviar comprobante",
     "pendingBack": "Agendar otra cita",
     "thanks": "Muchas gracias",
@@ -188,8 +188,8 @@
     "backHome": "Volver al inicio"
   },
   "whatsapp": {
-    "messageUpdatedTemplate": "¡Cita reagendada con éxito!\n🗓️ *{{date}} a las {{time}}*\nPuedes revisar, modificar o cancelar tu cita en el siguiente enlace:\n{{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita._",
-    "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\nPuedes revisar, modificar o cancelar tu cita en el siguiente enlace:\n{{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita._",
+    "messageUpdatedTemplate": "¡Cita reagendada con éxito!\n🗓️ *{{date}} a las {{time}}*\nPuedes revisar, modificar o cancelar tu cita en el siguiente enlace:\n{{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $350 en tu próxima cita._",
+    "messageTemplate": "¡Cita agendada con éxito!\n🗓️ *{{date}} a las {{time}}*\nPuedes revisar, modificar o cancelar tu cita en el siguiente enlace:\n{{appurl}}\n\n⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $350 en tu próxima cita._",
     "pendingMessageTemplate": "Hola Pau! Soy {{name}} ✨\n\nMe interesa agendar una cita para el *{{date}} a las {{time}}*\n🧾 Adjunto el comprobante del depósito.\n\nEspero tu confirmación. ¡Gracias!",
     "cancelMessageTemplate": "❌ *CITA CANCELADA*\n_{{date}} a las {{time}}_\n\nUna disculpa, no podré asistir a esta cita. Gracias!\n"
   }

@@ -189,7 +189,7 @@ Regla general:
    - CTA principal del paso 3:
      - clienta fiel: `Confirmar cita`,
      - clienta no fiel: `Siguiente`.
-7. Backend:
+8. Backend:
    - Inicia transacción.
    - Limpia locks expirados.
    - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
@@ -202,8 +202,10 @@ Regla general:
      - clienta no fiel: `PENDING`.
    - Elimina lock temporal consumido.
    - Commit.
-8. Si la cita quedó `CONFIRMED`, crea evento en Google Calendar.
-  - El título (`summary`) del evento debe usar siempre el `name` canónico completo del cliente (no `alias`).
+9. Si la cita quedó `CONFIRMED`, crea evento en Google Calendar.
+
+- El título (`summary`) del evento debe usar siempre el `name` canónico completo del cliente (no `alias`).
+
 9. UI muestra pantalla local de éxito (paso 3 del wizard).
    - Si la cita quedó `PENDING`, la UI muestra el mensaje `Ya estamos casi listas` con la explicación de que la cita quedó pre-registrada y requiere envío del comprobante por WhatsApp para terminar de agendar.
 10. Acción WhatsApp en éxito:
@@ -215,6 +217,7 @@ Regla general:
 11. El endpoint legacy `POST /api/reservar` queda deprecado y debe responder `410`.
 
 Contratos de payload relevantes en flujo vigente:
+
 - `POST /api/reservar/client-check-lock`:
   - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes que activan la sugerencia de UX por umbral `<15 días`.
   - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar que, dentro de la vista de sugerencia, también está permitido continuar como cita nueva.
@@ -275,7 +278,7 @@ Mensaje base para cita `CONFIRMED`:
     🗓️ *{Fecha} a las {Hora}*
 
     Puedes revisar, editar o cancelar tu cita en el siguiente enlace {appurl}/my-appointments
-    ⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $200 en tu próxima cita (el equivalente al depósito)._
+    ⚠️ _Si no puedes asistir a tu cita y no avisas con al menos 24 horas de anticipación, se aplicará un cargo extra de $350 en tu próxima cita (el equivalente al depósito)._
 
 El mensaje debe codificarse usando encodeURIComponent.
 La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
@@ -574,8 +577,8 @@ Reglas de integridad y auditoría:
 11. Modificación pública preserva el mismo `appointments.id`.
 12. Modificación pública no aplica `isLoyal` ni la sugerencia de 15 días.
 13. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
-12. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
-13. Los eventos de auditoría de citas son inmutables y se generan prospectivamente solo después de liberar el feature.
+14. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
+15. Los eventos de auditoría de citas son inmutables y se generan prospectivamente solo después de liberar el feature.
 
 ## 13. Stack de tecnologías
 
@@ -1135,20 +1138,20 @@ Flujo UI: Detalle y edición de cliente (`/admin/clients/[clientId]`)
    - El timeline no debe listar citas con estado `PENDING` ni `REJECTED`.
 3. UI muestra control dedicado para marcar/desmarcar `Cliente fiel` y persiste vía `PATCH /api/admin/clients/[clientId]`.
 4. UI muestra identidad con prioridad visual en `alias` (si existe) y mantiene visible `name` canónico como referencia.
-4. Acción `Editar cliente` abre modal para actualizar `name`, `phone` y `clientNumber`.
-5. Validación local del modal:
+5. Acción `Editar cliente` abre modal para actualizar `name`, `phone` y `clientNumber`.
+6. Validación local del modal:
    - `name` requerido,
    - largo mínimo `3`.
    - `phone` requerido en formato nacional de 10 dígitos (se normaliza removiendo separadores).
    - `clientNumber` requerido, entero positivo (`> 0`).
-6. Guardar edición:
+7. Guardar edición:
    - ejecuta `PATCH /api/admin/clients/[clientId]`,
    - incluye edición de `name`, `alias`, `phone` y `clientNumber`,
    - usa `sileo.promise` para notificaciones `loading/success/error`,
    - si backend responde `CLIENT_NUMBER_ALREADY_EXISTS`, UI muestra toast + error en campo `clientNumber`,
    - en éxito cierra modal y refresca detalle.
-7. Cambios de fidelidad también usan `sileo.promise` para notificaciones `loading/success/error`.
-8. Textos UX del módulo se resuelven por `react-i18next` (es/en).
+8. Cambios de fidelidad también usan `sileo.promise` para notificaciones `loading/success/error`.
+9. Textos UX del módulo se resuelven por `react-i18next` (es/en).
 
 Contrato API:
 

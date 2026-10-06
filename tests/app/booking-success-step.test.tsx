@@ -57,7 +57,9 @@ describe("booking success step", () => {
     );
 
     await continueToConfirmStep();
-    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Confirmar cita" }),
+    );
 
     expect(
       await screen.findByRole("heading", {
@@ -118,7 +120,9 @@ describe("booking success step", () => {
     );
 
     await continueToConfirmStep();
-    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Confirmar cita" }),
+    );
 
     await waitFor(() => {
       expect(onWhatsAppRedirect).toHaveBeenCalledTimes(1);
@@ -160,7 +164,9 @@ describe("booking success step", () => {
     );
 
     await continueToConfirmStep();
-    fireEvent.click(await screen.findByRole("button", { name: "Confirmar cita" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Confirmar cita" }),
+    );
 
     expect(
       await screen.findByRole("heading", {
@@ -170,7 +176,7 @@ describe("booking success step", () => {
 
     expect(
       screen.getByText(
-        /Para asegurar la cita es necesario que realices un depósito de \$200/i,
+        /Para asegurar la cita es necesario que realices un depósito de \$350/i,
       ),
     ).toBeInTheDocument();
     expect(
@@ -184,7 +190,9 @@ describe("booking success step", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
 
     expect(onWhatsAppRedirect).toHaveBeenCalledWith(
-      expect.stringContaining("Adjunto%20el%20comprobante%20del%20dep%C3%B3sito"),
+      expect.stringContaining(
+        "Adjunto%20el%20comprobante%20del%20dep%C3%B3sito",
+      ),
     );
   });
 });

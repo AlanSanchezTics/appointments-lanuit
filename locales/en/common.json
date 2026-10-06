@@ -88,7 +88,7 @@
     "confirmSuccessTitle": "All set, {{name}}!",
     "confirmSuccessBody": "Your appointment has been successfully scheduled.",
     "pendingTitle": "We're almost there; just one more step to go",
-    "pendingDescription": "To secure your appointment, a $200 deposit is required 💰",
+    "pendingDescription": "To secure your appointment, a $350 deposit is required 💰",
     "pendingSendReceipt": "Send receipt",
     "pendingBack": "Book another appointment",
     "thanks": "Thank you",
@@ -188,8 +188,8 @@
     "backHome": "Back home"
   },
   "whatsapp": {
-    "messageTemplate": "Appointment booked successfully!\n🗓️ *{{date}} at {{time}}*\n\nYou can review, edit, or cancel your appointment at the following link {{appurl}}\n\n⚠️ _If you can’t attend your appointment and don’t notify at least 24 hours in advance, an extra $200 fee will be applied to your next appointment (equivalent to the deposit)._",
-    "messageUpdatedTemplate": "Appointment rescheduled successfully!\n🗓️ *{{date}} at {{time}}*\n\nYou can review, edit, or cancel your appointment at the following link {{appurl}}\n\n⚠️ _If you can’t attend your appointment and don’t notify at least 24 hours in advance, an extra $200 fee will be applied to your next appointment (equivalent to the deposit)._",
+    "messageTemplate": "Appointment booked successfully!\n🗓️ *{{date}} at {{time}}*\n\nYou can review, edit, or cancel your appointment at the following link {{appurl}}\n\n⚠️ _If you can’t attend your appointment and don’t notify at least 24 hours in advance, an extra $350 fee will be applied to your next appointment (equivalent to the deposit)._",
+    "messageUpdatedTemplate": "Appointment rescheduled successfully!\n🗓️ *{{date}} at {{time}}*\n\nYou can review, edit, or cancel your appointment at the following link {{appurl}}\n\n⚠️ _If you can’t attend your appointment and don’t notify at least 24 hours in advance, an extra $350 fee will be applied to your next appointment (equivalent to the deposit)._",
     "pendingMessageTemplate": "Hi Pau! I'm {{name}} ✨\n\nI'd like to book an appointment for *{{date}} at {{time}}*\n🧾 I'm attaching the deposit receipt.\n\nI look forward to your confirmation. Thank you!",
     "cancelMessageTemplate": "❌ *APPOINTMENT CANCELED*\n_{{date}} at {{time}}_\n\nSorry, I won’t be able to attend this appointment. Thank you!\n"
   }
