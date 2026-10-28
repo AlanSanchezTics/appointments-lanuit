@@ -12,6 +12,7 @@ import {
 } from "@/lib/datetime/mexico-city";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type { AdminPendingAppointmentItem } from "@/lib/admin/appointments/types";
+import { usePendingAppointmentWhatsapp } from "@/hooks/admin/usePendingAppointmentWhatsapp";
 
 import { AdminIcon } from "./AdminIcon";
 import { Button } from "./Button";
@@ -81,6 +82,10 @@ export function PendingAppointmentsCard({
   const router = useRouter();
   const [pendingTransition, setPendingTransition] =
     useState<PendingTransition | null>(null);
+  const { redirectToConfirmationWhatsapp } = usePendingAppointmentWhatsapp({
+    language,
+    t,
+  });
 
   const subtitle = useMemo(
     () =>
@@ -91,14 +96,15 @@ export function PendingAppointmentsCard({
   );
 
   async function handleTransition(
-    appointmentId: number,
+    item: AdminPendingAppointmentItem,
     action: PendingTransition["action"],
   ) {
+    const { appointmentId } = item;
     const transition = { appointmentId, action } as const;
     setPendingTransition(transition);
 
     try {
-      await sileo.promise(submitPendingTransition(appointmentId, action), {
+      const result = await sileo.promise(submitPendingTransition(appointmentId, action), {
         loading: {
           title:
             action === "confirm"
@@ -120,6 +126,15 @@ export function PendingAppointmentsCard({
           };
         },
       });
+
+      if (
+        action === "confirm"
+        && (result.status === "CONFIRMED" || result.status === "SYNC_FAILED")
+      ) {
+        // Leaves the dashboard: no refresh before redirect, the page is replaced.
+        redirectToConfirmationWhatsapp(item);
+        return;
+      }
 
       router.refresh();
     } catch {
@@ -198,9 +213,7 @@ export function PendingAppointmentsCard({
                     variant="primary"
                     fullWidth
                     disabled={isBusy}
-                    onClick={() =>
-                      void handleTransition(item.appointmentId, "confirm")
-                    }
+                    onClick={() => void handleTransition(item, "confirm")}
                   >
                     {t("dashboard.pendingAppointments.actions.confirm")}
                   </Button>
@@ -209,9 +222,7 @@ export function PendingAppointmentsCard({
                     variant="ghost"
                     fullWidth
                     disabled={isBusy}
-                    onClick={() =>
-                      void handleTransition(item.appointmentId, "reject")
-                    }
+                    onClick={() => void handleTransition(item, "reject")}
                   >
                     {t("dashboard.pendingAppointments.actions.reject")}
                   </Button>

@@ -63,7 +63,7 @@ Describir la rama de cancelación dentro del flujo público `/my-appointments`, 
 - Trigger: respuesta exitosa de cancelación.
 - UI: muestra mensaje final de éxito del flujo.
 - UI: al entrar al paso de éxito, dispara un intento automático único de redirección a `wa.me` cuando existe `whatsappUrl`.
-- UI: mantiene CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `wa.me` con mensaje predefinido de aviso de cancelación incluyendo fecha/hora de la cita cancelada.
+- UI: mantiene CTA primaria `Notificar por WhatsApp` como fallback manual visible hacia `wa.me` con mensaje predefinido de aviso de cancelación incluyendo fecha/hora de la cita cancelada. La fecha usa el formato de fecha larga sin coma (`Lunes 13 de Abril` en `es`), según `docs/specification.md` sección 14, regla 10.
 - UI: mantiene CTA `Volver al inicio` que navega a `/`.
 - Efecto funcional: el slot deja de contar como ocupado para disponibilidad futura.
 

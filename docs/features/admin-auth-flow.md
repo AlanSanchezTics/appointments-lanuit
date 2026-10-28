@@ -66,7 +66,7 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
      - tag de estado por cita (`Listo`, `En curso`, `Pendiente`),
      - animación de parpadeo para la tag `En curso`.
    - el dashboard incluye bloque `Pendientes de confirmación` con acciones:
-     - `Confirmar`: transición de `PENDING` con intento de sync a Google Calendar (resultado final `CONFIRMED` o `SYNC_FAILED`),
+     - `Confirmar`: transición de `PENDING` con intento de sync a Google Calendar (resultado final `CONFIRMED` o `SYNC_FAILED`); tras éxito redirige la misma pestaña a WhatsApp con mensaje prellenado de cita (`Nos vemos el {Fecha} a las {Hora}`), por lo que el admin sale del dashboard; al volver, la lista ya no incluye la cita confirmada. Si falla, muestra toast de error sin redirigir (ver `docs/specification.md`, bloque `Pendientes de confirmación`),
      - `Rechazar`: transición de `PENDING` a `REJECTED`.
 7. Navegación base visible en sidebar:
    - `Dashboard` (`/admin`),

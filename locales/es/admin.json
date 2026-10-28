@@ -105,6 +105,7 @@
         "confirm": "Confirmar",
         "reject": "Rechazar"
       },
+      "whatsappMessage": "🗓️ *Nos vemos el {{date}} a las {{time}}*!",
       "notifications": {
         "confirmLoading": "Confirmando cita...",
         "confirmSuccess": "Cita confirmada",
@@ -649,8 +650,7 @@
         "copyError": "No se pudo copiar el enlace."
       }
     }
-  }
-  ,
+  },
   "appointmentLogs": {
     "actors": {
       "SYSTEM": "Sistema",

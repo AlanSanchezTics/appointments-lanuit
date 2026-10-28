@@ -445,8 +445,8 @@ Mostrar en el dashboard principal del admin la cola de citas `PENDING` que requi
 - estado vacío cuando no hay citas por revisar
 - listado de tarjetas por cita pendiente
 - acciones por elemento:
-  - `Confirmar`
-  - `Rechazar`
+  - `Confirmar` (tras éxito con `CONFIRMED` o `SYNC_FAILED` redirige la misma pestaña a WhatsApp con mensaje prellenado),
+  - `Rechazar` (no redirige)
 
 ### Data / Props Contract
 
@@ -483,6 +483,11 @@ El agente debe:
 - permitir transiciones `PENDING -> CONFIRMED` y `PENDING -> REJECTED`
 - usar feedback operativo con `sileo.promise` y textos resueltos vía `react-i18next`
 - refrescar el dashboard al finalizar una transición exitosa
+- en `Confirmar`, redirigir la misma pestaña a WhatsApp (`window.location.assign`) solo si la confirmación resulta `CONFIRMED` o `SYNC_FAILED`; no llamar a `router.refresh()` en ese caso porque la página sale del dashboard
+- la redirección es asíncrona (después del `await` de la confirmación) y en la misma pestaña; es una excepción explícita a la regla síncrona de recordatorios (ver `docs/architecture/business-rules.md`, "Pending confirmation WhatsApp redirect")
+- en errores de confirmación, mostrar el toast y no redirigir; en `Rechazar`, refrescar el dashboard
+- la fecha del mensaje usa el formato de fecha larga compartido (sin coma en `es`, ver `docs/specification.md` sección 14, regla 10)
+- construir el mensaje de WhatsApp con `dashboard.pendingAppointments.whatsappMessage` (`{{date}}` y `{{time}}` con el texto que muestra la tarjeta) sin escapar HTML
 - mantener el bloque usable en desktop y mobile sin agregar estados visuales nuevos al sistema
 
 El agente no debe:
@@ -490,11 +495,14 @@ El agente no debe:
 - introducir edición manual del contenido de la cita desde este bloque
 - mezclar esta tarjeta con el flujo de detalle mensual
 - agregar variantes nuevas de `Button`, `Card` o tokens visuales para resolver este caso
+- abrir WhatsApp al rechazar una cita
+- abrir WhatsApp con `window.open` (bloqueado por navegadores móviles fuera del gesto directo)
 
 ### Implementation Notes
 
 - componente reusable ubicado en `components/admin/ui/PendingAppointmentsCard.tsx`
 - integra endpoints admin para confirmar/rechazar citas pendientes
+- la redirección y el mensaje de WhatsApp viven en `hooks/admin/usePendingAppointmentWhatsapp.ts`, que reutiliza `buildWhatsappUrlFromMessage` de `lib/whatsapp/message.ts`
 - usa estilos y tokens ya existentes del sistema admin
 
 ### Documentation Note

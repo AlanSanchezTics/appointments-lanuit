@@ -297,6 +297,7 @@ Mensaje base para cita `CONFIRMED`:
 
 El mensaje debe codificarse usando encodeURIComponent.
 La plantilla se mantiene con `es` como fallback y la propiedad del texto final es del frontend.
+`{Fecha}` usa el formato de fecha larga de la sección 14, regla 10.
 
 Mensaje base para cita `PENDING`:
 
@@ -632,6 +633,12 @@ Reglas obligatorias:
    - Todo texto visible en rutas/componentes admin debe resolverse con `react-i18next`.
    - Quedan prohibidos literales de UX inline en `app/admin`, `components/admin` y `hooks/admin`.
    - Nuevos textos requieren clave en `es` y `en` antes de merge.
+10. Formato de fecha larga (helper compartido `formatLongDate` en `lib/datetime/mexico-city.ts`):
+    - `es`: `{Día de la semana} {d} de {Mes}` sin coma entre el día de la semana y la fecha, con día de la semana y mes capitalizados (ejemplo: `Lunes 13 de Abril`).
+    - `en`: `{Weekday} {Month} {d}` (ejemplo: `Monday April 13`).
+    - Aplica en todas las pantallas y en los mensajes de WhatsApp que usan la fecha larga, tanto de flujos públicos (reserva, pendiente, cancelación, `Mis citas`) como del admin (tarjeta de pendientes, detalle de clienta, modal de reserva admin).
+    - Cambio de formato: antes `es` usaba coma (`Lunes, 13 de Abril`). Decisión de la dueña, aplicada de forma global después de la ronda de pendientes; afecta por tanto a los flujos públicos, no solo al admin.
+    - Excepción: los recordatorios de `Recordatorios` (`NEXT_DAY`/`NEXT_WEEK`) no usan este helper; arman día de la semana, día y mes por separado y conservan su plantilla propia.
 
 ## 15. Admin Panel
 
@@ -821,7 +828,15 @@ Reglas obligatorias:
   - permite acciones directas para `Confirmar` y `Rechazar`,
   - la acción `Confirmar` transiciona la cita localmente a `CONFIRMED` y luego intenta crear evento espejo en Google Calendar,
   - si la sincronización de Calendar falla, la cita queda en `SYNC_FAILED` (activa para reglas de ocupación y recuperable por job de reintento),
-  - la acción `Rechazar` transiciona la cita a `REJECTED`,
+  - si la acción `Confirmar` termina en `CONFIRMED` o `SYNC_FAILED`, redirige la misma pestaña del admin a WhatsApp con mensaje prellenado:
+    - plantilla `es`: `🗓️ *Nos vemos el {Fecha} a las {Hora}*!`; plantilla `en`: `🗓️ *See you on {Fecha} at {Hora}*!`,
+    - `{Fecha}` y `{Hora}` son los mismos textos que muestra la tarjeta (fecha larga y hora con el formato del idioma activo),
+    - URL final `https://wa.me/52{phone}?text={encodedMessage}` (`phone` son 10 dígitos),
+    - la redirección ocurre después de que termina la confirmación; el admin sale del dashboard, por lo que no se llama a `router.refresh()` antes de redirigir,
+    - el toast de éxito de sileo puede verse brevemente antes de la salida de la página; no hay esperas artificiales,
+    - al volver atrás, si el navegador vuelve a cargar `/admin` desde el servidor, la cita confirmada ya no aparece en `Pendientes de confirmación` (`/admin` es una ruta dinámica que lee la sesión en servidor). El sistema no fuerza un refresco al restaurar la página desde la caché de navegación (no hay handler de `pageshow`); en ese caso la lista mostrada depende del navegador,
+  - si la confirmación falla, muestra el toast de error, no redirige y deja los botones disponibles,
+  - la acción `Rechazar` transiciona la cita a `REJECTED`, no redirige a WhatsApp y refresca el dashboard,
   - el bloque solo lista citas aún no resueltas manualmente.
 - Bloque `Recordatorios`:
   - muestra dos secciones:

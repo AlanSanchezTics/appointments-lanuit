@@ -105,6 +105,7 @@
         "confirm": "Confirm",
         "reject": "Reject"
       },
+      "whatsappMessage": "🗓️ *See you on {{date}} at {{time}}*!",
       "notifications": {
         "confirmLoading": "Confirming appointment...",
         "confirmSuccess": "Appointment confirmed",
@@ -649,8 +650,7 @@
         "copyError": "Unable to copy the link."
       }
     }
-  }
-  ,
+  },
   "appointmentLogs": {
     "actors": {
       "SYSTEM": "System",

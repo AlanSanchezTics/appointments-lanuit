@@ -35,7 +35,7 @@ describe("mexico city datetime", () => {
   });
 
   it("formats spanish long date without year", () => {
-    expect(formatLongDate("2026-04-13", "es")).toBe("Lunes, 13 de Abril");
+    expect(formatLongDate("2026-04-13", "es")).toBe("Lunes 13 de Abril");
   });
 
   it("formats appointment log table datetimes for admin display", () => {

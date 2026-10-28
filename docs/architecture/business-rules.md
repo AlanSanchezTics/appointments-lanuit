@@ -151,6 +151,14 @@ Business behavior is defined by:
   - If that sync fails, appointment transitions to `SYNC_FAILED` without rolling back the local confirmation lifecycle.
   - If a `PENDING` appointment remains unresolved for 36 hours, the system marks it as `REJECTED` automatically.
 
+- Pending confirmation WhatsApp redirect:
+  - Applies only to the `Confirmar` action of the admin dashboard `Pendientes de confirmación` block.
+  - When the confirmation result is `CONFIRMED` or `SYNC_FAILED`, the admin UI redirects the same tab to `https://wa.me/52{phone}?text={encodedMessage}` with the prefilled appointment message. Date and time are the labels shown on the card; the template is resolved via `react-i18next`.
+  - The redirect happens after the confirmation request completes. The UI must not call `router.refresh()` before redirecting, because the page is left.
+  - `Rechazar` never redirects. A failed confirmation never redirects; it shows an error notification and keeps the actions available.
+  - The redirect must not use `window.open` or a new tab. Mobile browsers block new windows not opened directly from a user gesture, and the outcome is known only after the server responds.
+  - Explicit exception: this redirect is intentionally asynchronous and same-tab. The reminder rule requiring a synchronous open without an intermediate tab (see Reminders widget policy) does not apply to it.
+
 ## Appointment Audit Log Rules
 
 - Scope:
@@ -365,6 +373,7 @@ Business behavior is defined by:
   - Each row exposes action `Enviar recordatorio` that opens WhatsApp in a new tab using:
     - `https://wa.me/52{phone}?text={encodedMessage}`.
   - To support mobile browsers, the UI must open the final WhatsApp URL synchronously during the user click/tap and must not open an intermediate blank tab.
+  - Exception: the pending confirmation redirect (see "Pending confirmation WhatsApp redirect") is not a reminder and is not bound by this rule. Its reason is that the outcome is known only after the server confirms, and a same-tab redirect after that await is not blocked by mobile popup blockers. Reminder and retouch actions remain synchronous.
   - Reminder sending does not enforce duplicate restrictions; admin can resend the same reminder type for the same appointment multiple times.
   - Supported reminder types:
     - `NEXT_DAY`,

@@ -96,7 +96,7 @@ export function formatLongDate(date: string, language: AppLanguage = "es") {
     .map((part) => (part.type === "month" ? capitalize(part.value) : part.value))
     .join("");
 
-  return `${capitalize(weekday)}, ${longDate}`;
+  return `${capitalize(weekday)} ${longDate}`;
 }
 
 export function formatMonthLabel(month: string, language: AppLanguage = "es") {
