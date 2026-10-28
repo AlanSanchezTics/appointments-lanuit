@@ -1018,6 +1018,7 @@ Flujo UI:
      - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
    - Cuando `isPastMonth=false`, debajo del calendario se muestra CTA secundaria `Compartir agenda`.
    - `Compartir agenda` permanece deshabilitado cuando `monthStatus=INACTIVE`.
+   - `Agendar cita` (mes y día) permanece habilitado aunque `monthStatus=INACTIVE`; `POST /api/admin/months/[month]/appointments` ya no responde `MONTH_NOT_ACTIVE` (solo exige mes registrado). El flujo público sigue requiriendo `ACTIVE`.
    - `Compartir agenda` intenta copiar al portapapeles la URL pública completa del mes seleccionado (`<origen>/citas/[month]`, ej. `https://dominio.com/citas/2026-03`) y muestra notificación de éxito.
    - Compatibilidad cross-device obligatoria para `Compartir agenda`:
      - desktop: usa clipboard como comportamiento principal,

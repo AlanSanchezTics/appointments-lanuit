@@ -547,6 +547,7 @@ Business behavior is defined by:
   - Month status action updates `active_months.status` between `ACTIVE` and `INACTIVE`.
   - Month slot-mode action is only exposed in UI for current/future months (`isPastMonth=false`).
   - Share-agenda action is exposed only for current/future months and must stay disabled when `monthStatus=INACTIVE`.
+  - Admin appointment creation is allowed in registered months regardless of status (`ACTIVE` or `INACTIVE`); only the public booking flow requires `ACTIVE`.
   - If `isPastMonth=true`, UI must hide the 4 action CTAs block (`Compartir agenda`, `Agendar nueva cita`, `Bloquear espacios`, `Activar|Desactivar mes`).
   - Month status update is only allowed for current or future months.
   - Updating month status in past months is rejected with `MONTH_IN_PAST`.

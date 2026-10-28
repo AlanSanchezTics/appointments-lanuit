@@ -183,10 +183,7 @@ export async function createAdminAppointment(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  if (registration.status !== "ACTIVE") {
-    throw new Error("MONTH_NOT_ACTIVE");
-  }
-
+  // Admins may book in INACTIVE months; only the public flow requires ACTIVE.
   validateBookingRules(
     {
       date: input.date,

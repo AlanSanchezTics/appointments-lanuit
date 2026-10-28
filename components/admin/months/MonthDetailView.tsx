@@ -1251,8 +1251,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
             disabled={
               isLoading ||
               isUpdatingSlotMode ||
-              isUpdatingMonthStatus ||
-              data.monthStatus !== "ACTIVE"
+              isUpdatingMonthStatus
             }
             onClick={() => void handleOpenBookAppointmentModal()}
             className="h-12"
@@ -1708,8 +1707,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                 disabled={
                   isLoading ||
                   isUpdatingSlotMode ||
-                  isUpdatingMonthStatus ||
-                  data.monthStatus !== "ACTIVE"
+                  isUpdatingMonthStatus
                 }
                 onClick={() =>
                   void handleOpenBookAppointmentModal(

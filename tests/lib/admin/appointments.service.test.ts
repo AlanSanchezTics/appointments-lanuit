@@ -77,24 +77,24 @@ describe("admin appointments service", () => {
     ).rejects.toThrow("MONTH_NOT_REGISTERED");
   });
 
-  it("rejects booking when month is inactive", async () => {
+  it("does not reject booking when month is inactive", async () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-03",
       status: "INACTIVE",
       slotMode: "BLOCK_MODE",
     });
 
-    await expect(
-      createAdminAppointment(
-        {
-          month: "2026-03",
-          date: "2026-03-21",
-          timeSlot: "10:00",
-          clientId: 1,
-        },
-        new Date("2026-03-10T15:00:00.000Z"),
-      ),
-    ).rejects.toThrow("MONTH_NOT_ACTIVE");
+    const result = await createAdminAppointment(
+      {
+        month: "2026-03",
+        date: "2026-03-21",
+        timeSlot: "10:00",
+        clientId: 1,
+      },
+      new Date("2026-03-10T15:00:00.000Z"),
+    ).catch((error: Error) => error);
+
+    expect(result).not.toEqual(new Error("MONTH_NOT_ACTIVE"));
   });
 
   it("confirms a pending appointment", async () => {

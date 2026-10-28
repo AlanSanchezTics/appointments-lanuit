@@ -35,7 +35,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - `Bloques de horarios` (`BLOCK_MODE`): base `09:00,10:00,13:00,14:00,17:00,18:00`.
    - frontend ejecuta `PATCH /api/admin/months/[month]/slot-mode`.
 9. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
-10. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`.
+10. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`. `Agendar cita` (mes y día) permanece habilitado aunque el mes sea `INACTIVE`: el admin puede agendar en meses inactivos.
 11. Al usar `Compartir agenda`, frontend intenta copiar al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y muestra toast de éxito.
     - Si clipboard no está disponible (casos frecuentes en mobile), usa fallback de copia legacy.
     - Si la copia sigue fallando y el navegador soporta Web Share API, abre el flujo nativo de compartir para la misma URL.
