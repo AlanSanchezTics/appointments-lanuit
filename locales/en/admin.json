@@ -112,6 +112,8 @@
         "rejectLoading": "Rejecting appointment...",
         "rejectSuccess": "Appointment rejected",
         "errorTitle": "Could not update the appointment",
+        "whatsappActionTitle": "Notify the client on WhatsApp?",
+        "whatsappActionButton": "Send on WhatsApp",
         "errors": {
           "notFound": "The appointment is no longer available.",
           "invalidTransition": "The appointment is no longer pending.",

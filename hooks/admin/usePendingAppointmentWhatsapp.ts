@@ -1,6 +1,7 @@
 "use client";
 
 import type { TFunction } from "i18next";
+import { sileo } from "sileo";
 
 import {
   formatLongDate,
@@ -19,22 +20,29 @@ export function usePendingAppointmentWhatsapp({
   language,
   t,
 }: UsePendingAppointmentWhatsappInput) {
-  // Same-tab redirect: mobile browsers block window.open outside a direct gesture.
-  function redirectToConfirmationWhatsapp(item: AdminPendingAppointmentItem) {
+  // Offer only: nothing opens until the admin taps the toast button. The URL is
+  // built here, before the dashboard refresh unmounts the card.
+  function offerConfirmationWhatsapp(item: AdminPendingAppointmentItem) {
     const message = t("dashboard.pendingAppointments.whatsappMessage", {
       date: formatLongDate(item.date, language),
       time: formatTimeSlotLabel(item.timeSlot, language),
     });
+    const whatsappUrl = buildWhatsappUrlFromMessage({
+      phone: `52${item.phone}`,
+      message,
+    });
 
-    window.location.assign(
-      buildWhatsappUrlFromMessage({
-        phone: `52${item.phone}`,
-        message,
-      }),
-    );
+    sileo.action({
+      title: t("dashboard.pendingAppointments.notifications.whatsappActionTitle"),
+      button: {
+        title: t("dashboard.pendingAppointments.notifications.whatsappActionButton"),
+        // Same tab, synchronous inside the click: mobile browsers block window.open outside a gesture.
+        onClick: () => window.location.assign(whatsappUrl),
+      },
+    });
   }
 
   return {
-    redirectToConfirmationWhatsapp,
+    offerConfirmationWhatsapp,
   };
 }

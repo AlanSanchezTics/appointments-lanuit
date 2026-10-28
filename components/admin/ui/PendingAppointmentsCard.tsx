@@ -82,7 +82,7 @@ export function PendingAppointmentsCard({
   const router = useRouter();
   const [pendingTransition, setPendingTransition] =
     useState<PendingTransition | null>(null);
-  const { redirectToConfirmationWhatsapp } = usePendingAppointmentWhatsapp({
+  const { offerConfirmationWhatsapp } = usePendingAppointmentWhatsapp({
     language,
     t,
   });
@@ -131,9 +131,8 @@ export function PendingAppointmentsCard({
         action === "confirm"
         && (result.status === "CONFIRMED" || result.status === "SYNC_FAILED")
       ) {
-        // Leaves the dashboard: no refresh before redirect, the page is replaced.
-        redirectToConfirmationWhatsapp(item);
-        return;
+        // Offered before refresh: the toast keeps its own URL after the card unmounts.
+        offerConfirmationWhatsapp(item);
       }
 
       router.refresh();

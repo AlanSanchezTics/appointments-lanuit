@@ -112,6 +112,8 @@
         "rejectLoading": "Rechazando cita...",
         "rejectSuccess": "Cita rechazada",
         "errorTitle": "No se pudo actualizar la cita",
+        "whatsappActionTitle": "¿Avisar a la clienta por WhatsApp?",
+        "whatsappActionButton": "Enviar por WhatsApp",
         "errors": {
           "notFound": "La cita ya no está disponible.",
           "invalidTransition": "La cita ya no está en estado pendiente.",

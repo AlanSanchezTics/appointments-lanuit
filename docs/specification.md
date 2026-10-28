@@ -28,7 +28,7 @@ Este documento está diseñado para servir como especificación fuente para impl
 - Zona horaria obligatoria: America/Mexico_City.
 - Integraciones:
   - Google Calendar (sistema espejo).
-  - WhatsApp (notificación vía redirección: auto-intento en éxito `CONFIRMED`/`SYNC_FAILED` con fallback manual; manual en `PENDING`).
+  - WhatsApp (notificación vía redirección: auto-intento en éxito `CONFIRMED`/`SYNC_FAILED` con fallback manual; manual en `PENDING`). En el admin, tras confirmar `CONFIRMED`/`SYNC_FAILED` se ofrece un toast con botón para enviar, sin redirección automática.
 - Enfoque Mobile-first.
 
 ---
@@ -828,15 +828,15 @@ Reglas obligatorias:
   - permite acciones directas para `Confirmar` y `Rechazar`,
   - la acción `Confirmar` transiciona la cita localmente a `CONFIRMED` y luego intenta crear evento espejo en Google Calendar,
   - si la sincronización de Calendar falla, la cita queda en `SYNC_FAILED` (activa para reglas de ocupación y recuperable por job de reintento),
-  - si la acción `Confirmar` termina en `CONFIRMED` o `SYNC_FAILED`, redirige la misma pestaña del admin a WhatsApp con mensaje prellenado:
-    - plantilla `es`: `🗓️ *Nos vemos el {Fecha} a las {Hora}*!`; plantilla `en`: `🗓️ *See you on {Fecha} at {Hora}*!`,
+  - si la acción `Confirmar` termina en `CONFIRMED` o `SYNC_FAILED`, tras el toast de éxito muestra un toast de acción separado para avisar a la clienta por WhatsApp:
+    - título: `¿Avisar a la clienta por WhatsApp?` (`es`) / `Notify the client on WhatsApp?` (`en`); botón: `Enviar por WhatsApp` (`es`) / `Send on WhatsApp` (`en`); sin descripción,
+    - el toast no abre WhatsApp por sí mismo: la URL se abre solo cuando el admin pulsa el botón, en la misma pestaña,
+    - URL final `https://wa.me/52{phone}?text={encodedMessage}` (`phone` son 10 dígitos), con plantilla `es`: `🗓️ *Nos vemos el {Fecha} a las {Hora}*!`; plantilla `en`: `🗓️ *See you on {Fecha} at {Hora}*!`,
     - `{Fecha}` y `{Hora}` son los mismos textos que muestra la tarjeta (fecha larga y hora con el formato del idioma activo),
-    - URL final `https://wa.me/52{phone}?text={encodedMessage}` (`phone` son 10 dígitos),
-    - la redirección ocurre después de que termina la confirmación; el admin sale del dashboard, por lo que no se llama a `router.refresh()` antes de redirigir,
-    - el toast de éxito de sileo puede verse brevemente antes de la salida de la página; no hay esperas artificiales,
-    - al volver atrás, si el navegador vuelve a cargar `/admin` desde el servidor, la cita confirmada ya no aparece en `Pendientes de confirmación` (`/admin` es una ruta dinámica que lee la sesión en servidor). El sistema no fuerza un refresco al restaurar la página desde la caché de navegación (no hay handler de `pageshow`); en ese caso la lista mostrada depende del navegador,
-  - si la confirmación falla, muestra el toast de error, no redirige y deja los botones disponibles,
-  - la acción `Rechazar` transiciona la cita a `REJECTED`, no redirige a WhatsApp y refresca el dashboard,
+    - el admin permanece en el dashboard: tras confirmar con éxito la tarjeta se actualiza y la cita deja de aparecer en `Pendientes de confirmación`; la URL del toast se construye antes de esa actualización, así que el botón sigue funcionando aunque la tarjeta se desmonte,
+    - ofrecer el envío no cambia el estado de la cita ni registra nada adicional,
+  - si la confirmación falla, muestra el toast de error, no ofrece WhatsApp y deja los botones disponibles,
+  - la acción `Rechazar` transiciona la cita a `REJECTED`, no ofrece WhatsApp y refresca el dashboard,
   - el bloque solo lista citas aún no resueltas manualmente.
 - Bloque `Recordatorios`:
   - muestra dos secciones:

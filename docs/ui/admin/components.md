@@ -445,8 +445,8 @@ Mostrar en el dashboard principal del admin la cola de citas `PENDING` que requi
 - estado vacío cuando no hay citas por revisar
 - listado de tarjetas por cita pendiente
 - acciones por elemento:
-  - `Confirmar` (tras éxito con `CONFIRMED` o `SYNC_FAILED` redirige la misma pestaña a WhatsApp con mensaje prellenado),
-  - `Rechazar` (no redirige)
+  - `Confirmar` (tras éxito con `CONFIRMED` o `SYNC_FAILED` ofrece, en un toast de acción aparte, enviar el mensaje por WhatsApp en la misma pestaña),
+  - `Rechazar` (no ofrece WhatsApp)
 
 ### Data / Props Contract
 
@@ -483,9 +483,11 @@ El agente debe:
 - permitir transiciones `PENDING -> CONFIRMED` y `PENDING -> REJECTED`
 - usar feedback operativo con `sileo.promise` y textos resueltos vía `react-i18next`
 - refrescar el dashboard al finalizar una transición exitosa
-- en `Confirmar`, redirigir la misma pestaña a WhatsApp (`window.location.assign`) solo si la confirmación resulta `CONFIRMED` o `SYNC_FAILED`; no llamar a `router.refresh()` en ese caso porque la página sale del dashboard
-- la redirección es asíncrona (después del `await` de la confirmación) y en la misma pestaña; es una excepción explícita a la regla síncrona de recordatorios (ver `docs/architecture/business-rules.md`, "Pending confirmation WhatsApp redirect")
-- en errores de confirmación, mostrar el toast y no redirigir; en `Rechazar`, refrescar el dashboard
+- en `Confirmar`, solo si la confirmación resulta `CONFIRMED` o `SYNC_FAILED`, mostrar después del toast de éxito un `sileo.action` aparte con título `dashboard.pendingAppointments.notifications.whatsappActionTitle` y botón `dashboard.pendingAppointments.notifications.whatsappActionButton`, sin `description`
+- el botón abre WhatsApp con `window.location.assign` en la misma pestaña, de forma síncrona dentro del click; la URL no se abre sin que el admin pulse el botón (ver `docs/architecture/business-rules.md`, "Pending confirmation WhatsApp offer")
+- la URL del botón se construye antes de `router.refresh()`, para que siga funcionando si la tarjeta se desmonta
+- tras `Confirmar` con éxito, refrescar el dashboard (`router.refresh()`); el admin permanece en el dashboard
+- en errores de confirmación, mostrar el toast de error y no ofrecer WhatsApp; en `Rechazar`, refrescar el dashboard y no ofrecer WhatsApp
 - la fecha del mensaje usa el formato de fecha larga compartido (sin coma en `es`, ver `docs/specification.md` sección 14, regla 10)
 - construir el mensaje de WhatsApp con `dashboard.pendingAppointments.whatsappMessage` (`{{date}}` y `{{time}}` con el texto que muestra la tarjeta) sin escapar HTML
 - mantener el bloque usable en desktop y mobile sin agregar estados visuales nuevos al sistema
@@ -502,7 +504,7 @@ El agente no debe:
 
 - componente reusable ubicado en `components/admin/ui/PendingAppointmentsCard.tsx`
 - integra endpoints admin para confirmar/rechazar citas pendientes
-- la redirección y el mensaje de WhatsApp viven en `hooks/admin/usePendingAppointmentWhatsapp.ts`, que reutiliza `buildWhatsappUrlFromMessage` de `lib/whatsapp/message.ts`
+- la oferta del toast de WhatsApp y su mensaje viven en `hooks/admin/usePendingAppointmentWhatsapp.ts` (`offerConfirmationWhatsapp`), que reutiliza `buildWhatsappUrlFromMessage` de `lib/whatsapp/message.ts` y `formatLongDate`/`formatTimeSlotLabel` de `lib/datetime/mexico-city.ts` (no el helper `formatWhatsappAppointmentLabels`, que produce coma en la fecha)
 - usa estilos y tokens ya existentes del sistema admin
 
 ### Documentation Note
