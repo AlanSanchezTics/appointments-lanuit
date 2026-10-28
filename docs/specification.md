@@ -963,7 +963,15 @@ Flujo UI:
 3. Admin ajusta filtros:
    - `Año`: rango permitido = año actual + 5 años posteriores.
    - `Estado`: `ALL`, `ACTIVE`, `INACTIVE`.
-4. Sistema actualiza listado de meses filtrado por `Año + Estado`.
+   - `Mostrar meses anteriores` (switch, apagado por defecto): controla si la lista incluye meses pasados.
+4. Sistema actualiza listado de meses filtrado por `Año + Estado`, y después por el switch `Mostrar meses anteriores`:
+   - Por defecto (switch apagado) la lista muestra solo el mes actual y los meses futuros (`month >= currentMonth`); los meses pasados (`month < currentMonth`) se ocultan.
+   - Con el switch encendido la lista muestra también los meses pasados.
+   - El filtro de pasados es solo de presentación: las métricas (incluida `Pasados`) siguen calculadas sobre todo el año seleccionado y no cambian con el switch.
+   - El contador de la lista (`N Reg.`) refleja la cantidad de meses visibles tras aplicar el switch.
+   - Si el switch está apagado, la lista queda vacía y existen meses pasados para el filtro actual, el mensaje vacío sugiere activar `Mostrar meses anteriores`.
+   - El estado del switch persiste en la URL como `past=1` (encendido) o sin el parámetro (apagado). Cualquier otro valor se trata como apagado. Cambiar el switch reemplaza la URL sin crear entrada en el historial y conserva `year` y `status`; cambiar `Año` o `Estado` conserva `past`.
+   - El switch no realiza llamadas a `GET /api/admin/months/catalog`.
 5. Admin puede navegar a `/admin/months/[month]` para consultar detalle operativo del mes seleccionado.
    - Vista de detalle:
      - grid de métricas 2x2 (`Confirmadas`, `Canceladas`, `Disponibles`, `Bloqueados`),

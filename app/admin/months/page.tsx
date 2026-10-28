@@ -17,12 +17,15 @@ export default async function AdminMonthsPage({ searchParams }: AdminMonthsPageP
     redirect("/admin/login");
   }
 
-  const query = parseMonthsCatalogQueryOrDefault(await searchParams);
+  const rawSearchParams = await searchParams;
+  const query = parseMonthsCatalogQueryOrDefault(rawSearchParams);
   const initialData = await getMonthsCatalog(query);
+  // Solo `past=1` muestra meses anteriores; cualquier otro valor los oculta.
+  const initialShowPast = rawSearchParams.past === "1";
 
   return (
     <AdminLayout>
-      <MonthsCatalogView initialData={initialData} />
+      <MonthsCatalogView initialData={initialData} initialShowPast={initialShowPast} />
     </AdminLayout>
   );
 }

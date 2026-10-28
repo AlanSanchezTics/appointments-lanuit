@@ -702,6 +702,41 @@ Notas:
 
 ---
 
+## Component: Switch
+
+Archivo: `components/admin/ui/Switch.tsx`
+
+### Purpose
+
+Activar o desactivar una opción binaria de filtrado o de vista (sí/no) en el admin panel.
+
+### Structure
+
+- etiqueta de texto a la izquierda (`label`, vinculada por `id`),
+- control `role="switch"` a la derecha con `aria-checked`.
+
+### Style
+
+- track: `44px x 24px`, radius `pill`, borde `1px solid border`
+- track apagado: fondo `inactive-bg`
+- track encendido: fondo `accent`
+- knob: círculo blanco (`surface`) de `16px`
+- foco visible: outline `accent`
+- deshabilitado: opacidad reducida, cursor no interactivo
+
+### Usage
+
+Uso:
+
+- filtros binarios, por ejemplo `Mostrar meses anteriores` en `/admin/months`
+
+Notas:
+
+- no usar para selección entre varias opciones (usar `Select`)
+- el componente no mantiene estado propio: el estado llega por `checked` y se actualiza por `onChange`
+
+---
+
 ## Component: BottomSheetModal
 
 ### Purpose
@@ -977,12 +1012,15 @@ Nota:
 
 - `MetricCard` x6 en grid 3x2
 - `Select` para `Año` y `Estado`
+- `Switch` para `Mostrar meses anteriores` (apagado por defecto)
 - `Button` (`Nuevo`) para abrir modal de alta
 - `ListItem` para filas de meses con `href` o `onClick`
 
 ### Behavior
 
-- filtros refrescan métricas y listado
+- `Año` y `Estado` refrescan métricas y listado
+- `Mostrar meses anteriores` solo filtra la lista en cliente (no cambia métricas); su estado persiste en la URL como `past=1`
+- el contador de la lista refleja los meses visibles
 - filas navegan a `/admin/months/[month]`
 - botón `Nuevo` abre modal de registro de meses futuros
 

@@ -317,7 +317,8 @@
       "status": "Status",
       "statusAll": "All",
       "statusActive": "Active",
-      "statusInactive": "Inactive"
+      "statusInactive": "Inactive",
+      "showPast": "Show past months"
     },
     "cta": {
       "new": "New",
@@ -350,7 +351,8 @@
       "title": "Months List",
       "total_one": "{{count}} Rec.",
       "total_other": "{{count}} Rec.",
-      "empty": "No months match the selected filters."
+      "empty": "No months match the selected filters.",
+      "emptyPastHidden": "No months from the current month onward match these filters. Turn on \"Show past months\" to see past ones."
     },
     "errors": {
       "loadFailed": "Unable to load the months catalog.",

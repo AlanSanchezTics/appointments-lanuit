@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## Workflow selection
+
+- Before editing code or documentation, choose a flow per "Choosing a flow" in `docs/standards/subagent-workflow.md` (direct for trivial edits; Developer then Reviewer for bounded changes; `create-specs` for a new flow or scope change). Run the triage against the specs index and domain docs named in `docs/standards/subagent-workflow.profile.md`, state the choice and reason in one line, and wait for the owner's confirmation unless the edit is trivial. Never implement directly by default.
+- Read the whole workflow standard and profile before launching a subagent. Follow the spec authoring standard in `docs/standards/spec-authoring-workflow.md` when creating or amending a spec. Use `resume-spec` in a fresh session before continuing a spec in progress.
+- Claude agents use `.claude/agents/*.md`; Codex agents use `.codex/agents/*.toml`. The Markdown role bodies are shared; model and effort settings are independent per platform. Shared skills live in `.agents/skills/` and are exposed to Claude through `.claude/skills`. Platform limits and invocation examples are in the workflow profile.
+- Update portable files with `python3 scripts/workflow-sync.py pull`; propose improvements with `push`. Project-owned configuration is never overwritten by these updates.
+
 ## Propósito
 
 Este archivo define las reglas operativas que todo agente debe seguir al trabajar en este repositorio.
@@ -628,10 +635,3 @@ Recommended flow for new feature work:
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
 <!-- SPECKIT END -->
-
-## Workflow selection
-
-- Before editing code or documentation, choose a flow per "Choosing a flow" in `docs/standards/subagent-workflow.md` (direct for trivial edits; Developer then Reviewer for bounded changes; `create-specs` for a new flow or scope change). Run the triage against the specs index and domain docs named in `docs/standards/subagent-workflow.profile.md`, state the choice and reason in one line, and wait for the owner's confirmation unless the edit is trivial. Never implement directly by default.
-- Read the whole workflow standard and profile before launching a subagent. Follow the spec authoring standard in `docs/standards/spec-authoring-workflow.md` when creating or amending a spec. Use `resume-spec` in a fresh session before continuing a spec in progress.
-- Claude agents use `.claude/agents/*.md`; Codex agents use `.codex/agents/*.toml`. The Markdown role bodies are shared; model and effort settings are independent per platform. Shared skills live in `.agents/skills/` and are exposed to Claude through `.claude/skills`. Platform limits and invocation examples are in the workflow profile.
-- Update portable files with `python3 scripts/workflow-sync.py pull`; propose improvements with `push`. Project-owned configuration is never overwritten by these updates.

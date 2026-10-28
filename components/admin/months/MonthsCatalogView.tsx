@@ -10,6 +10,7 @@ import { ListItem } from "@/components/admin/ui/ListItem";
 import { MetricCard } from "@/components/admin/ui/MetricCard";
 import { NewMonthModal } from "@/components/admin/months/NewMonthModal";
 import { Select, type SelectOption } from "@/components/admin/ui/Select";
+import { Switch } from "@/components/admin/ui/Switch";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useMonthsCatalog } from "@/hooks/admin/months/useMonthsCatalog";
 import { createMonths } from "@/lib/admin/months/api-client";
@@ -23,6 +24,7 @@ import { formatMonthLabel } from "@/lib/datetime/mexico-city";
 
 type MonthsCatalogViewProps = {
   initialData: MonthsCatalogResponse;
+  initialShowPast?: boolean;
 };
 
 function resolveAppLanguage(language: string): AppLanguage {
@@ -82,23 +84,27 @@ function resolveCreationErrorMessageKey(errorCode: string) {
   }
 }
 
-export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
+export function MonthsCatalogView({ initialData, initialShowPast = false }: MonthsCatalogViewProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveAppLanguage(i18n.resolvedLanguage ?? "es");
   const [isNewMonthModalOpen, setIsNewMonthModalOpen] = useState(false);
   const {
     data,
-    isLoading,
+    isBusy,
     errorCode,
     year,
     status,
     availableYears,
+    showPast,
+    visibleMonths,
+    hasHiddenPastMonths,
     updateYear,
     updateStatus,
+    updateShowPast,
     retry,
     refreshCatalog,
     goToMonth,
-  } = useMonthsCatalog({ initialData });
+  } = useMonthsCatalog({ initialData, initialShowPast });
 
   const yearOptions = useMemo<SelectOption[]>(
     () =>
@@ -117,8 +123,6 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
     ],
     [t],
   );
-
-  const monthRows = data.months;
 
   async function handleCreateMonths(input: { year: number; months: string[] }) {
     const request = createMonths(input);
@@ -211,7 +215,7 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
               options={yearOptions}
               onChange={(value) => updateYear(Number(value))}
               showPlaceholder={false}
-              disabled={isLoading}
+              disabled={isBusy}
             />
           </div>
 
@@ -228,10 +232,19 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
               options={statusOptions}
               onChange={(value) => updateStatus(value as MonthsCatalogStatus)}
               showPlaceholder={false}
-              disabled={isLoading}
+              disabled={isBusy}
             />
           </div>
         </div>
+
+        <Switch
+          id="months-catalog-show-past"
+          label={t("monthsCatalog.filters.showPast")}
+          checked={showPast}
+          onChange={updateShowPast}
+          disabled={isBusy}
+          className="mt-4"
+        />
 
         <div className="mt-4">
           <Button
@@ -250,7 +263,7 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
             {t("monthsCatalog.list.title")}
           </h2>
           <span className="rounded-full bg-[rgba(228,159,83,0.2)] px-3 py-1 text-xs font-bold uppercase text-[var(--admin-accent)]">
-            {t("monthsCatalog.list.total", { count: data.total })}
+            {t("monthsCatalog.list.total", { count: visibleMonths.length })}
           </span>
         </div>
 
@@ -263,21 +276,23 @@ export function MonthsCatalogView({ initialData }: MonthsCatalogViewProps) {
               {errorCode}
             </p>
             <div className="mt-3">
-              <Button type="button" variant="secondary" onClick={retry}>
+              <Button type="button" variant="secondary" onClick={retry} disabled={isBusy}>
                 {t("monthsCatalog.errors.retry")}
               </Button>
             </div>
           </div>
         ) : null}
 
-        {!errorCode && monthRows.length === 0 ? (
+        {!errorCode && visibleMonths.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 text-sm text-[var(--admin-text-secondary)]">
-            {t("monthsCatalog.list.empty")}
+            {hasHiddenPastMonths
+              ? t("monthsCatalog.list.emptyPastHidden")
+              : t("monthsCatalog.list.empty")}
           </div>
         ) : null}
 
         <div className="space-y-3">
-          {monthRows.map((item) => (
+          {visibleMonths.map((item) => (
             <ListItem
               key={item.month}
               icon={

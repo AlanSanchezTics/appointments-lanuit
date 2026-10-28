@@ -17,17 +17,31 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
    - si no hay sesión, redirige a `/admin/login`.
 3. UI renderiza:
    - grid de métricas (3x2),
-   - panel de filtros (`Año`, `Estado`),
+   - panel de filtros (`Año`, `Estado`, switch `Mostrar meses anteriores`),
    - botón `Nuevo` habilitado,
    - listado compacto de meses con contador.
 4. Filtro `Año`:
    - opciones limitadas a año actual + 5 siguientes.
 5. Filtro `Estado`:
    - opciones `Todos`, `Activo`, `Inactivo`.
-6. Al cambiar filtros:
+6. Al cambiar `Año` o `Estado`:
    - frontend llama `GET /api/admin/months/catalog?year=YYYY&status=...`,
    - se refrescan métricas y lista.
-7. Al tocar una fila:
+   - conserva el parámetro `past` de la URL.
+7. Switch `Mostrar meses anteriores` (apagado por defecto):
+   - apagado: la lista muestra solo el mes actual y los futuros (`month >= currentMonth`),
+   - encendido: la lista muestra también los meses pasados (`month < currentMonth`),
+   - es un filtro de cliente: no llama al endpoint y no cambia las métricas (incluida `Pasados`, que sigue sobre todo el año),
+   - el contador refleja los meses visibles tras el filtro.
+8. Persistencia en URL del switch:
+   - encendido: `?past=1`; apagado: sin `past`,
+   - cualquier otro valor de `past` equivale a apagado,
+   - el cambio usa `router.replace` (no crea entrada en el historial) y conserva `year` y `status`,
+   - al cargar `/admin/months?past=1` el servidor inicializa el switch encendido, sin parpadeo.
+9. Estado vacío:
+   - si no hay meses visibles y el switch está apagado pero existen meses pasados para el filtro actual, el mensaje sugiere activar `Mostrar meses anteriores`,
+   - en otro caso muestra el mensaje vacío general de filtros.
+10. Al tocar una fila:
    - navega a `/admin/months/[month]` para consultar el detalle operativo del mes.
 
 ## Subflujo: Registrar nuevo mes
@@ -60,8 +74,11 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
 - `months` vacío en creación -> `MONTHS_EMPTY_SELECTION`.
 - mes no futuro -> `MONTHS_MONTH_NOT_FUTURE`.
 - formato inválido -> `MONTHS_INVALID_FORMAT`.
+- `past` distinto de `1` (incluido `past` repetido) -> meses pasados ocultos; no es error de validación ni altera `year`/`status`.
 
 ## Notas de MVP
+
+- El filtro `past` no cambia `GET /api/admin/months/catalog`, Prisma ni el service; se resuelve en UI (hook `useMonthsCatalog`).
 
 - La creación solo registra meses y deja estado inicial `INACTIVE` con `slot_mode=SECOND_ONLY_MODE`.
 - Edición de estado/activación queda fuera de este flujo.

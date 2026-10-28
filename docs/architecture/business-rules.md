@@ -415,6 +415,7 @@ Business behavior is defined by:
   - Month list is sourced from `active_months` filtered by selected `year` and `status`.
   - Ordering is ascending by `month` (`YYYY-MM` lexical order).
   - Each row is navigable to `/admin/months/[month]` detail view.
+  - Filtro de presentación: oculta meses pasados por defecto; no cambia la fuente, la API ni las métricas.
 
 - Creation policy:
   - New month registration is only allowed for future months (`month > currentMonth`).

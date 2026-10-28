@@ -317,7 +317,8 @@
       "status": "Estado",
       "statusAll": "Todos",
       "statusActive": "Activo",
-      "statusInactive": "Inactivo"
+      "statusInactive": "Inactivo",
+      "showPast": "Mostrar meses anteriores"
     },
     "cta": {
       "new": "Nuevo",
@@ -350,7 +351,8 @@
       "title": "Listado de meses",
       "total_one": "{{count}} Reg.",
       "total_other": "{{count}} Reg.",
-      "empty": "No hay meses para los filtros seleccionados."
+      "empty": "No hay meses para los filtros seleccionados.",
+      "emptyPastHidden": "No hay meses desde el mes actual para estos filtros. Activa «Mostrar meses anteriores» para ver los pasados."
     },
     "errors": {
       "loadFailed": "No se pudo cargar el catálogo de meses.",

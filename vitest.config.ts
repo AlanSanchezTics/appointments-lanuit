@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    // Each jsdom worker costs hundreds of MB; cap them so the full suite cannot exhaust RAM.
+    maxWorkers: 2,
   },
   resolve: {
     alias: {

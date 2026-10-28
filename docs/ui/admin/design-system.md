@@ -398,6 +398,7 @@ Patrón para `/admin/months`:
 
 - contenedor neutro (`inactive-bg`)
 - dos selects en grid de 2 columnas: `Año` y `Estado`
+- switch `Mostrar meses anteriores` debajo del grid (apagado por defecto; ver `Switch` en `components.md`)
 - CTA `Nuevo` visible en ancho completo
 - `Nuevo` abre modal de registro de meses futuros
 
