@@ -466,6 +466,8 @@
         "rescheduleLoading": "Rescheduling appointment...",
         "rescheduleSuccess": "Appointment rescheduled",
         "rescheduleError": "Unable to reschedule appointment.",
+        "whatsappActionTitle": "Notify the client on WhatsApp?",
+        "whatsappActionButton": "Send on WhatsApp",
         "cancelLoading": "Cancelling appointment...",
         "cancelSuccess": "Appointment cancelled",
         "cancelError": "Unable to cancel appointment.",

@@ -1041,6 +1041,11 @@ Flujo UI:
      - al confirmar `Guardar`, el formulario de edición se cierra inmediatamente,
      - las acciones de esa fila se sustituyen temporalmente por indicador de carga,
      - al terminar la operación, la agenda del día se refresca para reflejar el resultado persistido.
+     - tras una reprogramación exitosa (respuesta `200`, con `status` `CONFIRMED` o `SYNC_FAILED`), además del toast de éxito, se muestra un toast con acción (`sileo.action`) con título `¿Avisar a la clienta por WhatsApp?` y botón `Enviar por WhatsApp`:
+       - el botón abre WhatsApp en la misma pestaña (`window.location.assign`) con `https://wa.me/52{phone}?text={encodedMessage}`, donde `phone` es el teléfono de la cita (10 dígitos) y el mensaje es `🗓️ *Nos vemos el {date} a las {time}*!` (clave `monthsDetail.bookModal.success.whatsappMessage`, la misma del agendado admin),
+       - `{date}` y `{time}` usan la fecha y horario nuevos confirmados por la respuesta del backend, con el mismo formato del agendado admin (fecha capitalizada, p. ej. `Miércoles, 18 de Marzo`; hora en minúsculas, p. ej. `10:00 am`),
+       - la acción es solo de feedback de UI: no se abre WhatsApp automáticamente y no persiste ningún dato (ni estado de cita ni log),
+       - si la reprogramación falla, no se ofrece ni se abre WhatsApp; solo se muestra el toast de error.
    - Semántica de color del calendario:
      - azul (`availableSpaces >= 2`),
      - amarillo (`availableSpaces = 1`),

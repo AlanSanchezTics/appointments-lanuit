@@ -30,6 +30,7 @@ import { Select, type SelectOption } from "@/components/admin/ui/Select";
 import { adminIcons } from "@/components/admin/ui/admin-icons";
 import { useBlockSpacesModal } from "@/hooks/admin/months/useBlockSpacesModal";
 import { useBookAppointmentModal } from "@/hooks/admin/months/useBookAppointmentModal";
+import { useRescheduleWhatsappAction } from "@/hooks/admin/months/useRescheduleWhatsappAction";
 import { useShareMonthAgenda } from "@/hooks/admin/months/useShareMonthAgenda";
 import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import { useDayAgendaModal } from "@/hooks/admin/months/useDayAgendaModal";
@@ -276,6 +277,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
   const blockSpacesModal = useBlockSpacesModal(data.month);
   const bookAppointmentModal = useBookAppointmentModal(data.month);
   const { shareMonthAgenda } = useShareMonthAgenda();
+  const { offerRescheduleWhatsapp } = useRescheduleWhatsappAction();
   const [editDate, setEditDate] = useState<string>("");
   const [editTimeSlot, setEditTimeSlot] = useState<string>(BASE_TIME_SLOTS[0]);
   const [availableEditSlots, setAvailableEditSlots] = useState<string[]>([]);
@@ -625,7 +627,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     setSlotModeDraft(data.slotMode);
   }, [data.slotMode, isSlotModeModalOpen]);
 
-  async function handleReschedule(appointmentId: number) {
+  async function handleReschedule(appointmentId: number, phone: string) {
     const normalizedTimeSlot = toBaseTimeSlot(editTimeSlot);
 
     if (!editDate || !normalizedTimeSlot) {
@@ -636,7 +638,7 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
     setProcessingAppointmentId(appointmentId);
 
     try {
-      await sileo.promise(
+      const rescheduled = await sileo.promise(
         rescheduleAdminAppointmentById(appointmentId, {
           month: data.month,
           date: editDate,
@@ -662,6 +664,11 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
           },
         },
       );
+      offerRescheduleWhatsapp({
+        phone,
+        date: rescheduled.date,
+        timeSlot: rescheduled.timeSlot,
+      });
     } finally {
       setProcessingAppointmentId(null);
       await Promise.all([dayAgendaModal.refresh(), refresh()]);
@@ -1522,7 +1529,10 @@ export function MonthDetailView({ month, initialData }: MonthDetailViewProps) {
                           <Button
                             type="button"
                             onClick={() =>
-                              void handleReschedule(appointment.appointmentId)
+                              void handleReschedule(
+                                appointment.appointmentId,
+                                appointment.phone,
+                              )
                             }
                           >
                             {t("monthsDetail.dayModal.actions.save")}

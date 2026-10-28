@@ -14,7 +14,6 @@ import {
   formatLongDate,
   formatShortWeekdayLabel,
   formatTimeSlotLabel,
-  parseDateOnly,
 } from "@/lib/datetime/mexico-city";
 import type { AppLanguage } from "@/lib/i18n/config";
 import type { AdminCreateAppointmentResponse } from "@/lib/admin/appointments/types";
@@ -22,6 +21,7 @@ import type { AdminBlockableDay } from "@/lib/admin/blocked-spaces/types";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
 import type { BaseTimeSlot } from "@/lib/constants/slots";
 import { resolveClientDisplayName } from "@/lib/shared/client-name";
+import { formatWhatsappAppointmentLabels } from "@/lib/whatsapp/appointment-labels";
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
 
 type ClientMode = "existing" | "new";
@@ -109,7 +109,6 @@ export function BookAppointmentModal({
 }: BookAppointmentModalProps) {
   const { t, i18n } = useTranslation("admin");
   const language = resolveLanguage(i18n.resolvedLanguage ?? "es");
-  const locale = language === "en" ? "en-US" : "es-MX";
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const clientDropdownRef = useRef<HTMLDivElement | null>(null);
   const dayButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -184,38 +183,18 @@ export function BookAppointmentModal({
       return "";
     }
 
-    const dateValue = parseDateOnly(successResult.date);
-    const capitalizeFirst = (value: string) =>
-      value.length > 0 ? value[0].toUpperCase() + value.slice(1) : value;
-
-    const whatsappDateLabel = new Intl.DateTimeFormat(locale, {
-      timeZone: "America/Mexico_City",
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    })
-      .formatToParts(dateValue)
-      .map((part) =>
-        part.type === "weekday" || part.type === "month"
-          ? capitalizeFirst(part.value)
-          : part.value,
-      )
-      .join("");
-
-    const whatsappTimeLabel = formatTimeSlotLabel(
-      successResult.timeSlot,
+    const whatsappLabels = formatWhatsappAppointmentLabels({
+      date: successResult.date,
+      timeSlot: successResult.timeSlot,
       language,
-    ).toLowerCase();
-    const message = t("monthsDetail.bookModal.success.whatsappMessage", {
-      date: whatsappDateLabel,
-      time: whatsappTimeLabel,
     });
+    const message = t("monthsDetail.bookModal.success.whatsappMessage", whatsappLabels);
 
     return buildWhatsappUrlFromMessage({
       phone: `+52${successResult.client.phone}`,
       message,
     });
-  }, [language, locale, successResult, t]);
+  }, [language, successResult, t]);
 
   function handleWhatsappRedirect() {
     if (!whatsappUrl || typeof window === "undefined") {

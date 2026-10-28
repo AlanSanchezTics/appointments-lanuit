@@ -102,6 +102,9 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
      - Al guardar edición, el subformulario se cierra de inmediato.
      - Mientras procesa la mutación, las acciones de la fila se reemplazan por spinner.
      - Al finalizar, la agenda diaria se refresca con los cambios persistidos.
+     - Tras una reprogramación exitosa, además del toast de éxito, aparece un toast con acción `¿Avisar a la clienta por WhatsApp?` / botón `Enviar por WhatsApp`.
+       - el botón abre `https://wa.me/52{phone}` con el mensaje `🗓️ *Nos vemos el {date} a las {time}*!` usando la nueva fecha y horario confirmados por el backend y el teléfono de la cita.
+       - solo se abre por click del admin; si la reprogramación falla no se ofrece la acción. No persiste nada.
    - `Editar` en citas pasadas permanece deshabilitado y debe mostrar feedback explícito de no editable.
    - `Eliminar`: solicita confirmación y luego cancela cita (estado `CANCELLED`) tanto para citas pasadas como futuras.
    - En `Espacios bloqueados`:

@@ -466,6 +466,8 @@
         "rescheduleLoading": "Reprogramando cita...",
         "rescheduleSuccess": "Cita reprogramada",
         "rescheduleError": "No se pudo reprogramar la cita.",
+        "whatsappActionTitle": "¿Avisar a la clienta por WhatsApp?",
+        "whatsappActionButton": "Enviar por WhatsApp",
         "cancelLoading": "Cancelando cita...",
         "cancelSuccess": "Cita cancelada",
         "cancelError": "No se pudo cancelar la cita.",
