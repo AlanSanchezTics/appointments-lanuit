@@ -1,4 +1,8 @@
-.agents
+.agents/*
+!.agents/skills
+.agents/skills/*
+!.agents/skills/create-specs
+!.agents/skills/resume-spec
 .github
 .next
 node_modules

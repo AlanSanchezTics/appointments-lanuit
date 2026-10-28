@@ -56,3 +56,5 @@ Key domain facts (source of truth: `docs/architecture/business-rules.md`):
 - Admin notifications: use `sileo` exclusively (`sileo.success/error/warning/info/action/promise`), with text through `react-i18next`. No other toast libraries.
 - New route names: English, lowercase, kebab-case (legacy `citas`/`cancelar` stay).
 - Path alias `@/` maps to repo root.
+
+@AGENTS.md

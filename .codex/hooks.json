@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s\\n' '{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"Read AGENTS.md and apply its Workflow selection section before editing code or documentation. It is the shared startup and workflow policy for Claude Code and Codex. Read the referenced workflow standard and project profile in full before launching a subagent.\"}}'",
+            "statusMessage": "Loading workflow reminder"
+          }
+        ]
+      }
+    ]
+  }
+}
