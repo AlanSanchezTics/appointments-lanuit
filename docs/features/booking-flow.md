@@ -31,7 +31,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 1. Usuario entra a `/`:
    - se muestra pantalla de bienvenida con CTA primaria `Agendar cita` (`/booking`) y CTA secundaria de cancelación.
    - si no hay meses disponibles, se mantiene layout de bienvenida con aviso de indisponibilidad.
-2. En `/booking` (paso 1): selecciona día y horario.
+2. En `/booking` (paso 1): selecciona día y horario, ya sea por día (mes -> día -> horario, default) o por horario (mes -> horario -> día) mediante un button group `Por día` / `Por horario`.
 3. Al continuar desde paso 1, backend crea lock temporal (TTL 10 minutos).
 4. En paso 2, usuario captura teléfono y backend ejecuta `check + lock` para validar cliente y sostener lock por teléfono.
 5. Si el cliente ya existe por teléfono, avanza directo a confirmación.
@@ -69,6 +69,9 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - UI valida formato base y solicita avance.
   - El selector de días muestra un calendario mensual en grilla por semanas.
   - Los días sin disponibilidad se muestran deshabilitados y el día seleccionado se mantiene resaltado.
+  - Button group `Por día` / `Por horario` (default `Por día`). Es solo UI: usa la misma disponibilidad mensual ya cargada, sin endpoint nuevo.
+  - En `Por horario`: se muestran chips con los horarios que tienen al menos un día disponible en el mes (con conteo de días); al elegir uno, solo se habilitan los días que lo tienen. Cambiar de mes conserva el horario si existe en el mes nuevo; si no, se deshabilitan los días y `Siguiente` hasta elegir otro horario (al volver a un mes que sí lo tiene, el horario vuelve a quedar activo). El modo es estado local: al volver desde identidad o recargar, se reinicia a `Por día` conservando `date + timeSlot`.
+  - Ambos modos entregan el mismo `date + timeSlot` al lock inicial del paso 4.
   - CTA secundaria `Volver` regresa al inicio público (`/`) en estado normal del paso.
 
 4. Lock temporal inicial

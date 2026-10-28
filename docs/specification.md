@@ -238,6 +238,10 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 - El flujo visual de reserva queda compuesto por 4 vistas:
   - Entrada global (`/`): branding + CTA primaria `Agendar cita` + CTA secundaria `Mis citas`.
   - Paso 1 (`/booking`): selección de día/hora + navegación de meses activos futuros + lock temporal al continuar.
+    - Un button group `Por día` / `Por horario` define el orden de búsqueda (default `Por día`):
+      - `Por día` (flujo original): mes -> día -> horario.
+      - `Por horario`: mes -> horario -> día. Se listan los horarios con al menos un día disponible en el mes (con su número de días); al elegir uno, el calendario habilita solo los días que lo tienen.
+    - Ambos modos producen el mismo `date + timeSlot`; el lock temporal y los pasos siguientes no cambian.
     - CTA secundaria `Volver` regresa al inicio público (`/`).
   - Paso 2 (`/booking`): identificación (`phone`) y `name` condicional (solo cliente nuevo).
     - `Volver` regresa al paso 1 y libera lock vigente.
@@ -271,6 +275,17 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
   - debe renderizar un calendario mensual (grilla por semanas) con todos los días del mes,
   - los días sin disponibilidad deben mostrarse deshabilitados,
   - el día seleccionado debe mantenerse resaltado visualmente.
+- Requisito visual del modo `Por horario` en Paso 1:
+  - el button group se muestra encima de la navegación de meses y el modo activo expone `aria-pressed="true"`,
+  - los chips de horario son solo los horarios con disponibilidad en el mes visible,
+  - sin horario elegido, o si el horario elegido ya no existe al cambiar de mes, todos los días se muestran deshabilitados y `Siguiente` queda deshabilitado,
+  - al elegir un horario, si el día seleccionado no lo tiene, se selecciona el primer día disponible con ese horario,
+  - al cambiar de mes se conserva el horario elegido si existe en el mes nuevo; si no existe, los días y `Siguiente` se deshabilitan y, al volver a un mes que sí lo tiene, el horario vuelve a quedar activo,
+  - el modo es estado local del paso 1: al volver desde identidad (`Regresar`/`Editar información`) o recargar, el modo se reinicia a `Por día` y se conserva el `date + timeSlot` ya elegido.
+- Criterios de aceptación de la búsqueda por horario:
+  - un cliente puede llegar a `date + timeSlot` desde `Por horario` sin tocar días intermedios,
+  - el flujo `Por día` se comporta igual que antes,
+  - la disponibilidad mostrada usa las mismas reglas (ocupación, locks, bloqueos, pares, horario futuro) que `Por día`; la validación definitiva sigue ocurriendo al crear el lock.
 
 Mensaje base para cita `CONFIRMED`:
 

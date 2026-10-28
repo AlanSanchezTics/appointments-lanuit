@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/public/button";
+import { useBookingScheduleSearch } from "@/hooks/booking/use-booking-schedule-search";
 import {
   formatDayOfMonthLabel,
   formatMonthLabel,
@@ -73,6 +74,8 @@ export function BookingWizardStepSchedule({
   const availabilityByDate = new Map(
     days.map((day) => [day.date, day] as const),
   );
+  const search = useBookingScheduleSearch({ days, draft, onDraftChange });
+  const isTimeMode = search.mode === "time";
 
   return (
     <div className="space-y-8">
@@ -96,6 +99,32 @@ export function BookingWizardStepSchedule({
         {errors.date ? (
           <ErrorMessage message={translateValidationError(t, errors.date)} />
         ) : null}
+        {/* Modo de búsqueda: por día (default) o por horario */}
+        <div
+          aria-label={t("booking.searchBy")}
+          className="inline-flex w-full rounded-full bg-[var(--surface-alt)] p-1"
+          role="group"
+        >
+          {(["day", "time"] as const).map((mode) => (
+            <button
+              key={mode}
+              aria-pressed={search.mode === mode}
+              className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+                search.mode === mode
+                  ? "bg-white text-[var(--foreground)] shadow-sm"
+                  : "text-[var(--muted)]"
+              }`}
+              disabled={isPending}
+              onClick={() => search.changeMode(mode)}
+              type="button"
+            >
+              {mode === "day"
+                ? t("booking.searchByDay")
+                : t("booking.searchByTime")}
+            </button>
+          ))}
+        </div>
+
         {/* Navegación de meses */}
         <div className="grid w-full grid-cols-[2.25rem_1fr_2.25rem] items-center gap-3">
           <button
@@ -121,6 +150,53 @@ export function BookingWizardStepSchedule({
           </button>
         </div>
 
+        {/* Modo por horario: horarios con días disponibles en el mes */}
+        {isTimeMode ? (
+          <div className="space-y-3">
+            {search.slotOptions.length === 0 ? (
+              <p className="text-center text-sm text-[var(--muted)]">
+                {t("booking.noSlotsInMonth")}
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {search.slotOptions.map(({ slot, daysCount }) => {
+                  const isSelected = search.activeSlot === slot;
+
+                  return (
+                    <button
+                      key={slot}
+                      aria-label={`${t("booking.selectTimeSlot", {
+                        slot: formatTimeSlotLabel(slot, language),
+                      })}, ${t("booking.daysCount", { count: daysCount })}`}
+                      aria-pressed={isSelected}
+                      disabled={isPending}
+                      className={`flex min-h-14 flex-col items-center justify-center rounded-full border px-4 transition ${
+                        isSelected
+                          ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
+                          : "border-[var(--border)] bg-white text-[var(--foreground)]"
+                      }`}
+                      onClick={() => search.selectSlot(slot)}
+                      type="button"
+                    >
+                      <span className="text-[0.96rem] font-semibold">
+                        {formatTimeSlotLabel(slot, language)}
+                      </span>
+                      <span className="text-[0.7rem] text-[var(--muted)]">
+                        {t("booking.daysCount", { count: daysCount })}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {search.slotOptions.length > 0 && !search.activeSlot ? (
+              <p className="text-center text-sm text-[var(--muted)]">
+                {t("booking.selectTimeFirst")}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {/* Días de la semana */}
         <div className="grid grid-cols-7 gap-y-3 text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
           {WEEKDAY_HEADERS[language].map((label) => (
@@ -138,9 +214,13 @@ export function BookingWizardStepSchedule({
             />
           ))}
           {monthDates.map((date) => {
-            const isSelected = draft.date === date;
             const day = availabilityByDate.get(date);
-            const isAvailable = Boolean(day && day.slots.length > 0);
+            const isAvailable = Boolean(
+              day
+                && day.slots.length > 0
+                && (!search.enabledDates || search.enabledDates.has(date)),
+            );
+            const isSelected = draft.date === date && isAvailable;
 
             return (
               <button
@@ -153,13 +233,14 @@ export function BookingWizardStepSchedule({
                       ? "text-[var(--foreground)] hover:bg-[var(--surface-alt)]"
                       : "cursor-not-allowed text-[var(--muted-light)]"
                 }`}
-                disabled={!isAvailable}
+                disabled={!isAvailable || isPending}
                 onClick={() =>
                   onDraftChange({
                     date,
-                    timeSlot: day?.slots.includes(draft.timeSlot ?? "")
-                      ? draft.timeSlot
-                      : (day?.slots[0] ?? null),
+                    timeSlot:
+                      isTimeMode || day?.slots.includes(draft.timeSlot ?? "")
+                        ? draft.timeSlot
+                        : (day?.slots[0] ?? null),
                   })
                 }
                 type="button"
@@ -171,7 +252,7 @@ export function BookingWizardStepSchedule({
         </div>
       </section>
 
-      <section className="space-y-4">
+      <section className={`space-y-4 ${isTimeMode ? "hidden" : ""}`}>
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
           {t("booking.selectTime")}
         </p>
@@ -211,6 +292,9 @@ export function BookingWizardStepSchedule({
           />
         ) : null}
       </section>
+      {isTimeMode && errors.timeSlot ? (
+        <ErrorMessage message={translateValidationError(t, errors.timeSlot)} />
+      ) : null}
 
       {errors.form ? (
         <ErrorMessage message={translateValidationError(t, errors.form)} />
@@ -220,7 +304,7 @@ export function BookingWizardStepSchedule({
       <div className="space-y-4 pt-1">
         <Button
           className="w-full py-4 text-[1.02rem] font-semibold mb-[1rem]"
-          disabled={isPending}
+          disabled={isPending || !search.canContinue}
           onClick={onContinue}
           type="button"
         >
