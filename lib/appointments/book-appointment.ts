@@ -1,3 +1,4 @@
+import type { AppointmentStatus } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
@@ -239,8 +240,9 @@ async function rescheduleAppointmentInTransaction(
       client: {
         phone: input.phone,
       },
+      // D95: PENDING también puede reprogramarse desde la sugerencia del umbral.
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
+        in: ["PENDING", "CONFIRMED", "SYNC_FAILED"],
       },
       date: {
         gte: new Date(`${monthStart}T00:00:00.000Z`),
@@ -311,11 +313,38 @@ async function rescheduleAppointmentInTransaction(
     },
   });
 
+  // D95: una cita PENDING reprogramada sigue PENDING, sin evento de calendario y con bitácora MODIFIED (como Mi cita).
+  if (appointmentToReschedule.status === "PENDING") {
+    await createAppointmentLogEvent(tx, {
+      appointmentId: appointmentToReschedule.id,
+      actionType: "MODIFIED",
+      actor: {
+        type: "CLIENT",
+      },
+      clientId: appointmentToReschedule.clientId,
+      payload: {
+        appointment: {
+          date: input.date,
+          timeSlot: input.timeSlot,
+        },
+        previous: {
+          date: currentDate,
+          timeSlot: currentTimeSlot,
+        },
+        next: {
+          date: input.date,
+          timeSlot: input.timeSlot,
+        },
+      },
+    });
+  }
+
   await deleteReservationLockByToken(tx, lockToken);
 
   return {
     appointmentId: appointmentToReschedule.id,
     name: appointmentToReschedule.client.name,
+    status: appointmentToReschedule.status,
     previousGoogleEventId: appointmentToReschedule.googleEventId,
   };
 }
@@ -360,8 +389,22 @@ async function finalizeRescheduledAppointment(input: {
   date: string;
   name: string;
   timeSlot: string;
+  status: AppointmentStatus;
   previousGoogleEventId: string | null;
 }) {
+  if (input.status === "PENDING") {
+    return {
+      appointmentId: input.appointmentId,
+      status: "PENDING" as const,
+      whatsappPhone: getWhatsappPhone(),
+      whatsappData: {
+        name: input.name,
+        date: input.date,
+        timeSlot: input.timeSlot,
+      },
+    };
+  }
+
   if (input.previousGoogleEventId) {
     try {
       await deleteCalendarEvent(input.previousGoogleEventId);
@@ -519,6 +562,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
           type: "rescheduled" as const,
           appointmentId: rescheduled.appointmentId,
           name: rescheduled.name,
+          status: rescheduled.status,
           previousGoogleEventId: rescheduled.previousGoogleEventId,
         };
       }
@@ -543,6 +587,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
       date: input.date,
       name: result.name,
       timeSlot: input.timeSlot,
+      status: result.status,
       previousGoogleEventId: result.previousGoogleEventId,
     });
   }

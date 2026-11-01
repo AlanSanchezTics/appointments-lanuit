@@ -133,7 +133,8 @@ Business behavior is defined by:
   - In public booking flow, a phone can hold multiple active future appointments within the same target month.
   - In public booking flow, when same-month active future appointments exist within the 15-calendar-day threshold of the selected date, booking flow must enter a decision view with current selection details + list of active appointments.
   - In public booking flow, the 15-calendar-day threshold is used only to decide whether to show the decision/suggestion view.
-  - Target rule (D95): the threshold counts `PENDING`, `CONFIRMED` and `SYNC_FAILED` as active appointments. Pending implementation (public code round, D95): the current code counts only `CONFIRMED` and `SYNC_FAILED`.
+  - The threshold counts `PENDING`, `CONFIRMED` and `SYNC_FAILED` as active appointments (D95); `CANCELLED` and `REJECTED` do not count.
+  - A `PENDING` appointment listed by the threshold can be rescheduled through public confirmation: it moves to the new `date + timeSlot`, stays `PENDING`, has no calendar event (`googleEventId` null) and gets a `MODIFIED` log event, as in my-appointments (D95).
   - In public booking flow, when the new slot/date is within 15 calendar days of at least one existing active future appointment in the same month, UI shows the suggestion view and allows either rescheduling or booking as new.
   - In public booking flow, when the new slot/date is outside that threshold for all same-month active future appointments, UI can continue directly to confirmation.
   - In public booking flow, the same-month active appointments list must start with no preselected appointment; the customer must choose explicitly.
@@ -292,7 +293,7 @@ Business behavior is defined by:
   - the target time must be offered given occupancy (including `PENDING` appointments), active locks, manual blocks, minimum gap, daily capacity, and the same-day cutoff.
   - Otherwise the reschedule is rejected with `SLOT_NOT_AVAILABLE`.
   - An active lock held by another client on the target time also rejects the reschedule with `SLOT_NOT_AVAILABLE` (D87). A lock held by the same client does not block it (D88).
-- Public reschedule must not apply `isLoyal` logic, the 15-day booking suggestion branch, or any 15-day rule between appointments.
+- Mi cita public reschedule (`POST /api/my-appointments/reschedule`) must not apply `isLoyal` logic, the 15-day booking suggestion branch, or any 15-day rule between appointments. The booking wizard reaches reschedule through the 15-day suggestion with `appointmentIdToReschedule` (D95); that path follows the booking rules above.
 - For source appointments in `CONFIRMED` or `SYNC_FAILED`:
   - system attempts calendar mirror re-sync for the new schedule,
   - if sync succeeds, the updated appointment stores the resulting `googleEventId` and ends in `CONFIRMED`,
@@ -802,7 +803,7 @@ Business behavior is defined by:
   - Minimum gap and daily capacity.
   - Valid temporary lock at confirmation step.
   - Public flow only: if same-phone active future appointments exist in the target month, evaluate the 15-calendar-day threshold only as UX suggestion trigger.
-  - Pending implementation (D95): `PENDING` will count as active for this threshold; the current code counts only `CONFIRMED` and `SYNC_FAILED`.
+  - `PENDING`, `CONFIRMED` and `SYNC_FAILED` count as active for this threshold (D95).
 
 - Cancellation precondition validation:
   - `CONFIRMED` status.

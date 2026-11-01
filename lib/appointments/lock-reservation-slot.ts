@@ -75,8 +75,9 @@ async function listActiveFutureAppointmentsInMonth(
       client: {
         phone: input.phone,
       },
+      // D95: PENDING también cuenta como cita activa para el umbral de 15 días (solo sugerencia UX).
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
+        in: ["PENDING", "CONFIRMED", "SYNC_FAILED"],
       },
       date: {
         gte: new Date(`${monthStart}T00:00:00.000Z`),

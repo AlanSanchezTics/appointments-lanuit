@@ -182,8 +182,8 @@ Cambios de reglas y versión (FR-021 a FR-024, FR-035, FR-041):
    - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
    - Si el cliente tiene citas futuras activas en el mismo mes y la nueva fecha queda a menos de 15 días naturales de al menos una de ellas, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
    - Si no existe ninguna cita activa del mes dentro de ese umbral (<15 días), UI avanza directo a confirmación (sin vista de sugerencia).
-   - Regla objetivo (decisión de producto D95): para el umbral de 15 días, las citas activas son `PENDING`, `CONFIRMED` y `SYNC_FAILED`. Una cita `PENDING` dispara la sugerencia igual que las demás.
-   - Implementación pendiente (ronda propia de código público, D95): el código vigente todavía considera solo `CONFIRMED` y `SYNC_FAILED`. Hasta que se implemente, rige ese comportamiento. Esta nota se retira al cerrar esa ronda.
+   - Para el umbral de 15 días, las citas activas son `PENDING`, `CONFIRMED` y `SYNC_FAILED` (D95). Una cita `PENDING` dispara la sugerencia igual que las demás; `CANCELLED` y `REJECTED` no cuentan.
+   - Una cita `PENDING` de la lista de sugerencia puede reprogramarse: la confirmación con `appointmentIdToReschedule` la mueve al nuevo `date + timeSlot`, la deja en `PENDING`, no crea ni borra evento de calendario (`googleEventId` queda nulo) y registra un evento `MODIFIED` en la bitácora, igual que la reprogramación `PENDING` de Mi cita. Las validaciones de horario, lock y bloqueos aplican igual (`SLOT_NOT_AVAILABLE`, `LOCK_EXPIRED_OR_INVALID`). `CONFIRMED` y `SYNC_FAILED` conservan su comportamiento: recrean el evento de calendario y quedan `CONFIRMED`, o `SYNC_FAILED` si falla la sincronización. El reagendar del wizard no escribe bitácora para `CONFIRMED` ni `SYNC_FAILED` (inconsistencia aceptada por el owner, candidata a Fase 4); Mi cita registra la bitácora en todos los estados.
    - En la vista de sugerencia, la lista de citas activas del mes inicia sin cita preseleccionada; la clienta debe elegir explícitamente qué cita reagendar o decidir continuar como cita nueva.
    - En la vista de decisión, el CTA principal es dinámico:
      - sin cita seleccionada y con `canBookAsNewAppointment=true`: `Continuar como nueva cita`,
@@ -229,7 +229,7 @@ Cambios de reglas y versión (FR-021 a FR-024, FR-035, FR-041):
 Contratos de payload relevantes en flujo vigente:
 
 - `POST /api/reservar/client-check-lock`:
-  - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes que activan la sugerencia de UX por umbral `<15 días`.
+  - respuesta puede incluir `futureAppointmentsInMonth[]` con `{ appointmentId, date, timeSlot }` cuando el teléfono tiene citas activas futuras en ese mes (`PENDING`, `CONFIRMED` o `SYNC_FAILED`, D95) que activan la sugerencia de UX por umbral `<15 días`.
   - respuesta puede incluir `canBookAsNewAppointment` (`boolean`) para indicar que, dentro de la vista de sugerencia, también está permitido continuar como cita nueva.
 - `POST /api/reservar/confirm`:
   - admite `appointmentIdToReschedule` opcional para reprogramar una cita futura activa del mismo teléfono y mes al `date + timeSlot` seleccionado.
@@ -369,7 +369,7 @@ Mensaje base para cita `PENDING`:
 3. En esta rama no aplican:
    - validaciones de `isLoyal`,
    - sugerencia o restricción UX por citas futuras activas dentro de 15 días.
-4. El slot destino se valida con el mismo resolvedor de disponibilidad que la reserva pública (sección 4.3): horarios del día según reglas y excepciones, ocupación (incluidas citas `PENDING`), locks, bloqueos manuales y horario futuro. Un día sin horarios, o una hora que no se ofrece, responde `SLOT_NOT_AVAILABLE` (D46). Un lock vigente de otra clienta sobre el horario destino también responde `SLOT_NOT_AVAILABLE` (D87, D88); el lock del propio teléfono no bloquea. Un mes no reservable (inactivo, sin registro o pasado) responde `SLOT_NOT_AVAILABLE`. Un error de infraestructura o de transacción (deadlock, timeout, pool de conexiones) no se convierte en un código de dominio: responde 400 `UNKNOWN_ERROR` y revierte la transacción (D81). La reprogramación pública no aplica la regla de 15 días ni `isLoyal`.
+4. El slot destino se valida con el mismo resolvedor de disponibilidad que la reserva pública (sección 4.3): horarios del día según reglas y excepciones, ocupación (incluidas citas `PENDING`), locks, bloqueos manuales y horario futuro. Un día sin horarios, o una hora que no se ofrece, responde `SLOT_NOT_AVAILABLE` (D46). Un lock vigente de otra clienta sobre el horario destino también responde `SLOT_NOT_AVAILABLE` (D87, D88); el lock del propio teléfono no bloquea. Un mes no reservable (inactivo, sin registro o pasado) responde `SLOT_NOT_AVAILABLE`. Un error de infraestructura o de transacción (deadlock, timeout, pool de conexiones) no se convierte en un código de dominio: responde 400 `UNKNOWN_ERROR` y revierte la transacción (D81). En Mi cita (`POST /api/my-appointments/reschedule`) la reprogramación pública no aplica la regla de 15 días ni `isLoyal`. El reagendar del wizard de reserva sí llega desde la sugerencia de 15 días con `appointmentIdToReschedule` (D95, sección 7 paso 5).
 5. Backend:
    - preserva el mismo `appointments.id`,
    - actualiza `date`,
@@ -648,7 +648,7 @@ Reglas de integridad y consistencia:
 2. Google Calendar es sistema espejo.
 3. No existen traslapes.
 4. Separación mínima por regla o excepción (`minGapMinutes`, medida entre horas de inicio) y máximo `maxPerDay` citas activas por día (1 a 6). Con `preserveCapacity`, no se ofrece un horario que reduzca la capacidad alcanzable del día (sección 4.3).
-5. En flujo público: se permiten múltiples citas activas futuras por teléfono en el mismo mes; cuando existen citas activas futuras del mismo mes dentro del umbral de 15 días naturales, el sistema muestra una sugerencia de UX para reagendar o continuar como nueva cita. En admin: se permiten múltiples citas futuras por cliente.
+5. En flujo público: se permiten múltiples citas activas futuras por teléfono en el mismo mes; cuando existen citas activas futuras del mismo mes dentro del umbral de 15 días naturales, el sistema muestra una sugerencia de UX para reagendar o continuar como nueva cita. Las citas activas para el umbral son `PENDING`, `CONFIRMED` y `SYNC_FAILED` (D95). En admin: se permiten múltiples citas futuras por cliente.
 6. Los días válidos los determinan las reglas y excepciones del mes (sección 4.1); no hay días fijos. Un mes sin reglas aplica el default D6.
 7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
 8. Solo meses `ACTIVE` y nunca meses pasados.

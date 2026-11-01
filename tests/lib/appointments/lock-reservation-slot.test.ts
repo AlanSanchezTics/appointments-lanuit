@@ -301,6 +301,26 @@ describe("reservation slot locks", () => {
     expect(result.whatsappPhone).toBe("5215512345678");
   });
 
+  it("counts PENDING, CONFIRMED and SYNC_FAILED as active appointments for the 15-day threshold (D95)", async () => {
+    const { checkClientAndAcquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    await checkClientAndAcquireReservationSlotLock(
+      {
+        phone: "5512345678",
+        date: "2026-03-16",
+        timeSlot: "13:00",
+      },
+      new Date("2026-02-27T12:00:00.000Z"),
+    );
+
+    // La consulta del umbral es la que filtra por teléfono; la de ocupación no.
+    const thresholdQuery = findManyMock.mock.calls
+      .map(([args]) => args as { where: { client?: unknown; status: { in: string[] } } })
+      .find((args) => args.where.client !== undefined);
+
+    expect(thresholdQuery?.where.status.in).toEqual(["PENDING", "CONFIRMED", "SYNC_FAILED"]);
+  });
+
   it("allows lock when future appointment exists in a different month", async () => {
     findUniqueClientMock.mockResolvedValueOnce({
       id: 9,

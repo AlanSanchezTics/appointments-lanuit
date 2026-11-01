@@ -630,26 +630,44 @@ async function transitionPendingAppointment(
     };
   }
 > {
-  const current = await tx.appointment.findUnique({
-    where: {
-      id: input.appointmentId,
-    },
-    select: {
-      id: true,
-      status: true,
-      date: true,
-      timeSlot: true,
-      client: {
-        select: {
-          id: true,
-          clientNumber: true,
-          name: true,
-          alias: true,
-          phone: true,
+  // N-1: bloqueo de la fila antes de leer (la fila de la cita va al final del orden de bloqueos). Una reprogramación
+  // pública concurrente espera al commit, y syncInput sale de esta lectura bloqueada, no de una previa sin bloqueo.
+  const [locked] = await tx.$queryRaw<
+    Array<{
+      id: number;
+      status: string;
+      date: Date;
+      time_slot: Date;
+      client_id: number;
+      client_number: number;
+      name: string;
+      alias: string | null;
+      phone: string;
+    }>
+  >`
+    SELECT a.id, a.status, a.date, a.time_slot, c.id AS client_id, c.client_number, c.name, c.alias, c.phone
+    FROM appointments a
+    INNER JOIN clients c
+      ON c.id = a.client_id
+    WHERE a.id = ${input.appointmentId}
+    FOR UPDATE
+  `;
+
+  const current = locked
+    ? {
+        id: locked.id,
+        status: locked.status,
+        date: locked.date,
+        timeSlot: locked.time_slot,
+        client: {
+          id: locked.client_id,
+          clientNumber: locked.client_number,
+          name: locked.name,
+          alias: locked.alias,
+          phone: locked.phone,
         },
-      },
-    },
-  });
+      }
+    : null;
 
   if (!current) {
     throw new Error("APPOINTMENT_NOT_FOUND");

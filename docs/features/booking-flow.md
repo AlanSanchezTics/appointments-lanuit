@@ -181,7 +181,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Puede tener más de una cita activa futura en el mismo mes.
   - Un teléfono puede tener citas activas futuras en meses distintos.
   - El umbral `<15 días` se usa para mostrar sugerencia de UX (reagendar o continuar como nueva), no como bloqueo de creación.
-  - Implementación pendiente (D95): la regla objetivo cuenta `PENDING`, `CONFIRMED` y `SYNC_FAILED` como citas activas para el umbral. El código vigente cuenta solo `CONFIRMED` y `SYNC_FAILED` (ver sección 7 paso 5 de la spec).
+  - Citas activas para el umbral (D95): `PENDING`, `CONFIRMED` y `SYNC_FAILED`; `CANCELLED` y `REJECTED` no cuentan (ver sección 7 paso 5 de la spec).
+  - Reprogramar una cita `PENDING` desde la sugerencia la mueve al nuevo horario y la deja `PENDING`, sin evento de calendario (`googleEventId` nulo) y con evento `MODIFIED` en bitácora (D95). Solo esa reprogramación escribe bitácora: el reagendar de `CONFIRMED` o `SYNC_FAILED` desde el wizard no escribe bitácora (inconsistencia aceptada por el owner, candidata a Fase 4).
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.

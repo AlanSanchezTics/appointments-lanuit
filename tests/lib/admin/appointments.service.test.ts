@@ -50,6 +50,13 @@ describe("admin appointments service", () => {
 
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({
+        // N-1: la transición lee la fila con FOR UPDATE; se devuelve la misma fila que el mock de findUnique.
+        $queryRaw: async () => {
+          const row = await appointmentFindUniqueMock();
+          return row
+            ? [{ id: row.id, status: row.status, date: row.date, time_slot: row.timeSlot, client_id: row.client.id, client_number: row.client.clientNumber, name: row.client.name, alias: row.client.alias, phone: row.client.phone }]
+            : [];
+        },
         appointment: {
           findUnique: appointmentFindUniqueMock,
           updateMany: appointmentUpdateManyMock,
