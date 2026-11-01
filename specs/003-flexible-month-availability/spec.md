@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-28
 
-**Status**: Draft
+**Status**: implemented at 2026-11-01
 
 **Input**: User description: "Disponibilidad flexible por mes en /admin/months/[month]. Reemplaza el enum `slotMode` (BLOCK_MODE / SECOND_ONLY_MODE) por reglas de disponibilidad: rango de fechas + días de la semana + horas libres (HH:mm), más excepciones por fecha (p. ej. sábados sueltos). Cada regla tiene `minGapMinutes`, `preserveCapacity`, `maxPerDay`."
 
-> Nota de alcance: este documento describe el comportamiento deseado para el cambio en curso. Es un artefacto de trabajo (constitución, principio II). Si contradice `docs/*`, prevalecen los documentos de `docs/*` hasta que se reconcilien (ver *Documentation Impact*). Las decisiones del registro (D1-D53) están aplicadas en el cuerpo del documento. Los supuestos A1-A6 están cerrados (A5 reemplazada por D15; A6 resuelta por D35 y D40). Los puntos que no decidió el owner se marcan como **default técnico** para revisión en Gate 3. No quedan consecuencias abiertas para el owner: CF1 a CF10 están resueltas (ver *Clarifications*).
+> Nota de alcance: este documento describe el comportamiento deseado para el cambio en curso. Es un artefacto de trabajo (constitución, principio II). Si contradice `docs/*`, prevalecen los documentos de `docs/*` hasta que se reconcilien (ver _Documentation Impact_). Las decisiones del registro (D1-D53) están aplicadas en el cuerpo del documento. Los supuestos A1-A6 están cerrados (A5 reemplazada por D15; A6 resuelta por D35 y D40). Los puntos que no decidió el owner se marcan como **default técnico** para revisión en Gate 3. No quedan consecuencias abiertas para el owner: CF1 a CF10 están resueltas (ver _Clarifications_).
 >
 > **Fuera de alcance**: duraciones por cita; reglas que cruzan meses (FR-019); cambios en el flujo público más allá de mostrar y aceptar los horarios resueltos (FR-018); eliminar `active_months.slot_mode` (FR-033, fase 4).
 
@@ -65,7 +65,7 @@ Las consecuencias CF1 a CF10 quedan resueltas y se conservan aquí con su decisi
 - Edge "Regla sin días de la semana, horas o rango" → A: D38. Se rechaza al guardar. Cada regla exige al menos un día de la semana, al menos una hora y un rango válido dentro del mes. Cerrar un día se hace con una excepción de lista vacía. Afecta FR-025.
 - Edge "Lock activo sobre un horario que se elimina" → A: D39. El lock sigue vigente hasta su TTL; la confirmación valida disponibilidad contra las reglas vigentes y rechaza con el mismo error que un horario no disponible.
 - CF8 (A6, bloqueos manuales en "fuera de horario") → A: D40. El diálogo D18 lista solo citas afectadas por cambios en reglas o excepciones. Los bloqueos manuales no entran en el cálculo: se validan al crearse. Afecta FR-024 y la edge case "Citas existentes fuera del nuevo horario".
-- CF9 (D14 + D29, conteo del día completo en "Espacios bloqueados") → A: D41. Un bloqueo de día completo cuenta un espacio bloqueado por cada horario de la rejilla del día según la regla vigente (coherente con D14). Afecta FR-029 y la entidad *Bloqueo manual*.
+- CF9 (D14 + D29, conteo del día completo en "Espacios bloqueados") → A: D41. Un bloqueo de día completo cuenta un espacio bloqueado por cada horario de la rejilla del día según la regla vigente (coherente con D14). Afecta FR-029 y la entidad _Bloqueo manual_.
 - CF10 (D28 + D23, primera regla de un mes sin reglas) → A: D42. Crear la primera regla cierra los días no cubiertos (D28 + D23). Se acepta tal cual, sin advertencia extra en el editor. Afecta la edge case "Primera regla de un mes sin reglas".
 
 **Ronda 3 (decisiones D43 a D49, owner vía Orchestrator)**
@@ -91,9 +91,9 @@ Las consecuencias CF1 a CF10 quedan resueltas y se conservan aquí con su decisi
 - FR-033: la coincidencia de reglas con un preset de D4 ignora las excepciones del mes (D33 conserva las excepciones en `PATCH slot-mode`, lo que hace coherente esta lectura).
 - FR-025: el límite de 24 horarios se cuenta después de normalizar (D37).
 - FR-023: el mecanismo de confirmación en la API es decisión de plan, igual que el de FR-041.
-- Supuestos de plan marcados [ASSUMPTION] como default técnico (D51): A-01, A-02, A-05, A-07, A-09, A-10 y A-11; ver `plan.md`, sección *Assumptions*.
+- Supuestos de plan marcados [ASSUMPTION] como default técnico (D51): A-01, A-02, A-05, A-07, A-09, A-10 y A-11; ver `plan.md`, sección _Assumptions_.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Definir reglas de disponibilidad por rango de fechas (Priority: P1)
 
@@ -194,7 +194,7 @@ Como responsable de producto, puedo configurar los dos meses de referencia del o
 - **Compatibilidad de citas**: cambiar reglas nunca cancela ni reprograma citas; una cita existente puede quedar en un horario que ya no se ofrece, y eso no la invalida.
 - **Guardado desactualizado**: si las reglas del mes cambiaron después de que el admin abrió el editor, el guardado se rechaza sin modificar nada (D24, FR-041).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -260,7 +260,7 @@ Como responsable de producto, puedo configurar los dos meses de referencia del o
 - **FR-039**: La UI admin MUST construirse con `components/admin/ui/` y los tokens de `docs/ui/admin/`. Cada componente reusable nuevo se documenta en `docs/ui/admin/components.md`. [AGENTS.md]
 - **FR-040**: La entrega MUST actualizar `docs/specification.md`, `docs/architecture/business-rules.md`, los `docs/features/*` afectados, `docs/architecture/api.md`, `docs/ui/admin/components.md` y crear `docs/architecture/data-model.md`, en el mismo flujo de trabajo. [constitución, D7]
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Regla de disponibilidad**: pertenece a un mes. Atributos: rango de fechas, días de la semana, horas `HH:mm` (sin duplicados y ordenadas, D37), `minGapMinutes`, `preserveCapacity`, `maxPerDay` (1 a 6, D20).
 - **Excepción por fecha**: una fecha concreta del mes con su lista de horas (vacía = cerrado) y sus tres parámetros propios, con los defaults de FR-002 (D10). Tiene prioridad sobre las reglas.
@@ -269,7 +269,7 @@ Como responsable de producto, puedo configurar los dos meses de referencia del o
 - **Cita activa** (`appointments`, existente): estados `PENDING`, `CONFIRMED`, `SYNC_FAILED` ocupan capacidad. Sin cambios.
 - **Mes registrado** (`active_months`, existente): `slot_mode` queda legado hasta la fase 4 y se deriva según FR-033.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -285,32 +285,32 @@ Como responsable de producto, puedo configurar los dos meses de referencia del o
 
 - Aprobadas por el owner (Gate 1): A1 traslapes y prioridad de excepción; A2 lista vacía cierra el día; A3 cualquier `HH:mm`; A4 `availableSpaces` redefinido (definición en D12); A5 reemplazada por D15 en Gate 2; A6 resuelta por D35 en Gate 2, con el alcance frente a bloqueos manuales precisado por D40.
 - Aprobadas por el owner (Gate 1): D1 a D9 (ver el informe de cobertura en `agent-reports/01-specify.md`).
-- Decididas por el owner en Gate 2: D10 a D42 (ver *Clarifications*).
+- Decididas por el owner en Gate 2: D10 a D42 (ver _Clarifications_).
 - La regla de D9 para el 14 al 23 de diciembre usa `0/false/4` por D11. Ya no es supuesto.
 - La separación mínima se mide entre horas de inicio (D25). Ya no es supuesto.
 - Defaults técnicos, no decididos por el owner, para revisión en Gate 3: FR-020 (CRUD completo), FR-030 (`maxPerDay=3` en el backfill), FR-031 (migración idempotente), FR-033 (coincidencia con preset sin excepciones).
 - Los cambios de reglas no generan auditoría de citas (D24). Ya no es supuesto.
 - Dependencia existente: el lock temporal (TTL 10 min), la sincronización con Google Calendar y la auditoría de citas funcionan igual que hoy, salvo la duración de eventos de bloqueos de horario puntual creados desde el despliegue (FR-036, D15, D30).
 
-## Documentation Impact *(mandatory for this repo)*
+## Documentation Impact _(mandatory for this repo)_
 
 **Impacto en flujo: Sí.** Cambian reglas de disponibilidad, validación de días, pasos del detalle mensual, métricas y contratos de API. Esta sección es la nota de trazabilidad para `docs/`.
 
 **Conciliación documental por fases (D52)**. El contrato de producto ya está descrito en esta spec, antes de implementar. Calendario: `docs/specification.md` y `docs/architecture/business-rules.md` al cierre de la Fase 1; features y `docs/ui/admin/components.md` al cierre de la Fase 2; verificación cruzada al cierre de la Fase 3, antes del release combinado de Fases 1 y 2 (D45). Contenido por documento:
 
 - `docs/specification.md`:
-  - 4.1 *Días válidos*: deja de ser solo lunes a viernes; los días válidos salen de las reglas del mes.
-  - 4.2 *Horarios base* y 4.3 *Reglas por Modalidad + Máximo Diario*: sustituidos por reglas de disponibilidad, separación mínima, capacidad preservada y excepciones. El máximo diario fijo de 3 pasa a ser por regla (1 a 6, D11, D20).
-  - 7 *Flujo de Reserva* (paso 0 y paso 1, validación del lock): los horarios vienen del resolvedor; lock sobre horario eliminado (D39).
-  - 10 *Modelo de Datos*: nuevas tablas de reglas y excepciones; `active_months.slot_mode` queda legado y derivado (FR-033, D31).
-  - 12 *Invariantes* 4 (regla direccional) y 6 (solo lunes a viernes).
-  - 15.7 *Catálogo de meses admin*: métrica `Disponibles`, modal `Modalidad` (sustituido por editor de reglas), `Bloquear espacios` (sin vista "Por bloque", D14; día completo según D41, ver líneas ~1020 y ~1131 que hoy dicen "cuenta como 3" y "06:00-23:00"), tono de calendario (D13, D34), contrato API, `POST /api/admin/months` (D17, D28, D31).
+  - 4.1 _Días válidos_: deja de ser solo lunes a viernes; los días válidos salen de las reglas del mes.
+  - 4.2 _Horarios base_ y 4.3 _Reglas por Modalidad + Máximo Diario_: sustituidos por reglas de disponibilidad, separación mínima, capacidad preservada y excepciones. El máximo diario fijo de 3 pasa a ser por regla (1 a 6, D11, D20).
+  - 7 _Flujo de Reserva_ (paso 0 y paso 1, validación del lock): los horarios vienen del resolvedor; lock sobre horario eliminado (D39).
+  - 10 _Modelo de Datos_: nuevas tablas de reglas y excepciones; `active_months.slot_mode` queda legado y derivado (FR-033, D31).
+  - 12 _Invariantes_ 4 (regla direccional) y 6 (solo lunes a viernes).
+  - 15.7 _Catálogo de meses admin_: métrica `Disponibles`, modal `Modalidad` (sustituido por editor de reglas), `Bloquear espacios` (sin vista "Por bloque", D14; día completo según D41, ver líneas ~1020 y ~1131 que hoy dicen "cuenta como 3" y "06:00-23:00"), tono de calendario (D13, D34), contrato API, `POST /api/admin/months` (D17, D28, D31).
 - `docs/architecture/business-rules.md`:
-  - *Operating calendar* y *Slot pair model* / *Daily capacity model*: reemplazados por reglas.
-  - *Admin Month Detail Rules*: fórmula de `availableSpaces` (D12), `blockedSpaces` (D14; día completo según D41; hoy línea ~534 dice "3 blocked spaces") y reglas de `slot-mode` (D16, D19, D31, D33).
-  - *Availability Rules*: resolvedor, separación mínima, capacidad preservada, excepciones (D10), mes sin reglas (D6, D17, D28) y días cerrados (D23).
-  - *Validation Rules*: día hábil ya no es fijo; rangos D20, máximo de 24 horarios (D21), normalización de horas (D37) y reglas inválidas (D38).
-  - *Edge Cases* y *Invariants*: traslapes, citas fuera de horario (D18, D33, D35, D40), mismo día (D22, D34), concurrencia (D24), lock sobre horario eliminado (D39), edición en meses pasados (D36), primera regla de un mes sin reglas (D42).
+  - _Operating calendar_ y _Slot pair model_ / _Daily capacity model_: reemplazados por reglas.
+  - _Admin Month Detail Rules_: fórmula de `availableSpaces` (D12), `blockedSpaces` (D14; día completo según D41; hoy línea ~534 dice "3 blocked spaces") y reglas de `slot-mode` (D16, D19, D31, D33).
+  - _Availability Rules_: resolvedor, separación mínima, capacidad preservada, excepciones (D10), mes sin reglas (D6, D17, D28) y días cerrados (D23).
+  - _Validation Rules_: día hábil ya no es fijo; rangos D20, máximo de 24 horarios (D21), normalización de horas (D37) y reglas inválidas (D38).
+  - _Edge Cases_ y _Invariants_: traslapes, citas fuera de horario (D18, D33, D35, D40), mismo día (D22, D34), concurrencia (D24), lock sobre horario eliminado (D39), edición en meses pasados (D36), primera regla de un mes sin reglas (D42).
 - `docs/architecture/business-rules.md` referencia la regla "slot-mode rules" en la reprogramación pública (línea sobre destino de reschedule). Se corrige su redacción para apuntar al resolvedor. La feature 002 no cambia de contrato: FR-016 de 002 sigue siendo válido porque el resolvedor es el mismo.
 - `docs/features/admin-month-detail-flow.md`: pasos 7-8 (Modalidad → Reglas), paso 18 (Bloquear espacios; línea ~133 "bloqueo de día completo = 3 espacios" se reemplaza por D41; evento de día completo `06:00-23:00` sin cambio, D29), reglas de cálculo y flujos alternos (diálogo de D18, sin bloqueos manuales según D40).
 - `docs/features/booking-flow.md`: sección de horarios válidos (líneas sobre `slotMode`) y validaciones.
@@ -335,9 +335,9 @@ Como responsable de producto, puedo configurar los dos meses de referencia del o
 
 **Conflictos con documentación vigente** (se llevan a Gate 2 para confirmación del owner):
 
-- C1: la regla "solo lunes a viernes" aparece en `docs/specification.md` (4.1, 12 invariante 6) y en `business-rules.md` (*Operating calendar*, *Validation Rules*). D9 la contradice; la feature la reemplaza.
-- C2: la regla de pares direccionales aparece en `docs/specification.md` (4.3) y en `business-rules.md` (*Slot pair model*, *Availability Rules*). D1 la reemplaza.
-- C3: la fórmula `(días hábiles × 3)` aparece en `docs/specification.md` (15.7) y `business-rules.md` (*Admin Month Detail Rules*). A4 la reemplaza.
+- C1: la regla "solo lunes a viernes" aparece en `docs/specification.md` (4.1, 12 invariante 6) y en `business-rules.md` (_Operating calendar_, _Validation Rules_). D9 la contradice; la feature la reemplaza.
+- C2: la regla de pares direccionales aparece en `docs/specification.md` (4.3) y en `business-rules.md` (_Slot pair model_, _Availability Rules_). D1 la reemplaza.
+- C3: la fórmula `(días hábiles × 3)` aparece en `docs/specification.md` (15.7) y `business-rules.md` (_Admin Month Detail Rules_). A4 la reemplaza.
 - C4: feature 002 está en estado `Implemented`. Esta feature no reescribe su historia; solo ajusta la redacción de `business-rules.md` que la referencia.
 - C5: feature 001 (`Completed`) no tiene conflicto. Sus logs solo registran eventos de cita.
 - C6: el bloqueo de día completo cuenta 3 espacios y su evento espejo es `06:00-23:00` en `docs/specification.md` y `business-rules.md`. D29 mantiene el evento; el conteo se reemplaza por D41 (hoy 3 espacios).
@@ -369,7 +369,7 @@ Migration Compatibility Check:
 
 **Notification Contract Check** (previsto para la fase 2): sileo para éxito, aviso y error del guardado; sin notificaciones alternas; textos con react-i18next. El diálogo de D18 es un modal de confirmación, no una notificación.
 
-**Ambigüedades detectadas**: ninguna abierta para el owner. CF8 a CF10 se resuelven por D40 a D42. Quedan defaults técnicos para Gate 3 (ver *Defaults técnicos para Gate 3*).
+**Ambigüedades detectadas**: ninguna abierta para el owner. CF8 a CF10 se resuelven por D40 a D42. Quedan defaults técnicos para Gate 3 (ver _Defaults técnicos para Gate 3_).
 
 ## Fases de implementación
 
