@@ -262,7 +262,7 @@ Mostrar la ocupación operativa de la semana en dashboard admin con comparación
 
 - título del bloque
 - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`
-- gráfico de barras de 5 días (`lunes` a `viernes`)
+- gráfico de barras de 7 días (`lunes` a `domingo`, D57), una columna por día en cuadrícula de 7 columnas (`grid-cols-7`)
 - tooltip por barra con número de citas del día
 
 ### Style
@@ -295,7 +295,7 @@ El agente debe:
 El agente no debe:
 
 - hardcodear etiquetas de UI
-- omitir sábados o domingos del gráfico: debe mostrar lunes a domingo (D57). La implementación actual todavía muestra 5 columnas; la corrección es de Fase 4
+- omitir sábados o domingos del gráfico: debe mostrar lunes a domingo (D57). El servicio devuelve los siete días y la tarjeta los dibuja en una cuadrícula de 7 columnas (`grid-cols-7`) con `gap-2`, también en móvil
 
 ---
 
@@ -903,7 +903,7 @@ Archivos:
 
 ### Purpose
 
-Editar las reglas semanales y las excepciones por fecha de un mes no pasado. Se abre con el botón `Reglas` del detalle mensual. Reemplaza al antiguo selector `Modalidad`.
+Editar las reglas semanales y las excepciones por fecha de un mes no pasado. Se abre con el botón `Reglas` del detalle mensual.
 
 ### Structure
 

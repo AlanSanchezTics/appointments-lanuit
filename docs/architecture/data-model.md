@@ -6,7 +6,7 @@ Este documento inventaría los modelos de persistencia, sus relaciones, claves y
 
 Fuente de verdad del esquema: `prisma/schema.prisma` y las migraciones en `prisma/migrations/`. Si este documento contradice esos archivos, gana el código.
 
-Estado: la migración `0022_availability_rules` existe en el repositorio. Todavía no se ha desplegado: Fase 1 y Fase 2 salen en el mismo release (D45).
+Estado: la migración `0022_availability_rules` existe en el repositorio y está aplicada en la copia local de la base, pero no se ha desplegado en producción: sale en el mismo release que el resto de la disponibilidad por mes (D45). La migración `0023_drop_active_months_slot_mode` está creada y aplicada solo en la BD de pruebas (`appointments_test`); su despliegue espera la autorización del owner (Gate 4).
 
 ---
 
@@ -21,7 +21,7 @@ La disponibilidad de cada mes se describe con reglas por rango de fechas y excep
 | `id` | INT, PK autoincremental | sin cambio | Referenciada por reglas y excepciones |
 | `month` | CHAR(7), UNIQUE | sin cambio | Formato `YYYY-MM` |
 | `status` | ENUM `ACTIVE` / `INACTIVE` | sin cambio | Controla si el mes se puede reservar. No lo cambia la disponibilidad |
-| `slot_mode` | ENUM `BLOCK_MODE` / `SECOND_ONLY_MODE`, NOT NULL | **Legado** | Derivado de las reglas (ver "Derivación de `slot_mode`"). Default cambiado a `BLOCK_MODE` en `0022` |
+| `slot_mode` | ENUM `BLOCK_MODE` / `SECOND_ONLY_MODE`, NOT NULL | **Legado** | El código no la lee ni la escribe desde la ronda 4B. Se elimina con `0023` (pendiente de despliegue). Default cambiado a `BLOCK_MODE` en `0022` |
 | `availability_version` | INT, NOT NULL, DEFAULT 0 | **Nueva** | Control de concurrencia del editor. Solo crece |
 | `created_at`, `updated_at` | DATETIME(3) | sin cambio | — |
 
@@ -120,19 +120,13 @@ Todas las tablas hijas caen en cascada con su padre. El editor reemplaza el conj
 
 ---
 
-## Derivación de `slot_mode` (D19, D31, FR-033)
+## Presets de entrada de `PATCH slot-mode` (D4, D16, D33)
 
-`slot_mode` se mantiene sincronizado con las reglas para que la versión anterior de la aplicación y las respuestas con `slotMode` sigan siendo coherentes mientras exista la columna (fase 4 la retira).
-
-La derivación se calcula en la capa de servicio (`lib/availability/slot-mode-derivation.ts`, función `deriveSlotMode`), no en la BD. Se ejecuta en cada escritura, dentro de la misma transacción:
-
-1. Sin reglas en el mes → `BLOCK_MODE` (D31).
-2. Exactamente una regla que cubre todo el mes (primer a último día), con días `{1,2,3,4,5}`, horas, `min_gap_minutes`, `preserve_capacity` y `max_per_day` iguales a un preset → el valor del preset.
-3. En cualquier otro caso → se conserva el valor actual de `slot_mode`.
+Los presets ya no se derivan ni se guardan en la tabla. `slot_mode` no se escribe desde la ronda 4B: se eliminó `deriveSlotMode` y sus pruebas, y no queda ningún llamador de producción. El preset es solo la entrada de `PATCH /api/admin/months/[month]/slot-mode`: `SLOT_MODE_PRESET_VALUES` y `SLOT_MODE_PRESETS` (`lib/availability/defaults.ts`) y `buildSlotModePresetRules` (`lib/availability/slot-mode-derivation.ts`) convierten el valor en una regla de mes completo.
 
 Presets (D4):
 
-| Preset | Horas | `min_gap_minutes` | `preserve_capacity` | `max_per_day` | `slot_mode` |
+| Preset | Horas | `min_gap_minutes` | `preserve_capacity` | `max_per_day` | Valor de entrada |
 |---|---|---|---|---|---|
 | BLOCK | 09:00, 10:00, 13:00, 14:00, 17:00, 18:00 | 240 | TRUE | 3 | `BLOCK_MODE` |
 | SECOND_ONLY | 10:00, 14:00, 18:00 | 0 | FALSE | 3 | `SECOND_ONLY_MODE` |
@@ -154,7 +148,7 @@ La migración crea una regla por cada fila de `active_months`. El mapeo es:
 
 - `max_per_day = 3` es un default técnico (FR-030), no un valor leído del modo anterior.
 - No se crean excepciones en el backfill.
-- `slot_mode` no cambia de valor en la migración: ya coincide con el preset, así que `deriveSlotMode` queda consistente.
+- `slot_mode` no cambia de valor en la migración: ya coincide con el preset.
 - Idempotencia: cada sentencia de backfill tiene `WHERE NOT EXISTS` sobre la fila `backfill-availability-rules-v1` de `availability_migration_runs`. La fila se inserta al final, dentro de la misma transacción. Una segunda ejecución no inserta reglas ni cambia `availability_version`.
 - Transacción: el DDL no es transaccional en MySQL (cada sentencia hace commit implícito). Solo el bloque de backfill va dentro de `START TRANSACTION ... COMMIT`.
 - Verificación prevista (S-02 del quickstart): el resolvedor con las reglas del backfill devuelve los mismos horarios que el legado para estados sin bloqueos (prueba de equivalencia del motor). Esa prueba está en `tests/lib/availability/` y se describe en la spec, no en este documento.
@@ -170,16 +164,17 @@ La migración crea una regla por cada fila de `active_months`. El mapeo es:
 
 Efectos del cambio de default:
 
-- `createInactiveMonths` (alta de meses en el catálogo) usa `DEFAULT_MONTH_SLOT_MODE = BLOCK_MODE`, y `POST /api/admin/months` no crea reglas (D17). El mes queda sin reglas y se aplica la regla por defecto D6 (lunes a viernes, 09/10/13/14/17/18, 240, TRUE, 3).
-- `reconcileActiveMonthsInDatabase` (`lib/db/active-months.ts`) crea meses con `{ month, status: ACTIVE }` y no crea reglas. Recibe el default de la BD (`BLOCK_MODE`) y, como no tiene reglas, aplica D6. Antes de esta migración recibía `SECOND_ONLY_MODE`. Ver D6 y D84; el comportamiento descrito es el del código actual.
+- `createInactiveMonths` (alta de meses en el catálogo, `lib/db/admin-months.ts`) crea `status = INACTIVE` sin escribir la columna legada, y `POST /api/admin/months` no crea reglas (D17). El mes queda sin reglas y se aplica la regla por defecto D6 (lunes a viernes, 09/10/13/14/17/18, 240, TRUE, 3).
+- `reconcileActiveMonthsInDatabase` (`lib/db/active-months.ts`) crea meses con `{ month, status: ACTIVE }` y no crea reglas ni escribe la columna legada. Como no tiene reglas, aplica D6. Ver D6 y D84; el comportamiento descrito es el del código actual.
 
 ---
 
 ## Estado legado de `slot_mode`
 
-- `active_months.slot_mode` sigue existiendo y se escribe en cada guardado de disponibilidad (derivado).
-- Se lee en `GET /api/admin/months/[month]/availability` y en el detalle del mes como campo `slotMode`, y se devuelve en la respuesta de `PATCH .../slot-mode` y en `PUT .../availability`.
-- Fase 4 (T078) lo retira: columna, campo `slotMode` de las respuestas (D49, sin alias) y `lib/availability/month-slot-mode.ts`. La eliminación de la columna es una migración aparte (`0023_drop_active_months_slot_mode`, pendiente de autorización del owner).
+- `active_months.slot_mode` sigue existiendo en las bases que no han aplicado `0023`, con el último valor escrito por la versión anterior a la ronda 4B. El código actual no la lee ni la escribe.
+- Ninguna respuesta de la API incluye `slotMode` (D49, sin alias): ni `GET .../availability`, ni `GET /api/admin/months/[month]`, ni la respuesta de `PATCH .../slot-mode` (`{ month, availabilityVersion }`). `slotMode` solo aparece como campo de entrada del `PATCH`.
+- `lib/availability/month-slot-mode.ts` se eliminó (T073). Los valores de entrada del preset viven en `lib/availability/defaults.ts`.
+- La eliminación física de la columna es la migración `0023_drop_active_months_slot_mode`, descrita en la sección siguiente. `availability_migration_runs` se conserva.
 
 ---
 
@@ -262,10 +257,49 @@ Despliegue y limpieza:
 
 1. Aplicar `prisma migrate deploy` (incluye `0022`). Las tablas nuevas quedan con datos del backfill. El código anterior sigue funcionando porque lee `slot_mode`, que se conserva.
 2. Verificar `availability_migration_runs` y el conteo de reglas (una por mes con `active_months`; S-02 del quickstart).
-3. Desplegar el código nuevo. Fase 1 y Fase 2 salen en el mismo release, sin bandera (D45). El código nuevo no debe ejecutarse contra una BD sin el paso 3.
-4. Limpieza (fase 4, T078): retirar la lectura de `slot_mode` del código, las constantes de pares y el campo `slotMode` de las respuestas (D49). La eliminación de la columna va en `0023_drop_active_months_slot_mode`, que requiere autorización del owner.
+3. Desplegar el código nuevo. La disponibilidad por mes sale en un solo release, sin bandera (D45). El código nuevo no debe ejecutarse contra una BD sin el paso 3.
+4. Limpieza: retirar la lectura de `slot_mode` del código, las constantes de pares y el campo `slotMode` de las respuestas (D49). Hecho en la ronda 4B. La eliminación de la columna va en `0023_drop_active_months_slot_mode` (sección siguiente).
 
 La migración no modifica `appointments` (`date`, `time_slot`, `status`, `google_event_id`) ni `blocked_slots` (FR-032).
+
+---
+
+## Migración 0023: orden, compatibilidad y rollback
+
+Migración `prisma/migrations/0023_drop_active_months_slot_mode/migration.sql`: `ALTER TABLE active_months DROP COLUMN slot_mode`.
+
+Estado: aplicada solo en la BD de pruebas `appointments_test` (ronda 4B). No aplicada en producción. Pendiente: autorización del owner (Gate 4), respaldo verificado y precondiciones de la lista «Orden en cada entorno» (incluye parar los procesos de la versión anterior). No hay staging accesible desde el entorno de desarrollo.
+
+Migration Compatibility Check:
+
+- Cambio de esquema: sí. Backfill de datos: no. Compatibilidad con legado: sí, sin ventana de convivencia.
+- El código anterior a la ronda 4B selecciona `slot_mode` al mapear meses (`findActiveMonth`, `listActiveMonths`, `findRegisteredMonth`), lee la columna en `findMonthAvailability` y la escribe en `replaceMonthAvailability`. Sin la columna, esas consultas fallan, incluidas las de reserva pública. Por eso la migración y el despliegue del código de la ronda 4B deben ser atómicos.
+- Legado: `availability_migration_runs` se conserva. Retirarla requiere decisión del owner.
+- Rollback definido: parcial, ver abajo. La migración es irreversible sin respaldo.
+- Limpieza: el código y la documentación ya no referencian la columna (ronda 4B). Solo falta esta migración.
+- Protecciones de integridad: ninguna nueva. La eliminación no toca claves foráneas ni índices (la columna no tenía índice).
+
+Orden en cada entorno. El respaldo es **obligatorio** (decisión del owner, 2026-11-01): ningún entorno ejecuta `prisma migrate deploy` de `0023` sin un respaldo verificado.
+
+1. Confirmar que `0022_availability_rules` está aplicada. `0023` no puede ejecutarse antes que `0022`. Precondición (c): `SELECT migration_name, finished_at, rolled_back_at FROM _prisma_migrations WHERE migration_name = '0022_availability_rules';` debe devolver una fila con `finished_at` no nulo y `rolled_back_at` nulo. Si `0022` figura como fallida o revertida, no continuar. Marcar `0022` como aplicada sin haber ejecutado su backfill permitiría que `0023` borre `slot_mode` sin que existan reglas.
+2. Parar todas las instancias de la versión anterior a la ronda 4B y los procesos manuales que usan el modelo `activeMonth`, incluido `npm run months:reconcile` (`scripts/reconcile-active-months.mjs`): con código anterior a la ronda 4B falla tras `0023`, porque ese código selecciona `slot_mode`. No hay ventana de convivencia. El respaldo se toma después de esta parada para que ninguna escritura de `slot_mode` quede fuera de él (decisión del owner, 2026-11-01).
+3. Con las instancias ya paradas, tomar respaldo de `active_months.slot_mode`: volcado completo de la base, o tabla auxiliar `CREATE TABLE active_months_slot_mode_backup_0023 AS SELECT id, slot_mode FROM active_months;`. Verificación obligatoria:
+   - Conteo: `SELECT COUNT(*) FROM active_months_slot_mode_backup_0023;` debe ser igual a `SELECT COUNT(*) FROM active_months;`. Con volcado completo, comprobar que el fichero existe, no está vacío y es restaurable.
+   - Restauración de prueba: restaurar el respaldo en una base desechable creada solo para esta comprobación, nunca en `appointments` ni en producción, y comparar `id` y `slot_mode` con la base de origen.
+4. Con las instancias paradas, comprobar las precondiciones de datos. Todas deben cumplirse antes de `migrate deploy`:
+   - (a) `SELECT COUNT(*) FROM availability_migration_runs WHERE name = 'backfill-availability-rules-v1';` devuelve `1`. La fila la inserta el backfill de `0022` al final de su transacción.
+   - (b) Cobertura de reglas: `SELECT am.id, am.month, am.slot_mode FROM active_months am LEFT JOIN availability_rules ar ON ar.active_month_id = am.id WHERE am.slot_mode <> 'BLOCK_MODE' AND ar.id IS NULL;` devuelve 0 filas. `BLOCK_MODE` es el default de la columna desde `0022`. El backfill creó una regla por cada mes existente; un mes sin regla suele ser un alta posterior a `0022`, que no escribe `slot_mode`. Un mes con `SECOND_ONLY_MODE` sin regla perdería su modo al borrar la columna.
+   - Si alguna precondición falla, no ejecutar `migrate deploy` y consultar al owner.
+5. `prisma migrate deploy` (aplica `0023`).
+6. Desplegar el código de la ronda 4B de inmediato y verificar `GET /api/admin/months/[month]`, `PATCH /api/admin/months/[month]/slot-mode` y una reserva pública.
+
+Fallo de `0023` por columna ya eliminada (N4 de la revisión 4B): `0023` ejecuta `ALTER TABLE active_months DROP COLUMN slot_mode` sin `IF EXISTS`. Si alguien eliminó la columna a mano, MySQL devuelve un error del tipo «Can't DROP ... check that column/key exists», `migrate deploy` falla y Prisma marca `0023` como fallida. No hay daño de datos porque la sentencia no se aplica. Recuperación, con cautela y con el respaldo ya verificado:
+
+1. Comprobar el estado: `SHOW COLUMNS FROM active_months LIKE 'slot_mode';` no debe devolver filas. Averiguar cómo se eliminó la columna: significa que la base cambió fuera de las migraciones.
+2. Si el owner acepta el estado final (columna ausente), marcar la migración: `npx prisma migrate resolve --applied 0023_drop_active_months_slot_mode`.
+3. Si el fallo tiene otra causa, corregirla, ejecutar `npx prisma migrate resolve --rolled-back 0023_drop_active_months_slot_mode` y repetir `prisma migrate deploy`.
+
+Rollback: no es automático. Revertir el código a `fed5d46` no basta, porque ese código necesita la columna. Pasos: recrear la columna con `ALTER TABLE active_months ADD COLUMN slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') NOT NULL DEFAULT 'BLOCK_MODE' AFTER status;` y restaurar los valores desde el respaldo (`UPDATE active_months a JOIN <respaldo> b ON b.id = a.id SET a.slot_mode = b.slot_mode;`). Sin respaldo, los valores se pierden y el código anterior mostrará `BLOCK_MODE` en todos los meses como etiqueta de admin. El motor de horarios de `fed5d46` no usa la columna para calcular horarios. Las reglas editadas con el código de la ronda 4B no actualizan la columna, así que el valor restaurado puede no coincidir con las reglas.
 
 ---
 
@@ -287,7 +321,7 @@ Advertencia: los pasos 3 y 4 borran datos. Un rollback de release no requiere bo
 
 ---
 
-## Riesgos de rollback
+## Riesgos de rollback del release 0022
 
 - Revertir el release (fases 1 y 2 juntas, D45) deja las tablas nuevas sin uso. No se eliminan.
 - Con el código anterior, `PATCH slot-mode` actualiza solo la columna `slot_mode` (`updateRegisteredMonthSlotMode`). Si luego se vuelve a desplegar el código nuevo, las reglas pueden no reflejar los cambios hechos con el modal anterior. El nuevo código lee las reglas, no `slot_mode`.
@@ -302,7 +336,7 @@ Advertencia: los pasos 3 y 4 borran datos. Un rollback de release no requiere bo
 | Migración | Fecha | Cambio | Tablas afectadas | Reversibilidad |
 |---|---|---|---|---|
 | `0022_availability_rules` | 2026-10-28 (aplicada en copia local de la base, 2026-10-31; pendiente de despliegue en producción con la release combinada) | Seis tablas de reglas y excepciones con PK, UNIQUE, FK CASCADE y CHECK; `availability_version`; default de `slot_mode` a `BLOCK_MODE`; backfill D4 idempotente | `active_months`, `availability_rules`, `availability_rule_weekdays`, `availability_rule_times`, `availability_exceptions`, `availability_exception_times`, `availability_migration_runs` | Sin rollback automático de DDL. Recuperación manual en la sección correspondiente |
-| `0023_drop_active_months_slot_mode` (fase 4, T078) | Pendiente de autorización del owner | Eliminar `slot_mode` (y, si el owner lo decide, `availability_migration_runs`) | `active_months`, `availability_migration_runs` | No sin restaurar desde respaldo |
+| `0023_drop_active_months_slot_mode` | Aplicada solo en `appointments_test` (ronda 4B). Pendiente de despliegue en producción: Gate 4 del owner | Eliminar `active_months.slot_mode`. `availability_migration_runs` se conserva | `active_months` | No sin restaurar desde respaldo (sección "Migración 0023") |
 
 ---
 

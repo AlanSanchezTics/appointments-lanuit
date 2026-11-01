@@ -7,7 +7,7 @@
 
 ## Contexto
 
-El dashboard calculaba la capacidad con una constante fija de tres citas por día (`MAX_APPOINTMENTS_PER_DAY`). Con reglas por mes, un día puede admitir otra cantidad, o ninguna. Además, los contadores y la agenda no trataban de forma consistente las citas `PENDING`: las notas D59 y D61 decían que sí las contaban, y la lista de agenda y los contadores de la BD las excluían.
+El dashboard calculaba la capacidad con una constante fija de tres citas por día (`MAX_APPOINTMENTS_PER_DAY`, retirada en la ronda 4A). Con reglas por mes, un día puede admitir otra cantidad, o ninguna. Además, los contadores y la agenda no trataban de forma consistente las citas `PENDING`: las notas D59 y D61 decían que sí las contaban, y la lista de agenda y los contadores de la BD las excluían.
 
 ## Decisión
 
@@ -21,4 +21,4 @@ El dashboard calculaba la capacidad con una constante fija de tres citas por dí
 - Positivo: la capacidad refleja la configuración real del día, incluidos los cierres.
 - Positivo: el admin no cuenta como ocupado un horario que todavía no confirmó, pero no puede pisarlo.
 - Negativo: la ocupación semanal puede superar 100 %. Se aceptó sin tope, por decisión del owner. El porcentaje diario sí se limita a 100.
-- Deuda documental: los comentarios de `lib/admin/months/detail-service.ts` (D59) y `lib/admin/dashboard/service.ts` (D61) describen `PENDING` como incluida. El código no la incluye. Los comentarios deben corregirse; la decisión vigente es D66.
+- Deuda de comentarios (abierta al cierre de T078): los comentarios de `lib/admin/months/detail-service.ts` (línea 189, D59) y `lib/admin/dashboard/service.ts` (línea 473, D61) describen `PENDING` como incluida. La decisión vigente es D66. Corregir los comentarios exige un cambio de código, fuera de la ronda documental; queda como pendiente.

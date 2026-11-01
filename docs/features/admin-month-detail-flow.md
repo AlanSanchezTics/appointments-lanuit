@@ -29,7 +29,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - comparativa de ocupación vs mes anterior dentro de la misma tarjeta en formato `N% más/menos comparado con (mes) (año)` con icono de tendencia,
    - calendario operativo mensual,
    - tags de estado (`Activo|Inactivo`) y `Histórico` debajo del título cuando `isPastMonth=true`.
-7. Si `isPastMonth=false`, el bloque de acciones del mes incluye el botón `Reglas`. Abre el editor de disponibilidad (sección "Editor de reglas y excepciones"). Reemplaza al antiguo selector `Modalidad`, que ya no existe.
+7. Si `isPastMonth=false`, el bloque de acciones del mes incluye el botón `Reglas`. Abre el editor de disponibilidad (sección "Editor de reglas y excepciones").
 8. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
 9. `Compartir agenda` se mantiene deshabilitado cuando `monthStatus=INACTIVE`. `Agendar cita` (mes y día) permanece habilitado aunque el mes sea `INACTIVE`: el admin puede agendar en meses inactivos.
 10. Al usar `Compartir agenda`, frontend intenta copiar al portapapeles la URL pública completa `<origen>/citas/[month]` del mes actual (ej. `https://dominio.com/citas/2026-03`) y muestra toast de éxito.
@@ -228,7 +228,7 @@ Abre con `Reglas` (solo meses no pasados) y muestra el editor de disponibilidad 
 13. Reagendado o creación con horario que dejó de ofrecerse mientras la UI está abierta:
     - el servidor responde `SLOT_NOT_AVAILABLE` o `SLOT_LOCKED`. La UI muestra el error y el admin debe elegir otro horario de la lista actualizada.
 
-## Contrato backend para agendado admin (Fase 1)
+## Contrato backend para agendado admin
 
 - Endpoint de búsqueda de clientes:
   - `GET /api/admin/clients/search?query=<texto>&limit=<n>`

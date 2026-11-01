@@ -282,7 +282,6 @@ Respuesta 200:
 {
   "month": "2026-12",
   "availabilityVersion": 3,
-  "slotMode": "BLOCK_MODE",
   "rules": [
     {
       "id": 11,
@@ -304,7 +303,7 @@ Respuesta 200:
 
 - `weekdays`: ISO, 1 = lunes, 7 = domingo.
 - `usesDefaultRule`: `true` cuando el mes no tiene reglas. Los días no cubiertos por una excepción usan la regla por defecto (D6, D28). Es informativo.
-- `slotMode`: campo legado. Se retira en la Fase 4, sin alias (D49).
+- Sin `slotMode`: el campo se retiró de la respuesta, sin alias (D49).
 - Errores: 404 `MONTH_NOT_REGISTERED`; 400 `MONTHS_INVALID_FORMAT`.
 
 ### PUT /api/admin/months/[month]/availability
@@ -316,7 +315,7 @@ Cuerpo:
 - `exceptions[]`: `{ date, times[], minGapMinutes, preserveCapacity, maxPerDay }`. `times` puede ser `[]`, que cierra el día.
 - `confirmAffectedAppointments` (boolean, opcional, por defecto `false`).
 
-Semántica: reemplaza el conjunto completo de reglas y excepciones del mes en una transacción con `FOR UPDATE` sobre `active_months`. Deriva `slotMode` (ver `data-model.md`) e incrementa `availabilityVersion`. No escribe en `appointment_logs` (D24) y no modifica citas ni eventos de Google Calendar (FR-022).
+Semántica: reemplaza el conjunto completo de reglas y excepciones del mes en una transacción con `FOR UPDATE` sobre `active_months`. Incrementa `availabilityVersion`; no deriva ningún modo (D49). No escribe en `appointment_logs` (D24) y no modifica citas ni eventos de Google Calendar (FR-022).
 
 Respuesta 200: el mismo cuerpo que el GET, con la versión nueva.
 
@@ -373,9 +372,9 @@ Cuerpo:
 - `expectedVersion` (entero ≥ 0, opcional).
 - `confirmAffectedAppointments` (boolean, opcional, por defecto `false`).
 
-Semántica: reemplaza las reglas del mes por el preset D4 como regla de mes completo, de lunes a viernes. Conserva las excepciones (D33) y deriva `slot_mode`. Siempre escribe: enviar el mismo modo ya no es una operación sin efecto (D69) y siempre incrementa `availabilityVersion`.
+Semántica: reemplaza las reglas del mes por el preset D4 como regla de mes completo, de lunes a viernes. Conserva las excepciones (D33). Siempre escribe: enviar el mismo modo ya no es una operación sin efecto (D69) y siempre incrementa `availabilityVersion`.
 
-Respuesta 200: `{ "month": "2026-12", "slotMode": "SECOND_ONLY_MODE", "availabilityVersion": 4 }`. Antes devolvía `{ month, slotMode }`; el campo nuevo es aditivo.
+Respuesta 200: `{ "month": "2026-12", "availabilityVersion": 4 }`. `slotMode` no se devuelve (D49, sin alias).
 
 Errores: 404 `MONTH_NOT_REGISTERED`; 422 `MONTH_IN_PAST`; 409 `AVAILABILITY_VERSION_CONFLICT` (solo si se envía `expectedVersion`); 409 `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED`; 400 `VALIDATION_ERROR` o `MONTHS_INVALID_FORMAT`.
 
@@ -386,13 +385,13 @@ Compatibilidad:
 
 ### POST /api/admin/months
 
-Crea meses inactivos sin reglas (D17). `slot_mode` queda en `BLOCK_MODE` (D31). Los días no cubiertos usan la regla por defecto D6 (lunes a viernes, 09:00, 10:00, 13:00, 14:00, 17:00, 18:00; 240 minutos; `preserveCapacity` TRUE; `maxPerDay` 3).
+Crea meses inactivos sin reglas (D17). Los días no cubiertos usan la regla por defecto D6 (lunes a viernes, 09:00, 10:00, 13:00, 14:00, 17:00, 18:00; 240 minutos; `preserveCapacity` TRUE; `maxPerDay` 3).
 
 Respuesta 200 con el cuerpo existente (la convención de 201 no se aplica a este endpoint; sin cambio). Errores: 401; 400 para cualquier error de dominio o de forma.
 
 ### GET /api/admin/months/[month]
 
-Campos aditivos: `rules`, `exceptions`, `availabilityVersion` y `usesDefaultRule`. `slotMode` se conserva.
+Campos aditivos: `rules`, `exceptions`, `availabilityVersion` y `usesDefaultRule`. `slotMode` no se devuelve (D49).
 
 - Los días anteriores a hoy cuentan 0 disponibles (D56).
 - Un día sin horarios resueltos se marca con `tone: "closed"` (D34).
@@ -470,7 +469,7 @@ Respuesta 200: `{ "month": "2026-12", "days": [{ "date": "2026-12-03", "slots": 
 - `timeSlot` es `HH:mm` con cualquier minuto (FR-006). Una fecha de calendario inválida responde `VALIDATION_ERROR` (400).
 - Mes no reservable (sin registro, inactivo o pasado) en `reservar/lock`, `client-check-lock` o `confirm`: 400 `MONTH_NOT_ALLOWED`. En la reprogramación pública de Mi cita el mismo caso responde `SLOT_NOT_AVAILABLE` (D91).
 - `POST /api/reservar/client-check-lock` devuelve `futureAppointmentsInMonth[]` (`{ appointmentId, date, timeSlot }`) y `canBookAsNewAppointment`. La lista incluye las citas activas del mismo teléfono y mes (`PENDING`, `CONFIRMED`, `SYNC_FAILED`; D95) que quedan a menos de 15 días naturales de la fecha elegida. Si no hay ninguna, la lista va vacía y no hay sugerencia. El umbral nunca bloquea la creación.
-- `POST /api/reservar/confirm` con `appointmentIdToReschedule` reprograma una cita activa del mismo teléfono y mes (`PENDING`, `CONFIRMED` o `SYNC_FAILED`; D95). Si no existe, es de otro teléfono o mes, o ya pasó, responde 409 `APPOINTMENT_NOT_FOUND`. Una `PENDING` sigue `PENDING`, no crea ni borra evento de calendario y registra `MODIFIED` en la bitácora. `CONFIRMED` y `SYNC_FAILED` recrean el evento de calendario, y el reagendado del wizard no escribe bitácora para ellos (inconsistencia aceptada por el owner, candidata a Fase 4).
+- `POST /api/reservar/confirm` con `appointmentIdToReschedule` reprograma una cita activa del mismo teléfono y mes (`PENDING`, `CONFIRMED` o `SYNC_FAILED`; D95). Si no existe, es de otro teléfono o mes, o ya pasó, responde 409 `APPOINTMENT_NOT_FOUND`. Una `PENDING` sigue `PENDING`, no crea ni borra evento de calendario y registra `MODIFIED` en la bitácora. `CONFIRMED` y `SYNC_FAILED` recrean el evento de calendario, y el reagendado del wizard no escribe bitácora para ellos (inconsistencia aceptada por el owner; no corregida en la spec 003).
 - Las reglas se leen dentro de la transacción, después de los bloqueos de reserva, con `FOR SHARE` (PD-08). Si `GET_LOCK` no obtiene el bloqueo en 5 s, `LOCK_TIMEOUT` (409). La transacción tiene 30 s de timeout (F1, D82). Si aun así expira, la respuesta es 400 `UNKNOWN_ERROR` (riesgo residual de F1, ADR 0006).
 
 ### Reprogramación pública `POST /api/my-appointments/reschedule`
@@ -495,9 +494,485 @@ F4 corregido (D88, D91): en la validación del destino, solo un mes no reservabl
 
 ### Compatibilidad de la capacidad
 
-- `GET /api/admin/months/[month]` y `PATCH .../slot-mode` conservan `slotMode` y su forma (campos nuevos aditivos).
+- `slotMode` se retiró de las respuestas de disponibilidad, del detalle del mes y de `PATCH .../slot-mode` (D49, sin alias). `PATCH .../slot-mode` conserva su ruta y su cuerpo: `slotMode` sigue siendo el selector de preset (RQ-1).
 - Ningún otro endpoint público cambia de forma.
 - Versionado: el proyecto no versiona por ruta. Los cambios de contrato se documentan en este archivo en la misma entrega.
+
+---
+
+## Administración de meses, citas y clientes
+
+Esta sección documenta el contrato de endpoints administrativos que no tenían ficha en este archivo. Se deriva de los manejadores en `app/api/admin/**` y de los servicios que llaman (`lib/admin/**`, `lib/db/**`, `lib/calendar/**`).
+
+Propiedad:
+
+- Capacidad: catálogo y estado de meses (`admin/months`), bloqueos manuales (`admin/months/[month]/blocked-slots`), transiciones de citas (`admin/appointments`) y consulta de clientes (`admin/clients`).
+- Consumidores (UI verificada en el código): dashboard `/admin` (confirmar y rechazar citas pendientes), `/admin/months` y `/admin/months/[month]` (catálogo, estado del mes, cancelación y bloqueos), y `/admin/clients` y `/admin/clients/[clientId]` (catálogo, búsqueda y detalle).
+- Autenticación: todos los endpoints de esta sección requieren sesión admin. Sin sesión responden `401` con `ADMIN_UNAUTHORIZED`.
+
+Convenciones de error de esta sección (verificadas en el código):
+
+- Un fallo de validación de Zod se responde como `VALIDATION_ERROR` (`400`). Los códigos personalizados que aparecen en los esquemas (por ejemplo `CLIENT_CATALOG_PAGE_INVALID` por `page` menor que 1) no llegan al cliente cuando el valor es numérico fuera de rango; ver "Pendiente de aclarar" en clientes.
+- Un cuerpo JSON malformado, o cualquier error no mapeado (incluidos los de base de datos), responde `UNKNOWN_ERROR` con el HTTP por defecto de la ruta, que es `400` en todas las rutas de esta sección.
+- Cada tabla lista los códigos que el manejador mapea explícitamente. Cualquier otro error cae en el HTTP por defecto de la ruta.
+
+### GET /api/admin/months/catalog
+
+Query:
+
+- `year` (opcional): `YYYY`. Por defecto, el año actual. Debe estar en `availableYears`, que son el año actual y los cinco siguientes. Un valor vacío equivale a omitido.
+- `status` (opcional): `ALL` (por defecto), `ACTIVE` o `INACTIVE`. Se normaliza a mayúsculas, así que `active` también se acepta. Un valor vacío responde `400`.
+
+Respuesta 200:
+
+```json
+{
+  "filters": { "year": 2026, "status": "ALL", "availableYears": [2026, 2027, 2028, 2029, 2030, 2031] },
+  "metrics": {
+    "activeMonths": 3,
+    "inactiveMonths": 2,
+    "futureMonths": 4,
+    "pastMonths": 1,
+    "pastAppointments": 5,
+    "futureAppointments": 12
+  },
+  "months": [{ "month": "2026-12", "status": "ACTIVE" }],
+  "total": 1,
+  "currentMonth": "2026-11",
+  "currentDate": "2026-11-01"
+}
+```
+
+- `months[]` se filtra por `status` y va ordenado por mes ascendente. `total` es `months.length`.
+- `metrics` se calcula sobre todo el año y no cambia con `status`.
+- `activeMonths` e `inactiveMonths`: meses del año con estado `ACTIVE` o `INACTIVE`.
+- `futureMonths` y `pastMonths`: meses del año posteriores o anteriores a `currentMonth` (zona `America/Mexico_City`).
+- `pastAppointments` y `futureAppointments`: citas del año en estado `CONFIRMED` o `SYNC_FAILED`, con fecha anterior o posterior a `currentDate`. `PENDING` no cuenta (D66).
+- Solo lectura: no escribe en base de datos, bitácora ni Google Calendar.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 400 | `MONTHS_YEAR_INVALID` | `year` no tiene cuatro dígitos. |
+| 400 | `MONTHS_YEAR_OUT_OF_RANGE` | `year` no está en `availableYears`. |
+| 400 | `MONTHS_STATUS_INVALID` | `status` no es `ALL`, `ACTIVE` ni `INACTIVE`. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado, por ejemplo de base de datos. |
+
+### PATCH /api/admin/months/[month]/status
+
+Path: `[month]` en formato `YYYY-MM`.
+
+Cuerpo:
+
+```json
+{ "status": "ACTIVE" }
+```
+
+`status` es obligatorio y solo acepta `ACTIVE` o `INACTIVE`.
+
+Semántica:
+
+- Cambia únicamente `active_months.status` del mes.
+- No modifica citas, bloqueos, reglas ni `availabilityVersion`. No escribe en `appointment_logs` y no toca Google Calendar.
+- Si el mes ya tiene el estado pedido, responde `200` sin escribir.
+- Un mes `INACTIVE` no admite reserva pública (`MONTH_NOT_ALLOWED` en `reservar/*`, ver "Reserva pública").
+- No usa transacción ni control de versión.
+
+Orden de comprobaciones: formato del mes y forma del cuerpo (`400`), después mes registrado (`404`), después mes pasado (`422`) y, por último, la escritura.
+
+Respuesta 200:
+
+```json
+{ "month": "2026-12", "status": "INACTIVE" }
+```
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `MONTH_NOT_REGISTERED` | El mes no existe en `active_months`. |
+| 422 | `MONTH_IN_PAST` | El mes es anterior al mes actual. |
+| 400 | `MONTHS_INVALID_FORMAT` | El segmento `[month]` no es un `YYYY-MM` válido con mes entre 01 y 12. |
+| 400 | `VALIDATION_ERROR` | El cuerpo no es un objeto con `status` válido. |
+| 400 | `UNKNOWN_ERROR` | JSON malformado o error no mapeado. |
+
+Pendiente de aclarar: el código no comprueba las citas activas del mes al pasarlo a `INACTIVE`. Las citas existentes se conservan sin cambios. El efecto esperado sobre ellas no está documentado en `business-rules.md`.
+
+### PATCH /api/admin/months/[month]/blocked-slots/[blockedSlotId]
+
+Path:
+
+- `[month]`: `YYYY-MM`.
+- `[blockedSlotId]`: entero mayor que 0. Si no lo es, responde `400 BLOCKED_SLOT_ID_INVALID`.
+
+Cuerpo:
+
+```json
+{ "reason": "PERSONAL" }
+```
+
+`reason` es obligatorio y solo acepta `DESCANSO`, `PERSONAL` u `OTRO`. Otros campos se ignoran. Si el cuerpo trae `month`, prevalece el del path.
+
+Semántica:
+
+- Cambia únicamente `reason`. Fecha y hora no cambian.
+- Solo es editable un bloqueo puntual (hora distinta de `00:00`) cuya fecha y hora sean futuras en `America/Mexico_City`. Los bloqueos de día completo (marcador `00:00`) no son editables aunque su fecha sea futura (ver "Pendiente de aclarar").
+- El bloqueo debe pertenecer al mes del path. Si está en otro mes, responde `404 BLOCKED_SLOT_NOT_FOUND`.
+- La escritura local va en transacción con lectura del bloqueo. La sincronización con Google Calendar se hace después de la transacción:
+  - si el bloqueo tiene `googleEventId`, se actualiza el resumen del evento a `No disponible - <motivo>`;
+  - si no lo tiene, se crea un evento de 1 hora para el bloqueo.
+- Un fallo de Calendar no revierte el cambio local. El fallo queda registrado en el bloqueo y la respuesta sigue siendo `200`, con `syncWarnings`.
+- No escribe en `appointment_logs`.
+
+Respuesta 200:
+
+```json
+{
+  "month": "2026-12",
+  "blockedSlotId": 21,
+  "date": "2026-12-03",
+  "timeSlot": "17:00",
+  "reason": "PERSONAL",
+  "syncSummary": { "total": 1, "failed": 0, "synced": 1 },
+  "syncWarnings": []
+}
+```
+
+Si Calendar falla, `syncSummary` queda con `failed: 1`, `synced: 0` y `syncWarnings` lleva `[{ "blockedSlotId": 21, "reason": "CALENDAR_SYNC_FAILED" }]`. Los motivos posibles son `CALENDAR_NOT_CONFIGURED` y `CALENDAR_SYNC_FAILED`.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `MONTH_NOT_REGISTERED` | El mes no está registrado. |
+| 404 | `BLOCKED_SLOT_NOT_FOUND` | El id no existe, o el bloqueo pertenece a otro mes. |
+| 409 | `BLOCKED_SLOT_NOT_EDITABLE` | Bloqueo de día completo, o fecha y hora ya pasadas. |
+| 400 | `BLOCKED_SLOT_ID_INVALID` | `blockedSlotId` no es entero positivo. |
+| 400 | `MONTHS_INVALID_FORMAT` | El path `[month]` no es válido. |
+| 400 | `VALIDATION_ERROR` | `reason` falta o no está en la lista permitida. |
+| 400 | `UNKNOWN_ERROR` | JSON malformado o error no mapeado. |
+
+Pendiente de aclarar:
+
+- Bloqueos de día completo: el código responde `409` aunque la fecha sea futura. `business-rules.md` y la especificación dicen solo "bloqueos futuros" y no mencionan el marcador `00:00`.
+- Bloqueo sin evento en Calendar: el PATCH crea un evento. Las reglas solo hablan de actualizar el resumen del evento existente.
+
+### POST /api/admin/appointments/[appointmentId]/confirm
+
+Path: `[appointmentId]`, entero mayor que 0. Si no lo es, responde `400 APPOINTMENT_ID_INVALID`.
+
+Sin cuerpo: el manejador no lee la petición.
+
+Semántica:
+
+- Transición `PENDING` a `CONFIRMED` dentro de una transacción. La lectura usa `FOR UPDATE` sobre la cita y su cliente. Escribe un evento de bitácora `CONFIRMED` con actor admin.
+- Solo acepta citas `PENDING`. Cualquier otro estado responde `409`.
+- Después de confirmar, se crea el evento de Google Calendar y se guarda su `googleEventId`. Si Calendar falla, la cita pasa a `SYNC_FAILED`, la confirmación local se mantiene y la respuesta sigue siendo `200`.
+
+Respuesta 200 (sincronización correcta):
+
+```json
+{ "appointmentId": 87, "status": "CONFIRMED" }
+```
+
+Respuesta 200 (fallo de Calendar):
+
+```json
+{ "appointmentId": 87, "status": "SYNC_FAILED", "syncReason": "CALENDAR_SYNC_FAILED" }
+```
+
+`syncReason` puede ser `CALENDAR_NOT_CONFIGURED` o `CALENDAR_SYNC_FAILED`. `SYNC_FAILED` es un estado de éxito con `200`, no un error HTTP.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `APPOINTMENT_NOT_FOUND` | La cita no existe. |
+| 409 | `APPOINTMENT_STATUS_INVALID_TRANSITION` | La cita no está en `PENDING`. |
+| 400 | `APPOINTMENT_ID_INVALID` | `appointmentId` no es entero positivo. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado. Si ocurre antes del commit, la transición se revierte. Si ocurre durante la sincronización, la confirmación ya está guardada. |
+
+Pendiente de aclarar:
+
+- El código no comprueba que la cita sea futura ni que su mes esté activo. Una cita `PENDING` pasada se puede confirmar.
+- La bitácora registra `CONFIRMED`, pero si Calendar falla la cita queda en `SYNC_FAILED` y no hay evento de bitácora para ese paso.
+- Si la escritura a `SYNC_FAILED` falla, la respuesta es `400 UNKNOWN_ERROR` aunque la confirmación local ya esté guardada.
+
+### POST /api/admin/appointments/[appointmentId]/reject
+
+Path: `[appointmentId]`, igual que en confirm.
+
+Sin cuerpo.
+
+Semántica:
+
+- Transición `PENDING` a `REJECTED` con la misma lectura bloqueante y la misma validación de estado que confirm.
+- Escribe un evento de bitácora `REJECTED` con actor admin.
+- No toca Google Calendar, porque una cita `PENDING` no tiene evento.
+
+Respuesta 200:
+
+```json
+{ "appointmentId": 87, "status": "REJECTED" }
+```
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `APPOINTMENT_NOT_FOUND` | La cita no existe. |
+| 409 | `APPOINTMENT_STATUS_INVALID_TRANSITION` | La cita no está en `PENDING`. |
+| 400 | `APPOINTMENT_ID_INVALID` | `appointmentId` no es entero positivo. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado. La transacción se revierte. |
+
+### POST /api/admin/appointments/[appointmentId]/cancel
+
+Path: `[appointmentId]`, igual que en confirm.
+
+Cuerpo:
+
+```json
+{ "month": "2026-12" }
+```
+
+`month` es obligatorio y debe ser un `YYYY-MM` válido.
+
+Semántica:
+
+- Solo cancela citas `CONFIRMED` o `SYNC_FAILED` cuya fecha cae dentro de `month`. Una cita `PENDING`, `REJECTED` o `CANCELLED`, o una cita de otro mes, responde `404 APPOINTMENT_NOT_FOUND`. Las citas `PENDING` se resuelven con reject.
+- No aplica la restricción pública de 24 horas. Puede cancelar citas pasadas o futuras del mes indicado.
+- Cambia el estado a `CANCELLED` (sin borrado físico) y escribe un evento de bitácora `CANCELLED` con actor admin, en la misma transacción.
+- Después de la transacción, si la cita tenía `googleEventId`, se elimina el evento y el campo se pone a `null`. Si la eliminación falla, la cita sigue `CANCELLED`, el `googleEventId` se conserva y la respuesta es `200` con `syncReason`.
+
+Respuesta 200:
+
+```json
+{ "appointmentId": 87, "status": "CANCELLED" }
+```
+
+Si Calendar falla:
+
+```json
+{ "appointmentId": 87, "status": "CANCELLED", "syncReason": "CALENDAR_DELETE_FAILED" }
+```
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `MONTH_NOT_REGISTERED` | El `month` del cuerpo no está registrado. |
+| 404 | `APPOINTMENT_NOT_FOUND` | La cita no existe, no está activa o no pertenece a ese mes. |
+| 400 | `APPOINTMENT_ID_INVALID` | `appointmentId` no es entero positivo. |
+| 400 | `MONTHS_INVALID_FORMAT` | `month` del cuerpo no es un `YYYY-MM` válido. |
+| 400 | `VALIDATION_ERROR` | Falta `month` o no es texto. |
+| 400 | `UNKNOWN_ERROR` | JSON malformado o error no mapeado. |
+
+Pendiente de aclarar: la consulta de lectura se llama `findActiveAppointmentByIdInMonthForUpdate`, pero usa `findFirst` sin `FOR UPDATE`. No hay bloqueo de fila antes de cancelar. El comportamiento con dos cancelaciones simultáneas de la misma cita no está verificado.
+
+### GET /api/admin/clients/[clientId]
+
+Path: `[clientId]`, entero mayor que 0. Si no lo es, responde `400 CLIENT_ID_INVALID`.
+
+Respuesta 200:
+
+```json
+{
+  "client": {
+    "clientId": 14,
+    "clientNumber": 7,
+    "name": "Nombre de ejemplo",
+    "alias": null,
+    "phone": "5500000000",
+    "isLoyal": false,
+    "createdAt": "2026-03-10T15:00:00.000Z",
+    "updatedAt": "2026-10-20T12:30:00.000Z"
+  },
+  "summary": {
+    "totalAppointments": 4,
+    "activeAppointments": 2,
+    "cancelledAppointments": 1,
+    "futureActiveAppointments": 1,
+    "lastAppointmentDate": "2026-10-20",
+    "nextAppointmentDate": "2026-12-03",
+    "nextAppointmentTimeSlot": "17:00"
+  },
+  "appointments": [
+    { "appointmentId": 87, "date": "2026-12-03", "timeSlot": "17:00", "status": "CONFIRMED" }
+  ],
+  "currentDate": "2026-11-01"
+}
+```
+
+Semántica:
+
+- `summary.totalAppointments`: todas las citas del cliente, sin filtrar por estado.
+- `activeAppointments`: citas `CONFIRMED` o `SYNC_FAILED`. `cancelledAppointments`: citas `CANCELLED`.
+- `futureActiveAppointments`: activas con fecha posterior a `currentDate`.
+- `lastAppointmentDate`: fecha de la cita más reciente de cualquier estado.
+- `nextAppointmentDate` y `nextAppointmentTimeSlot`: la activa futura más próxima. Son `null` si no hay ninguna.
+- `appointments[]`: todas las citas del cliente, de cualquier estado, ordenadas por fecha y hora descendentes.
+- `currentDate`: fecha actual en `America/Mexico_City`.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `CLIENT_NOT_FOUND` | El cliente no existe. |
+| 400 | `CLIENT_ID_INVALID` | `clientId` no es entero positivo. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado. |
+
+Pendiente de aclarar: `business-rules.md` (Detail policy) dice que la línea de tiempo excluye `PENDING` y `REJECTED`, y que las métricas de detalle cuentan solo `CONFIRMED`. El código incluye todos los estados en `appointments[]` y en `summary.totalAppointments`.
+
+### GET /api/admin/clients/catalog
+
+Query:
+
+- `query` (opcional): texto de hasta 100 caracteres tras recortar. Busca por subcadena en `name` y `alias`. Si contiene dígitos, busca también en `phone` por esos dígitos.
+- `status` (opcional): `ALL` (por defecto), `WITH_FUTURE_APPOINTMENTS`, `WITHOUT_FUTURE_APPOINTMENTS` o `LOYAL`. Se normaliza a mayúsculas.
+- `sort` (opcional): `RECENT` (por defecto, `updatedAt` descendente), `NAME_ASC`, `NAME_DESC` (ambos con `updatedAt` descendente como desempate) o `APPOINTMENTS_DESC`.
+- `page` (opcional): entero mayor o igual que 1. Por defecto `1`.
+- `pageSize` (opcional): entero de `1` a `100`. Por defecto `20`.
+
+Respuesta 200:
+
+```json
+{
+  "filters": { "query": "ejemplo", "status": "ALL", "sort": "RECENT", "page": 1, "pageSize": 20 },
+  "metrics": {
+    "totalClients": 40,
+    "withFutureAppointments": 6,
+    "withoutFutureAppointments": 34,
+    "loyalClients": 10,
+    "loyalClientsPercentage": 25
+  },
+  "pagination": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1 },
+  "clients": [
+    {
+      "clientId": 14,
+      "clientNumber": 7,
+      "name": "Nombre de ejemplo",
+      "alias": null,
+      "phone": "5500000000",
+      "isLoyal": false,
+      "createdAt": "2026-03-10T15:00:00.000Z",
+      "updatedAt": "2026-10-20T12:30:00.000Z",
+      "totalAppointments": 3,
+      "hasFutureActiveAppointments": true,
+      "lastAppointmentDate": "2026-10-20",
+      "nextAppointmentDate": "2026-12-03",
+      "nextAppointmentTimeSlot": "17:00"
+    }
+  ],
+  "currentDate": "2026-11-01"
+}
+```
+
+Semántica:
+
+- `metrics` se calcula sobre los clientes que cumplen `query`, sin aplicar `status`: `totalClients`, `withFutureAppointments`, `withoutFutureAppointments`, `loyalClients` y `loyalClientsPercentage` (redondeado; `0` si no hay clientes).
+- `pagination.total` cuenta los clientes que cumplen `query` y `status`. `totalPages` es como mínimo `1`.
+- `clients[].totalAppointments`: solo citas `CONFIRMED`.
+- `hasFutureActiveAppointments`, `nextAppointmentDate` y `nextAppointmentTimeSlot`: la primera cita `CONFIRMED` o `SYNC_FAILED` con fecha posterior a `currentDate`.
+- `lastAppointmentDate`: fecha de la cita más reciente de cualquier estado.
+- `PENDING` no cuenta en los contadores (D66).
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 400 | `CLIENT_CATALOG_PAGE_INVALID` | `page` contiene algo que no son solo dígitos. |
+| 400 | `CLIENT_CATALOG_PAGE_SIZE_INVALID` | `pageSize` contiene algo que no son solo dígitos. |
+| 400 | `VALIDATION_ERROR` | `status` o `sort` fuera de lista, `query` de más de 100 caracteres, `page` menor que 1 o `pageSize` fuera de `1..100`. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado. |
+
+Pendiente de aclarar:
+
+- Los rangos de `page` y `pageSize` responden `VALIDATION_ERROR`, no los códigos personalizados que aparecen en el esquema. Solo los valores no numéricos responden esos códigos.
+- `sort=APPOINTMENTS_DESC` ordena por el número de citas de cualquier estado, mientras que `totalAppointments` muestra solo `CONFIRMED`.
+
+### GET /api/admin/clients/next-number
+
+Sin parámetros.
+
+Respuesta 200:
+
+```json
+{ "nextClientNumber": 42 }
+```
+
+`nextClientNumber` es el máximo `clientNumber` existente más uno, o `1` si no hay clientes. Es solo una sugerencia: no reserva el número.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 400 | `UNKNOWN_ERROR` | Error no mapeado, por ejemplo de base de datos. |
+
+### GET /api/admin/clients/search
+
+Query:
+
+- `query` (obligatorio en la práctica): texto de 2 a 100 caracteres tras recortar. Si falta o es más corto, responde `VALIDATION_ERROR`.
+- `limit` (opcional): entero de `1` a `20`. Por defecto `8`. Si no son solo dígitos, responde `CLIENT_SEARCH_LIMIT_INVALID`. Si está fuera de rango, responde `VALIDATION_ERROR`.
+
+Semántica:
+
+- Coincide igual que el catálogo: subcadena en `name` y `alias`, y en `phone` si la consulta contiene dígitos.
+- Lee los `limit × 3` clientes coincidentes más recientes por `updatedAt`, los ordena por relevancia y devuelve los primeros `limit`. La relevancia es `0` si el nombre, el alias o el teléfono empieza por la consulta, `1` si la contiene y `2` en otro caso. Un cliente fuera de esa ventana de recientes no aparece, aunque coincida mejor.
+- `total` es el número de elementos devueltos (no mayor que `limit`), no el número total de coincidencias.
+- Solo lectura.
+
+Respuesta 200:
+
+```json
+{
+  "query": "ejemplo",
+  "total": 1,
+  "clients": [
+    { "clientId": 14, "clientNumber": 7, "name": "Nombre de ejemplo", "alias": null, "phone": "5500000000", "isLoyal": false }
+  ]
+}
+```
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `query` falta o tiene menos de 2 caracteres, o `query` supera 100, o `limit` está fuera de `1..20`. |
+| 400 | `CLIENT_SEARCH_LIMIT_INVALID` | `limit` contiene algo que no son solo dígitos. |
+| 400 | `UNKNOWN_ERROR` | Error no mapeado. |
+
+---
+
+## Endpoints públicos auxiliares
+
+Esta sección cubre dos endpoints públicos sin ficha previa: la liberación best-effort de un lock de reserva y las rutas `/api/cancelar*`, que están retiradas.
+
+### POST /api/reservar/lock/release-beacon
+
+Sin sesión. Está pensado para `navigator.sendBeacon` al salir de la página de reserva.
+
+Cuerpo:
+
+```json
+{ "lockToken": "token-de-ejemplo" }
+```
+
+Semántica:
+
+- Recorta `lockToken`. Si falta, está vacío o no es texto, responde `400 LOCK_TOKEN_REQUIRED`.
+- Borra la fila de `reservation_locks` con ese token. No usa transacción ni locks con nombre, y no modifica citas, bloqueos ni Google Calendar.
+- No comprueba teléfono, fecha ni expiración. Basta con conocer el token para liberar el lock.
+- Es idempotente: repetir la llamada no produce error.
+
+Respuesta 200:
+
+```json
+{ "released": true }
+```
+
+`released` es `true` si borró una fila. Es `false` si el token no existe, ya se liberó o la fila ya no está.
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 400 | `LOCK_TOKEN_REQUIRED` | `lockToken` falta, está vacío o no es texto. |
+| 400 | `UNKNOWN_ERROR` | JSON malformado o error no mapeado. |
+
+### POST /api/cancelar/buscar y POST /api/cancelar
+
+Rutas retiradas. Ambas responden `410` sin leer el cuerpo ni la sesión:
+
+```json
+{
+  "errorCode": "ENDPOINT_DEPRECATED_USE_MY_APPOINTMENTS",
+  "error": "ENDPOINT_DEPRECATED_USE_MY_APPOINTMENTS"
+}
+```
+
+El reemplazo está en `/api/my-appointments/*` (ver "Public My Appointments Endpoints"). El manejador no indica la ruta exacta de cada una.
+
+Pendiente de aclarar: `lib/cancel/api-client.ts` todavía llama a estas dos rutas. Su único consumidor, `hooks/cancel/use-cancel-flow.ts`, se usa desde `components/cancel/cancel-form.tsx`, que ninguna página monta. `app/cancelar` y `app/citas/cancelar` solo redirigen a `/my-appointments`. Hoy no hay una llamada alcanzable desde una página.
 
 ---
 

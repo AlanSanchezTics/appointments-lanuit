@@ -6,7 +6,7 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
 
 ## Prerrequisitos
 
-- Migraciones de Fase 1/Fase 2 aplicadas (sin cambios de esquema para este feature).
+- Migraciones aplicadas en orden según `docs/architecture/data-model.md`: `0022_availability_rules` (sección «Migración 0022») y `0023_drop_active_months_slot_mode` (sección «Migración 0023», Gate 4). Sin `0022`, la lectura de `availability_rules` falla. Este runbook no define pasos de migración.
 - Entorno con sesión admin operativa.
 - Catálogo `active_months` con al menos 1 mes registrado.
 - Para smoke completo de agenda diaria, contar con al menos 1 cita `CONFIRMED` en un día hábil del mes activo.
@@ -65,6 +65,8 @@ Definir la secuencia operativa para desplegar y validar la vista de detalle mens
    - `Volver` cierra modal y refresca métricas/calendario.
 
 ## Rollout en producción
+
+Antes de cualquier paso de esta sección, seguir la secuencia de migración de `docs/architecture/data-model.md`, sección «Migración 0023», lista «Orden en cada entorno»: confirmar `0022`, parar las instancias de la versión anterior, respaldo verificado (obligatorio, tras la parada), comprobar precondiciones y `prisma migrate deploy`. El despliegue de 4B va inmediatamente después de `migrate deploy`.
 
 1. Deploy en ventana de bajo riesgo.
 2. Smoke test inmediato:

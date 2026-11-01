@@ -488,7 +488,7 @@ Business behavior is defined by:
   - Year selection for creation is constrained to `[currentYear..currentYear+5]`.
   - Batch selection supports multiple months in one request.
   - New records are created with `status = INACTIVE`.
-  - New records are created with `slot_mode = BLOCK_MODE`, a legacy field that is derived from the rules, and without availability rules. The default rule of the Availability Rules section applies until the admin creates rules (D17, D31).
+  - New records are created without availability rules. The legacy column `slot_mode` is no longer written. The default rule of the Availability Rules section applies until the admin creates rules (D17, D31).
   - Persistence is idempotent-partial:
     - existing months are skipped,
     - missing months are created,
@@ -752,13 +752,9 @@ Business behavior is defined by:
   - A temporary lock on a time that a rule removed keeps its TTL. Confirmation rejects it with `SLOT_NOT_AVAILABLE` (D39).
   - Rule changes do not generate appointment audit events (FR-035, D24).
 
-- Slot mode (legacy field):
-  - `slot_mode` is no longer a source of times. It is derived from the rules (FR-033, D19, D31; ADR 0004):
-    - a month without rules has `BLOCK_MODE`;
-    - a month with a single rule that covers the whole month, with exactly the values of a preset, has that preset's mode;
-    - any other set of rules keeps the current value.
-    - Exceptions are not compared.
-  - Presets (D4, D16) are shortcuts that set the month's rules:
+- Slot mode (presets only):
+  - The legacy column `slot_mode` is not a source of times, is not read, and is not written by the application. Its removal is migration `0023` (see `docs/architecture/data-model.md`). No API response contains a slot mode.
+  - Presets (D4, D16) are entry shortcuts of the slot-mode action that set the month's rules:
     - `BLOCK_MODE`: Monday to Friday, times `09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, `240` / `true` / `3`;
     - `SECOND_ONLY_MODE`: Monday to Friday, times `10:00, 14:00, 18:00`, `0` / `false` / `3`.
   - The slot-mode action replaces the month's rules with one whole-month rule that has the values of the preset and keeps the exceptions (FR-034, D16, D33).
@@ -770,7 +766,7 @@ Business behavior is defined by:
   - `CONFIRMED`: valid active appointment.
   - `CANCELLED`: appointment canceled; does not consume availability.
   - `SYNC_FAILED`: appointment remains active for domain conflicts even when external sync failed.
-  - `PENDING`: appointment awaiting manual review; it occupies its time in the public flow and in admin writes, but it is not counted in admin counters (D66, D68).
+  - `PENDING`: appointment awaiting manual review; it occupies its time in the public flow and in admin writes, but it is not counted in admin counters nor listed in the admin day agenda (D66, D68).
 
 - Allowed business transitions:
   - New public booking creates a `CONFIRMED` appointment for loyal customers and a `PENDING` appointment for non-loyal customers (see Booking confirmation rules).
