@@ -11,7 +11,6 @@ type SyncResult = Awaited<ReturnType<typeof syncAppointmentToCalendar>>;
 const MONTH_CONFIG = {
   activeMonthId: 1,
   month: "2026-03",
-  slotMode: "BLOCK_MODE" as const,
   availabilityVersion: 1,
   rules: [
     {
@@ -51,7 +50,6 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
   id: 1,
   month: "2026-03",
   status: "ACTIVE",
-  slotMode: "BLOCK_MODE",
 }));
 const transactionMock = vi.fn();
 const findManyMock = vi.fn();

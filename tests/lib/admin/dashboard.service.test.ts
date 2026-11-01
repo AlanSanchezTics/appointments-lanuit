@@ -287,7 +287,6 @@ describe("admin dashboard service", () => {
     const DECEMBER = {
       activeMonthId: 1,
       month: "2026-12",
-      slotMode: "BLOCK_MODE",
       availabilityVersion: 1,
       rules: [
         {
@@ -316,7 +315,6 @@ describe("admin dashboard service", () => {
     const JANUARY = {
       activeMonthId: 2,
       month: "2027-01",
-      slotMode: "BLOCK_MODE",
       availabilityVersion: 1,
       rules: [
         {

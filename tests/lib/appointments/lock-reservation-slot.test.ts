@@ -21,7 +21,6 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
   id: 1,
   month: "2026-03",
   status: "ACTIVE",
-  slotMode: "BLOCK_MODE",
 }));
 const listBlockedSlotsByDateForUpdateMock = vi.fn(
   async () => [] as Array<{ id: number; date: string; timeSlot: string; reason: string; createdByAdminId: number }>,
@@ -60,7 +59,6 @@ vi.mock("@/lib/active-months/service", () => ({
 const findMonthAvailabilityForShareMock = vi.fn(async (_tx: unknown, month: string) => ({
   activeMonthId: 1,
   month,
-  slotMode: "BLOCK_MODE" as const,
   availabilityVersion: 1,
   rules: [
     {
@@ -386,7 +384,6 @@ describe("reservation slot locks", () => {
     findMonthAvailabilityForShareMock.mockResolvedValueOnce({
       activeMonthId: 1,
       month: "2026-03",
-      slotMode: "SECOND_ONLY_MODE",
       availabilityVersion: 1,
       rules: [
         {

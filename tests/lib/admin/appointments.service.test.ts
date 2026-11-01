@@ -88,7 +88,6 @@ describe("admin appointments service", () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-03",
       status: "INACTIVE",
-      slotMode: "BLOCK_MODE",
     });
 
     const result = await createAdminAppointment(

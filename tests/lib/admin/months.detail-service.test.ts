@@ -84,7 +84,7 @@ function monthRecord(
   rules: MonthAvailabilityRecord["rules"],
   exceptions: MonthAvailabilityRecord["exceptions"] = [],
 ): MonthAvailabilityRecord {
-  return { activeMonthId: 1, month, slotMode: "BLOCK_MODE", availabilityVersion: 1, rules, exceptions };
+  return { activeMonthId: 1, month, availabilityVersion: 1, rules, exceptions };
 }
 
 // Meses sin entrada devuelven null: el mes no está registrado y el servicio aplica D6 en el mes anterior.
@@ -94,8 +94,8 @@ function mockAvailabilityByMonth(records: MonthAvailabilityRecord[]) {
   );
 }
 
-function mockRegisteredMonth(month: string, slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE" = "BLOCK_MODE") {
-  findRegisteredMonthMock.mockResolvedValueOnce({ month, status: "ACTIVE", slotMode });
+function mockRegisteredMonth(month: string) {
+  findRegisteredMonthMock.mockResolvedValueOnce({ month, status: "ACTIVE" });
 }
 
 describe("admin month detail service", () => {
@@ -132,10 +132,10 @@ describe("admin month detail service", () => {
 
     expect(result.month).toBe("2026-03");
     expect(result.monthStatus).toBe("ACTIVE");
-    expect(result.slotMode).toBe("BLOCK_MODE");
     expect(result.usesDefaultRule).toBe(true);
     expect(result.rules).toEqual([]);
     expect(result.exceptions).toEqual([]);
+    expect(result).not.toHaveProperty("slotMode");
     expect(result.availabilityVersion).toBe(1);
     expect(result.currentMonth).toBe("2026-03");
     expect(result.currentDate).toBe("2026-03-21");
@@ -243,7 +243,7 @@ describe("admin month detail service", () => {
   });
 
   it("shows one available space in SECOND_ONLY_MODE when 18:00 is occupied and 14:00 is manually blocked", async () => {
-    mockRegisteredMonth("2026-03", "SECOND_ONLY_MODE");
+    mockRegisteredMonth("2026-03");
     mockAvailabilityByMonth([
       monthRecord("2026-03", [
         {
@@ -420,26 +420,6 @@ describe("admin month detail service", () => {
       previousProjectedSaturationPercent: Math.round((1 / (1 + 59)) * 100),
       deltaPercentPoints:
         Math.round((1 / 66) * 100) - Math.round((1 / 60) * 100),
-    });
-  });
-
-  // D59: una cita PENDING ocupa su horario en el detalle sin contar como confirmada.
-  it("counts a PENDING appointment as occupied but not as confirmed (D59)", async () => {
-    mockRegisteredMonth("2026-03");
-    mockAvailabilityByMonth([monthRecord("2026-03", [])]);
-    listAppointmentsByMonthMock.mockResolvedValueOnce([
-      { date: "2026-03-24", timeSlot: "09:00", status: "PENDING" },
-    ]);
-
-    const result = await getAdminMonthDetail("2026-03", new Date("2026-03-01T12:00:00.000Z"));
-
-    expect(result.metrics.occupiedSpaces).toBe(1);
-    expect(result.metrics.confirmedAppointments).toBe(0);
-    expect(result.metrics.availableSpaces).toBe(65);
-    expect(result.calendarDays.find((day) => day.date === "2026-03-24")).toMatchObject({
-      availableSpaces: 2,
-      appointmentsCount: 1,
-      tone: "available",
     });
   });
 });

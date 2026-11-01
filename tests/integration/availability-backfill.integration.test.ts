@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/db/prisma";
 
@@ -9,6 +9,8 @@ import { disconnectPrisma, resetAppointmentsTable } from "./helpers/db";
 
 // El test ejecuta el bloque BACKFILL de la migración real (entre los marcadores), no una copia.
 // La migración ya se aplicó con migrate deploy; aquí se simula una base recién creada con datos.
+// Desde la migración 0023 la columna active_months.slot_mode ya no existe: el test la recrea como
+// columna legada antes de correr el backfill y la elimina al terminar (el backfill la lee).
 // Ruta desde la raíz del repo (vitest corre desde ahí); import.meta.url no sirve en jsdom.
 const MIGRATION_SQL_PATH = path.resolve(
   process.cwd(),
@@ -25,6 +27,28 @@ if (hasDatabase && !/\/appointments_test(\?|$)/.test(databaseUrl)) {
 }
 
 const integrationSuite = hasDatabase ? describe : describe.skip;
+
+const LEGACY_SLOT_MODE_COLUMN_SQL =
+  "ALTER TABLE `active_months` ADD COLUMN `slot_mode` ENUM('BLOCK_MODE', 'SECOND_ONLY_MODE') NOT NULL DEFAULT 'BLOCK_MODE' AFTER `status`";
+let addedLegacySlotModeColumn = false;
+
+async function ensureLegacySlotModeColumn() {
+  const rows = await prisma.$queryRawUnsafe<Array<{ total: bigint | number }>>(
+    "SELECT COUNT(*) AS total FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'active_months' AND COLUMN_NAME = 'slot_mode'",
+  );
+
+  if (Number(rows[0]?.total ?? 0) === 0) {
+    await prisma.$executeRawUnsafe(LEGACY_SLOT_MODE_COLUMN_SQL);
+    addedLegacySlotModeColumn = true;
+  }
+}
+
+async function dropLegacySlotModeColumn() {
+  if (addedLegacySlotModeColumn) {
+    await prisma.$executeRawUnsafe("ALTER TABLE `active_months` DROP COLUMN `slot_mode`");
+    addedLegacySlotModeColumn = false;
+  }
+}
 
 function loadBackfillStatements() {
   const sql = readFileSync(MIGRATION_SQL_PATH, "utf8");
@@ -75,10 +99,12 @@ async function seedSampleMonths() {
 
   await prisma.activeMonth.createMany({
     data: [
-      { month: "2026-12", status: "ACTIVE", slotMode: "BLOCK_MODE" },
-      { month: "2027-01", status: "ACTIVE", slotMode: "SECOND_ONLY_MODE" },
+      { month: "2026-12", status: "ACTIVE" },
+      { month: "2027-01", status: "ACTIVE" },
     ],
   });
+  // slot_mode es la columna legada: se fija por SQL porque el cliente Prisma ya no la conoce.
+  await prisma.$executeRawUnsafe("UPDATE active_months SET slot_mode = 'SECOND_ONLY_MODE' WHERE month = '2027-01'");
 }
 
 async function readRuleSnapshot() {
@@ -104,10 +130,9 @@ async function readRuleSnapshot() {
 }
 
 async function readMonthSnapshot() {
-  return prisma.activeMonth.findMany({
-    orderBy: { month: "asc" },
-    select: { id: true, month: true, slotMode: true, availabilityVersion: true },
-  });
+  return prisma.$queryRawUnsafe<Array<{ id: number; month: string; slotMode: string; availabilityVersion: number }>>(
+    "SELECT id, `month`, slot_mode AS slotMode, availability_version AS availabilityVersion FROM active_months ORDER BY `month` ASC",
+  );
 }
 
 async function readRunSnapshot() {
@@ -124,6 +149,10 @@ async function readAppointmentSnapshot() {
 }
 
 integrationSuite("availability backfill integration (migration 0022)", () => {
+  beforeAll(async () => {
+    await ensureLegacySlotModeColumn();
+  });
+
   beforeEach(async () => {
     // AppointmentLog.appointment es onDelete: Restrict; los logs deben borrarse antes de las citas.
     await prisma.appointmentLog.deleteMany();
@@ -133,6 +162,7 @@ integrationSuite("availability backfill integration (migration 0022)", () => {
 
   afterAll(async () => {
     await resetAppointmentsTable();
+    await dropLegacySlotModeColumn();
     await disconnectPrisma();
   });
 

@@ -1,26 +1,22 @@
 import { ActiveMonthStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
-import { type MonthSlotMode } from "@/lib/availability/month-slot-mode";
 
 export type PersistedActiveMonth = {
   id: number;
   month: string;
   status: ActiveMonthStatus;
-  slotMode: MonthSlotMode;
 };
 
 function mapActiveMonth(row: {
   id: number;
   month: string;
   status: ActiveMonthStatus;
-  slotMode: MonthSlotMode;
 }) {
   return {
     id: row.id,
     month: row.month,
     status: row.status,
-    slotMode: row.slotMode,
   } satisfies PersistedActiveMonth;
 }
 
@@ -33,7 +29,6 @@ export async function findActiveMonth(month: string) {
       id: true,
       month: true,
       status: true,
-      slotMode: true,
     },
   });
 
@@ -52,7 +47,6 @@ export async function listActiveMonths() {
       id: true,
       month: true,
       status: true,
-      slotMode: true,
     },
   });
 

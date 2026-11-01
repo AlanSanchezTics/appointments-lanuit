@@ -97,7 +97,7 @@ export function WeeklyOccupancyCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-5 gap-2">
+      <div className="mt-4 grid grid-cols-7 gap-2">
         {data.days.map((day) => {
           const barHeight = Math.max(day.occupancyPercent, 8);
           const tooltipLabel = getDayTooltip(

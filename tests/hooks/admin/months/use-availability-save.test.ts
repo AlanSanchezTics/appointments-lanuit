@@ -37,7 +37,6 @@ const affected = [
 const savedResponse = {
   month: "2026-12",
   availabilityVersion: 4,
-  slotMode: "BLOCK_MODE" as const,
   rules: [],
   exceptions: [],
   usesDefaultRule: true,

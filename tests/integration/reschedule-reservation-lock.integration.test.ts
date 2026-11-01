@@ -66,7 +66,6 @@ async function writeRules(times = ["10:00", "14:00"], maxPerDay = 3) {
     replaceMonthAvailability(tx, {
       month: MONTH,
       expectedVersion: current?.availabilityVersion ?? 1,
-      slotMode: "SECOND_ONLY_MODE",
       rules: [
         {
           startDate: `${MONTH}-01`,

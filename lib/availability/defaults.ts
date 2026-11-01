@@ -2,7 +2,9 @@
 
 export const AVAILABILITY_TIMEZONE = "America/Mexico_City";
 
-export type AvailabilityPresetMode = "BLOCK_MODE" | "SECOND_ONLY_MODE";
+// Valores válidos del selector de preset de PATCH slot-mode (RQ-1). Ya no es un campo persistido del mes.
+export const SLOT_MODE_PRESET_VALUES = ["BLOCK_MODE", "SECOND_ONLY_MODE"] as const;
+export type AvailabilityPresetMode = (typeof SLOT_MODE_PRESET_VALUES)[number];
 
 export type AvailabilityParams = {
   weekdays: number[];

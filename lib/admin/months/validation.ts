@@ -2,13 +2,12 @@ import { getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import { z } from "zod";
 
 import { MONTH_KEY_PATTERN } from "@/lib/admin/months/month-helpers";
+import { SLOT_MODE_PRESET_VALUES } from "@/lib/availability/defaults";
 import {
   ACTIVE_MONTH_STATUS_VALUES,
   MONTHS_CATALOG_STATUS_VALUES,
-  MONTH_SLOT_MODE_VALUES,
   type ActiveMonthStatus,
   type CreateAdminMonthsPayload,
-  type MonthSlotMode,
   type MonthsCatalogStatus,
   type UpdateAdminMonthStatusPayload,
   type PreviewAvailabilityPayload,
@@ -173,7 +172,7 @@ export function parseAdminMonthKey(month: string) {
 }
 
 const UPDATE_MONTH_SLOT_MODE_SCHEMA = z.object({
-  slotMode: z.enum(MONTH_SLOT_MODE_VALUES),
+  slotMode: z.enum(SLOT_MODE_PRESET_VALUES),
   expectedVersion: z.number().int().min(0).optional(),
   confirmAffectedAppointments: z.boolean().optional(),
 });
@@ -184,7 +183,7 @@ export function parseUpdateMonthSlotModePayload(
   const parsed = UPDATE_MONTH_SLOT_MODE_SCHEMA.parse(payload);
 
   return {
-    slotMode: parsed.slotMode as MonthSlotMode,
+    slotMode: parsed.slotMode,
     expectedVersion: parsed.expectedVersion,
     confirmAffectedAppointments: parsed.confirmAffectedAppointments ?? false,
   };

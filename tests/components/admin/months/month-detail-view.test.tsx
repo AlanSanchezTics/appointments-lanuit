@@ -8,7 +8,6 @@ function buildMonthDetail(overrides: Partial<MonthDetailResponse> = {}): MonthDe
   return {
     month: "2026-03",
     monthStatus: "ACTIVE",
-    slotMode: "BLOCK_MODE",
     rules: [],
     exceptions: [],
     availabilityVersion: 4,
@@ -41,7 +40,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -110,7 +108,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -161,7 +158,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -219,7 +215,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -274,7 +269,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -332,7 +326,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "INACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -383,7 +376,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -476,7 +468,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -571,7 +562,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -687,7 +677,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -798,7 +787,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -910,7 +898,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1048,7 +1035,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1111,7 +1097,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1203,7 +1188,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2026-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1308,7 +1292,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2099-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1417,7 +1400,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2099-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1655,7 +1637,6 @@ describe("MonthDetailView", () => {
           JSON.stringify({
             month: "2000-03",
             monthStatus: "ACTIVE",
-            slotMode: "BLOCK_MODE",
             currentMonth: "2000-03",
             currentDate: "2000-03-01",
             isPastMonth: false,
@@ -1710,7 +1691,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2000-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1815,7 +1795,6 @@ describe("MonthDetailView", () => {
           JSON.stringify({
             month: "2000-03",
             monthStatus: "ACTIVE",
-            slotMode: "BLOCK_MODE",
             currentMonth: "2000-03",
             currentDate: "2000-03-01",
             isPastMonth: false,
@@ -1870,7 +1849,6 @@ describe("MonthDetailView", () => {
         initialData={{
           month: "2000-03",
           monthStatus: "ACTIVE",
-          slotMode: "BLOCK_MODE",
           rules: [],
           exceptions: [],
           availabilityVersion: 1,
@@ -1947,7 +1925,6 @@ describe("MonthDetailView", () => {
             JSON.stringify({
               month: "2026-03",
               availabilityVersion: 4,
-              slotMode: "BLOCK_MODE",
               rules: [],
               exceptions: [],
               usesDefaultRule: true,

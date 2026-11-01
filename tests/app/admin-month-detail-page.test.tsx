@@ -71,7 +71,6 @@ describe("admin month detail page", () => {
     getAdminMonthDetailMock.mockResolvedValueOnce({
       month: "2026-03",
       monthStatus: "ACTIVE",
-      slotMode: "BLOCK_MODE",
       rules: [],
       exceptions: [],
       availabilityVersion: 1,

@@ -14,8 +14,8 @@ import type {
   SaveAvailabilityPayload,
   UpdateAdminMonthStatusResponse,
   UpdateAdminMonthSlotModeResponse,
-  MonthSlotMode,
 } from "@/lib/admin/months/types";
+import type { AvailabilityPresetMode } from "@/lib/availability/defaults";
 
 // message = código de error de la API. affectedAppointments llega en el 409 de confirmación (D18).
 export class AdminMonthApiError extends Error {
@@ -114,7 +114,7 @@ type UpdateAdminMonthSlotModeOptions = {
 
 export async function updateAdminMonthSlotMode(
   month: string,
-  slotMode: MonthSlotMode,
+  slotMode: AvailabilityPresetMode,
   options: UpdateAdminMonthSlotModeOptions = {},
 ): Promise<UpdateAdminMonthSlotModeResponse> {
   const response = await fetch(`/api/admin/months/${month}/slot-mode`, {

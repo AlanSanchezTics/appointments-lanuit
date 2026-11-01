@@ -186,7 +186,8 @@ export async function getAdminMonthDetail(
     } satisfies MonthDetailCalendarDay;
   });
 
-  // D59: PENDING ocupa su horario; "confirmadas" conserva su significado (no cancelada ni pendiente).
+  // D66: PENDING no cuenta en métricas del admin; listAppointmentsByMonth ya lo excluye (CONFIRMED, SYNC_FAILED, CANCELLED),
+  // así que este filtro no descarta filas hoy y "confirmadas" equivale a las activas.
   const confirmedAppointments = activeAppointments.filter(
     (appointment) => appointment.status !== "PENDING",
   ).length;
@@ -220,7 +221,6 @@ export async function getAdminMonthDetail(
   return {
     month,
     monthStatus: registration.status,
-    slotMode: registration.slotMode,
     rules: config.rules,
     exceptions: config.exceptions,
     availabilityVersion: config.availabilityVersion,

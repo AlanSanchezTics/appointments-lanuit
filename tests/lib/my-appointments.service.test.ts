@@ -59,7 +59,6 @@ vi.mock("@/lib/admin/appointment-logs/service", () => ({
 const findMonthAvailabilityForShareMock = vi.fn(async (_tx: unknown, month: string) => ({
   activeMonthId: 1,
   month,
-  slotMode: "SECOND_ONLY_MODE" as const,
   availabilityVersion: 1,
   rules: [
     {
@@ -99,7 +98,6 @@ describe("my appointments service", () => {
     appointmentLogCreateManyMock.mockResolvedValue({ count: 0 });
     listBlockedSlotsByDateForUpdateMock.mockResolvedValue([]);
     getBookableMonthConfigMock.mockResolvedValue({
-      slotMode: "SECOND_ONLY_MODE",
     });
 
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>

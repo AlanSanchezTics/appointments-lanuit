@@ -53,7 +53,6 @@ function monthConfig(rules: Array<typeof BLOCK_RULE>, exceptions: Array<Record<s
   return {
     activeMonthId: 1,
     month: "2026-03",
-    slotMode: "BLOCK_MODE" as const,
     availabilityVersion: 1,
     rules,
     exceptions,
@@ -67,7 +66,6 @@ describe("availability service", () => {
       id: 1,
       month: "2026-03",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
     findMonthAvailabilityMock.mockResolvedValue(monthConfig([BLOCK_RULE]));
   });

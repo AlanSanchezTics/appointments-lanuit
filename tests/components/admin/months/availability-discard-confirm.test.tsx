@@ -51,7 +51,6 @@ describe("AvailabilityEditorModal discard confirmation", () => {
     fetchMock.mockResolvedValue({
       month: "2026-12",
       availabilityVersion: 3,
-      slotMode: "BLOCK_MODE",
       rules: [],
       exceptions: [],
       usesDefaultRule: true,

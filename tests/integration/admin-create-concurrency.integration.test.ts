@@ -39,7 +39,6 @@ async function writeRules() {
     replaceMonthAvailability(tx, {
       month: MONTH,
       expectedVersion: current?.availabilityVersion ?? 1,
-      slotMode: "SECOND_ONLY_MODE",
       rules: [
         {
           startDate: `${MONTH}-01`,

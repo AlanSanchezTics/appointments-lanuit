@@ -125,12 +125,11 @@ describe("GET /api/admin/months/[month]/availability", () => {
     expect(getAvailabilityMock).not.toHaveBeenCalled();
   });
 
-  it("returns 200 with rules, exceptions, availabilityVersion, slotMode and usesDefaultRule", async () => {
+  it("returns 200 with rules, exceptions, availabilityVersion and usesDefaultRule without slotMode", async () => {
     authorized();
     getAvailabilityMock.mockResolvedValueOnce({
       month: MONTH,
       availabilityVersion: 3,
-      slotMode: "BLOCK_MODE",
       rules: [{ id: 11, ...RULE }],
       exceptions: [{ id: 4, ...EXCEPTION, times: ["10:00", "14:00"] }],
       usesDefaultRule: false,
@@ -144,7 +143,6 @@ describe("GET /api/admin/months/[month]/availability", () => {
     await expect(response.json()).resolves.toMatchObject({
       month: MONTH,
       availabilityVersion: 3,
-      slotMode: "BLOCK_MODE",
       usesDefaultRule: false,
       rules: [expect.objectContaining({ id: 11, weekdays: [1, 2, 3, 4, 5], times: ["09:00", "10:00", "13:00"] })],
       exceptions: [expect.objectContaining({ id: 4, date: "2026-12-19" })],
@@ -172,7 +170,6 @@ describe("PUT /api/admin/months/[month]/availability", () => {
     saveMock.mockResolvedValueOnce({
       month: MONTH,
       availabilityVersion: 4,
-      slotMode: "BLOCK_MODE",
       rules: [{ id: 12, ...RULE }],
       exceptions: [{ id: 5, ...EXCEPTION }],
       usesDefaultRule: false,
@@ -188,7 +185,9 @@ describe("PUT /api/admin/months/[month]/availability", () => {
       expectedVersion: 3,
       confirmAffectedAppointments: false,
     });
-    await expect(response.json()).resolves.toMatchObject({ availabilityVersion: 4, slotMode: "BLOCK_MODE" });
+    const body = await response.json();
+    expect(body).toMatchObject({ availabilityVersion: 4 });
+    expect(body).not.toHaveProperty("slotMode");
   });
 
   it("forwards confirmAffectedAppointments=true to the service", async () => {

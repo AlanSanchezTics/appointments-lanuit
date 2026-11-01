@@ -81,7 +81,6 @@ describe("admin months catalog service", () => {
   const juneRecord = {
     activeMonthId: 6,
     month: "2026-06",
-    slotMode: "BLOCK_MODE" as const,
     availabilityVersion: 3,
     rules: [],
     exceptions: [],
@@ -180,7 +179,7 @@ describe("admin months catalog service", () => {
   it("replaces rules with the preset and returns the new version (D16, D69)", async () => {
     findMonthAvailabilityForUpdateMock
       .mockResolvedValueOnce(juneRecord)
-      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", availabilityVersion: 4 });
+      .mockResolvedValueOnce({ ...juneRecord, availabilityVersion: 4 });
 
     const result = await updateAdminMonthSlotMode(
       "2026-06",
@@ -193,14 +192,12 @@ describe("admin months catalog service", () => {
       expect.objectContaining({
         month: "2026-06",
         expectedVersion: 3,
-        slotMode: "SECOND_ONLY_MODE",
         rules: buildSlotModePresetRules("2026-06", "SECOND_ONLY_MODE"),
         exceptions: [],
       }),
     );
     expect(result).toEqual({
       month: "2026-06",
-      slotMode: "SECOND_ONLY_MODE",
       availabilityVersion: 4,
     });
   });
@@ -210,8 +207,8 @@ describe("admin months catalog service", () => {
       { id: 1, startDate: "2026-06-01", endDate: "2026-06-15", weekdays: [1], times: ["10:00"], minGapMinutes: 240, preserveCapacity: true, maxPerDay: 1 },
     ];
     findMonthAvailabilityForUpdateMock
-      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", rules: customRules })
-      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", availabilityVersion: 4 });
+      .mockResolvedValueOnce({ ...juneRecord, rules: customRules })
+      .mockResolvedValueOnce({ ...juneRecord, availabilityVersion: 4 });
 
     await updateAdminMonthSlotMode(
       "2026-06",
@@ -257,7 +254,6 @@ describe("admin months catalog service", () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-06",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
     updateRegisteredMonthStatusMock.mockResolvedValueOnce({
       month: "2026-06",
@@ -284,7 +280,6 @@ describe("admin months catalog service", () => {
     findRegisteredMonthMock.mockResolvedValueOnce({
       month: "2026-02",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
 
     await expect(

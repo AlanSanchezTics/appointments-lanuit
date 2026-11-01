@@ -28,7 +28,7 @@ describe("admin month api-client (availability)", () => {
   });
 
   it("PATCH slot-mode sends expectedVersion and confirmAffectedAppointments", async () => {
-    const fetchMock = mockFetchJson({ month: "2026-12", slotMode: "SECOND_ONLY_MODE", availabilityVersion: 4 });
+    const fetchMock = mockFetchJson({ month: "2026-12", availabilityVersion: 4 });
 
     await updateAdminMonthSlotMode("2026-12", "SECOND_ONLY_MODE", {
       expectedVersion: 3,
@@ -46,7 +46,7 @@ describe("admin month api-client (availability)", () => {
   });
 
   it("PATCH slot-mode without options keeps the legacy body (no expectedVersion, confirm false)", async () => {
-    const fetchMock = mockFetchJson({ month: "2026-12", slotMode: "BLOCK_MODE", availabilityVersion: 4 });
+    const fetchMock = mockFetchJson({ month: "2026-12", availabilityVersion: 4 });
 
     await updateAdminMonthSlotMode("2026-12", "BLOCK_MODE");
 

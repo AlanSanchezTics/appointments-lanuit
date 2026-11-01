@@ -1,16 +1,11 @@
 import type { AvailabilityException, AvailabilityRule } from "@/lib/availability/types";
-import {
-  MONTH_SLOT_MODE_VALUES,
-  type MonthSlotMode,
-} from "@/lib/availability/month-slot-mode";
+import type { AvailabilityPresetMode } from "@/lib/availability/defaults";
 
 export const MONTHS_CATALOG_STATUS_VALUES = ["ALL", "ACTIVE", "INACTIVE"] as const;
 export const ACTIVE_MONTH_STATUS_VALUES = ["ACTIVE", "INACTIVE"] as const;
 
 export type MonthsCatalogStatus = (typeof MONTHS_CATALOG_STATUS_VALUES)[number];
 export type ActiveMonthStatus = (typeof ACTIVE_MONTH_STATUS_VALUES)[number];
-export { MONTH_SLOT_MODE_VALUES };
-export type { MonthSlotMode };
 
 export type MonthsCatalogMetrics = {
   activeMonths: number;
@@ -80,7 +75,6 @@ export type MonthSaturationComparison = {
 export type MonthDetailResponse = {
   month: string;
   monthStatus: ActiveMonthStatus;
-  slotMode: MonthSlotMode;
   rules: AvailabilityRule[];
   exceptions: AvailabilityException[];
   availabilityVersion: number;
@@ -97,14 +91,13 @@ export type MonthDetailResponse = {
 
 // D16/D33/D45: expectedVersion y confirmAffectedAppointments son opcionales en PATCH slot-mode (A-01, D51).
 export type UpdateAdminMonthSlotModePayload = {
-  slotMode: MonthSlotMode;
+  slotMode: AvailabilityPresetMode;
   expectedVersion?: number;
   confirmAffectedAppointments: boolean;
 };
 
 export type UpdateAdminMonthSlotModeResponse = {
   month: string;
-  slotMode: MonthSlotMode;
   availabilityVersion: number;
 };
 
@@ -152,7 +145,6 @@ export type PreviewAvailabilityResponse = {
 export type MonthAvailabilityResponse = {
   month: string;
   availabilityVersion: number;
-  slotMode: MonthSlotMode;
   rules: AvailabilityRule[];
   exceptions: AvailabilityException[];
   usesDefaultRule: boolean;

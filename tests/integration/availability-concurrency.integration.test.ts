@@ -43,7 +43,6 @@ async function writeRules(rules: AvailabilityRuleInput[], expectedVersion?: numb
     replaceMonthAvailability(tx, {
       month: MONTH,
       expectedVersion: version,
-      slotMode: "SECOND_ONLY_MODE",
       rules,
       exceptions: [],
     }),
@@ -69,7 +68,6 @@ integrationSuite("availability rules concurrency integration", () => {
       replaceMonthAvailability(tx, {
         month: MONTH,
         expectedVersion: before?.availabilityVersion ?? 1,
-        slotMode: "SECOND_ONLY_MODE",
         rules: [monthRule(["18:00", "10:00", "14:00"])],
         exceptions: [
           { date: `${MONTH}-07`, times: ["15:30", "11:00"], minGapMinutes: 0, preserveCapacity: false, maxPerDay: 2 },
@@ -81,7 +79,6 @@ integrationSuite("availability rules concurrency integration", () => {
 
     expect(availabilityVersion).toBe((before?.availabilityVersion ?? 1) + 1);
     expect(stored?.availabilityVersion).toBe(availabilityVersion);
-    expect(stored?.slotMode).toBe("SECOND_ONLY_MODE");
     expect(stored?.rules).toEqual([
       expect.objectContaining({
         startDate: `${MONTH}-01`,
@@ -126,7 +123,6 @@ integrationSuite("availability rules concurrency integration", () => {
       await replaceMonthAvailability(tx, {
         month: MONTH,
         expectedVersion: before,
-        slotMode: "SECOND_ONLY_MODE",
         rules: [monthRule(["14:00"])],
         exceptions: [],
       });

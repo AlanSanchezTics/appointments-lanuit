@@ -51,8 +51,8 @@ describe("createInactiveMonths", () => {
 
     expect(createManyMock).toHaveBeenCalledWith({
       data: [
-        { month: "2026-06", status: "INACTIVE", slotMode: "BLOCK_MODE" },
-        { month: "2026-08", status: "INACTIVE", slotMode: "BLOCK_MODE" },
+        { month: "2026-06", status: "INACTIVE" },
+        { month: "2026-08", status: "INACTIVE" },
       ],
       skipDuplicates: true,
     });

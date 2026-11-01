@@ -99,7 +99,6 @@ describe("PATCH /api/admin/months/[month]/slot-mode", () => {
     authMock.mockResolvedValueOnce({ user: { id: "1" } } as never);
     updateAdminMonthSlotModeMock.mockResolvedValueOnce({
       month: "2026-05",
-      slotMode: "SECOND_ONLY_MODE",
       availabilityVersion: 4,
     });
 
@@ -120,7 +119,6 @@ describe("PATCH /api/admin/months/[month]/slot-mode", () => {
     );
     await expect(response.json()).resolves.toEqual({
       month: "2026-05",
-      slotMode: "SECOND_ONLY_MODE",
       availabilityVersion: 4,
     });
   });

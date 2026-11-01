@@ -103,7 +103,6 @@ function mockMonthRules(slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE") {
   const record = {
     activeMonthId: 4,
     month: "2026-04",
-    slotMode,
     availabilityVersion: 1,
     rules: buildSlotModePresetRules("2026-04", slotMode).map((rule, index) => ({ ...rule, id: index + 1 })),
     exceptions: [],
@@ -125,7 +124,6 @@ describe("admin blocked spaces service", () => {
     findRegisteredMonthMock.mockResolvedValue({
       month: "2026-04",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
 
     cleanupExpiredReservationLocksMock.mockResolvedValue(undefined);
@@ -234,7 +232,6 @@ describe("admin blocked spaces service", () => {
     findMonthAvailabilityMock.mockResolvedValueOnce({
       activeMonthId: 4,
       month: "2026-04",
-      slotMode: "BLOCK_MODE",
       availabilityVersion: 1,
       rules: buildSlotModePresetRules("2026-04", "BLOCK_MODE").map((rule, index) => ({ ...rule, id: index + 1 })),
       exceptions: [

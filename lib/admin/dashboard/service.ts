@@ -470,7 +470,7 @@ export async function getAdminDashboardWeeklyOccupancy(
       currentTimeKey,
     ),
   }));
-  // D61: cuenta las citas que bloquean horario en la fecha de agenda (incluye PENDING); la lista de agenda no cambia.
+  // D66: cuenta CONFIRMED y SYNC_FAILED en la fecha de agenda (PENDING no cuenta); la lista de agenda usa el mismo filtro de estados.
   const todayOccupiedAppointments = agendaCounts.get(agendaTargetDateKey) ?? 0;
   // D58: la capacidad usa la misma fecha que la agenda mostrada (lunes siguiente si hoy es fin de semana).
   // dailyOccupancy.date se conserva en hoy: app/admin/page.tsx compara ambas fechas para elegir el título.

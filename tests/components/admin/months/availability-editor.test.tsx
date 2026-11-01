@@ -29,7 +29,6 @@ function loadedMonth(overrides: Partial<MonthAvailabilityResponse> = {}): MonthA
   return {
     month: "2026-12",
     availabilityVersion: 3,
-    slotMode: "BLOCK_MODE",
     rules: [],
     exceptions: [],
     usesDefaultRule: true,

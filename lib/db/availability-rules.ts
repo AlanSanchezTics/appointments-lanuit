@@ -1,11 +1,9 @@
 import { Prisma } from "@prisma/client";
 
-import type { MonthSlotMode } from "@/lib/availability/month-slot-mode";
 import { prisma } from "@/lib/db/prisma";
 
 // Solo acceso a datos (AGENTS, ubicación de código). Sin reglas de negocio:
-// la normalización y validación viven en lib/availability/rules-validation.ts
-// y el slotMode lo deriva el servicio llamador (lib/availability/slot-mode-derivation.ts, T011).
+// la normalización y validación viven en lib/availability/rules-validation.ts.
 
 export type AvailabilityRuleInput = {
   startDate: string; // YYYY-MM-DD, inclusivo
@@ -31,7 +29,6 @@ export type AvailabilityExceptionRecord = AvailabilityExceptionInput & { id: num
 export type MonthAvailabilityRecord = {
   activeMonthId: number;
   month: string;
-  slotMode: MonthSlotMode;
   availabilityVersion: number;
   rules: AvailabilityRuleRecord[];
   exceptions: AvailabilityExceptionRecord[];
@@ -41,7 +38,6 @@ type ReadClient = Pick<Prisma.TransactionClient, "$queryRaw">;
 
 type MonthRow = {
   id: number;
-  slotMode: MonthSlotMode;
   availabilityVersion: number;
 };
 
@@ -91,7 +87,7 @@ async function readMonthAvailability(
   lock: Prisma.Sql,
 ): Promise<MonthAvailabilityRecord | null> {
   const [monthRow] = await db.$queryRaw<MonthRow[]>`
-    SELECT id, slot_mode AS slotMode, availability_version AS availabilityVersion
+    SELECT id, availability_version AS availabilityVersion
     FROM active_months
     WHERE \`month\` = ${month}
     ${lock}
@@ -162,7 +158,6 @@ async function readMonthAvailability(
   return {
     activeMonthId: monthRow.id,
     month,
-    slotMode: monthRow.slotMode,
     availabilityVersion: Number(monthRow.availabilityVersion),
     rules: ruleRows.map((row) => ({
       id: row.id,
@@ -210,17 +205,15 @@ export function findMonthAvailabilityForUpdate(tx: Prisma.TransactionClient, mon
 /**
  * Reemplaza el conjunto completo de reglas y excepciones del mes. Debe ejecutarse dentro de
  * una transacción: bloquea el mes con FOR UPDATE, compara expectedVersion, borra y reinserta
- * el conjunto, sincroniza slot_mode e incrementa availability_version.
+ * el conjunto e incrementa availability_version.
  *
  * Lanza MONTH_NOT_REGISTERED o AVAILABILITY_VERSION_CONFLICT sin escribir nada.
- * slotMode llega ya derivado por el llamador.
  */
 export async function replaceMonthAvailability(
   tx: Prisma.TransactionClient,
   input: {
     month: string;
     expectedVersion: number;
-    slotMode: MonthSlotMode;
     rules: AvailabilityRuleInput[];
     exceptions: AvailabilityExceptionInput[];
   },
@@ -275,7 +268,6 @@ export async function replaceMonthAvailability(
   const updated = await tx.activeMonth.update({
     where: { id: monthRow.id },
     data: {
-      slotMode: input.slotMode,
       availabilityVersion: { increment: 1 },
     },
     select: { availabilityVersion: true },

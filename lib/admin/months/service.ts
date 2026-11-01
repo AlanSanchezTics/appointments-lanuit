@@ -1,7 +1,6 @@
 import { findAffectedAppointments } from "@/lib/availability/affected-appointments";
-import type { AvailabilityPresetMode } from "@/lib/availability/defaults";
 import { normalizeAvailabilityConfig, type AvailabilityExceptionDraft, type AvailabilityRuleDraft } from "@/lib/availability/rules-validation";
-import { buildSlotModePresetRules, deriveSlotMode } from "@/lib/availability/slot-mode-derivation";
+import { buildSlotModePresetRules } from "@/lib/availability/slot-mode-derivation";
 import type { MonthAvailabilityConfig } from "@/lib/availability/types";
 import { getCurrentDateKey, getCurrentMonthKey } from "@/lib/datetime/mexico-city";
 import {
@@ -89,7 +88,6 @@ function toMonthAvailabilityResponse(record: MonthAvailabilityRecord): MonthAvai
   return {
     month: record.month,
     availabilityVersion: record.availabilityVersion,
-    slotMode: record.slotMode,
     rules: record.rules,
     exceptions: record.exceptions,
     usesDefaultRule: record.rules.length === 0,
@@ -175,7 +173,7 @@ export async function getMonthsCatalog(
   };
 }
 
-// D17: el mes nuevo no crea reglas; sin reglas aplica D6 y slot_mode queda en BLOCK_MODE (default de createInactiveMonths).
+// D17: el mes nuevo no crea reglas; sin reglas aplica D6.
 export async function createAdminMonths(
   input: CreateAdminMonthsPayload,
 ): Promise<CreateAdminMonthsResponse> {
@@ -259,7 +257,6 @@ export async function saveAvailability(
     await replaceMonthAvailability(tx, {
       month,
       expectedVersion: current.availabilityVersion,
-      slotMode: deriveSlotMode(proposed.rules, current.slotMode),
       rules: normalized.rules,
       exceptions: normalized.exceptions,
     });
@@ -297,7 +294,7 @@ export async function updateAdminMonthSlotMode(
       throw new Error("AVAILABILITY_VERSION_CONFLICT");
     }
 
-    const presetRules = buildSlotModePresetRules(month, input.slotMode as AvailabilityPresetMode);
+    const presetRules = buildSlotModePresetRules(month, input.slotMode);
     const proposed = buildProposedConfig(
       month,
       { rules: presetRules, exceptions: current.exceptions },
@@ -312,7 +309,6 @@ export async function updateAdminMonthSlotMode(
     await replaceMonthAvailability(tx, {
       month,
       expectedVersion: current.availabilityVersion,
-      slotMode: deriveSlotMode(presetRules, input.slotMode),
       rules: presetRules,
       exceptions: current.exceptions,
     });
@@ -325,7 +321,6 @@ export async function updateAdminMonthSlotMode(
 
     return {
       month: updated.month,
-      slotMode: updated.slotMode,
       availabilityVersion: updated.availabilityVersion,
     };
   });

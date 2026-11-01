@@ -319,7 +319,6 @@ integrationSuite("bookAppointment integration", () => {
       replaceMonthAvailability(tx, {
         month: "2026-03",
         expectedVersion: current?.availabilityVersion ?? 1,
-        slotMode: "SECOND_ONLY_MODE",
         rules: [
           { startDate: "2026-03-01", endDate: "2026-03-31", weekdays: [6], times: ["11:00"], minGapMinutes: 0, preserveCapacity: false, maxPerDay: 3 },
         ],

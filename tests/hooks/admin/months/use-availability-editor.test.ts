@@ -14,7 +14,6 @@ const fetchMock = vi.mocked(fetchAdminMonthAvailability);
 const loadedResponse: MonthAvailabilityResponse = {
   month: "2026-12",
   availabilityVersion: 3,
-  slotMode: "BLOCK_MODE",
   rules: [
     {
       id: 11,

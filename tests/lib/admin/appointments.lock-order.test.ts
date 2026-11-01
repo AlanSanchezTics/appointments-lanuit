@@ -98,7 +98,6 @@ const OWNER_PHONE = "5512345678";
 function buildConfig() {
   return {
     month: "2026-04",
-    slotMode: "BLOCK_MODE" as const,
     availabilityVersion: 1,
     exceptions: [],
     rules: [
@@ -129,7 +128,7 @@ describe("admin appointments: lock order (D63) and blocking occupancy (D68)", ()
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({ tag: "tx" }),
     );
-    findRegisteredMonthMock.mockResolvedValue({ month: "2026-04", status: "ACTIVE", slotMode: "BLOCK_MODE" });
+    findRegisteredMonthMock.mockResolvedValue({ month: "2026-04", status: "ACTIVE" });
     findMonthAvailabilityMock.mockResolvedValue(buildConfig());
     findMonthAvailabilityForShareMock.mockImplementation(async () => recordCall("findMonthAvailabilityForShare", buildConfig()));
     appointmentFindFirstMock.mockImplementation(async () => recordCall("appointment.findFirst", { client: { phone: OWNER_PHONE } }));

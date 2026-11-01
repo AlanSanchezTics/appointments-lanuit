@@ -31,7 +31,6 @@ describe("active months service", () => {
       id: 1,
       month: "2026-04",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
 
     await expect(assertMonthIsBookable("2026-04", new Date("2026-03-03T12:00:00.000Z"))).resolves.toBeUndefined();
@@ -42,7 +41,6 @@ describe("active months service", () => {
       id: 1,
       month: "2026-02",
       status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
     });
 
     await expect(assertMonthIsBookable("2026-02", new Date("2026-03-03T12:00:00.000Z"))).rejects.toThrow(
@@ -60,9 +58,9 @@ describe("active months service", () => {
 
   it("lists only active months from current month onwards", async () => {
     listActiveMonthsMock.mockResolvedValueOnce([
-      { id: 1, month: "2026-02", status: "ACTIVE", slotMode: "BLOCK_MODE" },
-      { id: 2, month: "2026-03", status: "ACTIVE", slotMode: "BLOCK_MODE" },
-      { id: 3, month: "2026-04", status: "ACTIVE", slotMode: "BLOCK_MODE" },
+      { id: 1, month: "2026-02", status: "ACTIVE" },
+      { id: 2, month: "2026-03", status: "ACTIVE" },
+      { id: 3, month: "2026-04", status: "ACTIVE" },
     ]);
 
     const result = await listBookableMonths(new Date("2026-03-03T12:00:00.000Z"));
