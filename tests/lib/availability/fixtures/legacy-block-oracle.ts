@@ -1,7 +1,7 @@
-// Oráculo congelado: copia de la lógica legada de lib/availability/rules.ts
+// Oráculo congelado: copia de la lógica legada de lib/availability/rules.ts, borrado en la Ronda 4A (T064).
 // (getAvailableStartSlotsWithManualBlocks, ramas BLOCK_MODE y SECOND_ONLY_MODE).
 // No importa código de la aplicación: las constantes del legado van incrustadas.
-// Debe sobrevivir a la Fase 4 (cleanup), cuando se borre rules.ts. No editar salvo que se regenere la fuente.
+// Fixture de prueba permanente. No editar salvo que se regenere la fuente histórica.
 
 type LegacySlotMode = "BLOCK_MODE" | "SECOND_ONLY_MODE";
 

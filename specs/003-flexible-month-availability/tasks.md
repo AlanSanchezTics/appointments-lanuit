@@ -156,11 +156,11 @@ Objetivo: retirar el código legado, las constantes de pares, la constante 3 y l
 
 ### Ronda 4A: retirar código legado (5 tareas)
 
-- [ ] T064 [US1] Eliminar `lib/availability/rules.ts` y `tests/lib/availability/rules.test.ts` después de confirmar con T067 que no hay importaciones. El oráculo congelado (T013) se conserva como fixture de prueba.
-- [ ] T065 [US1] Actualizar `lib/availability/month-slot-mode.ts`: quitar `resolveBaseSlotsByMonthMode` y `SECOND_ONLY_BASE_TIME_SLOTS`; mantener solo el tipo `MonthSlotMode` mientras la columna exista (T069).
-- [ ] T066 [US1] Actualizar `lib/constants/slots.ts`: quitar `DIRECTIONAL_SLOT_PAIRS` y `MAX_APPOINTMENTS_PER_DAY`, y `BASE_TIME_SLOTS` si ya no tiene usos. Solo borrado de constantes: el cambio del dashboard ya está en T022 (D53). Depende de T019, T020, T022 y T064.
-- [ ] T067 [P] [US1] Verificar SC-006: `grep` en `app`, `lib`, `components` y `hooks` de `isWeekdayBookingDate`, `resolveBaseSlotsByMonthMode`, `DIRECTIONAL_SLOT_PAIRS` y `MAX_APPOINTMENTS_PER_DAY`. Sin resultados en código de aplicación; las pruebas pueden referirse al oráculo. Depende de T064 y T066.
-- [ ] T068 [P] [US1] Retirar de las pruebas los casos que dependen de pares direccionales o de `slot_mode` como fuente de horarios (ya reemplazados en T038 y T039): revisar `tests/lib/availability/` y `tests/lib/admin/`.
+- [X] T064 [US1] Eliminar `lib/availability/rules.ts` y `tests/lib/availability/rules.test.ts` después de confirmar con T067 que no hay importaciones. El oráculo congelado (T013) se conserva como fixture de prueba.
+- [X] T065 [US1] Actualizar `lib/availability/month-slot-mode.ts`: quitar `resolveBaseSlotsByMonthMode` y `SECOND_ONLY_BASE_TIME_SLOTS`; mantener solo el tipo `MonthSlotMode` mientras la columna exista (T069).
+- [X] T066 [US1] Actualizar `lib/constants/slots.ts`: quitar `DIRECTIONAL_SLOT_PAIRS` y `MAX_APPOINTMENTS_PER_DAY`, y `BASE_TIME_SLOTS` si ya no tiene usos. Solo borrado de constantes: el cambio del dashboard ya está en T022 (D53). Depende de T019, T020, T022 y T064.
+- [X] T067 [P] [US1] Verificar SC-006: `grep` en `app`, `lib`, `components` y `hooks` de `isWeekdayBookingDate`, `resolveBaseSlotsByMonthMode`, `DIRECTIONAL_SLOT_PAIRS` y `MAX_APPOINTMENTS_PER_DAY`. Sin resultados en código de aplicación; las pruebas pueden referirse al oráculo. Depende de T064 y T066.
+- [X] T068 [P] [US1] Retirar de las pruebas los casos que dependen de pares direccionales o de `slot_mode` como fuente de horarios (ya reemplazados en T038 y T039): revisar `tests/lib/availability/` y `tests/lib/admin/`.
 
 **Ronda 4A criterio de salida**: `npm test` y `npm run test:integration` pasan sin los archivos legados; T067 sin coincidencias.
 

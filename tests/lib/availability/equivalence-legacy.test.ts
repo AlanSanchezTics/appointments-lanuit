@@ -176,3 +176,35 @@ describe("equivalencia con el legado (oráculo congelado)", () => {
     expect(missingFromEngine).toEqual([]);
   });
 });
+
+// Ejemplos concretos de la antigua rules.test.ts (borrada en 4A). Cada caso debe cumplirse en el oráculo y en el motor.
+const BLOCK_SIX = ["09:00", "10:00", "13:00", "14:00", "17:00", "18:00"];
+const SECOND_THREE = ["10:00", "14:00", "18:00"];
+
+const legacyExamples: {
+  name: string;
+  mode: AvailabilityPresetMode;
+  occupied: string[];
+  blocked: string[];
+  expected: string[];
+}[] = [
+  { name: "returns all base slots when there are no occupied slots", mode: "BLOCK_MODE", occupied: [], blocked: [], expected: BLOCK_SIX },
+  { name: "keeps only 09:00 and 13:00 when 17:00 is occupied", mode: "BLOCK_MODE", occupied: ["17:00"], blocked: [], expected: ["09:00", "13:00"] },
+  { name: "keeps only 14:00 and 18:00 when 10:00 is occupied", mode: "BLOCK_MODE", occupied: ["10:00"], blocked: [], expected: ["14:00", "18:00"] },
+  { name: "composes directional restrictions from multiple occupied slots", mode: "BLOCK_MODE", occupied: ["10:00", "14:00"], blocked: [], expected: ["18:00"] },
+  { name: "returns no slots when there are already 3 active appointments", mode: "BLOCK_MODE", occupied: ["09:00", "14:00", "18:00"], blocked: [], expected: [] },
+  { name: "applies manual block directional rule for single blocked first slot", mode: "BLOCK_MODE", occupied: [], blocked: ["09:00"], expected: ["10:00", "14:00", "18:00"] },
+  { name: "does not propagate directional restriction when a full pair is manually blocked", mode: "BLOCK_MODE", occupied: [], blocked: ["09:00", "10:00"], expected: ["13:00", "14:00", "17:00", "18:00"] },
+  { name: "returns no slots when full day is manually blocked", mode: "BLOCK_MODE", occupied: [], blocked: [...BLOCK_SIX], expected: [] },
+  { name: "does not apply directional restriction in SECOND_ONLY_MODE", mode: "SECOND_ONLY_MODE", occupied: ["18:00"], blocked: [], expected: ["10:00", "14:00"] },
+  { name: "does not propagate manual blocked slots across pairs in SECOND_ONLY_MODE", mode: "SECOND_ONLY_MODE", occupied: ["18:00"], blocked: ["14:00"], expected: ["10:00"] },
+];
+
+describe("ejemplos concretos del legado (ex rules.test.ts)", () => {
+  it.each(legacyExamples)("$name", ({ mode, occupied, blocked, expected }) => {
+    const base = mode === "BLOCK_MODE" ? BLOCK_SIX : SECOND_THREE;
+
+    expect(legacyGetAvailableStartSlotsWithManualBlocks(base, occupied, blocked, mode)).toEqual(expected);
+    expect(engineSlots(mode, occupied, blocked)).toEqual(expected);
+  });
+});
