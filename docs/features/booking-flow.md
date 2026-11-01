@@ -65,7 +65,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Datos: `date`, `timeSlot`.
 - Comportamiento:
   - UI valida formato base y solicita avance.
-  - El selector de días muestra un calendario mensual en grilla por semanas.
+  - El selector de días muestra un calendario mensual en grilla por semanas, de lunes a domingo (encabezados `LUN`…`DOM`; huecos iniciales según el día de la semana del día 1; regla general en `docs/specification.md` sección 2). Aplica también al calendario modal.
   - Los días sin disponibilidad se muestran deshabilitados y el día seleccionado se mantiene resaltado.
   - Button group `Por día` / `Por horario` (default `Por día`). Es solo UI: usa la misma disponibilidad mensual ya cargada, sin endpoint nuevo.
   - En `Por horario`: se muestran chips con los horarios que tienen al menos un día disponible en el mes (con conteo de días); al elegir uno, solo se habilitan los días que lo tienen. Cambiar de mes conserva el horario si existe en el mes nuevo; si no, se deshabilitan los días y `Siguiente` hasta elegir otro horario (al volver a un mes que sí lo tiene, el horario vuelve a quedar activo). El modo es estado local: al volver desde identidad o recargar, se reinicia a `Por día` conservando `date + timeSlot`.

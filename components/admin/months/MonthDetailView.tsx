@@ -9,6 +9,7 @@ import { BlockSpacesModal } from "@/components/admin/months/BlockSpacesModal";
 import { BookAppointmentModal } from "@/components/admin/months/BookAppointmentModal";
 import { AvailabilityEditorModal } from "@/components/admin/months/availability/AvailabilityEditorModal";
 import type { AdminDayAgendaItem } from "@/lib/admin/appointments/types";
+import { getLeadingBlanks } from "@/lib/booking/calendar-helpers";
 import {
   cancelAdminAppointmentById,
   rescheduleAdminAppointmentById,
@@ -68,7 +69,8 @@ type DayBlockedEntry =
       reason: BlockReason;
     };
 
-const weekdayOrder = [0, 1, 2, 3, 4, 5, 6];
+// Grid de lunes a domingo; las claves de i18n siguen siendo 0=domingo.
+const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
 
 function resolveAppLanguage(language: string): AppLanguage {
   return language === "en" ? "en" : "es";
@@ -197,10 +199,8 @@ function buildCalendarCells(
   month: string,
   calendarDays: MonthDetailCalendarDay[],
 ) {
-  const firstDate = new Date(`${month}-01T12:00:00.000Z`);
-  const firstWeekday = firstDate.getUTCDay();
   const leadingPlaceholders = Array.from(
-    { length: firstWeekday },
+    { length: getLeadingBlanks(month) },
     (_, index) => ({
       key: `leading-${index}`,
       day: null as MonthDetailCalendarDay | null,

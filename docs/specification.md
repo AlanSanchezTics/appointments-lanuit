@@ -30,6 +30,7 @@ Este documento está diseñado para servir como especificación fuente para impl
   - Google Calendar (sistema espejo).
   - WhatsApp (notificación vía redirección: auto-intento en éxito `CONFIRMED`/`SYNC_FAILED` con fallback manual; manual en `PENDING`). En el admin, tras confirmar `CONFIRMED`/`SYNC_FAILED` se ofrece un toast con botón para enviar, sin redirección automática.
 - Enfoque Mobile-first.
+- Regla general de calendarios: el grid de días de todo calendario mensual va de lunes a domingo (público y admin). Los encabezados empiezan en lunes y los huecos iniciales se calculan con el mismo cálculo compartido en todos los calendarios, de modo que el día 1 queda en su columna de lunes a domingo. Aplica a `/booking` (selector de días y calendario modal), `Mis citas` (selección de nueva fecha) y al detalle del mes del admin (sección 15.7).
 
 ---
 
@@ -283,6 +284,7 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
   - errores inline por campo/contexto.
 - Requisito visual del selector de días en Paso 1:
   - debe renderizar un calendario mensual (grilla por semanas) con todos los días del mes,
+  - el grid va de lunes a domingo (encabezados `LUN`…`DOM` en `es`, `MON`…`SUN` en `en`), con la regla general de la sección 2; aplica también al calendario modal,
   - los días sin disponibilidad deben mostrarse deshabilitados,
   - el día seleccionado debe mantenerse resaltado visualmente.
 - Requisito visual del modo `Por horario` en Paso 1:
@@ -365,7 +367,7 @@ Mensaje base para cita `PENDING`:
    - estado `PENDING`, `CONFIRMED` o `SYNC_FAILED`,
    - fecha futura,
    - al menos 3 horas de anticipación.
-2. El flujo visual de modificación es similar a `/booking` para elegir nueva fecha y nuevo horario.
+2. El flujo visual de modificación es similar a `/booking` para elegir nueva fecha y nuevo horario. El selector de fecha usa el mismo grid mensual de lunes a domingo (sección 2).
 3. En esta rama no aplican:
    - validaciones de `isLoyal`,
    - sugerencia o restricción UX por citas futuras activas dentro de 15 días.
@@ -1087,7 +1089,7 @@ Flujo UI:
        - `ArrowCircleUp` verde para `más`,
        - `ArrowCircleDown` rojo para `menos`,
        - `MinusCircle` neutro cuando no hay cambio + texto `Misma ocupación comparada con el mes anterior`,
-     - calendario operativo mensual.
+     - calendario operativo mensual en grid de lunes a domingo (sección 2): encabezados `LUN`…`DOM` y huecos iniciales según el día de la semana del día 1.
    - Fórmula de `Disponibles` (métrica mensual, FR-027, D12, D56):
      - suma de `availableSpaces` de los días del mes, calculados con el resolvedor de la sección 4.3. Cada día aporta las citas adicionales alcanzables, acotadas por su `maxPerDay`.
      - los días anteriores a hoy aportan `0` y se pintan cerrados (D56).

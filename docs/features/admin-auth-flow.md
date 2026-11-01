@@ -32,7 +32,7 @@ Describir el flujo inicial del panel administrativo para autenticación, protecc
    - al accionar el botón del buscador, se abre un modal con la búsqueda global de clientes.
    - el buscador global permite buscar clientes por nombre o teléfono en todo el shell, usa debounce de `500ms`, muestra hasta 8 resultados y navega al detalle del cliente al seleccionarlo.
    - el dashboard incluye tarjeta `Ocupación semanal` con:
-     - una barra por día de la semana actual, de `lunes` a `domingo` (la API devuelve siete; la cuadrícula visual todavía es de 5 columnas, ver `docs/ui/admin/components.md`),
+     - una barra por día de la semana actual, de `lunes` a `domingo` (siete columnas, ver `docs/ui/admin/components.md`),
      - indicador `N% más|menos|similar` contra la semana anterior.
    - el dashboard incluye bloque destacado `Día más ocupado` con:
      - nombre del día con mayor demanda en la semana actual,

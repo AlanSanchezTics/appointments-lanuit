@@ -27,7 +27,7 @@ Describir el flujo operativo de detalle mensual en `/admin/months/[month]` para 
    - grid de métricas 2x2,
    - tarjeta de `Ocupación proyectada para este mes`,
    - comparativa de ocupación vs mes anterior dentro de la misma tarjeta en formato `N% más/menos comparado con (mes) (año)` con icono de tendencia,
-   - calendario operativo mensual,
+   - calendario operativo mensual en grid de lunes a domingo (encabezados `Lu`…`Do`; huecos iniciales según el día de la semana del día 1),
    - tags de estado (`Activo|Inactivo`) y `Histórico` debajo del título cuando `isPastMonth=true`.
 7. Si `isPastMonth=false`, el bloque de acciones del mes incluye el botón `Reglas`. Abre el editor de disponibilidad (sección "Editor de reglas y excepciones").
 8. Si `isPastMonth=false`, debajo del calendario admin puede usar `Compartir agenda`.
@@ -160,6 +160,7 @@ Abre con `Reglas` (solo meses no pasados) y muestra el editor de disponibilidad 
 
 ## Selección de días en el calendario
 
+- El grid del calendario va de lunes a domingo (regla general en `docs/specification.md` sección 2). Los huecos antes del día 1 son los días de la semana previos dentro de la primera semana; el domingo es la última columna.
 - Un día `closed` de fin de semana está deshabilitado en el calendario (no se puede abrir su agenda). Un sábado o domingo abierto por una excepción usa el semáforo normal y se puede abrir.
 - Un día entre semana `closed` (pasado o sin horarios) sigue siendo seleccionable para ver su agenda.
 

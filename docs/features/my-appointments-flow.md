@@ -70,7 +70,7 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
 ## Reschedule Branch
 
 1. Usuario selecciona una cita modificable.
-2. UI muestra un flujo similar a `/booking` para elegir nueva fecha y nuevo horario.
+2. UI muestra un flujo similar a `/booking` para elegir nueva fecha y nuevo horario. La nueva fecha se elige en el mismo calendario mensual en grid de lunes a domingo (regla general en `docs/specification.md` sección 2).
 3. Backend valida:
    - estado `PENDING`, `CONFIRMED` o `SYNC_FAILED`,
    - cita futura,

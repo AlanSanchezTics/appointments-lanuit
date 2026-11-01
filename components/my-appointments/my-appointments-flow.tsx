@@ -40,8 +40,8 @@ import {
 } from "@/lib/whatsapp/message";
 
 const WEEKDAY_HEADERS = {
-  es: ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"],
-  en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+  es: ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"],
+  en: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
 } as const;
 
 type MyAppointmentsFlowProps = {

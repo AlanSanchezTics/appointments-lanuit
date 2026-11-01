@@ -1984,4 +1984,22 @@ describe("MonthDetailView", () => {
 
     expect(fullDay).toHaveClass(expectedClass);
   });
+
+  // El grid de días va de lunes a domingo; los huecos iniciales dependen del día de la semana del día 1.
+  it.each([
+    ["2026-03", 6], // domingo
+    ["2026-06", 0], // lunes
+    ["2026-12", 1], // martes
+  ])("lays out the calendar Monday to Sunday for %s with %i leading blanks", (month, leadingBlanks) => {
+    const { container } = render(
+      <MonthDetailView month={month} initialData={buildMonthDetail({ month, currentMonth: month })} />,
+    );
+
+    const [headerGrid, dayGrid] = Array.from(container.querySelectorAll(".grid-cols-7"));
+
+    expect(Array.from(headerGrid.children).map((node) => node.textContent)).toEqual([
+      "Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do",
+    ]);
+    expect(dayGrid.querySelectorAll("[aria-hidden]")).toHaveLength(leadingBlanks);
+  });
 });

@@ -1,6 +1,9 @@
+// Huecos iniciales de un grid de calendario de lunes a domingo (0 = el día 1 cae en lunes).
+// getUTCDay() devuelve domingo=0; (d + 6) % 7 lo pasa a lunes=0.
 export function getLeadingBlanks(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
-  return new Date(Date.UTC(year, monthNumber - 1, 1)).getUTCDay();
+  const sundayFirstWeekday = new Date(Date.UTC(year, monthNumber - 1, 1)).getUTCDay();
+  return (sundayFirstWeekday + 6) % 7;
 }
 
 export function getMonthDates(month: string) {

@@ -30,8 +30,8 @@ import { translateValidationError } from "@/lib/i18n/translate";
 import ErrorMessage from "./error-message";
 
 const WEEKDAY_HEADERS = {
-  es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"],
-  en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+  es: ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"],
+  en: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
 } as const;
 
 type BookingWizardStepScheduleProps = {
