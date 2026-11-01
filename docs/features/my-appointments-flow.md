@@ -71,6 +71,11 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
 
 1. Usuario selecciona una cita modificable.
 2. UI muestra un flujo similar a `/booking` para elegir nueva fecha y nuevo horario. La nueva fecha se elige en el mismo calendario mensual en grid de lunes a domingo (regla general en `docs/specification.md` sección 2).
+   - Button group `Por día` / `Por horario` (default `Por día`), igual que `/booking` paso 1, con la misma disponibilidad mensual cargada (sin endpoint nuevo).
+   - `Por horario`: chips de horarios con al menos un día disponible en el mes y conteo de días; al elegir uno, solo se habilitan los días que lo tienen.
+   - Elegir día en `Por día`: conserva el horario si ese día lo ofrece; si no, asigna el primero del día (misma regla que `/booking`).
+   - Cambio de mes: conserva el horario si existe en el mes nuevo; si no, deshabilita días y `Confirmar cambio` hasta elegir otro horario.
+   - El modo es estado local de la UI: al entrar al paso de reagendado se reinicia a `Por día`; recargar la página también.
 3. Backend valida:
    - estado `PENDING`, `CONFIRMED` o `SYNC_FAILED`,
    - cita futura,
@@ -102,6 +107,7 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
 - La cita origen debe seguir siendo futura al confirmar.
 - El nuevo slot debe seguir disponible al confirmar.
 - El destino debe ser un horario que el resolvedor ofrece ese día, en un mes `ACTIVE` y no pasado.
+- UI: `Confirmar cambio` queda deshabilitado sin fecha, sin horario, o en `Por horario` cuando el horario elegido no existe en el mes visible.
 
 ## Concurrency Considerations
 
@@ -118,3 +124,4 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
 - La clienta puede cancelar citas elegibles con la regla de 24 horas.
 - La clienta puede modificar citas elegibles con la regla de 3 horas.
 - El flujo de modificación no aplica `isLoyal` ni la sugerencia de 15 días.
+- La clienta puede buscar la nueva fecha por día o por horario; en `Por horario` solo ve los días que ofrecen el horario elegido.

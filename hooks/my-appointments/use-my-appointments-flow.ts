@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
+import { useBookingScheduleSearch } from "@/hooks/booking/use-booking-schedule-search";
 import { fetchMonthAvailability } from "@/lib/booking/api-client";
+import type { BookingDraft } from "@/lib/booking/types";
 import {
   cancelMyAppointments,
   lookupMyAppointments,
@@ -12,6 +14,8 @@ import type { MyAppointmentLookupItem } from "@/lib/my-appointments/types";
 
 type FlowStep = "lookup" | "results" | "reschedule" | "success";
 type SuccessAction = "cancel" | "reschedule" | null;
+
+export type MyAppointmentsScheduleSearch = ReturnType<typeof useBookingScheduleSearch>;
 
 export function useMyAppointmentsFlow(availableMonths: string[]) {
   const [step, setStep] = useState<FlowStep>("lookup");
@@ -30,6 +34,25 @@ export function useMyAppointmentsFlow(availableMonths: string[]) {
   const [isCanceling, startCancelTransition] = useTransition();
   const [isRescheduling, startRescheduleTransition] = useTransition();
   const [isLoadingAvailability, startAvailabilityTransition] = useTransition();
+
+  // Adapts the reschedule selection to the booking search hook (only date and timeSlot are read).
+  const scheduleDraft = useMemo<BookingDraft>(
+    () => ({ date: selectedDate, timeSlot: selectedTimeSlot, name: "", phone: "" }),
+    [selectedDate, selectedTimeSlot],
+  );
+  const handleScheduleDraftChange = useCallback((next: Partial<BookingDraft>) => {
+    if (next.date !== undefined) {
+      setSelectedDate(next.date);
+    }
+    if (next.timeSlot !== undefined) {
+      setSelectedTimeSlot(next.timeSlot);
+    }
+  }, []);
+  const scheduleSearch = useBookingScheduleSearch({
+    days: rescheduleDays,
+    draft: scheduleDraft,
+    onDraftChange: handleScheduleDraftChange,
+  });
 
   const selectedAppointment = useMemo(
     () => appointments.find((appointment) => appointment.appointmentId === selectedAppointmentId) ?? null,
@@ -164,11 +187,29 @@ export function useMyAppointmentsFlow(availableMonths: string[]) {
     setRescheduleMonth(initialMonth);
     setSelectedDate(null);
     setSelectedTimeSlot(null);
+    // Search mode is local state and restarts in "Por día" on every entry.
+    scheduleSearch.changeMode("day");
     setStep("reschedule");
   }
 
+  function handleSelectDate(date: string) {
+    const day = rescheduleDays.find((item) => item.date === date);
+    setSelectedDate(date);
+    // Same rule as /booking: keep the current time if this day offers it, else its first slot.
+    // In "Por horario" the enabled days already offer the searched slot, so it is never changed.
+    if (scheduleSearch.mode === "day" && !day?.slots.includes(selectedTimeSlot ?? "")) {
+      setSelectedTimeSlot(day?.slots[0] ?? null);
+    }
+  }
+
   function handleRescheduleConfirm() {
-    if (!selectedAppointment || !selectedDate || !selectedTimeSlot || !rescheduleMonth) {
+    if (
+      !selectedAppointment
+      || !selectedDate
+      || !selectedTimeSlot
+      || !rescheduleMonth
+      || !scheduleSearch.canContinue
+    ) {
       setActionErrorCode("VALIDATION_ERROR");
       return;
     }
@@ -230,11 +271,13 @@ export function useMyAppointmentsFlow(availableMonths: string[]) {
     rescheduleDays,
     selectedDate,
     selectedTimeSlot,
+    scheduleSearch,
     availableMonths,
     setPhone,
     setRescheduleMonth,
     setSelectedDate,
     setSelectedTimeSlot,
+    handleSelectDate,
     handleLookup,
     handleSelectAppointment,
     handleCancelSelected,

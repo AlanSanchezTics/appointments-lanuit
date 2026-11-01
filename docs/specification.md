@@ -368,6 +368,12 @@ Mensaje base para cita `PENDING`:
    - fecha futura,
    - al menos 3 horas de anticipación.
 2. El flujo visual de modificación es similar a `/booking` para elegir nueva fecha y nuevo horario. El selector de fecha usa el mismo grid mensual de lunes a domingo (sección 2).
+   - Selector `Por día` / `Por horario` (default `Por día`), igual que `/booking` paso 1. Es solo UI: usa la misma disponibilidad mensual ya cargada, sin endpoint nuevo.
+   - En `Por horario`: se muestran chips con los horarios que tienen al menos un día disponible en el mes (con conteo de días); al elegir uno, solo se habilitan los días que lo tienen.
+   - Cambiar de mes conserva el horario si existe en el mes nuevo; si no, se deshabilitan los días y `Confirmar cambio` hasta elegir otro horario (al volver a un mes que sí lo tiene, el horario vuelve a quedar activo).
+   - En `Por día`, elegir un día conserva el horario elegido si ese día lo ofrece; si no, asigna el primer horario de ese día (misma regla que `/booking`).
+   - En `Por horario`, elegir un día no cambia el horario: los días habilitados ya lo ofrecen.
+   - El modo es estado local: al entrar al paso de reagendado se reinicia a `Por día`; recargar la página también lo reinicia.
 3. En esta rama no aplican:
    - validaciones de `isLoyal`,
    - sugerencia o restricción UX por citas futuras activas dentro de 15 días.

@@ -15,7 +15,10 @@ import Logo from "@/assets/images/logo.png";
 import ErrorMessage from "@/components/booking/error-message";
 import { Button } from "@/components/ui/public/button";
 import { useCancelSuccessWhatsapp } from "@/hooks/cancel/use-cancel-success-whatsapp";
-import { useMyAppointmentsFlow } from "@/hooks/my-appointments/use-my-appointments-flow";
+import {
+  type MyAppointmentsScheduleSearch,
+  useMyAppointmentsFlow,
+} from "@/hooks/my-appointments/use-my-appointments-flow";
 import {
   getLeadingBlanks,
   getMonthDates,
@@ -83,10 +86,11 @@ export function MyAppointmentsFlow({
     rescheduleDays,
     selectedDate,
     selectedTimeSlot,
+    scheduleSearch,
     setPhone,
     setRescheduleMonth,
-    setSelectedDate,
     setSelectedTimeSlot,
+    handleSelectDate,
     handleLookup,
     handleSelectAppointment,
     handleCancelSelected,
@@ -309,6 +313,7 @@ export function MyAppointmentsFlow({
               selectedDate={selectedDate}
               selectedTimeSlot={selectedTimeSlot}
               days={rescheduleDays}
+              scheduleSearch={scheduleSearch}
               onPreviousMonth={() => {
                 const index = availableMonths.indexOf(rescheduleMonth);
                 if (index > 0) {
@@ -321,11 +326,7 @@ export function MyAppointmentsFlow({
                   setRescheduleMonth(availableMonths[index + 1]);
                 }
               }}
-              onSelectDate={(date) => {
-                const day = rescheduleDays.find((item) => item.date === date);
-                setSelectedDate(date);
-                setSelectedTimeSlot(day?.slots[0] ?? null);
-              }}
+              onSelectDate={handleSelectDate}
               onSelectTimeSlot={setSelectedTimeSlot}
               t={t}
             />
@@ -333,7 +334,12 @@ export function MyAppointmentsFlow({
             <div className="space-y-4 pt-1">
               <Button
                 className="w-full py-4 text-[1.02rem] font-semibold"
-                disabled={isRescheduling || !selectedDate || !selectedTimeSlot}
+                disabled={
+                  isRescheduling
+                  || !selectedDate
+                  || !selectedTimeSlot
+                  || !scheduleSearch.canContinue
+                }
                 onClick={handleRescheduleConfirm}
                 type="button"
               >
@@ -714,6 +720,7 @@ function RescheduleCalendar({
   selectedDate,
   selectedTimeSlot,
   days,
+  scheduleSearch,
   onPreviousMonth,
   onNextMonth,
   onSelectDate,
@@ -727,6 +734,7 @@ function RescheduleCalendar({
   selectedDate: string | null;
   selectedTimeSlot: string | null;
   days: Array<{ date: string; slots: string[] }>;
+  scheduleSearch: MyAppointmentsScheduleSearch;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   onSelectDate: (date: string) => void;
@@ -742,6 +750,7 @@ function RescheduleCalendar({
     days.map((day) => [day.date, day] as const),
   );
   const selectedDay = days.find((day) => day.date === selectedDate) ?? null;
+  const isTimeMode = scheduleSearch.mode === "time";
 
   return (
     <section className="space-y-4">
@@ -750,6 +759,32 @@ function RescheduleCalendar({
           {t("myAppointments.loadingAvailability")}
         </p>
       ) : null}
+
+      {/* Modo de búsqueda: por día (default) o por horario, igual que /booking paso 1 */}
+      <div
+        aria-label={t("booking.searchBy")}
+        className="inline-flex w-full rounded-full bg-[var(--surface-alt)] p-1"
+        role="group"
+      >
+        {(["day", "time"] as const).map((mode) => (
+          <button
+            key={mode}
+            aria-pressed={scheduleSearch.mode === mode}
+            className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-4 text-center text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+              scheduleSearch.mode === mode
+                ? "bg-white text-[var(--foreground)] shadow-sm"
+                : "text-[var(--muted)]"
+            }`}
+            disabled={isLoadingAvailability}
+            onClick={() => scheduleSearch.changeMode(mode)}
+            type="button"
+          >
+            {mode === "day"
+              ? t("booking.searchByDay")
+              : t("booking.searchByTime")}
+          </button>
+        ))}
+      </div>
 
       <div className="grid w-full grid-cols-[2.25rem_1fr_2.25rem] items-center gap-3">
         <button
@@ -777,6 +812,53 @@ function RescheduleCalendar({
         </button>
       </div>
 
+      {/* Modo por horario: horarios con días disponibles en el mes */}
+      {isTimeMode ? (
+        <div className="space-y-3">
+          {!isLoadingAvailability && scheduleSearch.slotOptions.length === 0 ? (
+            <p className="text-center text-sm text-[var(--muted)]">
+              {t("booking.noSlotsInMonth")}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {scheduleSearch.slotOptions.map(({ slot, daysCount }) => {
+                const isSelected = scheduleSearch.activeSlot === slot;
+
+                return (
+                  <button
+                    key={slot}
+                    aria-label={`${t("booking.selectTimeSlot", {
+                      slot: formatTimeSlotLabel(slot, language),
+                    })}, ${t("booking.daysCount", { count: daysCount })}`}
+                    aria-pressed={isSelected}
+                    disabled={isLoadingAvailability}
+                    className={`flex min-h-14 flex-col items-center justify-center rounded-full border px-4 transition ${
+                      isSelected
+                        ? "border-[var(--accent)] bg-[rgba(228,159,83,0.16)] text-[var(--accent-dark)]"
+                        : "border-[var(--border)] bg-white text-[var(--foreground)]"
+                    }`}
+                    onClick={() => scheduleSearch.selectSlot(slot)}
+                    type="button"
+                  >
+                    <span className="text-[0.96rem] font-semibold">
+                      {formatTimeSlotLabel(slot, language)}
+                    </span>
+                    <span className="text-[0.7rem] text-[var(--muted)]">
+                      {t("booking.daysCount", { count: daysCount })}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {scheduleSearch.slotOptions.length > 0 && !scheduleSearch.activeSlot ? (
+            <p className="text-center text-sm text-[var(--muted)]">
+              {t("booking.selectTimeFirst")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-7 gap-y-3 text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
         {WEEKDAY_HEADERS[language].map((label) => (
           <span key={label}>{label}</span>
@@ -792,9 +874,13 @@ function RescheduleCalendar({
           />
         ))}
         {monthDates.map((date) => {
-          const isSelected = selectedDate === date;
           const day = availabilityByDate.get(date);
-          const isAvailable = Boolean(day && day.slots.length > 0);
+          const isAvailable = Boolean(
+            day
+              && day.slots.length > 0
+              && (!scheduleSearch.enabledDates || scheduleSearch.enabledDates.has(date)),
+          );
+          const isSelected = selectedDate === date && isAvailable;
 
           return (
             <button
@@ -808,12 +894,7 @@ function RescheduleCalendar({
                     : "cursor-not-allowed text-[var(--muted-light)]"
               }`}
               disabled={!isAvailable}
-              onClick={() => {
-                onSelectDate(date);
-                if (!day?.slots.includes(selectedTimeSlot ?? "")) {
-                  onSelectTimeSlot(day?.slots[0] ?? null);
-                }
-              }}
+              onClick={() => onSelectDate(date)}
               type="button"
             >
               {formatDayOfMonthLabel(date)}
@@ -822,7 +903,7 @@ function RescheduleCalendar({
         })}
       </div>
 
-      <section className="space-y-4">
+      <section className={isTimeMode ? "hidden" : "space-y-4"}>
         <p className="text-[0.74rem] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
           {t("booking.selectTime")}
         </p>
