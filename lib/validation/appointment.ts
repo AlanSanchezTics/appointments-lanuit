@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-import { getCurrentMonthKey, isFutureDateTime, isWeekdayInMexicoCity } from "@/lib/datetime/mexico-city";
+import { isValidIsoDate } from "@/lib/availability/day-rule";
+import { getCurrentMonthKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
 
 const phoneSchema = z
   .string()
@@ -21,10 +21,14 @@ const optionalNameSchema = z
   .max(100, "VALIDATION_NAME_TOO_LONG")
   .optional();
 
+// FR-006: cualquier HH:mm válido; que la hora se ofrezca lo decide el resolvedor (SLOT_NOT_AVAILABLE).
+export const timeSlotSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "VALIDATION_TIME_SLOT_FORMAT");
+
 const bookingCoreSchema = z.object({
   phone: phoneSchema,
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "VALIDATION_DATE_FORMAT"),
-  timeSlot: z.enum(BASE_TIME_SLOTS),
+  // Calendario real (2026-02-30 y 2026-13-01 se rechazan); el formato lo valida isValidIsoDate.
+  date: z.string().refine(isValidIsoDate, "VALIDATION_DATE_FORMAT"),
+  timeSlot: timeSlotSchema,
 });
 
 export const bookingSchema = bookingCoreSchema.extend({
@@ -59,10 +63,6 @@ export function validateBookingRules<
 
   if (!isFutureDateTime(input.date, input.timeSlot, now)) {
     throw new Error("PAST_TIME_SLOT");
-  }
-
-  if (!isWeekdayInMexicoCity(input.date)) {
-    throw new Error("WEEKDAY_ONLY");
   }
 
   return input;

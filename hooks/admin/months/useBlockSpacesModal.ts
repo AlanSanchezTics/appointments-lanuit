@@ -7,11 +7,10 @@ import {
   fetchAdminBlockableSlots,
 } from "@/lib/admin/blocked-spaces/api-client";
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 
 type BlockReason = (typeof BLOCK_REASON_VALUES)[number];
-type SlotViewMode = "hour" | "block";
-type TimeSlot = (typeof BASE_TIME_SLOTS)[number];
+// Horario HH:mm que devuelve blockable-slots (D67: string libre, sin rejilla fija).
+type TimeSlot = string;
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
 
@@ -25,7 +24,6 @@ export function useBlockSpacesModal(month: string) {
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [isFullDaySelected, setIsFullDaySelected] = useState(false);
   const [reason, setReason] = useState<BlockReason>("DESCANSO");
-  const [slotViewMode, setSlotViewMode] = useState<SlotViewMode>("hour");
   const abortRef = useRef<AbortController | null>(null);
 
   const selectedDaySlots = useMemo(() => {
@@ -57,7 +55,6 @@ export function useBlockSpacesModal(month: string) {
     setSelectedSlots([]);
     setIsFullDaySelected(false);
     setReason("DESCANSO");
-    setSlotViewMode("hour");
 
     try {
       const response = await fetchAdminBlockableSlots(month, null, controller.signal);
@@ -107,7 +104,6 @@ export function useBlockSpacesModal(month: string) {
     setSelectedSlots([]);
     setIsFullDaySelected(false);
     setReason("DESCANSO");
-    setSlotViewMode("hour");
   }, [isSubmitting]);
 
   const selectDate = useCallback((date: string) => {
@@ -124,20 +120,6 @@ export function useBlockSpacesModal(month: string) {
       }
 
       return [...current, slot].sort();
-    });
-  }, []);
-
-  const toggleBlockSlots = useCallback((slots: TimeSlot[]) => {
-    setIsFullDaySelected(false);
-    setSelectedSlots((current) => {
-      const hasAllSlots = slots.every((slot) => current.includes(slot));
-
-      if (hasAllSlots) {
-        return current.filter((slot) => !slots.includes(slot));
-      }
-
-      const merged = new Set([...current, ...slots]);
-      return Array.from(merged).sort();
     });
   }, []);
 
@@ -224,17 +206,14 @@ export function useBlockSpacesModal(month: string) {
     isFullDaySelected,
     areAllSelectedForDay,
     reason,
-    slotViewMode,
     open,
     close,
     selectDate,
     toggleSlot,
-    toggleBlockSlots,
     selectAllSlotsForDay,
     selectFullDayForDay,
     clearSelectedSlots,
     setReason,
-    setSlotViewMode,
     submit,
   };
 }

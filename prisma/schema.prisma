@@ -129,15 +129,87 @@ model ReservationLock {
 }
 
 model ActiveMonth {
-  id        Int               @id @default(autoincrement())
-  month     String            @unique @db.Char(7)
-  status    ActiveMonthStatus @default(ACTIVE)
-  slotMode  MonthSlotMode     @default(SECOND_ONLY_MODE) @map("slot_mode")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
+  id                  Int                      @id @default(autoincrement())
+  month               String                   @unique @db.Char(7)
+  status              ActiveMonthStatus        @default(ACTIVE)
+  slotMode            MonthSlotMode            @default(BLOCK_MODE) @map("slot_mode")
+  availabilityVersion Int                      @default(0) @map("availability_version")
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @updatedAt @map("updated_at")
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
 
   @@index([status, month])
   @@map("active_months")
+}
+
+model AvailabilityRule {
+  id               Int                       @id @default(autoincrement())
+  activeMonthId    Int                       @map("active_month_id")
+  startDate        DateTime                  @map("start_date") @db.Date
+  endDate          DateTime                  @map("end_date") @db.Date
+  minGapMinutes    Int                       @default(240) @map("min_gap_minutes") @db.SmallInt
+  preserveCapacity Boolean                   @default(true) @map("preserve_capacity")
+  maxPerDay        Int                       @default(3) @map("max_per_day") @db.TinyInt
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  activeMonth      ActiveMonth               @relation(fields: [activeMonthId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  weekdays         AvailabilityRuleWeekday[]
+  times            AvailabilityRuleTime[]
+
+  @@index([activeMonthId])
+  @@map("availability_rules")
+}
+
+model AvailabilityRuleWeekday {
+  ruleId  Int              @map("rule_id")
+  weekday Int              @db.TinyInt
+  rule    AvailabilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([ruleId, weekday])
+  @@map("availability_rule_weekdays")
+}
+
+model AvailabilityRuleTime {
+  ruleId   Int              @map("rule_id")
+  timeSlot DateTime         @map("time_slot") @db.Time(0)
+  rule     AvailabilityRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([ruleId, timeSlot])
+  @@map("availability_rule_times")
+}
+
+model AvailabilityException {
+  id               Int                         @id @default(autoincrement())
+  activeMonthId    Int                         @map("active_month_id")
+  date             DateTime                    @db.Date
+  minGapMinutes    Int                         @default(240) @map("min_gap_minutes") @db.SmallInt
+  preserveCapacity Boolean                     @default(true) @map("preserve_capacity")
+  maxPerDay        Int                         @default(3) @map("max_per_day") @db.TinyInt
+  createdAt        DateTime                    @default(now()) @map("created_at")
+  updatedAt        DateTime                    @updatedAt @map("updated_at")
+  activeMonth      ActiveMonth                 @relation(fields: [activeMonthId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  times            AvailabilityExceptionTime[]
+
+  @@unique([activeMonthId, date])
+  @@map("availability_exceptions")
+}
+
+model AvailabilityExceptionTime {
+  exceptionId Int                   @map("exception_id")
+  timeSlot    DateTime              @map("time_slot") @db.Time(0)
+  exception   AvailabilityException @relation(fields: [exceptionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([exceptionId, timeSlot])
+  @@map("availability_exception_times")
+}
+
+model AvailabilityMigrationRun {
+  name        String   @id @db.VarChar(100)
+  appliedAt   DateTime @map("applied_at")
+  rowsCreated Int      @map("rows_created")
+
+  @@map("availability_migration_runs")
 }
 
 model AdminUser {

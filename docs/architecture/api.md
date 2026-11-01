@@ -240,12 +240,261 @@ Supported contracts:
 
 Required error semantics:
 
-- `PHONE_INVALID` for invalid phone input
+- `VALIDATION_ERROR` for invalid phone input (the zod error is normalized to `VALIDATION_ERROR`; the code does not return `PHONE_INVALID`, D84)
 - `APPOINTMENT_NOT_FOUND` when no eligible appointment is found or the target appointment no longer matches the flow
 - `APPOINTMENT_IS_COMING_SOON` when cancellation fails due to the 24-hour rule
 - `APPOINTMENT_NOT_MODIFIABLE` when reschedule fails due to the 3-hour rule or state mismatch
-- `SLOT_NOT_AVAILABLE` when the target slot is no longer available
+- `SLOT_NOT_AVAILABLE` when the target slot is no longer available or is held by another client's active reservation lock (D87)
 - `VALIDATION_ERROR` for malformed or semantically invalid payloads
+- `LOCK_TIMEOUT` (409), invalid calendar dates (`VALIDATION_ERROR`, 400) and `UNKNOWN_ERROR` (400) for reschedule: see "Disponibilidad mensual y reservas (spec 003)".
+
+---
+
+## Disponibilidad mensual y reservas (spec 003)
+
+Esta sección documenta el contrato de los endpoints de disponibilidad por mes, de la reserva pública y de las reprogramaciones tal como están implementados. La decisión y el alcance están en `specs/003-flexible-month-availability/`.
+
+Propiedad:
+
+- Capacidad: disponibilidad y bloqueos por mes en `admin/months/[month]`, reprogramación admin en `admin/appointments/[appointmentId]/reschedule`, lectura pública en `availability/[month]`, reserva en `reservar/*` y reprogramación pública en `my-appointments/reschedule`.
+- Cálculo de horarios: un único resolvedor en `lib/availability/` (FR-016). Las rutas validan la forma, llaman al servicio de dominio y mapean códigos. No calculan horarios.
+- Persistencia: `lib/db/availability-rules.ts`. Esquema en `docs/architecture/data-model.md`.
+
+Formatos: fechas `YYYY-MM-DD`, horas `HH:mm`, zona horaria `America/Mexico_City`. El segmento `[month]` es `YYYY-MM`.
+
+Convenciones de error de esta capacidad:
+
+- El cuerpo es siempre `{ errorCode, error }`. Los 409 de citas afectadas añaden `affectedCount` y `affectedAppointments`.
+- `ADMIN_UNAUTHORIZED` (401) en todas las rutas admin.
+- `VALIDATION_ERROR` (400): el cuerpo o la query no cumplen la forma (validación zod). Las fechas de calendario inválidas (por ejemplo `2026-02-30`) en reservas y reprogramación pública también responden `VALIDATION_ERROR`.
+- `MONTHS_INVALID_FORMAT` (400): el segmento `[month]` no es un `YYYY-MM` válido.
+- `AFFECTED_MONTH_MISMATCH` es interno: lo lanza el cálculo de citas afectadas si el mes actual y el propuesto no coinciden. Ambos llamadores pasan el mes del path, así que no debería llegar a una ruta. Si llegara, el normalizador lo devolvería como 400 con ese código.
+- Códigos de validación de dominio `AVAILABILITY_*` (400): ver la tabla de cada endpoint.
+- Error no mapeado, incluidos errores de base de datos y expiración de la transacción: `UNKNOWN_ERROR` con el HTTP por defecto de la ruta (400 en las rutas admin, en la reserva y en la reprogramación pública; 422 en `GET /api/availability/[month]`).
+
+Orden de comprobaciones en las escrituras de disponibilidad: primero la forma del cuerpo (400 `VALIDATION_ERROR`). Después, dentro de la transacción: mes registrado (404), mes pasado (422), versión (409), valores de dominio (400), citas afectadas (409) y, al final, la escritura.
+
+### GET /api/admin/months/[month]/availability
+
+Respuesta 200:
+
+```json
+{
+  "month": "2026-12",
+  "availabilityVersion": 3,
+  "slotMode": "BLOCK_MODE",
+  "rules": [
+    {
+      "id": 11,
+      "startDate": "2026-12-01",
+      "endDate": "2026-12-13",
+      "weekdays": [1, 2, 3, 4, 5],
+      "times": ["09:00", "10:00", "13:00", "14:00", "17:00", "18:00"],
+      "minGapMinutes": 240,
+      "preserveCapacity": true,
+      "maxPerDay": 3
+    }
+  ],
+  "exceptions": [
+    { "id": 4, "date": "2026-12-19", "times": [], "minGapMinutes": 240, "preserveCapacity": true, "maxPerDay": 3 }
+  ],
+  "usesDefaultRule": false
+}
+```
+
+- `weekdays`: ISO, 1 = lunes, 7 = domingo.
+- `usesDefaultRule`: `true` cuando el mes no tiene reglas. Los días no cubiertos por una excepción usan la regla por defecto (D6, D28). Es informativo.
+- `slotMode`: campo legado. Se retira en la Fase 4, sin alias (D49).
+- Errores: 404 `MONTH_NOT_REGISTERED`; 400 `MONTHS_INVALID_FORMAT`.
+
+### PUT /api/admin/months/[month]/availability
+
+Cuerpo:
+
+- `expectedVersion` (entero ≥ 0, obligatorio): `availabilityVersion` leído con el GET.
+- `rules[]`: `{ startDate, endDate, weekdays[], times[], minGapMinutes, preserveCapacity, maxPerDay }`.
+- `exceptions[]`: `{ date, times[], minGapMinutes, preserveCapacity, maxPerDay }`. `times` puede ser `[]`, que cierra el día.
+- `confirmAffectedAppointments` (boolean, opcional, por defecto `false`).
+
+Semántica: reemplaza el conjunto completo de reglas y excepciones del mes en una transacción con `FOR UPDATE` sobre `active_months`. Deriva `slotMode` (ver `data-model.md`) e incrementa `availabilityVersion`. No escribe en `appointment_logs` (D24) y no modifica citas ni eventos de Google Calendar (FR-022).
+
+Respuesta 200: el mismo cuerpo que el GET, con la versión nueva.
+
+409 `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED`:
+
+```json
+{
+  "errorCode": "AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED",
+  "error": "AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED",
+  "affectedCount": 1,
+  "affectedAppointments": [
+    { "appointmentId": 87, "date": "2026-12-03", "timeSlot": "17:00", "status": "CONFIRMED", "clientName": "Nombre de ejemplo" }
+  ]
+}
+```
+
+| HTTP | Código | Cuándo |
+|---|---|---|
+| 404 | `MONTH_NOT_REGISTERED` | El mes no está registrado. |
+| 422 | `MONTH_IN_PAST` | El mes es anterior al mes actual (D36). |
+| 409 | `AVAILABILITY_VERSION_CONFLICT` | `expectedVersion` no coincide con la versión vigente. No se escribe nada. |
+| 409 | `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED` | Hay citas que quedan fuera del horario y no se confirmó. |
+| 400 | `AVAILABILITY_RULE_RANGE_OUTSIDE_MONTH` | Fecha de regla fuera del mes, o fecha inexistente o malformada. |
+| 400 | `AVAILABILITY_RULE_RANGE_INVALID` | `startDate` posterior a `endDate`. |
+| 400 | `AVAILABILITY_RULE_OVERLAP` | Dos reglas comparten fechas. No se miran los días de la semana. |
+| 400 | `AVAILABILITY_RULE_WEEKDAYS_REQUIRED` | La regla no tiene días, o un día está fuera de 1-7. |
+| 400 | `AVAILABILITY_RULE_TIMES_REQUIRED` | La regla no tiene horas. |
+| 400 | `AVAILABILITY_TIME_INVALID` | Hora fuera de `HH:mm`, o `00:00`, que es el centinela de día completo (D55). |
+| 400 | `AVAILABILITY_TIMES_LIMIT_EXCEEDED` | Más de 24 horas por día después de normalizar. |
+| 400 | `AVAILABILITY_MIN_GAP_OUT_OF_RANGE` | `minGapMinutes` no es entero o está fuera de 0-1440. |
+| 400 | `AVAILABILITY_MAX_PER_DAY_OUT_OF_RANGE` | `maxPerDay` no es entero o está fuera de 1-6. |
+| 400 | `AVAILABILITY_EXCEPTION_DATE_OUTSIDE_MONTH` | Fecha de excepción fuera del mes, o inexistente. |
+| 400 | `AVAILABILITY_EXCEPTION_DATE_DUPLICATE` | Dos excepciones con la misma fecha. |
+| 400 | `VALIDATION_ERROR` | La forma del cuerpo no es válida. |
+
+### POST /api/admin/months/[month]/availability/preview
+
+Cuerpo: `rules[]` y `exceptions[]` con la misma forma que el PUT. `expectedVersion` y `confirmAffectedAppointments` no se usan y se ignoran.
+
+Respuesta 200: `{ "affectedCount": 2, "affectedAppointments": [...] }`, con los mismos elementos que el 409 del PUT.
+
+- Sin escritura y sin cambio de `availabilityVersion`.
+- Solo cuentan citas `PENDING`, `CONFIRMED` o `SYNC_FAILED` que sean futuras (D35).
+- Lista solo la diferencia: citas que estaban dentro de la rejilla vigente y quedan fuera de la propuesta (A-03).
+- "Fuera" significa que la fecha no tiene horarios o que la hora no está en la rejilla del día (A-04). No cuentan bloqueos, separación ni capacidad (D40).
+- Funciona también en meses pasados (D70).
+- Errores: 404 `MONTH_NOT_REGISTERED`; 400 con los códigos `AVAILABILITY_*` de la tabla anterior o `VALIDATION_ERROR`.
+
+### PATCH /api/admin/months/[month]/slot-mode (contrato ampliado)
+
+Cuerpo:
+
+- `slotMode` (`BLOCK_MODE` o `SECOND_ONLY_MODE`, obligatorio).
+- `expectedVersion` (entero ≥ 0, opcional).
+- `confirmAffectedAppointments` (boolean, opcional, por defecto `false`).
+
+Semántica: reemplaza las reglas del mes por el preset D4 como regla de mes completo, de lunes a viernes. Conserva las excepciones (D33) y deriva `slot_mode`. Siempre escribe: enviar el mismo modo ya no es una operación sin efecto (D69) y siempre incrementa `availabilityVersion`.
+
+Respuesta 200: `{ "month": "2026-12", "slotMode": "SECOND_ONLY_MODE", "availabilityVersion": 4 }`. Antes devolvía `{ month, slotMode }`; el campo nuevo es aditivo.
+
+Errores: 404 `MONTH_NOT_REGISTERED`; 422 `MONTH_IN_PAST`; 409 `AVAILABILITY_VERSION_CONFLICT` (solo si se envía `expectedVersion`); 409 `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED`; 400 `VALIDATION_ERROR` o `MONTHS_INVALID_FORMAT`.
+
+Compatibilidad:
+
+- Sin `expectedVersion` no hay control de versión: un `PATCH slot-mode` puede sobrescribir un guardado del editor. La UI del editor siempre envía `expectedVersion`.
+- El editor de la UI envía `confirmAffectedAppointments: true` solo tras la confirmación de citas afectadas. Un cliente que guarde sin ese campo recibe 409 `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED` cuando hay citas afectadas.
+
+### POST /api/admin/months
+
+Crea meses inactivos sin reglas (D17). `slot_mode` queda en `BLOCK_MODE` (D31). Los días no cubiertos usan la regla por defecto D6 (lunes a viernes, 09:00, 10:00, 13:00, 14:00, 17:00, 18:00; 240 minutos; `preserveCapacity` TRUE; `maxPerDay` 3).
+
+Respuesta 200 con el cuerpo existente (la convención de 201 no se aplica a este endpoint; sin cambio). Errores: 401; 400 para cualquier error de dominio o de forma.
+
+### GET /api/admin/months/[month]
+
+Campos aditivos: `rules`, `exceptions`, `availabilityVersion` y `usesDefaultRule`. `slotMode` se conserva.
+
+- Los días anteriores a hoy cuentan 0 disponibles (D56).
+- Un día sin horarios resueltos se marca con `tone: "closed"` (D34).
+- Errores: 404 `MONTH_NOT_REGISTERED`; 400 `MONTHS_INVALID_FORMAT`.
+
+### GET /api/admin/months/[month]/days/[date]/agenda
+
+Query opcional `excludeAppointmentId` (entero). Campo aditivo `availableSlots`: horarios ofrecibles para reagendar ese día, calculados con el resolvedor (ocupación, bloqueos, locks y hora actual), sin contar la cita indicada. Un día sin horarios devuelve `[]` (D46).
+
+Errores: 404 `MONTH_NOT_REGISTERED`; 400 `DATE_OUTSIDE_MONTH` o `DATE_INVALID_FORMAT`.
+
+### GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD
+
+Horarios bloqueables calculados con el resolvedor. Errores: 404 `MONTH_NOT_REGISTERED`; 400 `DATE_OUTSIDE_MONTH` o `DATE_INVALID_FORMAT`.
+
+### POST /api/admin/months/[month]/blocked-slots
+
+Crea un bloqueo manual:
+
+- Horario puntual: evento de Google Calendar de 1 hora (D15, D29). Los eventos existentes no cambian (D30).
+- Día completo (`00:00`): evento de 06:00 a 23:00 (D29).
+
+Una cita `PENDING` ocupa el horario y bloquea el bloqueo admin en ese horario (D71).
+
+Errores:
+
+- 404 `MONTH_NOT_REGISTERED`.
+- 409 `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED`, `DAY_ALREADY_BLOCKED`, `BLOCKED_SLOT_ALREADY_EXISTS`.
+- 422 `DATE_IN_PAST`.
+- 400 `DATE_NOT_OPERATIONAL` cuando el día no tiene horarios. No tiene mapeo explícito a 409 (D76).
+- 400 para el resto.
+
+### POST /api/admin/months/[month]/appointments (creación admin)
+
+- Un `timeSlot` `HH:mm` fuera de la rejilla del día responde 409 `SLOT_NOT_AVAILABLE` (D73, D46).
+- Un horario con lock de reserva activo responde 409 `SLOT_LOCKED`.
+- Una cita `PENDING` ocupa el horario (D68).
+- Éxito: 201.
+- Orden de bloqueo: locks con nombre, después `FOR SHARE` de reglas, después conflictos del día y lectura de ocupación con `FOR UPDATE` (D63, D77; ver `data-model.md`).
+
+Errores:
+
+- 404 `MONTH_NOT_REGISTERED` o `CLIENT_NOT_FOUND`.
+- 409 `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED`, `LOCK_TIMEOUT` (D78).
+- 400 para el resto, incluidos `VALIDATION_ERROR` y `UNKNOWN_ERROR`.
+
+Nota: `LOCK_TIMEOUT` se mapea a 409, pero según la medición de F1 (D82; ADR 0006) ese 409 casi no se alcanza hoy. Si la transacción de Prisma expira antes que `GET_LOCK`, la respuesta es 400 `UNKNOWN_ERROR`. La corrección está planificada en D82 (F1).
+
+### PATCH /api/admin/appointments/[appointmentId]/reschedule
+
+- Solo se reprograman citas `CONFIRMED` o `SYNC_FAILED` (D72). La lectura bloqueante filtra por esos estados, así que una cita `PENDING` responde 404 `APPOINTMENT_NOT_FOUND`. Esto está verificado en el código; no hay prueba específica.
+- Una cita pasada responde 409 `APPOINTMENT_NOT_EDITABLE`.
+- La propia cita no cuenta como ocupada en el horario de destino (`excludeAppointmentId`).
+
+Errores:
+
+- 404 `MONTH_NOT_REGISTERED` o `APPOINTMENT_NOT_FOUND`.
+- 409 `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED`, `APPOINTMENT_NOT_EDITABLE`, `LOCK_TIMEOUT` (D78).
+- 400 para el resto.
+
+### GET /api/availability/[month] (público)
+
+Respuesta 200: `{ "month": "2026-12", "days": [{ "date": "2026-12-03", "slots": ["09:00", "13:00"] }] }`.
+
+- Solo incluye fechas desde hoy con al menos un horario.
+- La forma de `days[]` (`date`, `slots`) no cambia.
+- Cualquier error de dominio responde 422 con `{ errorCode, error }` (por ejemplo `MONTH_NOT_ALLOWED`).
+
+### Reserva pública (`/api/reservar/*`)
+
+- `POST /api/reservar/lock` y `POST /api/reservar/client-check-lock`: 201 en éxito. 409 para `SLOT_NOT_AVAILABLE`, `PHONE_ALREADY_BOOKED`, `LOCK_TIMEOUT` y `SLOT_LOCKED`. 400 para el resto.
+- `POST /api/reservar/confirm`: 201 en éxito. 409 para `SLOT_NOT_AVAILABLE`, `PHONE_ALREADY_BOOKED`, `LOCK_TIMEOUT`, `LOCK_EXPIRED_OR_INVALID`, `CLIENT_NAME_MISMATCH` y `APPOINTMENT_NOT_FOUND`. 400 para el resto.
+- Un día sin horarios, o una hora que no se ofrece, responde `SLOT_NOT_AVAILABLE` (D46). El código `WEEKDAY_ONLY` ya no existe.
+- Si la hora no se ofrece y tiene un lock activo en `reservation_locks`, responde `SLOT_LOCKED`. Si no, `SLOT_NOT_AVAILABLE` (D39).
+- `timeSlot` es `HH:mm` con cualquier minuto (FR-006). Una fecha de calendario inválida responde `VALIDATION_ERROR` (400).
+- Las reglas se leen dentro de la transacción, después de los bloqueos de reserva, con `FOR SHARE` (PD-08). Si `GET_LOCK` no obtiene el bloqueo en 5 s, `LOCK_TIMEOUT` (409). Misma salvedad que en la creación admin: hasta corregir F1 (D82), si la transacción de Prisma expira antes, la respuesta puede ser 400 `UNKNOWN_ERROR`.
+
+### Reprogramación pública `POST /api/my-appointments/reschedule`
+
+Cuerpo: `{ phone, appointmentId, month, date, timeSlot }`. Éxito: 200.
+
+Orden: forma (400 `VALIDATION_ERROR`), después transacción: bloqueos de reserva, `FOR SHARE` de reglas, conflictos del día, fila de la cita, lock vigente de otra clienta sobre el destino (lectura `FOR UPDATE`, sin limpieza de locks) y destino.
+
+409:
+
+- `APPOINTMENT_NOT_FOUND`
+- `APPOINTMENT_NOT_MODIFIABLE`
+- `SLOT_NOT_AVAILABLE`: destino fuera del día, día sin horarios, hora no ofrecida, `month` distinto del mes de `date`, mes no reservable (inactivo, sin registro o pasado), o lock vigente de otra clienta sobre el horario destino (D87, D88). El lock del propio teléfono no cuenta.
+- `LOCK_TIMEOUT`
+
+400:
+
+- `VALIDATION_ERROR`: fecha de calendario inválida, mes con formato incorrecto, o teléfono inválido. El teléfono inválido responde `VALIDATION_ERROR` en el código actual, porque el error de zod se normaliza a `VALIDATION_ERROR` (D84).
+- `UNKNOWN_ERROR`: error de infraestructura o de transacción (deadlock, timeout de espera de InnoDB, pool de conexiones) en cualquier lectura o escritura de la transacción, incluidas las reglas con `FOR SHARE`, los locks, la ocupación y la consulta del mes. La transacción se revierte (D81, D88).
+
+F4 corregido (D88, D91): en la validación del destino, solo un mes no reservable (`MONTH_NOT_ALLOWED`) se traduce a `SLOT_NOT_AVAILABLE`. Los demás errores, incluidos los de base de datos, se propagan como `UNKNOWN_ERROR` (400).
+
+### Compatibilidad de la capacidad
+
+- `GET /api/admin/months/[month]` y `PATCH .../slot-mode` conservan `slotMode` y su forma (campos nuevos aditivos).
+- Ningún otro endpoint público cambia de forma.
+- Versionado: el proyecto no versiona por ruta. Los cambios de contrato se documentan en este archivo en la misma entrega.
 
 ---
 

@@ -7,6 +7,7 @@ import type {
   AdminCreateAppointmentResponse,
   AdminCreateAppointmentPayload,
 } from "@/lib/admin/appointments/types";
+import { fetchDayAgendaSlots } from "@/hooks/admin/months/fetch-day-agenda-slots";
 import { fetchAdminBlockableSlots } from "@/lib/admin/blocked-spaces/api-client";
 import type { AdminBlockableDay } from "@/lib/admin/blocked-spaces/types";
 import {
@@ -14,7 +15,7 @@ import {
   searchAdminClientsByQuery,
 } from "@/lib/admin/clients/api-client";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
-import type { BaseTimeSlot } from "@/lib/constants/slots";
+// Mínimo para tsc (T030-T039): horarios del resolvedor son HH:mm libres; T052 rehace el tipo.
 import { normalizeClientName } from "@/lib/shared/client-name";
 
 const DEFAULT_ERROR_CODE = "UNKNOWN_ERROR";
@@ -38,7 +39,7 @@ export function useBookAppointmentModal(month: string) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [days, setDays] = useState<AdminBlockableDay[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<BaseTimeSlot | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [clientMode, setClientMode] = useState<ClientMode>("existing");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<AdminClientSearchItem[]>([]);
@@ -54,16 +55,56 @@ export function useBookAppointmentModal(month: string) {
   const abortClientSearchRef = useRef<AbortController | null>(null);
   const abortClientNumberRef = useRef<AbortController | null>(null);
 
-  const selectedDaySlots = useMemo(() => {
-    if (!selectedDate) {
-      return [] as BaseTimeSlot[];
+  // Horarios del día desde la agenda del servidor (T052): mismo resolvedor que valida la creación.
+  const [selectedDaySlots, setSelectedDaySlots] = useState<string[]>([]);
+  const [isLoadingDaySlots, setIsLoadingDaySlots] = useState(false);
+  const [slotsRefreshKey, setSlotsRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen || !selectedDate) {
+      setSelectedDaySlots([]);
+      setIsLoadingDaySlots(false);
+      return;
     }
 
-    return days.find((day) => day.date === selectedDate)?.slots ?? [];
-  }, [days, selectedDate]);
+    const controller = new AbortController();
+    setIsLoadingDaySlots(true);
+
+    fetchDayAgendaSlots(month, selectedDate, controller.signal)
+      .then((slots) => {
+        setSelectedDaySlots(slots);
+        setSelectedTimeSlot((currentSlot) =>
+          currentSlot && slots.includes(currentSlot) ? currentSlot : (slots[0] ?? null),
+        );
+      })
+      .catch(() => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setSelectedDaySlots([]);
+        setSelectedTimeSlot(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoadingDaySlots(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [isOpen, month, selectedDate, slotsRefreshKey]);
 
   const isReadyToSubmit = useMemo(() => {
-    if (!selectedDate || !selectedTimeSlot || isSubmitting || isLoadingDays || Boolean(successResult)) {
+    if (
+      !selectedDate
+      || !selectedTimeSlot
+      || isSubmitting
+      || isLoadingDays
+      || isLoadingDaySlots
+      || Boolean(successResult)
+    ) {
       return false;
     }
 
@@ -75,6 +116,7 @@ export function useBookAppointmentModal(month: string) {
   }, [
     clientMode,
     isLoadingDays,
+    isLoadingDaySlots,
     isSubmitting,
     newClientName,
     newClientPhone,
@@ -126,27 +168,15 @@ export function useBookAppointmentModal(month: string) {
         const hasCurrent = currentDate
           ? mappedDays.some((day) => day.date === currentDate)
           : false;
-        const resolvedDate = preferredDateIfAvailable
+
+        return preferredDateIfAvailable
           ? preferredDateIfAvailable
           : hasCurrent
             ? currentDate
             : firstDate;
-        const resolvedDay = mappedDays.find((day) => day.date === resolvedDate);
-
-        setSelectedTimeSlot((currentSlot) => {
-          if (!resolvedDay || resolvedDay.slots.length === 0) {
-            return null;
-          }
-
-          if (currentSlot && resolvedDay.slots.includes(currentSlot)) {
-            return currentSlot;
-          }
-
-          return resolvedDay.slots[0] ?? null;
-        });
-
-        return resolvedDate;
       });
+      // Recarga los horarios del día seleccionado aunque la fecha no cambie (p. ej. tras crear una cita).
+      setSlotsRefreshKey((current) => current + 1);
     } catch (error) {
       if (error instanceof Error && error.message === "AbortError") {
         return;
@@ -208,21 +238,17 @@ export function useBookAppointmentModal(month: string) {
     setSuccessResult(null);
   }, [isSubmitting]);
 
-  const selectDate = useCallback(
-    (date: string) => {
-      setSelectedDate(date);
-      const day = days.find((item) => item.date === date);
-      setSelectedTimeSlot(day?.slots[0] ?? null);
-      setFieldErrors((current) => ({
-        ...current,
-        date: undefined,
-        timeSlot: undefined,
-      }));
-    },
-    [days],
-  );
+  const selectDate = useCallback((date: string) => {
+    setSelectedDate(date);
+    setSelectedTimeSlot(null);
+    setFieldErrors((current) => ({
+      ...current,
+      date: undefined,
+      timeSlot: undefined,
+    }));
+  }, []);
 
-  const selectTimeSlot = useCallback((timeSlot: BaseTimeSlot) => {
+  const selectTimeSlot = useCallback((timeSlot: string) => {
     setSelectedTimeSlot(timeSlot);
     setFieldErrors((current) => ({
       ...current,

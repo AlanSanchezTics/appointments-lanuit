@@ -36,7 +36,7 @@ describe("month slot mode", () => {
     ]);
   });
 
-  it("uses SECOND_ONLY_MODE as default month slot mode", () => {
-    expect(DEFAULT_MONTH_SLOT_MODE).toBe("SECOND_ONLY_MODE");
+  it("uses BLOCK_MODE as default month slot mode", () => {
+    expect(DEFAULT_MONTH_SLOT_MODE).toBe("BLOCK_MODE");
   });
 });

@@ -1,3 +1,4 @@
+import type { AvailabilityException, AvailabilityRule } from "@/lib/availability/types";
 import {
   MONTH_SLOT_MODE_VALUES,
   type MonthSlotMode,
@@ -50,7 +51,8 @@ export type CreateAdminMonthsResponse = {
   totalSkipped: number;
 };
 
-export type MonthDetailDayTone = "available" | "low" | "full" | "weekend";
+// D13/D34/FR-028: "closed" = día sin horarios resueltos (gris); sustituye al antiguo "weekend".
+export type MonthDetailDayTone = "available" | "low" | "full" | "closed";
 
 export type MonthDetailCalendarDay = {
   date: string;
@@ -79,6 +81,11 @@ export type MonthDetailResponse = {
   month: string;
   monthStatus: ActiveMonthStatus;
   slotMode: MonthSlotMode;
+  rules: AvailabilityRule[];
+  exceptions: AvailabilityException[];
+  availabilityVersion: number;
+  // Informativo: true cuando el mes no tiene reglas y el resolvedor aplica D6 (D28).
+  usesDefaultRule: boolean;
   currentMonth: string;
   currentDate: string;
   isPastMonth: boolean;
@@ -88,13 +95,67 @@ export type MonthDetailResponse = {
   calendarDays: MonthDetailCalendarDay[];
 };
 
+// D16/D33/D45: expectedVersion y confirmAffectedAppointments son opcionales en PATCH slot-mode (A-01, D51).
 export type UpdateAdminMonthSlotModePayload = {
   slotMode: MonthSlotMode;
+  expectedVersion?: number;
+  confirmAffectedAppointments: boolean;
 };
 
 export type UpdateAdminMonthSlotModeResponse = {
   month: string;
   slotMode: MonthSlotMode;
+  availabilityVersion: number;
+};
+
+export type AvailabilityRuleBody = {
+  startDate: string;
+  endDate: string;
+  weekdays: number[];
+  times: string[];
+  minGapMinutes: number;
+  preserveCapacity: boolean;
+  maxPerDay: number;
+};
+
+export type AvailabilityExceptionBody = {
+  date: string;
+  times: string[];
+  minGapMinutes: number;
+  preserveCapacity: boolean;
+  maxPerDay: number;
+};
+
+export type PreviewAvailabilityPayload = {
+  rules: AvailabilityRuleBody[];
+  exceptions: AvailabilityExceptionBody[];
+};
+
+export type SaveAvailabilityPayload = PreviewAvailabilityPayload & {
+  expectedVersion: number;
+  confirmAffectedAppointments: boolean;
+};
+
+export type AffectedAppointmentItem = {
+  appointmentId: number;
+  date: string;
+  timeSlot: string;
+  status: string;
+  clientName: string;
+};
+
+export type PreviewAvailabilityResponse = {
+  affectedCount: number;
+  affectedAppointments: AffectedAppointmentItem[];
+};
+
+export type MonthAvailabilityResponse = {
+  month: string;
+  availabilityVersion: number;
+  slotMode: MonthSlotMode;
+  rules: AvailabilityRule[];
+  exceptions: AvailabilityException[];
+  usesDefaultRule: boolean;
 };
 
 export type UpdateAdminMonthStatusPayload = {

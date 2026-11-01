@@ -46,8 +46,10 @@ export async function fetchAdminDayAgenda(
   month: string,
   date: string,
   signal?: AbortSignal,
+  excludeAppointmentId?: number,
 ): Promise<AdminDayAgendaResponse> {
-  const response = await fetch(`/api/admin/months/${month}/days/${date}/agenda`, {
+  const query = excludeAppointmentId === undefined ? "" : `?excludeAppointmentId=${excludeAppointmentId}`;
+  const response = await fetch(`/api/admin/months/${month}/days/${date}/agenda${query}`, {
     method: "GET",
     cache: "no-store",
     signal,

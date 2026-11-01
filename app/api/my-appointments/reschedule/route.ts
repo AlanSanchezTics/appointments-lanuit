@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       errorCode === "APPOINTMENT_NOT_FOUND"
       || errorCode === "APPOINTMENT_NOT_MODIFIABLE"
       || errorCode === "SLOT_NOT_AVAILABLE"
+      || errorCode === "LOCK_TIMEOUT"
         ? 409
         : 400;
 

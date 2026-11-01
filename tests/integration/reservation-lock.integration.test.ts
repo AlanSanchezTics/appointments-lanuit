@@ -1,3 +1,4 @@
+import { findMonthAvailability, replaceMonthAvailability } from "@/lib/db/availability-rules";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { confirmAppointmentWithLock } from "@/lib/appointments/book-appointment";
@@ -142,5 +143,29 @@ integrationSuite("reservation lock integration", () => {
     });
 
     expect(appointments).toHaveLength(1);
+  });
+
+  it("locks only the times that the rules offer (D46, D55)", async () => {
+    const current = await findMonthAvailability("2026-03");
+    await prisma.$transaction((tx) =>
+      replaceMonthAvailability(tx, {
+        month: "2026-03",
+        expectedVersion: current?.availabilityVersion ?? 1,
+        slotMode: "SECOND_ONLY_MODE",
+        rules: [
+          { startDate: "2026-03-01", endDate: "2026-03-31", weekdays: [1, 2, 3, 4, 5], times: ["10:00"], minGapMinutes: 0, preserveCapacity: false, maxPerDay: 3 },
+        ],
+        exceptions: [],
+      }),
+    );
+    const now = new Date("2026-03-13T12:00:00.000Z");
+
+    // 14:00 ya no está en las reglas.
+    await expect(
+      acquireReservationSlotLock({ phone: "5512345678", date: "2026-03-18", timeSlot: "14:00" }, now),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
+
+    const lock = await acquireReservationSlotLock({ phone: "5512345678", date: "2026-03-18", timeSlot: "10:00" }, now);
+    expect(lock.lockToken).toEqual(expect.any(String));
   });
 });

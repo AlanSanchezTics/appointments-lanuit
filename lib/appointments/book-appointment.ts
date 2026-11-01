@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
-import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
+import { resolveDay } from "@/lib/availability/resolver";
+import type { MonthAvailabilityConfig } from "@/lib/availability/types";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/calendar/google";
 import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
@@ -15,6 +15,7 @@ import {
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
+import { findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
@@ -35,6 +36,40 @@ type AppointmentCreationStatus = "CONFIRMED" | "PENDING";
 
 function timeSlotToDate(timeSlot: string) {
   return new Date(`1970-01-01T${timeSlot}:00.000Z`);
+}
+
+// PD-08 / R-06: se llama dentro de la transacción, después de acquireBookingLocks (FOR SHARE).
+async function readMonthRulesInTransaction(tx: Prisma.TransactionClient, month: string) {
+  const config = await findMonthAvailabilityForShare(tx, month);
+
+  if (!config) {
+    throw new Error("MONTH_NOT_ALLOWED");
+  }
+
+  return config;
+}
+
+// D46: un día sin horarios ofrecibles deja slots vacíos, así que el horario pedido responde SLOT_NOT_AVAILABLE.
+function resolveOfferedSlots(
+  config: MonthAvailabilityConfig,
+  input: {
+    date: string;
+    now: Date;
+    occupiedSlots: string[];
+    blockedTimeSlots: string[];
+  },
+) {
+  // D54/D55: "00:00" en bloqueos es el centinela de día completo, no una hora.
+  const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(input.blockedTimeSlots);
+
+  return resolveDay(config, input.date, {
+    now: input.now,
+    occupancy: {
+      occupiedTimes: input.occupiedSlots,
+      blockedTimes: Array.from(blockedSlots),
+      fullDayBlocked: hasFullDayBlock,
+    },
+  }).slots;
 }
 
 function getMonthRange(month: string) {
@@ -106,8 +141,8 @@ async function createAppointmentInTransaction(
     name?: string;
     status?: AppointmentCreationStatus;
   },
-  baseSlots: readonly string[],
-  slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE",
+  config: MonthAvailabilityConfig,
+  now: Date,
 ) {
   await lockConflictingAppointments(tx, input.date, input.phone);
 
@@ -129,21 +164,14 @@ async function createAppointmentInTransaction(
   const occupiedSlots = occupied.map((item) =>
     item.timeSlot.toISOString().slice(11, 16),
   );
-  const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
-  const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
-
-  if (hasFullDayBlock) {
-    throw new Error("SLOT_NOT_AVAILABLE");
-  }
-
-  const availableSlots = getAvailableStartSlotsWithManualBlocks(
-    baseSlots,
+  const offeredSlots = resolveOfferedSlots(config, {
+    date: input.date,
+    now,
     occupiedSlots,
-    Array.from(blockedSlotsSet),
-    slotMode,
-  );
+    blockedTimeSlots: blockedSlots.map((slot) => slot.timeSlot),
+  });
 
-  if (!availableSlots.includes(input.timeSlot)) {
+  if (!offeredSlots.includes(input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
   }
 
@@ -197,8 +225,7 @@ async function rescheduleAppointmentInTransaction(
     date: string;
     timeSlot: string;
   },
-  baseSlots: readonly string[],
-  slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE",
+  config: MonthAvailabilityConfig,
   now: Date,
   lockToken: string,
 ) {
@@ -263,21 +290,14 @@ async function rescheduleAppointmentInTransaction(
   const occupiedSlots = occupied.map((item) =>
     item.timeSlot.toISOString().slice(11, 16),
   );
-  const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
-  const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
-
-  if (hasFullDayBlock) {
-    throw new Error("SLOT_NOT_AVAILABLE");
-  }
-
-  const availableSlots = getAvailableStartSlotsWithManualBlocks(
-    baseSlots,
+  const offeredSlots = resolveOfferedSlots(config, {
+    date: input.date,
+    now,
     occupiedSlots,
-    Array.from(blockedSlotsSet),
-    slotMode,
-  );
+    blockedTimeSlots: blockedSlots.map((slot) => slot.timeSlot),
+  });
 
-  if (!availableSlots.includes(input.timeSlot)) {
+  if (!offeredSlots.includes(input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
   }
 
@@ -404,21 +424,23 @@ async function finalizeRescheduledAppointment(input: {
 
 export async function bookAppointment(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(bookingSchema.parse(rawInput), now);
-  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
-  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
+  await getBookableMonthConfig(input.date.slice(0, 7), now);
 
   const appointment = await prisma.$transaction(async (tx) => {
-    await acquireBookingLocks(tx, input.date, input.phone);
-
     try {
-      return createAppointmentInTransaction(
+      // NB-3 (D65): los locks dentro del try para que el finally los libere si fallan a mitad.
+      await acquireBookingLocks(tx, input.date, input.phone);
+      const config = await readMonthRulesInTransaction(tx, input.date.slice(0, 7));
+
+      // NB-2 (D65): sin await, el finally liberaba los locks antes de que terminara la inserción.
+      return await createAppointmentInTransaction(
         tx,
         {
           ...input,
           status: "CONFIRMED",
         },
-        baseSlots,
-        monthConfig.slotMode,
+        config,
+        now,
       );
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
@@ -450,14 +472,16 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
     confirmBookingWithLockSchema.parse(rawInput),
     now,
   );
-  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
-  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
+  await getBookableMonthConfig(input.date.slice(0, 7), now);
 
   const result = await prisma.$transaction(async (tx) => {
-    await acquireBookingLocks(tx, input.date, input.phone);
-
     try {
-      await cleanupExpiredReservationLocks(tx, now);
+      // NB-3 (D65): locks dentro del try.
+      await acquireBookingLocks(tx, input.date, input.phone);
+      const config = await readMonthRulesInTransaction(tx, input.date.slice(0, 7));
+      // D89: conflictos de citas antes de tocar RL (la limpieza y la lectura por token van después).
+      await lockConflictingAppointments(tx, input.date, input.phone);
+      await cleanupExpiredReservationLocks(tx, input.date, now);
 
       const lock = await findReservationLockByTokenForUpdate(tx, lockToken);
 
@@ -486,8 +510,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
             date: input.date,
             timeSlot: input.timeSlot,
           },
-          baseSlots,
-          monthConfig.slotMode,
+          config,
           now,
           lockToken,
         );
@@ -500,12 +523,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
         };
       }
 
-      const created = await createAppointmentInTransaction(
-        tx,
-        input,
-        baseSlots,
-        monthConfig.slotMode,
-      );
+      const created = await createAppointmentInTransaction(tx, input, config, now);
       await deleteReservationLockByToken(tx, lockToken);
 
       return {

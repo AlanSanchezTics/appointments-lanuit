@@ -459,7 +459,8 @@
       },
       "edit": {
         "date": "Date",
-        "timeSlot": "Time slot"
+        "timeSlot": "Time slot",
+        "loadingTimeSlots": "Loading times…"
       },
       "confirmCancel": {
         "question": "Confirm cancellation for {{name}} at {{time}}?"
@@ -653,6 +654,101 @@
         "shareSuccess": "Schedule shared",
         "copyError": "Unable to copy the link."
       }
+    },
+    "availability": {
+      "title": "Month availability",
+      "close": "Close availability editor",
+      "loading": "Loading availability…",
+      "loadFailed": "Could not load the month availability.",
+      "retry": "Retry",
+      "defaultRuleNotice": "This month has no rules. The default schedule applies: Monday to Friday, weekends closed.",
+      "rulesSection": "Weekly rules",
+      "rulesEmpty": "No rules. The month uses the default schedule.",
+      "exceptionsSection": "Date exceptions",
+      "exceptionsEmpty": "No exceptions.",
+      "closedDayNotice": "No times: this day will be closed.",
+      "addRule": "Add rule",
+      "addException": "Add exception",
+      "removeItem": "Remove",
+      "save": "Save availability",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "discard": {
+        "title": "Discard changes?",
+        "description": "There are unsaved changes to this month's availability.",
+        "confirm": "Discard",
+        "keep": "Keep editing"
+      },
+      "affected": {
+        "title": "Some appointments would fall outside the schedule",
+        "description": "{{total}} active appointments would fall outside the proposed schedule. Saving does not modify appointments.",
+        "confirm": "Confirm and save",
+        "cancel": "Cancel",
+        "fields": {
+          "date": "Date",
+          "time": "Time",
+          "status": "Status",
+          "client": "Client"
+        },
+        "statuses": {
+          "PENDING": "Requested",
+          "CONFIRMED": "Confirmed",
+          "SYNC_FAILED": "Confirmed (calendar sync failed)",
+          "unknown": "Unknown status"
+        }
+      },
+      "fields": {
+        "startDate": "From",
+        "endDate": "To",
+        "date": "Date",
+        "weekdays": "Days of the week",
+        "times": "Schedule",
+        "addTime": "Add time",
+        "removeTime": "Remove time",
+        "minGap": "Minimum gap (min)",
+        "maxPerDay": "Maximum appointments per day",
+        "preserveCapacity": "Preserve capacity",
+        "preserveCapacityHelpLabel": "Help: preserve capacity",
+        "preserveCapacityHelp": "When on, only times that don't take room away from other appointments are offered. When off, every free time is offered. Example: times 9:00 AM, 11:00 AM, 12:00 PM and 1:00 PM, a 120 min gap and a maximum of 3 appointments. When on, 12:00 PM is not offered: if someone books it, only 2 appointments would fit that day instead of 3. When off, it is offered."
+      },
+      "periods": {
+        "am": "AM",
+        "pm": "PM"
+      },
+      "weekdays": {
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat",
+        "7": "Sun"
+      },
+      "notifications": {
+        "saveLoading": "Saving availability…",
+        "saveSuccess": "Availability saved",
+        "saveError": "Could not save availability"
+      },
+      "errors": {
+        "unknown": "An unexpected error occurred. Try again.",
+        "invalidRequest": "Check the form data.",
+        "monthNotRegistered": "The month is not registered.",
+        "monthInPast": "Past months cannot be edited.",
+        "versionConflict": "The availability changed while you were editing. Close the editor and open it again to load the current version.",
+        "affectedConfirmationRequired": "There are affected appointments. Review them before saving.",
+        "rangeOutsideMonth": "The range must be within the month.",
+        "rangeInvalid": "The start date cannot be after the end date.",
+        "ruleOverlap": "Two rules cannot cover the same dates.",
+        "weekdaysRequired": "Select at least one day of the week.",
+        "timesRequired": "Add at least one time to the rule.",
+        "timeInvalid": "One time is not valid. 12:00 AM cannot be used.",
+        "minGapOutOfRange": "The gap must be between 0 and 1440 minutes.",
+        "maxPerDayOutOfRange": "The maximum appointments per day must be between 1 and 6.",
+        "timesLimitExceeded": "Too many times on the same day.",
+        "exceptionDateDuplicate": "There is already an exception for that date.",
+        "exceptionDateOutsideMonth": "The date must be within the month."
+      },
+      "openCta": "Rules"
     }
   },
   "appointmentLogs": {

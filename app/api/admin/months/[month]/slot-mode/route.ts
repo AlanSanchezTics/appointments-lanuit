@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
-import { updateAdminMonthSlotMode } from "@/lib/admin/months/service";
+import {
+  AffectedAppointmentsConfirmationError,
+  updateAdminMonthSlotMode,
+} from "@/lib/admin/months/service";
 import {
   parseAdminMonthKey,
   parseUpdateMonthSlotModePayload,
@@ -26,6 +29,10 @@ function resolveStatusCode(errorCode: string) {
     return 422;
   }
 
+  if (errorCode === "AVAILABILITY_VERSION_CONFLICT" || errorCode === "AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED") {
+    return 409;
+  }
+
   return 400;
 }
 
@@ -42,12 +49,20 @@ export async function PATCH(request: Request, { params }: AdminMonthSlotModeRout
     const { month } = await params;
     const monthKey = parseAdminMonthKey(month);
     const payload = parseUpdateMonthSlotModePayload(await request.json());
-    const response = await updateAdminMonthSlotMode(monthKey, payload.slotMode);
+    const response = await updateAdminMonthSlotMode(monthKey, payload);
 
     return NextResponse.json(response);
   } catch (error) {
     const errorCode = normalizeErrorCode(error);
-    return NextResponse.json(buildErrorPayload(errorCode), {
+    const body = error instanceof AffectedAppointmentsConfirmationError
+      ? {
+          ...buildErrorPayload(errorCode),
+          affectedCount: error.affectedAppointments.length,
+          affectedAppointments: error.affectedAppointments,
+        }
+      : buildErrorPayload(errorCode);
+
+    return NextResponse.json(body, {
       status: resolveStatusCode(errorCode),
     });
   }

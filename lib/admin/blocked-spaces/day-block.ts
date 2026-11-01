@@ -1,5 +1,4 @@
-import { DIRECTIONAL_SLOT_PAIRS, MAX_APPOINTMENTS_PER_DAY } from "@/lib/constants/slots";
-import { resolveBaseSlotsByMonthMode, type MonthSlotMode } from "@/lib/availability/month-slot-mode";
+import type { DayRule } from "@/lib/availability/types";
 
 export const FULL_DAY_BLOCK_TIME_SLOT = "00:00";
 
@@ -26,26 +25,19 @@ export function splitBlockedTimeSlots(timeSlots: readonly string[]) {
   };
 }
 
-export function countBlockedSpacesByMode(input: {
-  slotMode: MonthSlotMode;
-  blockedTimeSlots: readonly string[];
-}) {
-  const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(input.blockedTimeSlots);
+// D14/D41/FR-029: cada hora de la rejilla vigente bloqueada cuenta 1 espacio; un bloqueo de día completo
+// cuenta 1 por cada hora de la rejilla. Sin regla vigente el día cuenta 0. Acepta el centinela "00:00" tal cual llega.
+export function countBlockedSpaces(dayRule: DayRule | null, blockedTimes: readonly string[]) {
+  if (!dayRule) {
+    return 0;
+  }
+
+  const grid = new Set(dayRule.times);
+  const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(blockedTimes);
 
   if (hasFullDayBlock) {
-    return MAX_APPOINTMENTS_PER_DAY;
+    return grid.size;
   }
 
-  if (input.slotMode === "SECOND_ONLY_MODE") {
-    const secondOnlySlots = resolveBaseSlotsByMonthMode("SECOND_ONLY_MODE");
-    return secondOnlySlots.filter((slot) => blockedSlots.has(slot)).length;
-  }
-
-  return DIRECTIONAL_SLOT_PAIRS.reduce((total, [firstSlot, secondSlot]) => {
-    if (blockedSlots.has(firstSlot) && blockedSlots.has(secondSlot)) {
-      return total + 1;
-    }
-
-    return total;
-  }, 0);
+  return [...grid].filter((time) => blockedSlots.has(time)).length;
 }

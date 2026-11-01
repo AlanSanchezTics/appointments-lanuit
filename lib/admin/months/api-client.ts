@@ -1,16 +1,40 @@
 "use client";
 
 import type {
+  AffectedAppointmentItem,
   CreateAdminMonthsPayload,
   CreateAdminMonthsResponse,
+  MonthAvailabilityResponse,
   MonthDetailResponse,
   MonthsCatalogResponse,
   MonthsCatalogStatus,
   ActiveMonthStatus,
+  PreviewAvailabilityPayload,
+  PreviewAvailabilityResponse,
+  SaveAvailabilityPayload,
   UpdateAdminMonthStatusResponse,
   UpdateAdminMonthSlotModeResponse,
   MonthSlotMode,
 } from "@/lib/admin/months/types";
+
+// message = código de error de la API. affectedAppointments llega en el 409 de confirmación (D18).
+export class AdminMonthApiError extends Error {
+  readonly affectedAppointments: AffectedAppointmentItem[];
+
+  constructor(code: string, affectedAppointments: AffectedAppointmentItem[] = []) {
+    super(code);
+    this.name = "AdminMonthApiError";
+    this.affectedAppointments = affectedAppointments;
+  }
+}
+
+async function readAdminMonthApiError(response: Response) {
+  const payload = (await response.json().catch(() => null)) as
+    | { errorCode?: string; affectedAppointments?: AffectedAppointmentItem[] }
+    | null;
+
+  return new AdminMonthApiError(payload?.errorCode ?? "UNKNOWN_ERROR", payload?.affectedAppointments ?? []);
+}
 
 type FetchMonthsCatalogInput = {
   year: number;
@@ -82,9 +106,16 @@ export async function fetchAdminMonthDetail(
   return response.json() as Promise<MonthDetailResponse>;
 }
 
+type UpdateAdminMonthSlotModeOptions = {
+  // Opcionales: sin expectedVersion el servidor no compara versión (D51).
+  expectedVersion?: number;
+  confirmAffectedAppointments?: boolean;
+};
+
 export async function updateAdminMonthSlotMode(
   month: string,
   slotMode: MonthSlotMode,
+  options: UpdateAdminMonthSlotModeOptions = {},
 ): Promise<UpdateAdminMonthSlotModeResponse> {
   const response = await fetch(`/api/admin/months/${month}/slot-mode`, {
     method: "PATCH",
@@ -93,17 +124,72 @@ export async function updateAdminMonthSlotMode(
     },
     body: JSON.stringify({
       slotMode,
+      expectedVersion: options.expectedVersion,
+      confirmAffectedAppointments: options.confirmAffectedAppointments ?? false,
     }),
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { errorCode?: string }
-      | null;
-    throw new Error(payload?.errorCode ?? "UNKNOWN_ERROR");
+    throw await readAdminMonthApiError(response);
   }
 
   return response.json() as Promise<UpdateAdminMonthSlotModeResponse>;
+}
+
+export async function fetchAdminMonthAvailability(
+  month: string,
+  signal?: AbortSignal,
+): Promise<MonthAvailabilityResponse> {
+  const response = await fetch(`/api/admin/months/${month}/availability`, {
+    method: "GET",
+    cache: "no-store",
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await readAdminMonthApiError(response);
+  }
+
+  return response.json() as Promise<MonthAvailabilityResponse>;
+}
+
+// Sin escritura (FR-023): citas que quedarían fuera del horario propuesto.
+export async function previewAdminMonthAvailability(
+  month: string,
+  payload: PreviewAvailabilityPayload,
+): Promise<PreviewAvailabilityResponse> {
+  const response = await fetch(`/api/admin/months/${month}/availability/preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await readAdminMonthApiError(response);
+  }
+
+  return response.json() as Promise<PreviewAvailabilityResponse>;
+}
+
+export async function saveAdminMonthAvailability(
+  month: string,
+  payload: SaveAvailabilityPayload,
+): Promise<MonthAvailabilityResponse> {
+  const response = await fetch(`/api/admin/months/${month}/availability`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await readAdminMonthApiError(response);
+  }
+
+  return response.json() as Promise<MonthAvailabilityResponse>;
 }
 
 export async function updateAdminMonthStatus(

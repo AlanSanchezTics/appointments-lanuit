@@ -6,6 +6,7 @@ import {
   updateAdminMonthStatus,
   updateAdminMonthSlotMode,
 } from "@/lib/admin/months/service";
+import { buildSlotModePresetRules } from "@/lib/availability/slot-mode-derivation";
 import {
   createInactiveMonths,
   countActiveMonthsByYear,
@@ -16,10 +17,28 @@ import {
   countPastMonthsByYear,
   findRegisteredMonth,
   listExistingMonths,
+  listMonthActiveAppointmentsForAvailability,
   listMonthsByYear,
   updateRegisteredMonthStatus,
-  updateRegisteredMonthSlotMode,
 } from "@/lib/db/admin-months";
+import {
+  findMonthAvailabilityForUpdate,
+  replaceMonthAvailability,
+} from "@/lib/db/availability-rules";
+
+const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
+
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    $transaction: transactionMock,
+  },
+}));
+
+vi.mock("@/lib/db/availability-rules", () => ({
+  findMonthAvailability: vi.fn(),
+  findMonthAvailabilityForUpdate: vi.fn(),
+  replaceMonthAvailability: vi.fn(),
+}));
 
 vi.mock("@/lib/db/admin-months", () => ({
   countActiveMonthsByYear: vi.fn(),
@@ -32,8 +51,8 @@ vi.mock("@/lib/db/admin-months", () => ({
   listExistingMonths: vi.fn(),
   createInactiveMonths: vi.fn(),
   findRegisteredMonth: vi.fn(),
+  listMonthActiveAppointmentsForAvailability: vi.fn(),
   updateRegisteredMonthStatus: vi.fn(),
-  updateRegisteredMonthSlotMode: vi.fn(),
 }));
 
 const countActiveMonthsByYearMock = vi.mocked(countActiveMonthsByYear);
@@ -47,12 +66,26 @@ const listExistingMonthsMock = vi.mocked(listExistingMonths);
 const createInactiveMonthsMock = vi.mocked(createInactiveMonths);
 const findRegisteredMonthMock = vi.mocked(findRegisteredMonth);
 const updateRegisteredMonthStatusMock = vi.mocked(updateRegisteredMonthStatus);
-const updateRegisteredMonthSlotModeMock = vi.mocked(updateRegisteredMonthSlotMode);
+const listMonthActiveAppointmentsForAvailabilityMock = vi.mocked(listMonthActiveAppointmentsForAvailability);
+const findMonthAvailabilityForUpdateMock = vi.mocked(findMonthAvailabilityForUpdate);
+const replaceMonthAvailabilityMock = vi.mocked(replaceMonthAvailability);
 
 describe("admin months catalog service", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    // La transacción ejecuta el callback con un cliente vacío; las lecturas y escrituras se mockean por prueba.
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => callback({}));
+    listMonthActiveAppointmentsForAvailabilityMock.mockResolvedValue([]);
   });
+
+  const juneRecord = {
+    activeMonthId: 6,
+    month: "2026-06",
+    slotMode: "BLOCK_MODE" as const,
+    availabilityVersion: 3,
+    rules: [],
+    exceptions: [],
+  };
 
   it("returns dashboard metrics and month rows for the selected filters", async () => {
     countActiveMonthsByYearMock.mockResolvedValueOnce(4);
@@ -134,6 +167,8 @@ describe("admin months catalog service", () => {
     });
 
     expect(createInactiveMonthsMock).toHaveBeenCalledWith(["2026-06", "2026-08"]);
+    // D17: el alta de meses no crea reglas.
+    expect(replaceMonthAvailabilityMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       createdMonths: ["2026-06", "2026-08"],
       skippedMonths: ["2026-07"],
@@ -142,47 +177,80 @@ describe("admin months catalog service", () => {
     });
   });
 
-  it("updates month slot mode for registered future month", async () => {
-    findRegisteredMonthMock.mockResolvedValueOnce({
-      month: "2026-06",
-      status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
-    });
-    updateRegisteredMonthSlotModeMock.mockResolvedValueOnce({
-      month: "2026-06",
-      slotMode: "SECOND_ONLY_MODE",
-    });
+  it("replaces rules with the preset and returns the new version (D16, D69)", async () => {
+    findMonthAvailabilityForUpdateMock
+      .mockResolvedValueOnce(juneRecord)
+      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", availabilityVersion: 4 });
 
     const result = await updateAdminMonthSlotMode(
       "2026-06",
-      "SECOND_ONLY_MODE",
+      { slotMode: "SECOND_ONLY_MODE", expectedVersion: 3, confirmAffectedAppointments: false },
       new Date("2026-03-10T15:00:00.000Z"),
     );
 
-    expect(updateRegisteredMonthSlotModeMock).toHaveBeenCalledWith(
-      "2026-06",
-      "SECOND_ONLY_MODE",
+    expect(replaceMonthAvailabilityMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        month: "2026-06",
+        expectedVersion: 3,
+        slotMode: "SECOND_ONLY_MODE",
+        rules: buildSlotModePresetRules("2026-06", "SECOND_ONLY_MODE"),
+        exceptions: [],
+      }),
     );
     expect(result).toEqual({
       month: "2026-06",
       slotMode: "SECOND_ONLY_MODE",
+      availabilityVersion: 4,
     });
   });
 
+  it("applies the preset even when the requested mode is already the current one (D69)", async () => {
+    const customRules = [
+      { id: 1, startDate: "2026-06-01", endDate: "2026-06-15", weekdays: [1], times: ["10:00"], minGapMinutes: 240, preserveCapacity: true, maxPerDay: 1 },
+    ];
+    findMonthAvailabilityForUpdateMock
+      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", rules: customRules })
+      .mockResolvedValueOnce({ ...juneRecord, slotMode: "SECOND_ONLY_MODE", availabilityVersion: 4 });
+
+    await updateAdminMonthSlotMode(
+      "2026-06",
+      { slotMode: "SECOND_ONLY_MODE", confirmAffectedAppointments: false },
+      new Date("2026-03-10T15:00:00.000Z"),
+    );
+
+    expect(replaceMonthAvailabilityMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        rules: buildSlotModePresetRules("2026-06", "SECOND_ONLY_MODE"),
+      }),
+    );
+  });
+
+  it("rejects slot mode update with a stale expectedVersion before writing (FR-041)", async () => {
+    findMonthAvailabilityForUpdateMock.mockResolvedValueOnce(juneRecord);
+
+    await expect(
+      updateAdminMonthSlotMode(
+        "2026-06",
+        { slotMode: "SECOND_ONLY_MODE", expectedVersion: 2, confirmAffectedAppointments: false },
+        new Date("2026-03-10T15:00:00.000Z"),
+      ),
+    ).rejects.toThrow("AVAILABILITY_VERSION_CONFLICT");
+    expect(replaceMonthAvailabilityMock).not.toHaveBeenCalled();
+  });
+
   it("rejects slot mode update when month is in the past", async () => {
-    findRegisteredMonthMock.mockResolvedValueOnce({
-      month: "2026-02",
-      status: "ACTIVE",
-      slotMode: "BLOCK_MODE",
-    });
+    findMonthAvailabilityForUpdateMock.mockResolvedValueOnce({ ...juneRecord, month: "2026-02" });
 
     await expect(
       updateAdminMonthSlotMode(
         "2026-02",
-        "SECOND_ONLY_MODE",
+        { slotMode: "SECOND_ONLY_MODE", confirmAffectedAppointments: false },
         new Date("2026-03-10T15:00:00.000Z"),
       ),
     ).rejects.toThrow("MONTH_IN_PAST");
+    expect(replaceMonthAvailabilityMock).not.toHaveBeenCalled();
   });
 
   it("updates month status for a registered future month", async () => {

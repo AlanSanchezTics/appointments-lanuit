@@ -1,3 +1,4 @@
+import { findMonthAvailability, replaceMonthAvailability } from "@/lib/db/availability-rules";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { bookAppointment } from "@/lib/appointments/book-appointment";
@@ -309,6 +310,34 @@ integrationSuite("bookAppointment integration", () => {
         },
         now,
       ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
+  });
+
+  it("books a day the rules open and rejects a day without offered times (FR-017, D46)", async () => {
+    const current = await findMonthAvailability("2026-03");
+    await prisma.$transaction((tx) =>
+      replaceMonthAvailability(tx, {
+        month: "2026-03",
+        expectedVersion: current?.availabilityVersion ?? 1,
+        slotMode: "SECOND_ONLY_MODE",
+        rules: [
+          { startDate: "2026-03-01", endDate: "2026-03-31", weekdays: [6], times: ["11:00"], minGapMinutes: 0, preserveCapacity: false, maxPerDay: 3 },
+        ],
+        exceptions: [],
+      }),
+    );
+    const now = new Date("2026-03-03T12:00:00.000Z");
+
+    // 2026-03-07 es sábado: la regla lo abre.
+    const booked = await bookAppointment(
+      { name: "Ana Lopez", phone: "5512345678", date: "2026-03-07", timeSlot: "11:00" },
+      now,
+    );
+    expect(booked).toMatchObject({ appointmentId: expect.any(Number) });
+
+    // 2026-03-04 es miércoles: ninguna regla lo cubre.
+    await expect(
+      bookAppointment({ name: "Bety Ruiz", phone: "5512345679", date: "2026-03-04", timeSlot: "11:00" }, now),
     ).rejects.toThrow("SLOT_NOT_AVAILABLE");
   });
 });

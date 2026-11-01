@@ -1,6 +1,7 @@
-import type { AppointmentStatus } from "@prisma/client";
+import type { AppointmentStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
+import { resolveClientDisplayName } from "@/lib/shared/client-name";
 import type { ActiveMonthStatus } from "@/lib/admin/months/types";
 import {
   DEFAULT_MONTH_SLOT_MODE,
@@ -286,11 +287,15 @@ export async function updateRegisteredMonthStatus(
   });
 }
 
+// D66: los contadores y la ocupación del admin no cuentan PENDING (el flujo público sí lo bloquea, sin cambio).
+// CANCELLED se pide solo para la métrica de canceladas.
+const COUNTED_APPOINTMENT_STATUSES: AppointmentStatus[] = ["CONFIRMED", "SYNC_FAILED", "CANCELLED"];
+
 export async function listAppointmentsByMonth(monthStart: string, monthEndExclusive: string) {
   const rows = await prisma.appointment.findMany({
     where: {
       status: {
-        in: ["CONFIRMED", "CANCELLED", "SYNC_FAILED"],
+        in: COUNTED_APPOINTMENT_STATUSES,
       },
       date: {
         gte: new Date(`${monthStart}T00:00:00.000Z`),
@@ -310,4 +315,46 @@ export async function listAppointmentsByMonth(monthStart: string, monthEndExclus
     timeSlot: timeToTimeSlotKey(row.timeSlot),
     status: row.status,
   })) satisfies PersistedMonthAppointment[];
+}
+
+export type AppointmentReader = Pick<Prisma.TransactionClient, "appointment">;
+
+// Citas activas del mes para el chequeo de citas afectadas (FR-023, D35). Incluye PENDING, a diferencia de los contadores (D66).
+export async function listMonthActiveAppointmentsForAvailability(
+  db: AppointmentReader,
+  monthStart: string,
+  monthEndExclusive: string,
+) {
+  const rows = await db.appointment.findMany({
+    where: {
+      status: {
+        in: ["PENDING", "CONFIRMED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    select: {
+      id: true,
+      date: true,
+      timeSlot: true,
+      status: true,
+      client: {
+        select: {
+          name: true,
+          alias: true,
+        },
+      },
+    },
+    orderBy: [{ date: "asc" }, { timeSlot: "asc" }],
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    date: dateToDateKey(row.date),
+    timeSlot: timeToTimeSlotKey(row.timeSlot),
+    status: row.status,
+    clientName: resolveClientDisplayName({ name: row.client.name, alias: row.client.alias }),
+  }));
 }

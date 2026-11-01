@@ -1,13 +1,11 @@
 import { getBookableMonthConfig } from "@/lib/active-months/service";
-import { getCurrentDateKey, getCurrentTimeKey } from "@/lib/datetime/mexico-city";
-import { listMonthActiveReservationLocks, listMonthAppointments } from "@/lib/db/appointments";
+import { getCurrentDateKey } from "@/lib/datetime/mexico-city";
+import { listMonthAppointments, listMonthActiveReservationLocks } from "@/lib/db/appointments";
+import { findMonthAvailability } from "@/lib/db/availability-rules";
 import { listMonthBlockedSlots } from "@/lib/db/blocked-slots";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
-import {
-  getAvailableStartSlotsWithManualBlocks,
-  isWeekdayBookingDate,
-} from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { resolveMonthDays } from "@/lib/availability/resolver";
+import type { DayOccupancy } from "@/lib/availability/types";
 
 export type DayAvailability = {
   date: string;
@@ -22,79 +20,55 @@ function getMonthBounds(month: string) {
   return { monthStart, monthEnd };
 }
 
-function getMonthDays(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const totalDays = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+function groupTimesByDate(rows: ReadonlyArray<{ date: string; timeSlot: string }>) {
+  const byDate = new Map<string, string[]>();
 
-  return Array.from({ length: totalDays }, (_, index) => {
-    const day = String(index + 1).padStart(2, "0");
-    return `${month}-${day}`;
-  });
+  for (const row of rows) {
+    byDate.set(row.date, [...(byDate.get(row.date) ?? []), row.timeSlot]);
+  }
+
+  return byDate;
 }
 
 export async function getMonthAvailability(month: string, now = new Date()) {
-  const monthConfig = await getBookableMonthConfig(month, now);
-  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
+  // Gate de mes activo y no pasado (MONTH_NOT_ALLOWED). Las reglas se leen sin bloqueo: esta lectura es pública.
+  await getBookableMonthConfig(month, now);
+
+  const config = await findMonthAvailability(month);
+
+  if (!config) {
+    throw new Error("MONTH_NOT_ALLOWED");
+  }
 
   const { monthStart, monthEnd } = getMonthBounds(month);
-  const bookedAppointments = await listMonthAppointments(monthStart, monthEnd);
-  const lockedSlots = await listMonthActiveReservationLocks(monthStart, monthEnd, now);
-  const blockedSlots = await listMonthBlockedSlots(monthStart, monthEnd);
-  const appointmentsByDate = new Map<string, string[]>();
-  const lockedSlotsByDate = new Map<string, string[]>();
-  const blockedSlotsByDate = new Map<string, string[]>();
+  const [bookedAppointments, lockedSlots, blockedSlots] = await Promise.all([
+    listMonthAppointments(monthStart, monthEnd),
+    listMonthActiveReservationLocks(monthStart, monthEnd, now),
+    listMonthBlockedSlots(monthStart, monthEnd),
+  ]);
+
+  const occupiedByDate = groupTimesByDate(bookedAppointments);
+  const lockedByDate = groupTimesByDate(lockedSlots);
+  const blockedByDate = groupTimesByDate(blockedSlots);
+  const occupancyByDate: Record<string, DayOccupancy> = {};
+
+  // A-05: los locks activos cuentan como ocupados en el flujo público.
+  for (const date of new Set([...occupiedByDate.keys(), ...lockedByDate.keys(), ...blockedByDate.keys()])) {
+    const { hasFullDayBlock, blockedSlots: manualBlocks } = splitBlockedTimeSlots(
+      blockedByDate.get(date) ?? [],
+    );
+
+    occupancyByDate[date] = {
+      occupiedTimes: [...(occupiedByDate.get(date) ?? []), ...(lockedByDate.get(date) ?? [])],
+      blockedTimes: Array.from(manualBlocks),
+      fullDayBlocked: hasFullDayBlock,
+    };
+  }
+
   const currentDate = getCurrentDateKey(now);
-  const currentTime = getCurrentTimeKey(now);
 
-  for (const appointment of bookedAppointments) {
-    const dayAppointments = appointmentsByDate.get(appointment.date) ?? [];
-    dayAppointments.push(appointment.timeSlot);
-    appointmentsByDate.set(appointment.date, dayAppointments);
-  }
-
-  for (const lock of lockedSlots) {
-    const dayLocks = lockedSlotsByDate.get(lock.date) ?? [];
-    dayLocks.push(lock.timeSlot);
-    lockedSlotsByDate.set(lock.date, dayLocks);
-  }
-
-  for (const blockedSlot of blockedSlots) {
-    const dayBlockedSlots = blockedSlotsByDate.get(blockedSlot.date) ?? [];
-    dayBlockedSlots.push(blockedSlot.timeSlot);
-    blockedSlotsByDate.set(blockedSlot.date, dayBlockedSlots);
-  }
-
-  return getMonthDays(month)
-    .filter((date) => date >= currentDate)
-    .filter((date) => isWeekdayBookingDate(date))
-    .map((date) => {
-      const occupiedSlots = appointmentsByDate.get(date) ?? [];
-      const activeLockSlots = lockedSlotsByDate.get(date) ?? [];
-      const dayBlockedTimeSlots = blockedSlotsByDate.get(date) ?? [];
-      const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(dayBlockedTimeSlots);
-
-      if (hasFullDayBlock) {
-        return {
-          date,
-          slots: [],
-        };
-      }
-
-      const slots = getAvailableStartSlotsWithManualBlocks(
-        baseSlots,
-        [...occupiedSlots, ...activeLockSlots],
-        Array.from(blockedSlots),
-        monthConfig.slotMode,
-      )
-        .filter((slot) => {
-        if (date !== currentDate) {
-          return true;
-        }
-
-        return slot >= currentTime;
-      });
-
-      return { date, slots };
-    })
+  return resolveMonthDays(config, { now, occupancyByDate })
+    .filter((day) => day.date >= currentDate)
+    .map(({ date, slots }) => ({ date, slots }))
     .filter((day) => day.slots.length > 0);
 }

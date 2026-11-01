@@ -6,9 +6,12 @@ import {
   getAdminBlockableSlots,
   updateAdminBlockedSlot,
 } from "@/lib/admin/blocked-spaces/service";
+import { buildSlotModePresetRules } from "@/lib/availability/slot-mode-derivation";
 
 const {
   transactionMock,
+  findMonthAvailabilityMock,
+  findMonthAvailabilityForShareMock,
   findRegisteredMonthMock,
   cleanupExpiredReservationLocksMock,
   lockConflictingAppointmentsMock,
@@ -29,6 +32,8 @@ const {
   syncBlockedSlotDeleteMock,
 } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
+  findMonthAvailabilityMock: vi.fn(),
+  findMonthAvailabilityForShareMock: vi.fn(),
   findRegisteredMonthMock: vi.fn(),
   cleanupExpiredReservationLocksMock: vi.fn(),
   lockConflictingAppointmentsMock: vi.fn(),
@@ -57,6 +62,12 @@ vi.mock("@/lib/db/prisma", () => ({
 
 vi.mock("@/lib/db/admin-months", () => ({
   findRegisteredMonth: findRegisteredMonthMock,
+}));
+
+// Las reglas del mes vienen de la tabla de disponibilidad (FR-016, FR-033): se simulan con el preset del modo.
+vi.mock("@/lib/db/availability-rules", () => ({
+  findMonthAvailability: findMonthAvailabilityMock,
+  findMonthAvailabilityForShare: findMonthAvailabilityForShareMock,
 }));
 
 vi.mock("@/lib/db/appointments", () => ({
@@ -88,9 +99,24 @@ vi.mock("@/lib/calendar/sync-blocked-slot", () => ({
   syncBlockedSlotDelete: syncBlockedSlotDeleteMock,
 }));
 
+function mockMonthRules(slotMode: "BLOCK_MODE" | "SECOND_ONLY_MODE") {
+  const record = {
+    activeMonthId: 4,
+    month: "2026-04",
+    slotMode,
+    availabilityVersion: 1,
+    rules: buildSlotModePresetRules("2026-04", slotMode).map((rule, index) => ({ ...rule, id: index + 1 })),
+    exceptions: [],
+  };
+
+  findMonthAvailabilityMock.mockResolvedValue(record);
+  findMonthAvailabilityForShareMock.mockResolvedValue(record);
+}
+
 describe("admin blocked spaces service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMonthRules("BLOCK_MODE");
 
     transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({}),
@@ -150,6 +176,12 @@ describe("admin blocked spaces service", () => {
     });
     expect(result.syncSummary).toEqual({ total: 1, synced: 1, failed: 0 });
     expect(result.syncWarnings).toEqual([]);
+    // D89: en el bloqueo de espacios, conflictos de citas antes de la limpieza de RL.
+    expect(lockConflictingAppointmentsMock).toHaveBeenCalledOnce();
+    expect(cleanupExpiredReservationLocksMock).toHaveBeenCalledOnce();
+    expect(lockConflictingAppointmentsMock.mock.invocationCallOrder[0]).toBeLessThan(
+      cleanupExpiredReservationLocksMock.mock.invocationCallOrder[0],
+    );
   });
 
   it("keeps local block and returns warning when calendar sync fails", async () => {
@@ -179,12 +211,56 @@ describe("admin blocked spaces service", () => {
     ]);
   });
 
-  it("keeps current calendar duration behavior in SECOND_ONLY_MODE", async () => {
-    findRegisteredMonthMock.mockResolvedValueOnce({
+  it("rejects a block on a Saturday with no operating hours (DATE_NOT_OPERATIONAL, D46)", async () => {
+    await expect(
+      createAdminBlockedSlots(
+        {
+          month: "2026-04",
+          date: "2026-04-25",
+          fullDay: false,
+          slots: ["13:00"],
+          reason: "DESCANSO",
+          createdByAdminId: 7,
+        },
+        new Date("2026-04-10T15:00:00.000Z"),
+      ),
+    ).rejects.toThrow("DATE_NOT_OPERATIONAL");
+
+    expect(createBlockedSlotsMock).not.toHaveBeenCalled();
+    expect(syncBlockedSlotCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a block on a weekday that an empty exception closes (DATE_NOT_OPERATIONAL, D46)", async () => {
+    findMonthAvailabilityMock.mockResolvedValueOnce({
+      activeMonthId: 4,
       month: "2026-04",
-      status: "ACTIVE",
-      slotMode: "SECOND_ONLY_MODE",
+      slotMode: "BLOCK_MODE",
+      availabilityVersion: 1,
+      rules: buildSlotModePresetRules("2026-04", "BLOCK_MODE").map((rule, index) => ({ ...rule, id: index + 1 })),
+      exceptions: [
+        { id: 9, date: "2026-04-22", times: [], minGapMinutes: 240, preserveCapacity: true, maxPerDay: 3 },
+      ],
     });
+
+    await expect(
+      createAdminBlockedSlots(
+        {
+          month: "2026-04",
+          date: "2026-04-22",
+          fullDay: false,
+          slots: ["13:00"],
+          reason: "DESCANSO",
+          createdByAdminId: 7,
+        },
+        new Date("2026-04-10T15:00:00.000Z"),
+      ),
+    ).rejects.toThrow("DATE_NOT_OPERATIONAL");
+
+    expect(createBlockedSlotsMock).not.toHaveBeenCalled();
+  });
+
+  it("uses 1 h duration for punctual blocks in SECOND_ONLY_MODE (D15)", async () => {
+    mockMonthRules("SECOND_ONLY_MODE");
 
     await createAdminBlockedSlots(
       {
@@ -203,7 +279,7 @@ describe("admin blocked spaces service", () => {
       date: "2026-04-22",
       timeSlot: "13:00",
       reason: "DESCANSO",
-      durationHours: undefined,
+      durationHours: 1,
     });
   });
 
@@ -332,11 +408,7 @@ describe("admin blocked spaces service", () => {
   });
 
   it("keeps 10:00 blockable in SECOND_ONLY_MODE when 18:00 is occupied and 14:00 is manually blocked", async () => {
-    findRegisteredMonthMock.mockResolvedValueOnce({
-      month: "2026-04",
-      status: "ACTIVE",
-      slotMode: "SECOND_ONLY_MODE",
-    });
+    mockMonthRules("SECOND_ONLY_MODE");
     listMonthAppointmentsMock.mockResolvedValueOnce([
       {
         id: 81,

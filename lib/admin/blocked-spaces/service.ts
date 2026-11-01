@@ -20,14 +20,13 @@ import {
   isFullDayBlockTimeSlot,
   splitBlockedTimeSlots,
 } from "@/lib/admin/blocked-spaces/day-block";
-import {
-  getAvailableStartSlotsWithManualBlocks,
-  isWeekdayBookingDate,
-} from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode, type MonthSlotMode } from "@/lib/availability/month-slot-mode";
-import { getCurrentDateKey, getCurrentTimeKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
+import { resolveDayRule } from "@/lib/availability/day-rule";
+import { resolveDay, resolveMonthDays } from "@/lib/availability/resolver";
+import type { MonthAvailabilityConfig } from "@/lib/availability/types";
+import { getCurrentDateKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { listActiveAppointmentSlotsByDateForUpdate } from "@/lib/db/admin-appointments";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
+import { findMonthAvailability, findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import {
   cleanupExpiredReservationLocks,
   listActiveReservationLocksForDate,
@@ -46,9 +45,6 @@ import {
   updateBlockedSlotReasonById,
 } from "@/lib/db/blocked-slots";
 import { prisma } from "@/lib/db/prisma";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-
-type BaseTimeSlot = (typeof BASE_TIME_SLOTS)[number];
 
 function getMonthBounds(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -61,62 +57,38 @@ function getMonthBounds(month: string) {
   };
 }
 
-function getMonthDays(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const totalDays = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-
-  return Array.from({ length: totalDays }, (_, index) => {
-    const day = String(index + 1).padStart(2, "0");
-    return `${month}-${day}`;
-  });
-}
-
-function buildBlockableDays<T extends string>(params: {
-  month: string;
+// FR-016: horarios bloqueables = horarios que ofrece el resolvedor (ocupación, locks, bloqueos y hora actual).
+function buildBlockableDays(params: {
+  config: MonthAvailabilityConfig;
   now: Date;
-  slotMode: MonthSlotMode;
-  baseSlots: readonly T[];
   occupiedByDate: Map<string, string[]>;
   lockByDate: Map<string, string[]>;
   blockedByDate: Map<string, string[]>;
 }) {
   const currentDate = getCurrentDateKey(params.now);
-  const currentTime = getCurrentTimeKey(params.now);
+  const dates = new Set([
+    ...params.occupiedByDate.keys(),
+    ...params.lockByDate.keys(),
+    ...params.blockedByDate.keys(),
+  ]);
+  const occupancyByDate = Object.fromEntries(
+    [...dates].map((date) => {
+      const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(params.blockedByDate.get(date) ?? []);
 
-  return getMonthDays(params.month)
-    .filter((date) => date >= currentDate)
-    .filter((date) => isWeekdayBookingDate(date))
-    .map((date) => {
-      const occupiedSlots = params.occupiedByDate.get(date) ?? [];
-      const activeLocks = params.lockByDate.get(date) ?? [];
-      const blockedTimeSlots = params.blockedByDate.get(date) ?? [];
-      const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(blockedTimeSlots);
-
-      if (hasFullDayBlock) {
-        return {
-          date,
-          slots: [] as T[],
-        };
-      }
-
-      const slots = getAvailableStartSlotsWithManualBlocks(
-        params.baseSlots,
-        [...occupiedSlots, ...activeLocks],
-        Array.from(blockedSlots),
-        params.slotMode,
-      ).filter((slot) => {
-        if (date !== currentDate) {
-          return true;
-        }
-
-        return slot >= currentTime;
-      });
-
-      return {
+      return [
         date,
-        slots,
-      };
-    })
+        {
+          occupiedTimes: [...(params.occupiedByDate.get(date) ?? []), ...(params.lockByDate.get(date) ?? [])],
+          blockedTimes: Array.from(blockedSlots),
+          fullDayBlocked: hasFullDayBlock,
+        },
+      ];
+    }),
+  );
+
+  return resolveMonthDays(params.config, { now: params.now, occupancyByDate })
+    .filter((day) => day.date >= currentDate)
+    .map((day) => ({ date: day.date, slots: day.slots }))
     .filter((day) => day.slots.length > 0);
 }
 
@@ -144,14 +116,6 @@ function assertBlockedSlotIsEditable(date: string, timeSlot: string, now: Date) 
   }
 }
 
-function toBaseTimeSlot(timeSlot: string): BaseTimeSlot {
-  if (BASE_TIME_SLOTS.includes(timeSlot as BaseTimeSlot)) {
-    return timeSlot as BaseTimeSlot;
-  }
-
-  throw new Error("SLOT_NOT_AVAILABLE");
-}
-
 function buildSyncSummary(input: {
   total: number;
   warnings: BlockedSlotSyncWarning[];
@@ -173,7 +137,12 @@ export async function getAdminBlockableSlots(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
+  const config = await findMonthAvailability(input.month);
+
+  if (!config) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
   const { monthStart, monthEndExclusive } = getMonthBounds(input.month);
   const [appointments, locks, blockedSlots] = await Promise.all([
     listMonthAppointments(monthStart, monthEndExclusive),
@@ -204,10 +173,8 @@ export async function getAdminBlockableSlots(
   }
 
   const allBlockableDays = buildBlockableDays({
-    month: input.month,
+    config,
     now,
-    slotMode: registration.slotMode,
-    baseSlots,
     occupiedByDate,
     lockByDate,
     blockedByDate,
@@ -234,10 +201,14 @@ export async function createAdminBlockedSlots(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
-  const baseSlotsSet = new Set<string>(baseSlots);
+  // D46: el día debe tener horarios en el resolvedor; ya no se decide por día de la semana (FR-017).
+  const config = await findMonthAvailability(input.month);
 
-  if (!isWeekdayBookingDate(input.date)) {
+  if (!config) {
+    throw new Error("MONTH_NOT_REGISTERED");
+  }
+
+  if (!resolveDayRule(config, input.date)?.times.length) {
     throw new Error("DATE_NOT_OPERATIONAL");
   }
 
@@ -247,10 +218,6 @@ export async function createAdminBlockedSlots(
 
   if (!input.fullDay) {
     for (const slot of input.slots) {
-      if (!baseSlotsSet.has(slot)) {
-        throw new Error("SLOT_NOT_AVAILABLE");
-      }
-
       if (!isFutureDateTime(input.date, slot, now)) {
         throw new Error("SLOT_NOT_AVAILABLE");
       }
@@ -261,8 +228,16 @@ export async function createAdminBlockedSlots(
   let removedSlotsForFullDay: Array<{ id: number; googleEventId: string | null }> = [];
 
   await prisma.$transaction(async (tx) => {
-    await cleanupExpiredReservationLocks(tx, now);
+    // PD-08 / D63: reglas con FOR SHARE antes de los conflictos del día (mismo orden que el editor y las reservas).
+    const txConfig = await findMonthAvailabilityForShare(tx, input.month);
+
+    if (!txConfig) {
+      throw new Error("MONTH_NOT_REGISTERED");
+    }
+
+    // D89: conflictos de citas antes de la limpieza de RL. Esta ruta no toma booking:date (sin named lock; ver informe).
     await lockConflictingAppointments(tx, input.date, "");
+    await cleanupExpiredReservationLocks(tx, input.date, now);
 
     const [occupiedSlots, activeLocks, blockedSlots] = await Promise.all([
       listActiveAppointmentSlotsByDateForUpdate(tx, input.date),
@@ -275,9 +250,8 @@ export async function createAdminBlockedSlots(
     const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
 
     if (input.fullDay) {
-      const hasActiveLockInBaseSlot = activeLockSlots.some((slot) =>
-        baseSlotsSet.has(slot),
-      );
+      const dayGrid = new Set<string>(resolveDayRule(txConfig, input.date)?.times ?? []);
+      const hasActiveLockInBaseSlot = activeLockSlots.some((slot) => dayGrid.has(slot));
 
       if (hasActiveLockInBaseSlot) {
         throw new Error("SLOT_LOCKED");
@@ -287,12 +261,14 @@ export async function createAdminBlockedSlots(
         throw new Error("DAY_ALREADY_BLOCKED");
       }
 
-      const availableSlots = getAvailableStartSlotsWithManualBlocks(
-        baseSlots,
-        [...occupiedSlots, ...activeLockSlots],
-        Array.from(blockedSlotsSet),
-        registration.slotMode,
-      ).filter((slot) => isFutureDateTime(input.date, slot, now));
+      const availableSlots = resolveDay(txConfig, input.date, {
+        now,
+        occupancy: {
+          occupiedTimes: [...occupiedSlots, ...activeLockSlots],
+          blockedTimes: Array.from(blockedSlotsSet),
+          fullDayBlocked: false,
+        },
+      }).slots;
 
       if (availableSlots.length === 0) {
         throw new Error("SLOT_NOT_AVAILABLE");
@@ -327,12 +303,14 @@ export async function createAdminBlockedSlots(
       throw new Error("SLOT_NOT_AVAILABLE");
     }
 
-    const availableSlots = getAvailableStartSlotsWithManualBlocks(
-      baseSlots,
-      [...occupiedSlots, ...activeLockSlots],
-      Array.from(blockedSlotsSet),
-      registration.slotMode,
-    ).filter((slot) => isFutureDateTime(input.date, slot, now));
+    const availableSlots = resolveDay(txConfig, input.date, {
+      now,
+      occupancy: {
+        occupiedTimes: [...occupiedSlots, ...activeLockSlots],
+        blockedTimes: Array.from(blockedSlotsSet),
+        fullDayBlocked: false,
+      },
+    }).slots;
 
     if (input.slots.some((slot) => !availableSlots.includes(slot))) {
       throw new Error("SLOT_NOT_AVAILABLE");
@@ -366,16 +344,13 @@ export async function createAdminBlockedSlots(
   }
 
   for (const blockedSlot of createdBlockedSlots) {
-    const durationHours = registration.slotMode === "SECOND_ONLY_MODE"
-      ? undefined
-      : 1;
-
+    // D15/D29: bloqueo puntual = evento de 1 h en todos los meses; día completo lo fija el evento (06:00-23:00).
     const syncResult = await syncBlockedSlotCreate({
       blockedSlotId: blockedSlot.id,
       date: blockedSlot.date,
       timeSlot: blockedSlot.timeSlot,
       reason: blockedSlot.reason,
-      durationHours,
+      durationHours: 1,
     });
 
     if (syncResult.status === "SYNC_FAILED") {
@@ -464,7 +439,7 @@ export async function updateAdminBlockedSlot(
     month: input.month,
     blockedSlotId: input.blockedSlotId,
     date: result.date,
-    timeSlot: toBaseTimeSlot(result.timeSlot),
+    timeSlot: result.timeSlot,
     reason: input.reason,
     syncSummary: buildSyncSummary({
       total: 1,

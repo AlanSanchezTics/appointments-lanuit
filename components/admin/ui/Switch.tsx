@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export interface SwitchProps {
   id: string;
   label: string;
@@ -5,6 +7,8 @@ export interface SwitchProps {
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   className?: string;
+  // Contenido opcional junto a la etiqueta (p. ej. un icono de ayuda). Fuera de <label>: no alterna el switch.
+  labelAdornment?: ReactNode;
 }
 
 export function Switch({
@@ -14,12 +18,24 @@ export function Switch({
   onChange,
   disabled = false,
   className = "",
+  labelAdornment,
 }: SwitchProps) {
+  const labelElement = (
+    <label htmlFor={id} className="text-sm font-medium text-[var(--admin-text-primary)]">
+      {label}
+    </label>
+  );
+
   return (
     <div className={`flex items-center justify-between gap-3 ${className}`}>
-      <label htmlFor={id} className="text-sm font-medium text-[var(--admin-text-primary)]">
-        {label}
-      </label>
+      {labelAdornment ? (
+        <span className="flex min-w-0 items-center gap-1.5">
+          {labelElement}
+          {labelAdornment}
+        </span>
+      ) : (
+        labelElement
+      )}
       <button
         id={id}
         type="button"

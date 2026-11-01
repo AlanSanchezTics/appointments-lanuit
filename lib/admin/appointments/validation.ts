@@ -1,11 +1,21 @@
 import { z } from "zod";
 
 import { parseAdminMonthKey } from "@/lib/admin/months/validation";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import type { AdminCreateAppointmentPayload } from "@/lib/admin/appointments/types";
 import { normalizeClientAlias } from "@/lib/shared/client-name";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+// FR-006: cualquier HH:mm válido; que el horario exista lo decide el resolvedor (SLOT_NOT_AVAILABLE, D46).
+const TIME_SLOT_SCHEMA = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+
+// Parámetro opcional de la agenda: cita que se excluye al calcular availableSlots (PD-09, A-07).
+export function parseAgendaExcludeAppointmentId(rawValue: string | null) {
+  if (rawValue == null || rawValue === "") {
+    return undefined;
+  }
+
+  return parseAppointmentIdParam(rawValue);
+}
 
 function isValidDateKey(date: string) {
   if (!DATE_KEY_PATTERN.test(date)) {
@@ -36,7 +46,7 @@ export function parseAdminDayAgendaParams(input: { month: string; date: string }
 const RESCHEDULE_SCHEMA = z.object({
   month: z.string(),
   date: z.string(),
-  timeSlot: z.enum(BASE_TIME_SLOTS),
+  timeSlot: TIME_SLOT_SCHEMA,
 });
 
 export function parseAdminReschedulePayload(payload: unknown) {
@@ -68,7 +78,7 @@ const CREATE_APPOINTMENT_SCHEMA = z
   .object({
     month: z.string(),
     date: z.string(),
-    timeSlot: z.enum(BASE_TIME_SLOTS),
+    timeSlot: TIME_SLOT_SCHEMA,
     clientId: z
       .number()
       .int("CLIENT_ID_INVALID")

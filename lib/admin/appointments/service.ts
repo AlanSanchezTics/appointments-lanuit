@@ -11,14 +11,16 @@ import type {
   AdminRescheduleAppointmentResponse,
 } from "@/lib/admin/appointments/types";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
-import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import type { MonthAvailabilityConfig } from "@/lib/availability/types";
+import { resolveDay } from "@/lib/availability/resolver";
+import { findMonthAvailability, findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import { findRegisteredMonth } from "@/lib/db/admin-months";
 import {
   listActiveAppointmentSlotsByDateForUpdate,
   cancelAppointmentById,
   findActiveAppointmentByIdInMonthForUpdate,
   listActiveAppointmentsByDate,
+  listBlockingAppointmentsByDate,
   listActiveAppointmentsByDateExcludingForUpdate,
   updateAppointmentScheduleById,
 } from "@/lib/db/admin-appointments";
@@ -26,6 +28,7 @@ import {
   acquireBookingLocks,
   cleanupExpiredReservationLocks,
   findActiveReservationLockForSlotForUpdate,
+  listMonthActiveReservationLocks,
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
@@ -133,24 +136,92 @@ async function resolveClientForCreate(
   return client;
 }
 
+// FR-016: horarios ofrecibles con el resolvedor. "00:00" en bloqueos es día completo (D55), no una hora.
+// D46: un día sin horarios deja la lista vacía, así que la hora pedida responde SLOT_NOT_AVAILABLE.
+function resolveOfferedSlots(input: {
+  config: MonthAvailabilityConfig;
+  date: string;
+  now: Date;
+  occupiedSlots: readonly string[];
+  blockedTimeSlots: readonly string[];
+  lockedSlots?: readonly string[];
+}) {
+  const { hasFullDayBlock, blockedSlots } = splitBlockedTimeSlots(input.blockedTimeSlots);
+
+  return resolveDay(input.config, input.date, {
+    now: input.now,
+    occupancy: {
+      occupiedTimes: [...input.occupiedSlots, ...(input.lockedSlots ?? [])],
+      blockedTimes: Array.from(blockedSlots),
+      fullDayBlocked: hasFullDayBlock,
+    },
+  }).slots;
+}
+
+// Teléfono del dueño de una cita activa del mes, sin bloqueo. Solo para elegir las claves de los locks antes de tomarlos (D63).
+async function findAppointmentOwnerPhone(appointmentId: number, monthStart: string, monthEndExclusive: string) {
+  const row = await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      status: {
+        in: ["CONFIRMED", "SYNC_FAILED"],
+      },
+      date: {
+        gte: new Date(`${monthStart}T00:00:00.000Z`),
+        lt: new Date(`${monthEndExclusive}T00:00:00.000Z`),
+      },
+    },
+    select: {
+      client: {
+        select: {
+          phone: true,
+        },
+      },
+    },
+  });
+
+  return row?.client.phone ?? null;
+}
+
 export async function getAdminDayAgenda(input: {
   month: string;
   date: string;
-}): Promise<AdminDayAgendaResponse> {
-  const registration = await findRegisteredMonth(input.month);
+  excludeAppointmentId?: number;
+}, now = new Date()): Promise<AdminDayAgendaResponse & { availableSlots: string[] }> {
+  const config = await findMonthAvailability(input.month);
 
-  if (!registration) {
+  if (!config) {
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  const [appointments, blockedSlots] = await Promise.all([
+  const nextDate = new Date(new Date(`${input.date}T00:00:00.000Z`).getTime() + 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+  const [appointments, blockingAppointments, blockedSlots, locks] = await Promise.all([
     listActiveAppointmentsByDate(input.date),
+    listBlockingAppointmentsByDate(input.date),
     listBlockedSlotsByDate(input.date),
+    listMonthActiveReservationLocks(input.date, nextDate, now),
   ]);
+
+  // PD-09/A-07: horarios para reagendar, sin la cita que se reprograma. Locks cuentan como ocupados (flujo público, A-05).
+  // D68: PENDING ocupa horario igual que en el flujo público; la lista visible sigue sin PENDING.
+  const availableSlots = resolveOfferedSlots({
+    config,
+    date: input.date,
+    now,
+    occupiedSlots: blockingAppointments
+      .filter((appointment) => appointment.id !== input.excludeAppointmentId)
+      .map((appointment) => appointment.timeSlot),
+    blockedTimeSlots: blockedSlots.map((blockedSlot) => blockedSlot.timeSlot),
+    lockedSlots: locks.filter((lock) => lock.date === input.date).map((lock) => lock.timeSlot),
+  });
 
   return {
     month: input.month,
     date: input.date,
+    availableSlots,
     total: appointments.length,
     appointments: appointments.map((appointment) => ({
       appointmentId: appointment.id,
@@ -192,47 +263,52 @@ export async function createAdminAppointment(
     now,
   );
 
-  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
-
   const created = await prisma.$transaction(async (tx) => {
     const resolvedClient = await resolveClientForCreate(tx, input);
     const lockPhone = resolvedClient.phone;
 
-    await acquireBookingLocks(tx, input.date, lockPhone);
-
     try {
-      await cleanupExpiredReservationLocks(tx, now);
+      await acquireBookingLocks(tx, input.date, lockPhone);
+
+      // D63 / PD-08: reglas con FOR SHARE antes de los conflictos y de la fila de horarios.
+      const config = await findMonthAvailabilityForShare(tx, input.month);
+
+      if (!config) {
+        throw new Error("MONTH_NOT_REGISTERED");
+      }
+
+      // D89: conflictos de citas antes de la limpieza de RL.
       await lockConflictingAppointments(tx, input.date, lockPhone);
+      await cleanupExpiredReservationLocks(tx, input.date, now);
 
       const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
         date: input.date,
         timeSlot: input.timeSlot,
+        phone: resolvedClient.phone,
         now,
       });
 
-      if (activeLock && activeLock.phone !== resolvedClient.phone) {
+      // NB-4: el SQL ya excluye los locks del mismo teléfono (phone <>), así que activeLock es siempre ajeno.
+      if (activeLock) {
         throw new Error("SLOT_LOCKED");
       }
 
+      // D77: ocupación con lectura bloqueante. resolveClientForCreate ya fijó un snapshot antes de los locks,
+      // así que una lectura plana no vería una reserva pública confirmada mientras esta transacción esperaba.
       const [occupiedSlots, blockedSlots] = await Promise.all([
         listActiveAppointmentSlotsByDateForUpdate(tx, input.date),
         listBlockedSlotsByDateForUpdate(tx, input.date),
       ]);
       const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
-      const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
-
-      if (hasFullDayBlock) {
-        throw new Error("SLOT_NOT_AVAILABLE");
-      }
-
-      const availableSlots = getAvailableStartSlotsWithManualBlocks(
-        baseSlots,
+      const offeredSlots = resolveOfferedSlots({
+        config,
+        date: input.date,
+        now,
         occupiedSlots,
-        Array.from(blockedSlotsSet),
-        registration.slotMode,
-      );
+        blockedTimeSlots,
+      });
 
-      if (!availableSlots.includes(input.timeSlot)) {
+      if (!offeredSlots.includes(input.timeSlot)) {
         throw new Error("SLOT_NOT_AVAILABLE");
       }
 
@@ -367,8 +443,6 @@ export async function rescheduleAdminAppointment(
     throw new Error("MONTH_NOT_REGISTERED");
   }
 
-  const baseSlots = resolveBaseSlotsByMonthMode(registration.slotMode);
-
   validateBookingRules(
     {
       date: input.date,
@@ -378,73 +452,92 @@ export async function rescheduleAdminAppointment(
   );
 
   const { monthStart, monthEndExclusive } = getMonthRange(input.month);
+  const ownerPhone = await findAppointmentOwnerPhone(appointmentId, monthStart, monthEndExclusive);
+
+  if (!ownerPhone) {
+    throw new Error("APPOINTMENT_NOT_FOUND");
+  }
 
   const updated = await prisma.$transaction(async (tx) => {
-    const current = await findActiveAppointmentByIdInMonthForUpdate(tx, {
-      appointmentId,
-      monthStart,
-      monthEndExclusive,
-    });
+    // D63 / PD-08, mismo orden que la creación admin y la reprogramación pública:
+    // named locks (fecha, teléfono) → FOR SHARE de reglas → conflictos del día → fila de la cita.
+    // NB-2 (D65): los locks van dentro del try para que el finally los libere si fallan a medio tomar.
+    try {
+      await acquireBookingLocks(tx, input.date, ownerPhone);
 
-    if (!current) {
-      throw new Error("APPOINTMENT_NOT_FOUND");
-    }
+      const config = await findMonthAvailabilityForShare(tx, input.month);
 
-    if (!isFutureDateTime(current.date, current.timeSlot, now)) {
-      throw new Error("APPOINTMENT_NOT_EDITABLE");
-    }
+      if (!config) {
+        throw new Error("MONTH_NOT_REGISTERED");
+      }
 
-    await cleanupExpiredReservationLocks(tx, now);
-    await lockConflictingAppointments(tx, input.date, current.phone);
+      // D89: conflictos de citas antes de la limpieza de RL.
+      await lockConflictingAppointments(tx, input.date, ownerPhone);
+      await cleanupExpiredReservationLocks(tx, input.date, now);
 
-    const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
-      date: input.date,
-      timeSlot: input.timeSlot,
-      now,
-    });
+      const current = await findActiveAppointmentByIdInMonthForUpdate(tx, {
+        appointmentId,
+        monthStart,
+        monthEndExclusive,
+      });
 
-    if (activeLock && activeLock.phone !== current.phone) {
-      throw new Error("SLOT_LOCKED");
-    }
+      // La cita debe seguir siendo la misma persona que bloqueamos; si cambió, no se mueve.
+      if (!current || current.phone !== ownerPhone) {
+        throw new Error("APPOINTMENT_NOT_FOUND");
+      }
 
-    const [occupiedSlots, blockedSlots] = await Promise.all([
-      listActiveAppointmentsByDateExcludingForUpdate(tx, {
+      if (!isFutureDateTime(current.date, current.timeSlot, now)) {
+        throw new Error("APPOINTMENT_NOT_EDITABLE");
+      }
+
+      const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
         date: input.date,
-        excludeAppointmentId: current.id,
-      }),
-      listBlockedSlotsByDateForUpdate(tx, input.date),
-    ]);
-    const blockedTimeSlots = blockedSlots.map((blockedSlot) => blockedSlot.timeSlot);
-    const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
+        timeSlot: input.timeSlot,
+        phone: current.phone,
+        now,
+      });
 
-    if (hasFullDayBlock) {
-      throw new Error("SLOT_NOT_AVAILABLE");
+      // NB-4: el SQL ya excluye los locks del mismo teléfono (phone <>), así que activeLock es siempre ajeno.
+      if (activeLock) {
+        throw new Error("SLOT_LOCKED");
+      }
+
+      const [occupiedSlots, blockedSlots] = await Promise.all([
+        listActiveAppointmentsByDateExcludingForUpdate(tx, {
+          date: input.date,
+          excludeAppointmentId: current.id,
+        }),
+        listBlockedSlotsByDateForUpdate(tx, input.date),
+      ]);
+
+      const offeredSlots = resolveOfferedSlots({
+        config,
+        date: input.date,
+        now,
+        occupiedSlots,
+        blockedTimeSlots: blockedSlots.map((blockedSlot) => blockedSlot.timeSlot),
+      });
+
+      if (!offeredSlots.includes(input.timeSlot)) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
+
+      await updateAppointmentScheduleById(tx, {
+        appointmentId,
+        date: input.date,
+        timeSlot: input.timeSlot,
+      });
+
+      return {
+        appointmentId: current.id,
+        name: current.name,
+        date: input.date,
+        timeSlot: input.timeSlot,
+        previousGoogleEventId: current.googleEventId,
+      };
+    } finally {
+      await releaseBookingLocks(tx, input.date, ownerPhone);
     }
-
-    const availableSlots = getAvailableStartSlotsWithManualBlocks(
-      baseSlots,
-      occupiedSlots,
-      Array.from(blockedSlotsSet),
-      registration.slotMode,
-    );
-
-    if (!availableSlots.includes(input.timeSlot)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
-
-    await updateAppointmentScheduleById(tx, {
-      appointmentId,
-      date: input.date,
-      timeSlot: input.timeSlot,
-    });
-
-    return {
-      appointmentId: current.id,
-      name: current.name,
-      date: input.date,
-      timeSlot: input.timeSlot,
-      previousGoogleEventId: current.googleEventId,
-    };
   });
 
   return syncRescheduledAppointment(updated);

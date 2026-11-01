@@ -1,13 +1,15 @@
 import { z } from "zod";
 
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
+import { isValidIsoDate } from "@/lib/availability/day-rule";
+import { timeSlotSchema } from "@/lib/validation/appointment";
 
 const phoneSchema = z
   .string()
   .transform((value) => value.replace(/\D/g, ""))
   .refine((value) => /^[0-9]{10}$/.test(value), "PHONE_INVALID");
 
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "VALIDATION_ERROR");
+// Calendario real: 2026-02-30 es VALIDATION_ERROR (antes respondía SLOT_NOT_AVAILABLE 409 en reprogramación).
+const dateSchema = z.string().refine(isValidIsoDate, "VALIDATION_ERROR");
 const monthSchema = z.string().regex(/^\d{4}-\d{2}$/, "VALIDATION_ERROR");
 
 export const myAppointmentsLookupSchema = z.object({
@@ -30,7 +32,7 @@ export const myAppointmentsRescheduleSchema = z.object({
   appointmentId: z.number().int().positive(),
   month: monthSchema,
   date: dateSchema,
-  timeSlot: z.enum(BASE_TIME_SLOTS),
+  timeSlot: timeSlotSchema,
 });
 
 export type MyAppointmentsLookupInput = z.infer<typeof myAppointmentsLookupSchema>;

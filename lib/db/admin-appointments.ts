@@ -1,5 +1,7 @@
-import type { AppointmentStatus, Prisma } from "@prisma/client";
+import type { AppointmentStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
+import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import { prisma } from "@/lib/db/prisma";
 
 export type PersistedAdminAgendaAppointment = {
@@ -118,47 +120,56 @@ export async function findActiveAppointmentByIdInMonthForUpdate(
   return row ? mapAgendaAppointment(row) : null;
 }
 
+// Misma razón que listActiveAppointmentSlotsByDateForUpdate (D77): lectura bloqueante, no snapshot.
 export async function listActiveAppointmentsByDateExcludingForUpdate(
   tx: Prisma.TransactionClient,
   input: { date: string; excludeAppointmentId: number },
 ) {
-  const rows = await tx.appointment.findMany({
+  const rows = await tx.$queryRaw<Array<{ t: string }>>`
+    SELECT TIME_FORMAT(time_slot, '%H:%i') AS t
+    FROM appointments
+    WHERE date = ${input.date}
+      AND status IN (${Prisma.join(SLOT_BLOCKING_APPOINTMENT_STATUSES.map((status) => Prisma.sql`${status}`))})
+      AND id <> ${input.excludeAppointmentId}
+    ORDER BY time_slot ASC
+    FOR UPDATE
+  `;
+
+  return rows.map((row) => row.t);
+}
+
+// D68: ocupación para horarios de la agenda admin (estados que bloquean en el flujo público). La lista visible no cambia.
+export async function listBlockingAppointmentsByDate(date: string) {
+  return prisma.appointment.findMany({
     where: {
-      date: new Date(`${input.date}T00:00:00.000Z`),
+      date: new Date(`${date}T00:00:00.000Z`),
       status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
-      },
-      id: {
-        not: input.excludeAppointmentId,
+        in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
       },
     },
     select: {
+      id: true,
       timeSlot: true,
     },
-    orderBy: [{ timeSlot: "asc" }],
-  });
-
-  return rows.map((row) => timeToTimeSlotKey(row.timeSlot));
+  }).then((rows) => rows.map((row) => ({ id: row.id, timeSlot: timeToTimeSlotKey(row.timeSlot) })));
 }
 
+// D77: lectura con FOR UPDATE de verdad. Un findMany plano usa el snapshot de REPEATABLE READ, que puede ser
+// anterior al COMMIT de una reserva pública; la lectura bloqueante siempre ve la última versión confirmada.
 export async function listActiveAppointmentSlotsByDateForUpdate(
   tx: Prisma.TransactionClient,
   date: string,
 ) {
-  const rows = await tx.appointment.findMany({
-    where: {
-      date: new Date(`${date}T00:00:00.000Z`),
-      status: {
-        in: ["CONFIRMED", "SYNC_FAILED"],
-      },
-    },
-    select: {
-      timeSlot: true,
-    },
-    orderBy: [{ timeSlot: "asc" }],
-  });
+  const rows = await tx.$queryRaw<Array<{ t: string }>>`
+    SELECT TIME_FORMAT(time_slot, '%H:%i') AS t
+    FROM appointments
+    WHERE date = ${date}
+      AND status IN (${Prisma.join(SLOT_BLOCKING_APPOINTMENT_STATUSES.map((status) => Prisma.sql`${status}`))})
+    ORDER BY time_slot ASC
+    FOR UPDATE
+  `;
 
-  return rows.map((row) => timeToTimeSlotKey(row.timeSlot));
+  return rows.map((row) => row.t);
 }
 
 export async function updateAppointmentScheduleById(

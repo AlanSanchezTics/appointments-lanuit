@@ -15,12 +15,12 @@ alwaysApply: true
 |---|---|---|---|
 | `{{product_spec}}` | The single document describing the product as a whole | Not a per-feature spec | `docs/specification.md` |
 | `{{domain_docs}}` | Business-rule documents, one per functional area | Not the database schema | `docs/architecture/business-rules.md` |
-| `{{data_model_doc}}` | The one document inventorying models, relationships, and the schema change log | Not the business rules | none |
+| `{{data_model_doc}}` | The one document inventorying models, relationships, and the schema change log | Not the business rules | `docs/architecture/data-model.md` |
 | `{{specs_index}}` | Registry of all feature specs (number, link, title, status) | Not a spec's own `spec.md` | `specs/README.md` |
 | `{{spec_reports_dir}}` | Folder where the agents' reports and `STATE.md` of one spec live (`NNN-feature` is that spec's folder name) | Not the folder for work without a spec | `specs/NNN-feature/agent-reports/` |
 | `{{adhoc_reports_dir}}` | Folder for agent reports of work that has no spec | Not a spec's report folder | `docs/implementation-reports/` |
 | `{{high_risk_areas}}` | The list of areas that require the high-risk Reviewer | Not a list of files | Prisma schema or migrations; admin auth and permissions; `AppointmentLog` audit events; booking rules, slot locks and Google Calendar sync; bulk or historic imports |
-| `{{test_commands}}` | Where the commands to run targeted and full tests are written | Not the commands themselves | `CLAUDE.md`, "Commands" section |
+| `{{test_commands}}` | Where the commands to run targeted and full tests are written | Not the commands themselves | `package.json` scripts: `npm test` (full), `npx vitest run <file>` (targeted). Integration tests (DB) must run serially: `npm run test:integration` or `npm run test:integration:file -- <file>` (`--maxWorkers=1`); parallel files fail across each other. Only against `appointments_test` |
 | `{{language}}` | Language for new documentation | Not the language of chat replies | Español |
 
 Models are not profile keys. Configure them independently: Claude Code uses `model:` and `effort:` in `.claude/agents/*.md`; Codex uses `model` and `model_reasoning_effort` in `.codex/agents/*.toml`. Never copy a GPT model ID into a Claude agent or replace a Codex model with a Claude alias. Markdown role bodies are shared; model choices are platform-owned.

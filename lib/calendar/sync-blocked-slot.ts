@@ -88,10 +88,12 @@ export async function syncBlockedSlotUpdate(input: {
       return { status: "CONFIRMED" };
     }
 
+    // D15/D30: un horario puntual nuevo crea evento de 1 h; los eventos existentes solo cambian de resumen.
     const googleEventId = await createBlockedSlotCalendarEvent({
       date: input.date,
       timeSlot: input.timeSlot,
       reason: input.reason,
+      durationHours: 1,
     });
 
     if (!googleEventId) {

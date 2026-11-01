@@ -11,6 +11,8 @@ import {
   type MonthSlotMode,
   type MonthsCatalogStatus,
   type UpdateAdminMonthStatusPayload,
+  type PreviewAvailabilityPayload,
+  type SaveAvailabilityPayload,
   type UpdateAdminMonthSlotModePayload,
 } from "@/lib/admin/months/types";
 
@@ -172,6 +174,8 @@ export function parseAdminMonthKey(month: string) {
 
 const UPDATE_MONTH_SLOT_MODE_SCHEMA = z.object({
   slotMode: z.enum(MONTH_SLOT_MODE_VALUES),
+  expectedVersion: z.number().int().min(0).optional(),
+  confirmAffectedAppointments: z.boolean().optional(),
 });
 
 export function parseUpdateMonthSlotModePayload(
@@ -181,6 +185,53 @@ export function parseUpdateMonthSlotModePayload(
 
   return {
     slotMode: parsed.slotMode as MonthSlotMode,
+    expectedVersion: parsed.expectedVersion,
+    confirmAffectedAppointments: parsed.confirmAffectedAppointments ?? false,
+  };
+}
+
+// Forma JSON de reglas y excepciones. Los valores (horas, rangos, límites) los valida rules-validation (códigos AVAILABILITY_*).
+const AVAILABILITY_RULE_SCHEMA = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  weekdays: z.array(z.number()),
+  times: z.array(z.string()),
+  minGapMinutes: z.number(),
+  preserveCapacity: z.boolean(),
+  maxPerDay: z.number(),
+});
+
+const AVAILABILITY_EXCEPTION_SCHEMA = z.object({
+  date: z.string(),
+  times: z.array(z.string()),
+  minGapMinutes: z.number(),
+  preserveCapacity: z.boolean(),
+  maxPerDay: z.number(),
+});
+
+const AVAILABILITY_BODY_SHAPE = {
+  rules: z.array(AVAILABILITY_RULE_SCHEMA),
+  exceptions: z.array(AVAILABILITY_EXCEPTION_SCHEMA),
+};
+
+export function parseAvailabilityPreviewPayload(payload: unknown): PreviewAvailabilityPayload {
+  return z.object(AVAILABILITY_BODY_SHAPE).parse(payload);
+}
+
+export function parseSaveAvailabilityPayload(payload: unknown): SaveAvailabilityPayload {
+  const parsed = z
+    .object({
+      ...AVAILABILITY_BODY_SHAPE,
+      expectedVersion: z.number().int().min(0),
+      confirmAffectedAppointments: z.boolean().optional(),
+    })
+    .parse(payload);
+
+  return {
+    rules: parsed.rules,
+    exceptions: parsed.exceptions,
+    expectedVersion: parsed.expectedVersion,
+    confirmAffectedAppointments: parsed.confirmAffectedAppointments ?? false,
   };
 }
 

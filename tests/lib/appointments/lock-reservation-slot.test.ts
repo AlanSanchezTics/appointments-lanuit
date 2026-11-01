@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { PersistedReservationLock } from "@/lib/db/appointments";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 
 const acquireBookingLocksMock = vi.fn(async () => undefined);
 const cleanupExpiredReservationLocksMock = vi.fn(async () => undefined);
 const lockConflictingAppointmentsMock = vi.fn(async () => undefined);
 const releaseBookingLocksMock = vi.fn(async () => undefined);
-const listActiveReservationLocksForDateMock = vi.fn(async () => []);
+const listActiveReservationLocksForDateMock = vi.fn(async () => [] as PersistedReservationLock[]);
 const deleteActiveReservationLocksByPhoneMock = vi.fn(async () => undefined);
 const createReservationLockMock = vi.fn(async () => ({
   id: 1,
@@ -22,7 +23,9 @@ const getBookableMonthConfigMock = vi.fn(async () => ({
   status: "ACTIVE",
   slotMode: "BLOCK_MODE",
 }));
-const listBlockedSlotsByDateForUpdateMock = vi.fn(async () => []);
+const listBlockedSlotsByDateForUpdateMock = vi.fn(
+  async () => [] as Array<{ id: number; date: string; timeSlot: string; reason: string; createdByAdminId: number }>,
+);
 
 const transactionMock = vi.fn();
 const findManyMock = vi.fn();
@@ -51,6 +54,32 @@ vi.mock("@/lib/db/prisma", () => ({
 vi.mock("@/lib/active-months/service", () => ({
   getBookableMonthConfig: getBookableMonthConfigMock,
 }));
+// D4 BLOCK_MODE como regla de mes completo: L-V, 9/10/13/14/17/18, separación 240 min, tope 3.
+// La regla cubre el mes pedido, como la lectura real.
+const findMonthAvailabilityForShareMock = vi.fn(async (_tx: unknown, month: string) => ({
+  activeMonthId: 1,
+  month,
+  slotMode: "BLOCK_MODE" as const,
+  availabilityVersion: 1,
+  rules: [
+    {
+      id: 1,
+      startDate: `${month}-01`,
+      endDate: `${month}-31`,
+      weekdays: [1, 2, 3, 4, 5],
+      times: ["09:00", "10:00", "13:00", "14:00", "17:00", "18:00"],
+      minGapMinutes: 240,
+      preserveCapacity: true,
+      maxPerDay: 3,
+    },
+  ],
+  exceptions: [],
+}));
+
+vi.mock("@/lib/db/availability-rules", () => ({
+  findMonthAvailabilityForShare: findMonthAvailabilityForShareMock,
+}));
+
 vi.mock("@/lib/db/blocked-slots", () => ({
   listBlockedSlotsByDateForUpdate: listBlockedSlotsByDateForUpdateMock,
 }));
@@ -93,6 +122,12 @@ describe("reservation slot locks", () => {
     expect(result.lockToken).toBe("lock-123");
     expect(result.expiresAt).toBe("2026-03-13T12:10:00.000Z");
     expect(createReservationLockMock).toHaveBeenCalledOnce();
+    // D89: conflictos de citas antes de la limpieza de RL (ninguna ruta invierte RL -> citas).
+    expect(lockConflictingAppointmentsMock).toHaveBeenCalledOnce();
+    expect(cleanupExpiredReservationLocksMock).toHaveBeenCalledOnce();
+    expect(lockConflictingAppointmentsMock.mock.invocationCallOrder[0]).toBeLessThan(
+      cleanupExpiredReservationLocksMock.mock.invocationCallOrder[0],
+    );
     expect(findManyMock).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
@@ -325,12 +360,25 @@ describe("reservation slot locks", () => {
   });
 
   it("keeps 10:00 available in SECOND_ONLY_MODE with lock at 18:00 and manual block at 14:00", async () => {
-    getBookableMonthConfigMock.mockResolvedValueOnce({
-      id: 1,
+    findMonthAvailabilityForShareMock.mockResolvedValueOnce({
+      activeMonthId: 1,
       month: "2026-03",
-      status: "ACTIVE",
       slotMode: "SECOND_ONLY_MODE",
-    });
+      availabilityVersion: 1,
+      rules: [
+        {
+          id: 2,
+          startDate: "2026-03-01",
+          endDate: "2026-03-31",
+          weekdays: [1, 2, 3, 4, 5],
+          times: ["10:00", "14:00", "18:00"],
+          minGapMinutes: 0,
+          preserveCapacity: false,
+          maxPerDay: 3,
+        },
+      ],
+      exceptions: [],
+    } as never);
     findUniqueClientMock.mockResolvedValueOnce(null);
     listActiveReservationLocksForDateMock.mockResolvedValueOnce([
       {
@@ -367,5 +415,24 @@ describe("reservation slot locks", () => {
     ).resolves.toMatchObject({
       lockToken: "lock-123",
     });
+  });
+
+  it("rejects a lock on a day without offered times (D46)", async () => {
+    findUniqueClientMock.mockResolvedValueOnce(null);
+
+    const { acquireReservationSlotLock } = await import("@/lib/appointments/lock-reservation-slot");
+
+    // 2026-03-07 es sábado: la regla de mes cubre L-V.
+    await expect(
+      acquireReservationSlotLock(
+        {
+          phone: "5512345678",
+          date: "2026-03-07",
+          timeSlot: "10:00",
+        },
+        new Date("2026-03-03T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow("SLOT_NOT_AVAILABLE");
+    expect(createReservationLockMock).not.toHaveBeenCalled();
   });
 });

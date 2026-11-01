@@ -724,6 +724,7 @@ Activar o desactivar una opción binaria de filtrado o de vista (sí/no) en el a
 
 - etiqueta de texto a la izquierda (`label`, vinculada por `id`),
 - control `role="switch"` a la derecha con `aria-checked`.
+- prop opcional `labelAdornment` (aditiva): contenido junto a la etiqueta, por ejemplo un `Tooltip` de ayuda. Va fuera de `<label>`, así que no alterna el switch. Sin la prop, el marcado no cambia.
 
 ### Style
 
@@ -786,6 +787,8 @@ Reglas:
 
 - debe cerrar por `Escape`, overlay y botón `X`
 - no reemplaza modales centrados para formularios complejos
+- prop opcional `overlay` (aditiva): contenido que se superpone al panel, fuera del área con scroll, para confirmaciones que deben verse siempre. Lo usa el descarte del editor de disponibilidad. Sin la prop no se renderiza nada adicional.
+- con `disableClose` activo, `Escape`, el overlay y la `X` no cierran la hoja.
 
 ---
 
@@ -799,9 +802,8 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
 
 - reusa `BottomSheetModal` como contenedor
 - selector horizontal de días bloqueables
-- lista de slots bloqueables con selección múltiple
-- selector de visualización `Por hora / Por bloque` disponible en `BLOCK_MODE`
-- en `SECOND_ONLY_MODE`, la visualización se fuerza a `Por hora`
+- lista única de horarios bloqueables con selección múltiple: cada horario es un espacio. No hay vista `Por bloque` ni prop `allowBlockView`
+- acción `Día completo`: bloquea el día en una sola operación
 - acciones masivas de selección:
   - `Seleccionar todo`
   - `Limpiar selección`
@@ -812,6 +814,8 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
 
 - usa iconografía outline (`schedule`, `lock`, `leaf/user`) vía `AdminIcon`.
 - no permite texto libre para `OTRO` en v1.
+- solo se listan días con al menos un horario bloqueable (horario que el servidor ofrece ese día). Los horarios ocupados, bloqueados, con lock o ya pasados no aparecen.
+- `Día completo` se habilita solo si el día tiene al menos un horario bloqueable. Es la misma condición que valida el servidor: si no queda ningún horario libre, responde `SLOT_NOT_AVAILABLE`.
 - durante submit:
   - deshabilita campos, acciones y CTA,
   - impide cierre por overlay, `X` y `Escape`.
@@ -819,25 +823,174 @@ Permitir bloqueo manual de espacios desde el detalle mensual admin sin navegaci�
 
 ---
 
-## Component: MonthSlotModeModal
+## Component: Tooltip
+
+Archivo: `components/admin/ui/Tooltip.tsx`
 
 ### Purpose
 
-Permitir configurar la modalidad mensual desde un CTA `Modalidad` ubicado junto al título del mes en `/admin/months/[month]`.
+Mostrar una ayuda contextual junto a un control sin ocupar espacio fijo en el formulario.
 
 ### Structure
 
-- botón de acción `Modalidad` en header de detalle mensual
-- `BottomSheetModal` con selección única:
-  - `Bloques de horarios`
-  - `Horario fijo`
-- CTA de guardado con estado loading bloqueante
+- disparador: botón solo con icono de información. Su nombre accesible es `label` (p. ej. `Ayuda: conservar capacidad`).
+- globo: `role="tooltip"`. El disparador lo referencia con `aria-describedby` aunque esté oculto, para que el lector de pantalla lo anuncie al enfocar el disparador.
+
+### Props
+
+- `label` (obligatoria): nombre accesible del disparador.
+- `children`: texto de la ayuda.
+- `align` (`"start" | "center" | "end"`, por defecto `"end"`): ancla el globo al disparador. Usar `center` cuando el disparador va junto a una etiqueta de un `Switch` (`labelAdornment`).
+
+### Behavior
+
+- abre con foco, clic/tap o entrada del puntero; cierra al perder el foco, con `Escape` o al salir el puntero.
+- con el globo abierto, `Escape` solo cierra el globo y no cierra la hoja que lo contiene. El listener de captura sobre `document` se registra mientras el globo está abierto y detiene la propagación. Con el globo cerrado, `Escape` vuelve a cerrar la hoja.
+
+### Usage
+
+- ayuda de `Conservar capacidad` en `AvailabilityParamsFields` (reglas y excepciones del editor de disponibilidad).
 
 ### Rules
 
-- guardar usando feedback con `sileo.promise`.
-- durante guardado, deshabilitar selección/cierre/CTA para evitar doble submit.
-- textos vía `react-i18next`.
+- el abierto/cerrado del globo es estado de presentación local al componente. Es una excepción a la regla de hooks de AGENTS, igual que `BottomSheetModal`.
+
+---
+
+## Component: TimeSlotChipInput
+
+Archivo: `components/admin/ui/TimeSlotChipInput.tsx`
+
+### Purpose
+
+Editar una lista de horas `HH:mm` (horario de una regla o de una excepción) con altas y bajas mediante chips.
+
+### Structure
+
+- un único `Input` nativo `type="time"` con su etiqueta. A su derecha, botón `+` primario, solo icono, con `aria-label` = `addLabel`. Mide 56 px de alto para igualar el input.
+- rejilla de chips de 3 columnas. Cada chip muestra la hora en 12 h con AM/PM (`9:00 AM`, `1:00 PM`, `12:00 AM` para `00:00`) y un botón de quitar con `aria-label` `<removeLabel> <hora en 12 h>`.
+- `emptyLabel` opcional cuando la lista está vacía.
+- `error` opcional, con `role="alert"`.
+
+### Contract
+
+- el valor de `values` y el que emite `onChange` son siempre `HH:mm` (24 h). La vista de 12 h es solo presentación.
+- la lista queda en orden ascendente por valor 24 h, sin duplicados.
+- `Enter` en el input añade la hora. El botón `+` está deshabilitado sin valor.
+- el formato del control nativo (12 o 24 h) lo decide el dispositivo y el idioma del sistema. La app no lo fuerza.
+- no valida reglas de dominio. `00:00` (marcador interno de día completo) y los límites del motor los rechaza la validación del editor (`AVAILABILITY_TIME_INVALID`).
+
+### Style
+
+- chips: fondo `inactive-bg`, borde `border`, texto `text-xs` truncado, radius pill.
+- botón de quitar: 20 px, foco visible con outline `accent`.
+
+### Rules
+
+- el valor pendiente de agregar es estado de presentación local al componente. Es la misma excepción que `Tooltip` y `BottomSheetModal`.
+
+---
+
+## Component: AvailabilityEditorModal
+
+Archivos:
+
+- `components/admin/months/availability/AvailabilityEditorModal.tsx` (contenedor presentacional)
+- `components/admin/months/availability/AvailabilityRuleForm.tsx`
+- `components/admin/months/availability/AvailabilityExceptionForm.tsx`
+- `components/admin/months/availability/AvailabilityParamsFields.tsx`
+- hooks: `hooks/admin/months/useAvailabilityEditor.ts`, `hooks/admin/months/useAvailabilitySave.ts`, `hooks/admin/months/useMonthAvailabilityController.ts` (une editor y guardado para `MonthDetailView`) y `hooks/admin/months/useDiscardConfirmDialog.ts`
+
+### Purpose
+
+Editar las reglas semanales y las excepciones por fecha de un mes no pasado. Se abre con el botón `Reglas` del detalle mensual. Reemplaza al antiguo selector `Modalidad`.
+
+### Structure
+
+- `BottomSheetModal` con título `Disponibilidad del mes`.
+- aviso cuando el mes no tiene reglas: se usa el horario por defecto (lunes a viernes, fin de semana cerrado).
+- sección `Reglas semanales`. Cada regla (`AvailabilityRuleForm`) es una tarjeta con:
+  - `Desde` y `Hasta` (`type="date"`, acotados al mes), en filas separadas;
+  - días de la semana (botones de alternancia `aria-pressed`, de lunes a domingo);
+  - horario (`TimeSlotChipInput`);
+  - parámetros (`AvailabilityParamsFields`);
+  - error del ítem, si lo hay, y botón `Quitar`.
+- sección `Excepciones por fecha`. Cada excepción (`AvailabilityExceptionForm`) es una tarjeta con:
+  - `Fecha` (`type="date"`, acotada al mes);
+  - horario (`TimeSlotChipInput`);
+  - aviso `Sin horas: este día quedará cerrado.` cuando la lista de horas está vacía;
+  - parámetros, error del ítem y botón `Quitar`.
+- `AvailabilityParamsFields` (compartido por regla y excepción): separación mínima (numérico 0 a 1440), máximo de citas por día (selector 1 a 6) y `Conservar capacidad` (`Switch` con `Tooltip` junto a la etiqueta).
+- botones `Agregar regla`, `Agregar excepción`, `Cancelar` y `Guardar disponibilidad`.
+- `AffectedAppointmentsDialog` (sección propia) y la confirmación de descarte, que se superpone al panel.
+
+### Valores por defecto (D6, D10, D99)
+
+- regla nueva: rango = mes completo, días lunes a viernes, horario `09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, separación `240`, `Conservar capacidad` activado y máximo `3`.
+- excepción nueva: fecha = día 1 del mes, horario vacío (día cerrado con aviso), separación `240`, `Conservar capacidad` activado y máximo `3`.
+
+### Validation
+
+- cada ítem se valida con el motor de disponibilidad al editar (la validación espejo reutiliza las reglas del servidor): rango dentro del mes, horas `HH:mm` válidas y distintas de `00:00`, días de la semana, separación 0 a 1440, máximo 1 a 6 y máximo 24 horas por día. Un campo de separación vacío es un error.
+- los errores de conjunto (traslape de reglas y fechas de excepción repetidas) solo se muestran cuando todos los ítems son válidos.
+- si hay cualquier error, `Guardar` queda deshabilitado.
+
+### States
+
+- carga: texto `Cargando disponibilidad…` con `role="status"`. Si falla, muestra error con `Reintentar`.
+- sin cambios: `Guardar` deshabilitado.
+- con cambios sin guardar: `Cancelar`, la `X` y el overlay piden confirmación de descarte.
+- guardando: controles, cierre y `Guardar` bloqueados; el botón muestra `Guardando…`.
+- éxito: el detalle del mes se recarga y el editor se cierra.
+
+### Descarte
+
+- la confirmación `¿Descartar cambios?` es un `role="alertdialog"` que se superpone al panel, en la parte superior, fuera del área con scroll.
+- un scrim cubre el encabezado (título y `X`). Tocarlo no cierra ni descarta nada.
+- el contenido del editor queda `inert` mientras la confirmación está abierta.
+- el foco inicial va a `Seguir editando`. `Escape` equivale a `Seguir editando`. Al cerrar la confirmación, el foco vuelve al elemento que lo tenía antes.
+- `Descartar` cierra el editor y pierde el borrador.
+- el color del scrim es el literal `rgba(28,25,23,0.35)`, igual que el fondo de `BottomSheetModal` y `Modal`. No hay token de scrim documentado en `tokens.md`. Pendiente: tokenizarlo.
+
+### Guardado y notificaciones
+
+- `Guardar` pide primero una previsualización al servidor. Si hay citas activas futuras que quedarían fuera de la nueva rejilla, abre `AffectedAppointmentsDialog`. Si no hay, guarda directamente.
+- la carga usa `sileo.show` de tipo `loading`, que se descarta al terminar. El resultado usa `sileo.success` (`Disponibilidad guardada`) o `sileo.error` con descripción por código.
+- excepción a `sileo.promise` (aceptada por el owner, D102): `sileo.promise` mostraría error ante el rechazo `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED` y no puede silenciarlo. Ese 409 no es un error: abre el diálogo de citas afectadas sin notificación de error.
+- `AVAILABILITY_VERSION_CONFLICT` muestra el mensaje `La disponibilidad cambió mientras editabas. Cierra el editor y ábrelo de nuevo para cargar la versión actual.` No hay recarga dentro del editor.
+
+### Rules
+
+- la lógica vive en hooks. Los componentes son presentacionales (AGENTS, reglas de hooks).
+- todo texto visible se resuelve con `react-i18next`.
+
+---
+
+## Component: AffectedAppointmentsDialog
+
+Archivo: `components/admin/months/availability/AffectedAppointmentsDialog.tsx`
+
+### Purpose
+
+Confirmar un guardado de disponibilidad que deja citas activas futuras fuera de la nueva rejilla. Es una decisión explícita del admin, no una notificación.
+
+### Structure
+
+- `Modal` (no `BottomSheetModal`) con título `Hay citas que quedarían fuera del horario`.
+- texto con el total de citas afectadas y la aclaración de que guardar no modifica las citas.
+- lista de citas (máximo de alto con scroll). Cada cita muestra fecha corta (zona `America/Mexico_City`), hora en 12 h, estado (`Solicitada`, `Confirmada`, `Confirmada (sincronización fallida)` o `Estado desconocido`) y cliente.
+- botones `Cancelar` (ghost) y `Confirmar y guardar` (primario).
+
+### Behavior
+
+- `Cancelar` solo cierra el diálogo. No escribe nada.
+- `Confirmar y guardar` repite el guardado con `confirmAffectedAppointments: true`. Las citas no cambian de fecha, hora ni estado.
+- mientras el guardado está en curso, ambos botones y el cierre están deshabilitados.
+- no usa `sileo` (D18).
+
+### Rules
+
+- la lista incluye solo citas activas futuras (o de hoy con hora posterior a la actual) que estaban dentro de la rejilla vigente y quedan fuera de la propuesta. Las citas pasadas no se listan.
 
 ---
 
@@ -871,6 +1024,7 @@ Nota:
 
 - cuando un `Input` incluya icono, debe usar `AdminIcon`.
 - todo `Input` con `type="password"` debe incluir toggle de visibilidad por defecto.
+- `type="date"`, `type="time"` y `type="datetime-local"` llevan contención específica: el input usa `box-border`, `min-w-0`, `max-w-full` y `appearance:none`, y su contenedor usa `min-w-0`. Motivo: en Safari iOS estos inputs tienen un ancho intrínseco y se salen de la tarjeta o se superponen al botón vecino (por ejemplo, el `+` de `TimeSlotChipInput`). Los demás tipos no cambian.
 
 ---
 
@@ -1246,7 +1400,9 @@ Permitir que el admin agende una cita desde `/admin/months/[month]` sin navegar 
 ### Rules
 
 - CTA `Agendar nueva cita` se muestra antes de `Bloquear espacios` en `/admin/months/[month]`
-- solo habilitado cuando el mes está `ACTIVE`
+- el admin puede agendar en meses `INACTIVE` (el flujo público exige `ACTIVE`); no se muestra en meses pasados
+- horarios del día: se piden a la agenda del día del servidor (`availableSlots`). Si el horario elegido sigue ofrecido al recargar, se conserva; si no, se elige el primero
+- `Agendar cita` está deshabilitado mientras no haya día y horario seleccionados o mientras carga la agenda del día
 - durante submit:
   - se bloquean interacciones del modal
   - se impide cierre por overlay, `X` y `Escape`

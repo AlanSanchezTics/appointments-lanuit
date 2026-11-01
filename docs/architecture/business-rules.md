@@ -4,7 +4,7 @@
 
 Define the business rules that govern the appointment domain for the manicure booking system, using `docs/specification.md` as the normative source.
 
-This document captures domain behavior, constraints, states, and decision rules without implementation-level details.
+This document captures domain behavior, constraints, states, and decision rules without implementation-level details. Data structures are described in `docs/architecture/data-model.md`; endpoint contracts and error codes are described in `docs/architecture/api.md`.
 
 ## Domain Overview
 
@@ -15,7 +15,7 @@ The core domain objective is to allow customers to book, consult, modify, and ca
 Business behavior is defined by:
 
 - Appointment scheduling windows based on active months.
-- A fixed weekday/time-slot model.
+- A rule-based availability model per month: days, times, minimum gap between appointments, and daily capacity (see Availability Rules).
 - Booking, cancellation, and self-service modification eligibility rules.
 - 15-calendar-day threshold as UX suggestion trigger in public booking flow when same-month active future appointments exist.
 - Temporary slot holding during public booking flow (from end of step 1 until confirmation/expiration).
@@ -47,10 +47,14 @@ Business behavior is defined by:
 
 - Reservation Lock
   - Temporary hold used during booking flow (step 1 -> step 2 -> step 3) to prevent concurrent slot capture.
-  - Locks expire automatically after a fixed time window and stop blocking availability once expired.
+  - Locks expire automatically after a fixed time window of 10 minutes and stop blocking availability once expired.
 
 - Active Month
   - Calendar month that is explicitly enabled for booking and destination reschedule availability flows.
+
+- Availability Rule and Availability Exception
+  - Per-month definitions of the days and times the professional offers (see Availability Rules).
+  - A month always has a rules version used to detect concurrent edits.
 
 ## Core Concepts
 
@@ -60,22 +64,29 @@ Business behavior is defined by:
   - The system operates within a limited forward-looking window of active months.
 
 - Operating calendar
-  - Service is offered only Monday through Friday.
-  - Same-day booking is allowed only for future time slots relative to local business time.
+  - A day is offered only when the month's availability rules or exceptions open it and produce at least one offerable time (FR-017, D46). There are no fixed operating weekdays.
+  - A month without any rule uses the default rule: Monday to Friday, times `09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, minimum gap 240 minutes, `preserveCapacity` true, `maxPerDay` 3 (D6). Saturdays and Sundays stay closed in that case (D28).
+  - A month with at least one rule closes every day that no rule or exception covers (D23).
+  - Same-day booking is allowed only for times equal to or later than the current local business time (D50).
 
-- Slot pair model
-  - Time slots are grouped in directional pairs:
-    - (09:00, 10:00)
-    - (13:00, 14:00)
-    - (17:00, 18:00)
+- Minimum gap model (replaces the former directional pair model, ADR 0001)
+  - Offered times are the `HH:mm` times of the rule or exception that covers the day. There is no fixed list of times.
+  - Each rule or exception has `minGapMinutes` (0 to 1440; default 240). A time is offered only when its start time is at least `minGapMinutes` away from the start time of every active appointment on that day.
+  - In the public flow, valid temporary locks count as occupied for this check.
+  - The former pairs `(09:00, 10:00)`, `(13:00, 14:00)`, `(17:00, 18:00)` and their directional restrictions no longer exist as a business rule. Only the migration presets keep the old time lists (see Availability Rules).
 
 - Daily capacity model
-  - A day can have at most three active appointments.
-  - A pair can contain at most one active appointment.
+  - Each rule or exception has `maxPerDay` (1 to 6; default 3). A day with `maxPerDay` active appointments offers no times.
+  - `preserveCapacity` (default true): a time is offered only if booking it does not reduce how many more appointments still fit that day, capped at `maxPerDay`. When it is false, only the minimum gap and `maxPerDay` apply (FR-010, FR-012).
+  - `availableSpaces` of a day is the number of additional appointments still reachable under these rules, capped by `maxPerDay`. It is not a fixed constant of 3 (FR-026, D12).
+  - A day with no offerable times (closed by rule, empty exception, full-day block, or times already past) is unavailable (FR-015).
+  - Compared with the former model, when there are manual single-time blocks 48 of 432 combinations differ; in those cases the new model offers more times. This difference is accepted (D43, D54; ADR 0002).
 
 - Active appointment definition
-  - States considered active for occupancy/conflict decisions: `PENDING`, `CONFIRMED`, `SYNC_FAILED`.
-  - `REJECTED` and `CANCELLED` appointments do not count toward occupancy or conflict decisions.
+  - Public booking, public reschedule, and admin writes (creation, reschedule, manual blocks) treat `PENDING`, `CONFIRMED`, and `SYNC_FAILED` as occupying their time (D68, D71).
+  - `REJECTED` and `CANCELLED` appointments do not occupy time and do not count toward occupancy or conflict decisions.
+  - Admin counters and metrics (month detail and dashboard) count only `CONFIRMED` and `SYNC_FAILED`; `PENDING` is not counted (D66).
+  - Consequence accepted by the owner: a month's `availableSpaces` can show more free spaces than the admin can book, when a `PENDING` appointment sits on a time that is otherwise free.
 
 - Temporary reservation lock
   - A slot can be temporarily held from the end of step 1 and kept across identity/confirmation while valid.
@@ -100,13 +111,12 @@ Business behavior is defined by:
 
 - A booking request is valid only when all of the following hold:
   - Target month is active.
-  - Target date is a weekday.
-  - Target slot is one of the official base slots.
-  - For same-day booking, target slot is still in the future.
-  - Slot is not occupied by an active appointment.
-  - Slot is not blocked by a valid temporary lock.
-  - Slot satisfies pair-direction constraints induced by all active appointments on that day.
-  - Daily active appointment limit has not been reached.
+  - Target date is a day of the month that has at least one offerable time under the availability rules.
+  - Target time is one of the times offered by the availability resolver for that day (see Availability Rules).
+  - For same-day booking, target time is still in the future.
+  - Slot is not occupied by an active appointment (`PENDING`, `CONFIRMED`, `SYNC_FAILED`).
+  - Slot is not blocked by a valid temporary lock or a manual block.
+  - The minimum gap and daily capacity rules of the day allow the slot.
 
 - Customer identity rules during booking:
   - Phone is normalized to exactly 10 digits.
@@ -123,6 +133,7 @@ Business behavior is defined by:
   - In public booking flow, a phone can hold multiple active future appointments within the same target month.
   - In public booking flow, when same-month active future appointments exist within the 15-calendar-day threshold of the selected date, booking flow must enter a decision view with current selection details + list of active appointments.
   - In public booking flow, the 15-calendar-day threshold is used only to decide whether to show the decision/suggestion view.
+  - Target rule (D95): the threshold counts `PENDING`, `CONFIRMED` and `SYNC_FAILED` as active appointments. Pending implementation (public code round, D95): the current code counts only `CONFIRMED` and `SYNC_FAILED`.
   - In public booking flow, when the new slot/date is within 15 calendar days of at least one existing active future appointment in the same month, UI shows the suggestion view and allows either rescheduling or booking as new.
   - In public booking flow, when the new slot/date is outside that threshold for all same-month active future appointments, UI can continue directly to confirmation.
   - In public booking flow, the same-month active appointments list must start with no preselected appointment; the customer must choose explicitly.
@@ -135,6 +146,7 @@ Business behavior is defined by:
 - Booking confirmation rules:
   - Confirmation requires a valid, unexpired lock tied to the selected slot/date/phone.
   - If lock expires or becomes invalid, confirmation is rejected and slot must be reselected.
+  - Confirmation revalidates the slot against the availability rules in force at confirmation time (D39). A valid lock does not guarantee that the time still exists: if a rule or exception removed it, confirmation fails with `SLOT_NOT_AVAILABLE`.
   - Public confirmation may include `appointmentIdToReschedule`; when present, the selected active future appointment for the same phone/month is rescheduled instead of creating a new record.
   - Public confirmation without `appointmentIdToReschedule` creates the new appointment in `CONFIRMED` for loyal customers and `PENDING` for non-loyal customers.
   - `PENDING` appointments do not create a calendar event until they are later confirmed.
@@ -160,6 +172,39 @@ Business behavior is defined by:
   - Offering the message persists nothing: it does not change the appointment status and does not write any record.
   - The button must not use `window.open` or a new tab. Mobile browsers block new windows not opened directly from a user gesture.
 
+## Concurrency Rules
+
+- Scope:
+  - Writes that touch times: public booking confirmation, public reschedule, admin appointment creation, admin reschedule, manual blocks, and changes to rules, exceptions, or slot mode.
+  - Decisions are recorded in ADR 0006 (`docs/decisions/0006-concurrencia-reservas-orden-de-locks.md`).
+
+- First commit wins:
+  - When two writes target the same time, only one succeeds (edge case: simultaneous booking).
+  - There is no database constraint that prevents two active appointments at the same time. Protection is application-level, by the lock order below (owner architecture decision; see `docs/architecture/data-model.md`).
+
+- Lock order for writes that touch times (D63, D77):
+  1. Named locks for the date and for the phone, taken in alphabetical order with a 5-second wait. If they are not obtained, the request fails with `LOCK_TIMEOUT` (409 on the routes that map it, see `docs/architecture/api.md`). Manual blocks do not take these named locks (limitation F2, D83).
+  2. Month rules read with a shared row lock in booking, confirmation, reschedule, and block flows. The rule editor takes an exclusive row lock on the same month.
+  3. Conflicting appointments of the day are locked.
+  4. Reservation locks (D88, D89): after the conflicting appointments are locked, expired locks of the processed date are cleaned up and the active locks the flow needs are read. No flow takes a reservation lock before the appointments. Manual blocks clean up and read the reservation locks of their date but do not take the named locks.
+  5. Occupancy is read. In admin creation and admin reschedule the read is exclusive (D77). In manual blocks the appointment read is exclusive, but the blocked-slot read is plain (limitation F2). The public flows also read blocked slots plainly (F2).
+  6. The appointment or block is written, then the named locks are released in the flows that took them.
+
+- Infrastructure errors (deadlock, transaction or InnoDB lock wait timeout, connection pool) raised during a write are not business rejections. The transaction is rolled back and the request fails with `UNKNOWN_ERROR` (400). A `GET_LOCK` timeout is `LOCK_TIMEOUT` instead (D81).
+
+- Rule editor:
+  - The editor waits for writes in progress on the same month.
+  - No write mixes old rules with a change in progress.
+
+- Public confirmation order:
+  - Start transaction; take the named locks; read the month rules with a shared lock; lock the conflicting appointments of the day and the phone; clean expired locks of the processed date; validate the temporary lock with a lock; validate availability against the current rules (D39) with a conflict lock; insert or reschedule; delete the consumed lock; release the named locks; commit; then create the calendar event.
+
+- Known limitations (see ADR 0006):
+  - F1 (D82, mandatory correction before the Phase 1 release): a session lock is not released when the database transaction expires first (default 5 seconds). In measurements the lock was kept in 7 of 10 expirations. Until it is corrected, `LOCK_TIMEOUT` is rarely reached and the response is usually `UNKNOWN_ERROR` (400).
+  - F2 (D83, accepted by the owner): the manual-block read used by public routes is a plain read despite its name. Measured double occupancy under simultaneous load: 17 of 40 batches (admin block against admin creation) and 10 of 40 (admin block against public booking).
+  - F3 (accepted): named locks of public booking are released before COMMIT. No double booking attributable to this was measured after the B-1 correction.
+  - F4 (corrected, D88 and D91): in the destination validation of public reschedule only a non-bookable month becomes `SLOT_NOT_AVAILABLE`. Other errors, including database errors, propagate as `UNKNOWN_ERROR` (400) and roll back the transaction (D81).
+
 ## Appointment Audit Log Rules
 
 - Scope:
@@ -175,6 +220,7 @@ Business behavior is defined by:
   - Automatic pending-expiration rejection also creates a `Cita rechazada` event with actor `Sistema`.
   - Events are created only for transitions that occur after the feature is released.
   - The system performs a one-time historical backfill for appointments that already existed before release, using the deployment cutoff as the boundary and skipping appointments that already have log rows.
+  - Changes to availability rules, exceptions, and slot mode do not create audit events (FR-035, D24).
 
 - Actor rules:
   - Valid actor categories are client, admin, and system.
@@ -240,11 +286,13 @@ Business behavior is defined by:
   - At least 3 hours away from the current local time.
 - Public reschedule preserves the same appointment record (`appointments.id`).
 - Public reschedule updates `date` and `timeSlot` to the newly selected slot.
-- Destination slot selection follows the same public booking availability rules:
-  - target month must be bookable,
-  - target day must be valid,
-  - target slot must be available under occupancy, locks, daily capacity, and slot-mode rules.
-- Public reschedule must not apply `isLoyal` logic or the 15-day booking suggestion branch.
+- Destination slot selection uses the same availability resolver as public booking (see Availability Rules):
+  - the target month must be bookable,
+  - the target day must have at least one offerable time,
+  - the target time must be offered given occupancy (including `PENDING` appointments), active locks, manual blocks, minimum gap, daily capacity, and the same-day cutoff.
+  - Otherwise the reschedule is rejected with `SLOT_NOT_AVAILABLE`.
+  - An active lock held by another client on the target time also rejects the reschedule with `SLOT_NOT_AVAILABLE` (D87). A lock held by the same client does not block it (D88).
+- Public reschedule must not apply `isLoyal` logic, the 15-day booking suggestion branch, or any 15-day rule between appointments.
 - For source appointments in `CONFIRMED` or `SYNC_FAILED`:
   - system attempts calendar mirror re-sync for the new schedule,
   - if sync succeeds, the updated appointment stores the resulting `googleEventId` and ends in `CONFIRMED`,
@@ -297,33 +345,37 @@ Business behavior is defined by:
   - Applies to `/admin` dashboard UI.
 
 - Weekly occupancy widget policy:
-  - Widget displays exactly 5 bars, one per operational weekday (`Monday` to `Friday`) of the current business week.
-  - Occupancy source uses only active appointments (`CONFIRMED`, `SYNC_FAILED`).
+  - Widget displays one bar per day of the current business week, Monday to Sunday (D57). Saturdays and Sundays count when a rule or exception opens them.
+  - Occupancy source uses only active appointments (`CONFIRMED`, `SYNC_FAILED`); `PENDING` is not counted (D66).
+  - Capacity of each day is its `maxPerDay` when the day is open, and `0` when the day is closed or has a full-day block (D44, D53, D57). Each day uses the rules of its own month, so a week can span two months.
   - Daily occupancy percent is calculated as:
-    - `activeAppointmentsForDay / 3 * 100`, rounded to integer.
+    - `activeAppointmentsForDay / capacityOfDay * 100`, rounded to integer.
+    - If the capacity of the day is `0`, the percent is `0`.
   - Weekly occupancy percent is calculated as:
-    - `activeAppointmentsInWeek / 15 * 100`, rounded to integer.
-    - where `15 = 5 weekdays * 3 max daily appointments`.
-  - Weekly comparison is computed against previous business week (`Monday` to `Friday`) using the same formula.
+    - `activeAppointmentsInWeek / weekCapacity * 100`, rounded to integer,
+    - where `weekCapacity` is the sum of the capacities of the seven days.
+    - The weekly percent is not capped.
+  - Weekly comparison is computed against the previous business week (Monday to Sunday) using the same formula.
   - Comparison indicator shows percent points delta (`currentWeekPercent - previousWeekPercent`) with semantic state:
     - `delta > 0`: `more`,
     - `delta < 0`: `less`,
     - `delta = 0`: `similar`.
   - Week boundaries and weekday resolution must use `America/Mexico_City`.
   - All visible copy in the widget must be resolved in frontend via `react-i18next`.
+  - The UI still shows five columns until the Phase 2 UI work is delivered (see `docs/specification.md`, 15.1.4).
 
 - Busiest-day widget policy:
-  - Dashboard includes a highlighted block showing the busiest operational weekday for the current business week.
-  - Source is derived from the same Monday-Friday weekly occupancy dataset.
-  - Busiest day is the weekday with highest active appointments count (`CONFIRMED`, `SYNC_FAILED`).
-  - Tie-break rule: pick the earliest weekday in the week order (`Monday` to `Friday`).
+  - Dashboard includes a highlighted block showing the busiest day of the current business week.
+  - Source is derived from the same Monday-to-Sunday weekly occupancy dataset.
+  - Busiest day is the day with highest active appointments count (`CONFIRMED`, `SYNC_FAILED`).
+  - Tie-break rule: pick the earliest day in the week order (Monday to Sunday).
   - Widget renders localized weekday name and localized supporting copy via `react-i18next`.
   - If the current week has no active appointments, widget is hidden.
 
 - Daily-occupancy widget policy:
   - Dashboard includes a card showing current-day occupancy percentage.
   - Source counts active appointments (`CONFIRMED`, `SYNC_FAILED`) for `currentDate` in `America/Mexico_City`.
-  - Percentage is `activeAppointmentsToday / 3 * 100`, rounded to integer and capped visually at `100`.
+  - Percentage is `activeAppointmentsToday / capacityToday * 100`, rounded to integer, capped visually at `100`; it is `0` when the capacity is `0`.
   - Card must render:
     - title (`Ocupación del día`),
     - percentage value,
@@ -432,7 +484,7 @@ Business behavior is defined by:
   - Year selection for creation is constrained to `[currentYear..currentYear+5]`.
   - Batch selection supports multiple months in one request.
   - New records are created with `status = INACTIVE`.
-  - New records default `slot_mode = SECOND_ONLY_MODE`.
+  - New records are created with `slot_mode = BLOCK_MODE`, a legacy field that is derived from the rules, and without availability rules. The default rule of the Availability Rules section applies until the admin creates rules (D17, D31).
   - Persistence is idempotent-partial:
     - existing months are skipped,
     - missing months are created,
@@ -516,7 +568,7 @@ Business behavior is defined by:
 ## Admin Month Detail Rules
 
 - Scope:
-  - Applies to `/admin/months/[month]`, `GET /api/admin/months/[month]`, `PATCH /api/admin/months/[month]/slot-mode`, and `PATCH /api/admin/months/[month]/status`.
+  - Applies to `/admin/months/[month]`, `GET /api/admin/months/[month]`, `PATCH /api/admin/months/[month]/slot-mode`, `PATCH /api/admin/months/[month]/status`, and the availability rules endpoints of the month.
 
 - Access and identity:
   - Admin authentication is mandatory for the endpoint.
@@ -524,15 +576,16 @@ Business behavior is defined by:
   - If `month` does not exist in `active_months`, response must be `MONTH_NOT_REGISTERED` (`404`).
 
 - Metrics policy:
-  - `confirmedAppointments`: appointments in active states (`CONFIRMED`, `SYNC_FAILED`) within the selected month.
+  - `confirmedAppointments`: appointments in active states (`CONFIRMED`, `SYNC_FAILED`) within the selected month. `PENDING` is not counted (D66).
   - `cancelledAppointments`: appointments in `CANCELLED` within the selected month.
-  - `occupiedSpaces`: same count as active appointments for the month.
-  - `availableSpaces`: `(operationalWeekdays * 3) - (occupiedSpaces + blockedSpaces)` where `3` is max daily capacity.
-  - `blockedSpaces`: blocked capacity units for the selected month (not raw rows):
-    - `BLOCK_MODE`: each directional pair fully blocked (`09:00+10:00`, `13:00+14:00`, `17:00+18:00`) counts as `1` blocked space.
-    - `SECOND_ONLY_MODE`: each blocked base slot (`10:00`, `14:00`, `18:00`) counts as `1` blocked space.
-    - full-day manual block counts as `3` blocked spaces in both modes.
-  - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer.
+  - `occupiedSpaces`: active appointments (`CONFIRMED`, `SYNC_FAILED`) within the selected month. `PENDING` is not counted (D66).
+  - `availableSpaces`: sum of the `availableSpaces` of every day of the month, computed by the availability resolver (see Availability Rules). Each day contributes the additional appointments still reachable, capped by its `maxPerDay`. Days before today contribute `0` (D12, D56). It is not computed as operational weekdays times 3 minus occupied and blocked spaces.
+  - `blockedSpaces`: blocked capacity units of the month (not raw rows):
+    - each time of the day's rule or exception that has a manual single-time block counts as `1`;
+    - a full-day block counts as `1` for each time of that day's rule or exception;
+    - a day without rule or exception counts `0`;
+    - days before today are included (D14, D41, D62).
+  - `projectedSaturationPercent`: `occupiedSpaces / (occupiedSpaces + availableSpaces) * 100`, rounded to integer, and `0` when the denominator is `0`. The `availableSpaces` used here keeps the days before today, so the value is comparable with the previous month (D60).
   - `saturationComparison`:
     - `previousMonth`: previous chronological month (`YYYY-MM`).
     - `previousProjectedSaturationPercent`: same saturation formula calculated for previous month.
@@ -540,11 +593,19 @@ Business behavior is defined by:
 
 - Calendar policy:
   - Calendar includes every day of the selected month.
-  - Weekend days are non-operational (`weekend` tone).
-  - Weekday tone is derived from `availableSpaces` per day:
-    - `available`: `>= 2`
-    - `low`: `= 1`
-    - `full`: `= 0`
+  - Tone of each day:
+    - `closed` (gray): a day before today, or a day with no offerable times once manual blocks and the times already past are applied (closed by rule or exception, all its times blocked, or all its times past). Occupancy is not considered for this tone (D34, D56).
+    - `available`: `availableSpaces >= 2`.
+    - `low`: `availableSpaces = 1`.
+    - `full`: `availableSpaces = 0` on a day that is not `closed` (for example, a day filled with appointments).
+  - Weekend is not a special tone. A Saturday or Sunday is closed unless a rule or exception opens it, and an open Saturday uses the same tones as any other day.
+  - Tones are derived from the resolver, and `PENDING` appointments do not count (D66). A day can therefore show free spaces that the admin cannot book.
+
+- Availability rules policy (month detail):
+  - The month detail shows the rules and exceptions of the month, the availability version (`availabilityVersion`), and whether the month still uses the default rule (no rules).
+  - Creating, editing, or deleting a rule or exception requires the version that the admin edited (see Availability Rules). A conflicting save is rejected and nothing changes.
+  - Before saving, the admin is shown the future active appointments that the change leaves outside the times grid of the month. If there are any, saving requires explicit confirmation; confirming does not change those appointments (FR-023, FR-024, D18, D35, D40).
+  - Rules and exceptions cannot be created, edited, or deleted, and the slot-mode preset cannot be applied, for a past month (`MONTH_IN_PAST`, D36).
 
 - Day agenda policy:
   - Day-level agenda is requested with `month + date`.
@@ -555,15 +616,16 @@ Business behavior is defined by:
 
 - Admin edit policy:
   - Month status action updates `active_months.status` between `ACTIVE` and `INACTIVE`.
-  - Month slot-mode action is only exposed in UI for current/future months (`isPastMonth=false`).
+  - Month slot-mode action is only exposed in UI for current/future months (`isPastMonth=false`). The API rejects a past month with `MONTH_IN_PAST` (D36).
   - Share-agenda action is exposed only for current/future months and must stay disabled when `monthStatus=INACTIVE`.
-  - Admin appointment creation is allowed in registered months regardless of status (`ACTIVE` or `INACTIVE`); only the public booking flow requires `ACTIVE`.
+  - Admin appointment creation is allowed in any registered month, `ACTIVE` or `INACTIVE` (D17). Only the public booking flow requires `ACTIVE`.
   - If `isPastMonth=true`, UI must hide the 4 action CTAs block (`Compartir agenda`, `Agendar nueva cita`, `Bloquear espacios`, `Activar|Desactivar mes`).
   - Month status update is only allowed for current or future months.
   - Updating month status in past months is rejected with `MONTH_IN_PAST`.
   - Edit action reprograms appointment `date + timeSlot` within the same selected month.
+  - Only `CONFIRMED` or `SYNC_FAILED` appointments can be rescheduled from the admin agenda. A `PENDING` appointment is not editable there and responds `APPOINTMENT_NOT_FOUND` (D72).
   - Past appointments are not editable in day-agenda actions.
-  - Destination must satisfy booking availability invariants (weekday-only, valid slot, future slot, pair-direction constraints, daily max, and active lock checks).
+  - Destination must satisfy the availability invariants: the day has offerable times, the time is offered by the resolver (occupancy including `PENDING` appointments, active locks, manual blocks, minimum gap, daily capacity, and same-day cutoff), in the same month (D63, D68).
 
 - Admin cancel policy:
   - UI must request explicit confirmation before executing cancel action.
@@ -573,14 +635,14 @@ Business behavior is defined by:
 
 - Admin booking policy:
   - Admin can create appointments inside `/admin/months/[month]` through admin-specific API contracts.
-  - Creation is only allowed when selected `month` exists and is `ACTIVE`.
-  - Booking must satisfy the same booking invariants as public flow:
-    - operational weekday,
-    - valid base slot according to month slot mode,
+  - Creation is allowed when the selected `month` is registered, in any status (`ACTIVE` or `INACTIVE`).
+  - Booking must satisfy the same booking invariants as the public flow:
+    - the day has offerable times,
+    - the time is offered by the availability resolver (no fixed list of times per mode),
     - future slot for same-day,
-    - pair-direction constraints,
-    - daily max capacity,
-    - no active temporary lock for another phone on same slot.
+    - minimum gap and daily capacity,
+    - no active temporary lock for another phone on same slot,
+    - no active appointment on the same time, including `PENDING` (D68).
   - Admin can create multiple active future appointments for the same phone/customer.
   - Customer selection supports:
     - existing customer by `clientId`,
@@ -591,93 +653,112 @@ Business behavior is defined by:
   - Admin booking uses deterministic API errors for conflicts/validation and keeps calendar sync behavior consistent with domain (`CONFIRMED` or `SYNC_FAILED`).
 
 - Admin blocked-slots policy:
-  - Admin can manually block multiple slots in `/admin/months/[month]`.
+  - Admin can manually block multiple times in `/admin/months/[month]`, or a full day in one action.
   - Allowed reasons are constrained to: `DESCANSO`, `PERSONAL`, `OTRO`.
   - Only one reason can be selected per submit operation.
   - Day eligibility:
     - inside selected `month`,
     - current day or future day,
-    - operational weekday.
+    - the day has at least one offerable time under the rules in force; otherwise the request fails with `DATE_NOT_OPERATIONAL` (D76).
   - Slot eligibility:
-    - base slot from the official catalog,
-    - not in the past for same-day,
-    - not occupied by active appointment,
-    - not blocked by active temporary lock,
-    - not already manually blocked.
-  - Manual-block directional propagation:
-    - `BLOCK_MODE`: blocking a single slot in a pair applies directional propagation to homologous slots in other pairs.
-    - `BLOCK_MODE`: blocking both slots of the same pair does not propagate additional directional restriction beyond that pair.
-    - `SECOND_ONLY_MODE`: no directional propagation; each blocked slot affects only that exact slot.
+    - the time is one of the times offered by the resolver for that day at the moment of the block. That excludes times already past for same-day blocks, times occupied by an active appointment (including `PENDING`, D68, D71), times held by an active temporary lock, times already manually blocked, and times that the minimum gap or the daily capacity rules exclude. Otherwise the request fails with `SLOT_NOT_AVAILABLE`.
+  - Effect of a manual single-time block:
+    - the blocked time leaves the day's times grid before the minimum gap and daily capacity are computed (FR-013, D2, D43);
+    - there is no propagation to other times of the day (the former directional propagation is retired).
+  - Full-day block:
+    - Admin can block a full day in one action, without selecting each time individually. The day is then unavailable for new bookings.
+    - Stored as a single marker in `blocked_slots` (`00:00`), not one row per time (D41, D55).
+    - The request fails with `SLOT_LOCKED` when an active temporary lock sits on a time of the day's grid, with `DAY_ALREADY_BLOCKED` when the day already has a full-day block, and with `SLOT_NOT_AVAILABLE` when the day has no time left to offer.
+    - A successful full-day block replaces the single-time blocks that the day already had.
+    - Day-agenda must allow unblocking a full-day block in a single action.
   - Calendar mirror:
-    - Every blocked slot creation (including full-day marker) must attempt to create a mirror event in Google Calendar.
+    - Every blocked slot creation (including the full-day marker) must attempt to create a mirror event in Google Calendar.
     - Mirror event title format:
-      - slot block: `No disponible - [Reason]`.
+      - single-time block: `No disponible - [Reason]`.
       - full-day block: `Día libre - [Reason]`.
-    - Mirror event range by month slot mode:
-      - `SECOND_ONLY_MODE`: keep current standard duration behavior.
-      - `BLOCK_MODE` single-hour block: event duration is 1 hour.
-      - `BLOCK_MODE` directional pair block: create one 1-hour event per blocked hour in the pair.
-    - Full-day blocked-slot mirror event must use same-day schedule window `06:00-23:00` in `America/Mexico_City`.
+    - Single-time block: one mirror event of 1 hour (D15, D29, D30). Only blocks created from the deployment onward use this duration; existing events keep theirs.
+    - Full-day block: mirror event on the same day from `06:00` to `23:00` in `America/Mexico_City`.
     - Blocked-slot reason updates must attempt to update the mirror event summary.
     - Blocked-slot deletion must attempt to delete the mirror event when `googleEventId` exists.
-    - Calendar failures never rollback local blocked-slot mutations; failures are exposed as sync warnings and tracked as `SYNC_FAILED` for retry when applicable.
-    - Blocking all base slots in a day results in no bookable slots for that day.
-  - Full-day block behavior:
-    - Admin can block a full day in one action (without selecting each hour individually).
-    - Full-day block marks the day as unavailable for new bookings.
-    - Day-agenda must allow unblocking a full-day block in a single action.
+    - Calendar failures never roll back local blocked-slot mutations; failures are exposed as sync warnings and tracked as `SYNC_FAILED` for retry when applicable.
+    - Blocking every offered time of a day leaves no bookable times for that day.
   - Submit behavior:
     - operation is atomic all-or-nothing for selected slots,
     - UI disables all modal interactions while submit is in progress.
   - Mass-action behavior:
-    - `Seleccionar todo` selects all currently blockable slots for the selected day in one action.
-    - `Limpiar selección` removes every selected slot before submit.
-  - Slot visualization behavior:
-    - UI supports `Por hora` and `Por bloque` views over the same eligible slot set in `BLOCK_MODE`.
-    - In `SECOND_ONLY_MODE`, blocked-spaces modal only allows `Por hora`.
-    - Selecting a block toggles both slots of the directional pair in the current day.
-    - Persistence uses `blocked_slots` for slot-level blocks and a dedicated full-day marker for day-level block (same table, no table adicional).
+    - `Seleccionar todo` selects all currently blockable times for the selected day in one action.
+    - `Limpiar selección` removes every selected time before submit.
+  - Time visualization:
+    - UI shows the eligible times one by one (`Por hora`). The former `Por bloque` view and the directional pairs no longer exist (D14).
+  - Persistence uses `blocked_slots` for single-time blocks and a dedicated full-day marker for day-level block (same table, no additional table).
+
 - Day-agenda management behavior:
-    - Day agenda includes operational CTAs to:
-      - open `Agendar nueva cita` with the selected day prefilled,
-      - open `Bloquear espacios` with the selected day prefilled.
-    - Day-agenda CTAs are hidden when the selected day has no eligible spaces.
-    - Admin can edit reason of a manual blocked slot from day-agenda modal.
-    - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
-    - Edit is allowed only for future blocked slots.
-    - Delete is allowed for manual blocked slots in past or future dates.
+  - Day agenda includes operational CTAs to:
+    - open `Agendar nueva cita` with the selected day prefilled,
+    - open `Bloquear espacios` with the selected day prefilled.
+  - Day-agenda CTAs are hidden when the selected day has no eligible spaces.
+  - Admin can edit reason of a manual blocked slot from day-agenda modal.
+  - Admin can delete a manual blocked slot from day-agenda modal with explicit confirmation.
+  - Edit is allowed only for future blocked slots.
+  - Delete is allowed for manual blocked slots in past or future dates.
 
 ## Availability Rules
 
-- Month slot mode policy:
-  - Default `slot_mode` for newly registered months in admin catalog is `SECOND_ONLY_MODE`.
-  - `BLOCK_MODE`:
-    - valid base time slots: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
-  - `SECOND_ONLY_MODE`:
-    - valid base time slots: `10:00`, `14:00`, `18:00`.
-  - Month slot mode is persisted in `active_months.slot_mode`.
-  - Mode change does not alter or cancel existing appointments.
-  - Mode affects new booking lock, booking confirmation, admin reschedule, and blockable-slot eligibility.
+- Scope:
+  - One resolver decides, for each day, the offered times. Public booking, public reschedule, the lock, the confirmation, admin creation and reschedule, manual blocks, the dashboard, and the month detail all use it (FR-016).
 
-- Visible/eligible availability must exclude:
-  - Past-time slots for same-day booking.
-  - Slots occupied by active appointments.
-  - Slots blocked by active temporary locks.
-  - Slots manually blocked by admin (`blocked_slots`).
-  - Slots invalidated by pair-direction constraints (`BLOCK_MODE` only).
+- Rules and exceptions of a month:
+  - A month has zero or more availability rules and zero or more date exceptions.
+  - A rule covers a date range inside the month, one or more weekdays (Monday to Sunday), one or more `HH:mm` times, and three parameters: `minGapMinutes`, `preserveCapacity`, and `maxPerDay`. When a rule is created, the defaults are `240`, `true`, and `3` (D20, FR-002).
+  - Two rules of the same month cannot share a date. The overlap is checked by dates, not by weekdays, when saving (FR-003).
+  - An exception applies to one date and has its own times and parameters. It takes priority over any rule covering that date, and it can open a date that no rule covers. An exception with an empty times list closes that day (FR-004, FR-005, D10).
+  - Rules and exceptions never cross months (FR-019).
 
-- `BLOCK_MODE` pair-direction rule:
-  - If a booking exists on the first slot of pair `i`, the second slot of every earlier pair is blocked.
-  - If a booking exists on the second slot of pair `i`, the first slot of every later pair is blocked.
-  - A candidate slot must satisfy all directional restrictions produced by all active appointments on that day.
+- Month without rules:
+  - A month with no rule uses the default rule: Monday to Friday, times `09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, `240` / `true` / `3`, on the days no exception covers. Saturdays and Sundays are closed (D6, D28).
+  - Deleting the last rule of a month returns the month to that default (D17).
+  - Adding the first rule to a month without rules closes the days that the default opened and the new rule does not cover; this is accepted without an extra warning (D28, D23, D42).
 
-- `SECOND_ONLY_MODE` slot rule:
-  - Valid bookable slots are `10:00`, `14:00`, `18:00`.
-  - No pair-direction propagation is applied.
-  - A candidate slot is valid only when that exact slot is not occupied, locked, or manually blocked.
+- Day resolution (single resolver, same result everywhere):
+  1. Start from the times of the rule or exception that covers the day. An exception has priority over a rule.
+  2. Remove times with a manual single-time block (FR-013, D2, D43).
+  3. On the current day, remove times before the current local time in `America/Mexico_City`. A time equal to the current time is still offered (FR-014, D50).
+  4. Apply the minimum gap: a time is offered only if its start is at least `minGapMinutes` from the start of every active appointment on that day. In the public flow, valid locks count as occupied (FR-009, D25).
+  5. If `preserveCapacity` is `true`, offer a time only if booking it does not reduce how many more appointments still fit that day, capped at `maxPerDay` (FR-010). If it is `false`, only the minimum gap and `maxPerDay` apply (FR-012).
+  6. If the day already has `maxPerDay` active appointments, offer no times (FR-011).
+- A day with no offerable times is unavailable (FR-015, D46).
+- `availableSpaces` of a day is the number of additional appointments still reachable, capped by `maxPerDay` (FR-026, D12).
+- Without manual blocks the engine reproduces the former behavior (SC-002). With manual blocks, 48 of 432 combinations differ from the former behavior and that difference is accepted (D43, D54; ADR 0002).
 
-- Day visibility rule:
-  - If all slots for a day are unavailable, that day is treated as unavailable.
+- Limits and validation of rules and exceptions:
+  - `minGapMinutes`: integer from `0` to `1440`.
+  - `maxPerDay`: integer from `1` to `6`.
+  - Each rule or exception has at most `24` distinct times, counted after normalization (D21).
+  - Times use the `HH:mm` format. They are normalized on save: no duplicates, sorted (D37).
+  - `00:00` is not a valid time in rules or exceptions. It is the internal marker of a full-day block (D55).
+  - A rule needs at least one weekday and at least one time. An exception may have an empty times list, which closes the day.
+  - Dates must be real calendar dates inside the month. A malformed or nonexistent date (for example `2026-02-30`) is rejected (D38).
+  - Each validation error has a stable `AVAILABILITY_*` code; the list is in `docs/architecture/api.md`.
+
+- Changes to rules and exceptions:
+  - Creating, editing, or deleting rules or exceptions, and applying a slot-mode preset, is allowed only for months that are not in the past (D36, `MONTH_IN_PAST`).
+  - Every month has a rules version. A save must carry the version the admin edited; if it changed, the save is rejected and nothing is modified (`AVAILABILITY_VERSION_CONFLICT`, FR-041, D24). Each successful save increments the version.
+  - Future active appointments that the change leaves outside the times grid are listed before saving (FR-023, FR-024, D35, D40). Past appointments are not listed, and manual blocks are not part of this calculation (D18). When there are affected appointments, saving requires explicit confirmation (`AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED`).
+  - Changing rules or exceptions does not modify, move, or cancel appointments, their status, or Google Calendar events (FR-022, D5).
+  - A temporary lock on a time that a rule removed keeps its TTL. Confirmation rejects it with `SLOT_NOT_AVAILABLE` (D39).
+  - Rule changes do not generate appointment audit events (FR-035, D24).
+
+- Slot mode (legacy field):
+  - `slot_mode` is no longer a source of times. It is derived from the rules (FR-033, D19, D31; ADR 0004):
+    - a month without rules has `BLOCK_MODE`;
+    - a month with a single rule that covers the whole month, with exactly the values of a preset, has that preset's mode;
+    - any other set of rules keeps the current value.
+    - Exceptions are not compared.
+  - Presets (D4, D16) are shortcuts that set the month's rules:
+    - `BLOCK_MODE`: Monday to Friday, times `09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, `240` / `true` / `3`;
+    - `SECOND_ONLY_MODE`: Monday to Friday, times `10:00, 14:00, 18:00`, `0` / `false` / `3`.
+  - The slot-mode action replaces the month's rules with one whole-month rule that has the values of the preset and keeps the exceptions (FR-034, D16, D33).
+  - Migration of existing months (D4, FR-030 to FR-032): a month with `BLOCK_MODE` receives the default rule above; a month with `SECOND_ONLY_MODE` receives Monday to Friday with times `10:00, 14:00, 18:00` and `0` / `false`. Existing appointments are not modified. Details are in `docs/architecture/data-model.md`.
 
 ## State Transitions
 
@@ -685,9 +766,10 @@ Business behavior is defined by:
   - `CONFIRMED`: valid active appointment.
   - `CANCELLED`: appointment canceled; does not consume availability.
   - `SYNC_FAILED`: appointment remains active for domain conflicts even when external sync failed.
+  - `PENDING`: appointment awaiting manual review; it occupies its time in the public flow and in admin writes, but it is not counted in admin counters (D66, D68).
 
 - Allowed business transitions:
-  - New booking creates a `CONFIRMED` appointment.
+  - New public booking creates a `CONFIRMED` appointment for loyal customers and a `PENDING` appointment for non-loyal customers (see Booking confirmation rules).
   - Confirmed appointment can transition to `CANCELLED` when cancellation rules are met.
   - External sync failure may result in `SYNC_FAILED` while still preserving active occupancy behavior.
 
@@ -697,13 +779,18 @@ Business behavior is defined by:
 ## Validation Rules
 
 - Month/date validation:
-  - Month must be active.
-  - Past months are rejected.
-  - Day must be Monday to Friday.
+  - Month must be active for the public booking flow and for public reschedule.
+  - Past months are rejected for public booking. Rules, exceptions, slot mode, and month status cannot be changed in a past month (`MONTH_IN_PAST`).
+  - Dates must be real calendar dates. A nonexistent or malformed date (for example `2026-02-30`) is `VALIDATION_ERROR` in public booking and public reschedule.
+  - The day must have at least one offerable time under the resolver. Otherwise booking, reschedule, and admin appointment creation fail with `SLOT_NOT_AVAILABLE`, and a manual block fails with `DATE_NOT_OPERATIONAL`.
 
 - Time validation:
-  - Slot must be one of the official base slots.
-  - Same-day slot must still be in the future.
+  - Time must be `HH:mm`. Any valid `HH:mm` is accepted by the input validation; whether it is offered is decided by the resolver (`SLOT_NOT_AVAILABLE`).
+  - Same-day time must still be in the future.
+  - `00:00` is rejected in rules and exceptions (D55).
+
+- Availability rule validation:
+  - Limits, overlap, and version rules of the Availability Rules section apply (FR-025, FR-003, FR-041).
 
 - Phone/name validation:
   - Phone input can include separators at capture time, but business identity is a normalized 10-digit phone.
@@ -711,10 +798,11 @@ Business behavior is defined by:
   - One phone corresponds to one canonical customer name.
 
 - Booking precondition validation:
-  - Slot availability.
-  - Daily and pair constraints.
+  - Slot availability under the resolver.
+  - Minimum gap and daily capacity.
   - Valid temporary lock at confirmation step.
   - Public flow only: if same-phone active future appointments exist in the target month, evaluate the 15-calendar-day threshold only as UX suggestion trigger.
+  - Pending implementation (D95): `PENDING` will count as active for this threshold; the current code counts only `CONFIRMED` and `SYNC_FAILED`.
 
 - Cancellation precondition validation:
   - `CONFIRMED` status.
@@ -727,13 +815,15 @@ Business behavior is defined by:
 - The appointment domain source of truth is internal system state.
 - External calendar acts as mirror, not authority.
 - No overlapping active occupancy per slot.
-- Pair-direction constraints and daily max capacity are always enforced.
+- Minimum gap (`minGapMinutes`), daily maximum (`maxPerDay`), and, when `preserveCapacity` is true, the capacity rule are enforced by the resolver for every public and admin write.
 - Public flow: a phone can have multiple active future appointments per month; the 15-calendar-day threshold only drives suggestion UX and does not block booking creation.
 - Admin flow: a phone can have multiple active future appointments.
-- Booking and cancellation are only valid within active months.
+- Booking and cancellation are only valid within active months. Admin appointments can be created in any registered month.
 - Same-day booking is only valid for future slots in local business time.
 - Cancellation releases availability.
 - Temporary reservation locks stop blocking once expired.
+- Changing availability rules or exceptions never changes, moves, or cancels appointments or calendar events (D5).
+- A `PENDING` appointment occupies its time in the public flow and in admin writes, but does not count in admin counters (D66, D68).
 - Admin protected routes are never accessible without a valid, non-expired admin session.
 
 ## Edge Cases
@@ -745,8 +835,13 @@ Business behavior is defined by:
   - if no months satisfy that filter, root keeps the same welcome layout and shows unavailable-agenda messaging while preserving cancellation CTA.
 - Two users trying to secure the same slot at nearly the same time can result in only one successful booking.
 - A lock can expire while the user is confirming; confirmation must fail and force reselection.
-- Same-day booking near slot time cutoff may become invalid between selection and confirmation.
-- A day can become unavailable either by reaching max active appointments or by directional constraints + locks.
+- Same-day booking: times equal to or later than the current local time are bookable (D50). A time that becomes past between selection and confirmation is rejected.
+- A day can become unavailable by reaching `maxPerDay` active appointments, by the minimum gap or preserved capacity leaving no time, by a closed rule or empty exception, by a full-day block, or by active locks.
+- A lock on a time that a rule removed afterwards is kept until its TTL; confirmation fails with `SLOT_NOT_AVAILABLE` (D39).
+- Rule change that leaves future active appointments outside the grid: the appointments keep date, time, and status; the admin sees them before saving (D5, D18, D40).
+- Admin reschedule of a `PENDING` appointment is not possible from the agenda; the response is `APPOINTMENT_NOT_FOUND` (D72).
+- Manual block on a time with a `PENDING` appointment: `SLOT_NOT_AVAILABLE` (D68, D71).
+- Past month: no rule, status, or slot-mode change is accepted (`MONTH_IN_PAST`, D36).
 - Cancellation and new booking attempts on the same slot/time window must resolve without violating occupancy invariants.
 - If external calendar sync fails, appointment remains active in domain conflict logic (`SYNC_FAILED`).
 - If month activation is temporarily stale at month boundary, month eligibility rules must still treat past months as invalid and active-window policy as authoritative once reconciled.

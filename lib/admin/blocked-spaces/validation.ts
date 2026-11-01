@@ -2,9 +2,9 @@ import { z } from "zod";
 
 import { BLOCK_REASON_VALUES } from "@/lib/admin/blocked-spaces/types";
 import { parseAdminMonthKey } from "@/lib/admin/months/validation";
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
-
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+// FR-006: cualquier HH:mm válido; "00:00" lo rechaza el resolvedor (D55), no el esquema.
+const TIME_SLOT_SCHEMA = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 function isValidDateKey(date: string) {
   if (!DATE_KEY_PATTERN.test(date)) {
@@ -50,7 +50,7 @@ const CREATE_BLOCKED_SLOTS_SCHEMA = z.discriminatedUnion("fullDay", [
     month: z.string(),
     date: z.string(),
     fullDay: z.literal(false).optional(),
-    slots: z.array(z.enum(BASE_TIME_SLOTS)).min(1),
+    slots: z.array(TIME_SLOT_SCHEMA).min(1),
     reason: z.enum(BLOCK_REASON_VALUES),
   }),
 ]);

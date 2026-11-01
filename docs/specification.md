@@ -70,50 +70,54 @@ Restricciones:
 
 ### 4.1 Días válidos
 
-- Solo lunes a viernes.
-- Se permiten citas el mismo día **solo** si el horario seleccionado aún no ha pasado en la zona `America/Mexico_City`.
+- Los días válidos no son fijos de lunes a viernes. Un día es válido para reservar, reprogramar o agendar si las reglas o excepciones del mes lo cubren y producen al menos un horario ofrecible (FR-017, D46). Un sábado o domingo es válido si una regla o excepción lo abre.
+- Un mes sin reglas aplica el default de lunes a viernes (D6) en los días que ninguna excepción cubre; sábados y domingos quedan cerrados (D28).
+- Un mes con al menos una regla cierra todo día que no cubran ni una regla ni una excepción (D23).
+- Se permiten citas el mismo día solo para horarios iguales o posteriores a la hora actual en la zona `America/Mexico_City` (D50).
 - Horarios del mismo día ya transcurridos no deben mostrarse como disponibles.
-- Si todos los horarios de un día están ocupados, el día no debe mostrarse disponible.
+- Si ningún horario de un día es ofrecible (porque están ocupados, bloqueados, transcurridos o excluidos por la separación mínima o la capacidad diaria), el día no está disponible en el flujo público: se muestra deshabilitado y no se puede seleccionar (sección 7.1). El flujo público no distingue entre un día lleno y uno cerrado. Los tonos `closed`, `full` y gris son del calendario admin (sección 15.7, D13, D34).
 - Los horarios con lock temporal vigente tampoco deben mostrarse como disponibles.
 - En flujo público, un slot se considera ocupado cuando existe una cita en `PENDING`, `CONFIRMED` o `SYNC_FAILED` para ese mismo `date + timeSlot`.
 
 ### 4.2 Horarios Base
 
-- 09:00
-- 10:00
-- 13:00
-- 14:00
-- 17:00
-- 18:00
+- No existe una lista fija de horarios. Los horarios de un día son las horas (`times`) de la regla o excepción que lo cubre, en formato `HH:mm` (FR-006): cualquier hora válida, sin granularidad fija. Por ejemplo, `07:30` y `14:30` son válidos (caso de referencia de diciembre 2026).
+- Cada regla o excepción admite hasta 24 horas distintas (D21). Las horas se normalizan al guardar: sin duplicados y ordenadas (D37).
+- `00:00` no es un horario válido en reglas ni excepciones; es el marcador interno de bloqueo de día completo (D55).
+- Las listas de los modos anteriores (`09:00, 10:00, 13:00, 14:00, 17:00, 18:00` y `10:00, 14:00, 18:00`) sobreviven solo como presets de migración y del `PATCH slot-mode` (D4, D16). No son fuente de horarios.
 
-### 4.3 Reglas por Modalidad + Máximo Diario
+### 4.3 Reglas de disponibilidad, separación y capacidad
 
-Regla general:
+Reglas por mes (FR-001 a FR-005, FR-025):
 
-- Duración del evento en Google Calendar: 3 horas.
-- Límite diario: máximo 3 citas activas por día.
+- Una regla define un rango de fechas dentro del mes, uno o más días de la semana (lunes a domingo), una o más horas `HH:mm` y tres parámetros: `minGapMinutes` (0 a 1440), `preserveCapacity` y `maxPerDay` (1 a 6). Al crear una regla, los valores por defecto son `240`, `true` y `3` (D20, FR-002).
+- Dos reglas del mismo mes no pueden tener fechas en común. El traslape se valida por fechas, no por días de la semana, y se rechaza al guardar (FR-003).
+- Una excepción por fecha tiene sus propias horas y sus propios tres parámetros. Tiene prioridad sobre cualquier regla que cubra esa fecha y también abre o cierra fechas que ninguna regla cubre (FR-004, D10). Una excepción con lista de horas vacía cierra ese día (FR-005, A2).
+- Las reglas y excepciones no cruzan meses (FR-019).
+- Antes de guardar se validan: fechas dentro del mes, horas `HH:mm`, rangos válidos, al menos un día de la semana y una hora por regla, parámetros dentro de rango y máximo de 24 horas por día (FR-025, D21, D38). Cada error tiene un código estable `AVAILABILITY_*`; el contrato está en `docs/architecture/api.md`.
+- Un mes sin reglas usa el default de la sección 4.1 (D6, D28).
 
-`BLOCK_MODE`:
+Motor de disponibilidad (FR-009 a FR-014, FR-016):
 
-- Pares oficiales de horarios:
-  - (09:00, 10:00)
-  - (13:00, 14:00)
-  - (17:00, 18:00)
-- Restricción estructural: máximo 1 cita activa por par.
-- Regla direccional formal:
-  - Si existe una cita en la primera hora de un par $i$, se bloquea la segunda hora de todos los pares anteriores ($j < i$).
-  - Si existe una cita en la segunda hora de un par $i$, se bloquea la primera hora de todos los pares posteriores ($j > i$).
-  - Un slot candidato es válido solo si cumple simultáneamente todas las restricciones inducidas por todas las citas activas del día (composición global).
-- Ejemplos:
-  - si hay cita activa a las `17:00`, se bloquean `14:00` y `10:00`,
-  - si hay cita activa a las `10:00`, se bloquean `13:00` y `17:00`.
+- Todas las validaciones de disponibilidad usan un único resolvedor por día. Lo usan la lista de días del flujo público, el lock, la confirmación, la reprogramación pública, el agendado y la reprogramación admin, los horarios bloqueables, las métricas y el detalle del mes (FR-016).
+- Para cada día, el motor parte de la rejilla de horas de la regla o excepción vigente y:
+  1. Quita los horarios con bloqueo manual de horario puntual (FR-013, D2, D43).
+  2. En el día actual, quita los horarios anteriores a la hora actual en `America/Mexico_City` (FR-014, D50).
+  3. Aplica la separación mínima (FR-009): un horario se ofrece solo si su hora de inicio dista al menos `minGapMinutes` de cada cita activa del día. La separación se mide entre horas de inicio (D25). En el flujo público, los locks vigentes cuentan como ocupados (A-05).
+  4. Si `preserveCapacity` es `true`, ofrece un horario solo si reservarlo no reduce la cantidad máxima de citas que todavía caben ese día, con tope `maxPerDay` (FR-010). Si es `false`, solo aplican la separación mínima y el máximo diario (FR-012).
+  5. Máximo diario: si el día ya tiene `maxPerDay` citas activas, no ofrece horarios (FR-011).
+- `availableSpaces` de un día es el número de citas adicionales alcanzables, acotado por `maxPerDay` (FR-026, D12). El cálculo no usa una constante fija de 3 (FR-011).
+- Un día sin horarios ofrecibles, ya sea por regla, excepción vacía, bloqueo de día completo o horas transcurridas, se trata como no disponible (FR-015).
+- Sin bloqueos manuales, el motor reproduce el comportamiento legado (SC-002). Con bloqueos manuales, 48 de 432 combinaciones difieren del legado y esa diferencia se acepta (D43, SC-003; ver ADR 0001 y ADR 0002 en `docs/decisions/`).
 
-`SECOND_ONLY_MODE`:
+Cambios de reglas y versión (FR-021 a FR-024, FR-035, FR-041):
 
-- Slots oficiales: `10:00`, `14:00`, `18:00`.
-- Restricción estructural: máximo 1 cita activa por slot.
-- No aplica propagación direccional entre pares.
-- Un slot candidato es válido solo si ese slot específico no está ocupado, lockeado o bloqueado manualmente.
+- Crear, editar o eliminar reglas o excepciones, y ejecutar `PATCH slot-mode`, solo se permite en meses no pasados (D36, `MONTH_IN_PAST`).
+- Cada mes tiene una versión de reglas. Un guardado debe llevar la versión que el admin editó; si ya cambió, se rechaza sin modificar nada (`AVAILABILITY_VERSION_CONFLICT`, FR-041, D24).
+- Cambiar reglas o excepciones no modifica ni cancela citas ni eventos de Google Calendar (FR-022, D5). Una cita activa futura que queda fuera de la rejilla vigente se lista antes de guardar (FR-023, FR-024, D35, D40); las citas no cambian de fecha, hora ni estado.
+- Los cambios de reglas no generan registros en la auditoría de citas (FR-035, D24).
+- El campo `slot_mode` del mes queda legado y se deriva de las reglas (FR-033, D19, D31); ver `docs/architecture/data-model.md`, sección "Derivación de slot_mode".
+- `PATCH slot-mode` reemplaza las reglas del mes por el preset del modo indicado y conserva las excepciones (FR-034, D16, D33).
 
 ---
 
@@ -172,10 +176,14 @@ Regla general:
 2. Las rutas `/citas/YYYY-MM` y `/citas/YYYY-MM/booking` se mantienen como compatibilidad y redirigen a `/booking?month=YYYY-MM`.
 3. En el paso 1 del wizard selecciona día y horario.
 4. Al avanzar desde paso 1, backend genera lock temporal (`TTL = 10 minutos`) para `date + timeSlot`.
+   - Antes de crear el lock, backend valida la fecha de calendario (una fecha inexistente o malformada, como `2026-02-30`, responde `VALIDATION_ERROR`) y resuelve los horarios del día con el resolvedor de la sección 4.3.
+   - Si el día no tiene horarios ofrecibles, o la hora no se ofrece, responde `SLOT_NOT_AVAILABLE` (D46). Si la hora no se ofrece porque tiene un lock vigente de otro teléfono, responde `SLOT_LOCKED`.
 5. En el paso 2 del wizard captura teléfono y backend ejecuta `check + lock` para ese teléfono:
    - Si el cliente existe por teléfono y no tiene citas futuras activas en el mismo mes, se avanza directo a confirmación.
    - Si el cliente tiene citas futuras activas en el mismo mes y la nueva fecha queda a menos de 15 días naturales de al menos una de ellas, UI entra a la vista de `Detalles de tu nueva cita` + `Ya tienes citas activas` para decidir cómo continuar.
    - Si no existe ninguna cita activa del mes dentro de ese umbral (<15 días), UI avanza directo a confirmación (sin vista de sugerencia).
+   - Regla objetivo (decisión de producto D95): para el umbral de 15 días, las citas activas son `PENDING`, `CONFIRMED` y `SYNC_FAILED`. Una cita `PENDING` dispara la sugerencia igual que las demás.
+   - Implementación pendiente (ronda propia de código público, D95): el código vigente todavía considera solo `CONFIRMED` y `SYNC_FAILED`. Hasta que se implemente, rige ese comportamiento. Esta nota se retira al cerrar esa ronda.
    - En la vista de sugerencia, la lista de citas activas del mes inicia sin cita preseleccionada; la clienta debe elegir explícitamente qué cita reagendar o decidir continuar como cita nueva.
    - En la vista de decisión, el CTA principal es dinámico:
      - sin cita seleccionada y con `canBookAsNewAppointment=true`: `Continuar como nueva cita`,
@@ -184,16 +192,18 @@ Regla general:
    - En este estado se ocultan los controles del paso 1 para cambiar `date`, `timeSlot` y `phone`.
    - En esa misma vista, `Regresar` no debe navegar a `/`; debe ejecutar una regresión interna equivalente a `Editar información` (liberar lock activo y volver a edición del paso 1).
    - Si el cliente no existe, UI solicita nombre en el paso 2 y luego avanza a confirmación usando lock vigente.
-6. Si el lock no puede crearse o renovarse (slot ocupado, lockeado o bloqueado manualmente), usuario debe elegir otro horario.
+6. Si el lock no puede crearse (horario no ofrecido por ocupación, separación, capacidad, bloqueo manual o hora transcurrida, `SLOT_NOT_AVAILABLE`; o lock vigente de otro teléfono, `SLOT_LOCKED`), usuario debe elegir otro horario.
 7. Usuario confirma cita (paso 3 del wizard).
    - CTA principal del paso 3:
      - clienta fiel: `Confirmar cita`,
      - clienta no fiel: `Siguiente`.
 8. Backend:
    - Inicia transacción.
-   - Limpia locks expirados.
-   - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono.
-   - Valida disponibilidad.
+   - Adquiere los locks con nombre de fecha y de teléfono y lee las reglas del mes con bloqueo compartido, en ese orden (sección 9, «Orden de confirmación», pasos 2 y 3).
+   - Toma con bloqueo los conflictos de citas del día y del teléfono (sección 9, «Orden de confirmación», paso 4).
+   - Limpia los locks expirados de la fecha de la reserva (`expires_at <= now`), después de esos conflictos y sin tocar locks de otras fechas (sección 9, «Orden de confirmación», paso 5; D88, D89).
+   - Valida lock temporal vigente (`lock_token`) para fecha/slot/teléfono (sección 9, «Orden de confirmación», paso 6).
+   - Valida disponibilidad contra las reglas vigentes en el momento de confirmar (D39). Un lock vigente no garantiza que el horario siga existiendo: si una regla o excepción lo eliminó, la confirmación responde `SLOT_NOT_AVAILABLE`, el mismo error que un horario no disponible.
    - Resuelve cliente por teléfono (reutiliza si existe, crea si no existe).
    - Si crea cliente nuevo, asigna `client_number` automáticamente (único e incremental con huecos permitidos).
    - Si se envía `appointmentIdToReschedule`, reprograma esa cita del cliente al nuevo `date + timeSlot`.
@@ -285,7 +295,7 @@ En navegación tipo `reload`, el frontend debe revalidar disponibilidad inmediat
 - Criterios de aceptación de la búsqueda por horario:
   - un cliente puede llegar a `date + timeSlot` desde `Por horario` sin tocar días intermedios,
   - el flujo `Por día` se comporta igual que antes,
-  - la disponibilidad mostrada usa las mismas reglas (ocupación, locks, bloqueos, pares, horario futuro) que `Por día`; la validación definitiva sigue ocurriendo al crear el lock.
+  - la disponibilidad mostrada usa las mismas reglas (ocupación, locks, bloqueos, separación mínima, capacidad, horario futuro) que `Por día`; la validación definitiva sigue ocurriendo al crear el lock.
 
 Mensaje base para cita `CONFIRMED`:
 
@@ -359,7 +369,7 @@ Mensaje base para cita `PENDING`:
 3. En esta rama no aplican:
    - validaciones de `isLoyal`,
    - sugerencia o restricción UX por citas futuras activas dentro de 15 días.
-4. El slot destino debe estar disponible bajo las mismas reglas de disponibilidad del flujo público de booking.
+4. El slot destino se valida con el mismo resolvedor de disponibilidad que la reserva pública (sección 4.3): horarios del día según reglas y excepciones, ocupación (incluidas citas `PENDING`), locks, bloqueos manuales y horario futuro. Un día sin horarios, o una hora que no se ofrece, responde `SLOT_NOT_AVAILABLE` (D46). Un lock vigente de otra clienta sobre el horario destino también responde `SLOT_NOT_AVAILABLE` (D87, D88); el lock del propio teléfono no bloquea. Un mes no reservable (inactivo, sin registro o pasado) responde `SLOT_NOT_AVAILABLE`. Un error de infraestructura o de transacción (deadlock, timeout, pool de conexiones) no se convierte en un código de dominio: responde 400 `UNKNOWN_ERROR` y revierte la transacción (D81). La reprogramación pública no aplica la regla de 15 días ni `isLoyal`.
 5. Backend:
    - preserva el mismo `appointments.id`,
    - actualiza `date`,
@@ -405,19 +415,44 @@ Locking temporal adicional:
 - `TTL` fijo de 10 minutos por lock.
 - El frontend debe intentar liberar lock en salida inesperada (`refresh`, cierre de pestaña o navegación fuera del flujo) usando `pagehide + sendBeacon` hacia `POST /api/reservar/lock/release-beacon`.
 - Este envío es best-effort y no garantiza entrega; el TTL sigue siendo el respaldo obligatorio de liberación.
-- Sin cron obligatorio: cleanup lazy en endpoints de lock/confirm y filtro por `expires_at > now` en disponibilidad.
-- Opcionalmente puede ejecutarse un cron externo frecuente para borrar locks expirados (`expires_at <= now`) por lotes.
+- Sin cron obligatorio: cleanup lazy en los endpoints de lock y confirmación, acotado a la fecha procesada (D88), y filtro por `expires_at > now` en disponibilidad.
+- Existe un cron externo de producción que ejecuta `npm run locks:cleanup` cada minuto para borrar por lotes los locks expirados (`expires_at <= now`) de todas las fechas (D92; ver `docs/runbooks/reservation-lock-cleanup.md`).
 
-Orden de confirmación:
+Orden de locks en escrituras que tocan horarios (reserva pública, confirmación, reprogramación pública, creación admin, reprogramación admin y bloqueos manuales; decisiones D63, D77, D83, D87, D88 y D89, ADR `docs/decisions/0006-concurrencia-reservas-orden-de-locks.md`):
 
-1. START TRANSACTION
-2. Limpiar locks expirados (`expires_at <= now`)
-3. Validar lock temporal vigente (`lock_token`) con bloqueo
-4. Validar disponibilidad con bloqueo
-5. INSERT (siempre crea una nueva fila)
-6. Eliminar lock consumido
-7. COMMIT
-8. Crear evento Google
+1. Locks con nombre `booking:date:<fecha>` y `booking:phone:<teléfono>`, tomados en orden alfabético con `GET_LOCK` y espera de 5 segundos. Si no se obtienen, responde `LOCK_TIMEOUT` (409 en las rutas que lo mapean; ver `docs/architecture/api.md`). Los bloqueos manuales de horario no toman estos locks (limitación F2, D83).
+2. Lectura de las reglas del mes con `FOR SHARE` sobre la fila de `active_months`.
+3. `FOR UPDATE` sobre las citas de la fecha o del teléfono (conflictos del día).
+4. Locks de reserva (`reservation_locks`, D88 y D89). Después de los conflictos del paso 3, se limpian los expirados de la fecha procesada (`expires_at <= now`; no se limpian locks de otras fechas) y se leen los locks vigentes que el flujo necesita. Ninguna de estas rutas toma un lock de reserva antes que las citas. La reprogramación pública y la creación y reprogramación admin leen el lock vigente del horario destino con `FOR UPDATE`; un lock vigente de otra clienta rechaza la reprogramación pública con `SLOT_NOT_AVAILABLE` (D87). La reprogramación pública no limpia locks.
+5. Lectura de ocupación. En la creación admin y la reprogramación admin es bloqueante (`FOR UPDATE` real, D77). En los bloqueos manuales, la lectura de citas es bloqueante, pero la de bloqueos de horario es plana. La lectura de bloqueos de horario (`listBlockedSlotsByDateForUpdate`), que usan también las rutas públicas, es una lectura plana sin bloqueo de filas (limitación F2).
+6. Escritura de la cita o del bloqueo, y liberación de los locks con nombre en los flujos que los tomaron.
+
+Excepción: el bloqueo de espacios (bloqueos manuales de horario y de día completo) no toma los locks con nombre del paso 1 (limitación F2, D83). Sí aplica los pasos 2 a 6, incluida la limpieza de `reservation_locks` de la fecha.
+
+El editor de reglas toma `FOR UPDATE` sobre la misma fila de `active_months`: espera a las escrituras en curso y ninguna escritura mezcla reglas viejas con un cambio en curso.
+
+Orden de confirmación de una reserva pública:
+
+1. Inicia transacción.
+2. Toma los locks con nombre de fecha y teléfono (sección anterior).
+3. Lee las reglas del mes con `FOR SHARE`.
+4. Toma con `FOR UPDATE` los conflictos de citas del día y del teléfono (paso 3 de la sección anterior).
+5. Limpia locks expirados de la fecha de la reserva (`expires_at <= now`), después de los conflictos (paso 4 de la sección anterior; D88 y D89).
+6. Valida lock temporal vigente (`lock_token`) con bloqueo. Si no es válido o expiró, responde `LOCK_EXPIRED_OR_INVALID`.
+7. Valida disponibilidad con las reglas vigentes (D39) con bloqueo de conflictos.
+8. INSERT (siempre crea una nueva fila), o reprogramación si hay `appointmentIdToReschedule`.
+9. Elimina el lock consumido.
+10. Libera los locks con nombre. Hoy esto ocurre antes del COMMIT (riesgo F3).
+11. COMMIT.
+12. Crear evento Google.
+
+Limitaciones conocidas de concurrencia (ADR 0006; planificadas, no corregidas en esta documentación):
+
+- **F1 (D82, corrección obligatoria antes de publicar la Fase 1).** El `GET_LOCK` de sesión no se libera si la transacción de Prisma expira antes (valor por defecto de 5 segundos). En las pruebas medidas, el lock quedó retenido en 7 de 10 expiraciones. Mientras no se corrija, `LOCK_TIMEOUT` casi nunca se alcanza y la respuesta suele ser `UNKNOWN_ERROR` (400).
+- **F2 (D83, aceptado por el owner).** La lectura de bloqueos `listBlockedSlotsByDateForUpdate` es una lectura plana, pese a su nombre. Medido en carrera simultánea: bloqueo admin frente a creación admin, 17 de 40 lotes con doble ocupación; frente a reserva pública, 10 de 40.
+- **F3 (aceptado).** Los locks con nombre de la reserva pública se liberan antes del COMMIT. No se midió doble reserva atribuible después de la corrección de B-1.
+- **F4 (corregido, D88 y D91).** En la validación de destino de la reprogramación pública, solo un mes no reservable (`MONTH_NOT_ALLOWED`) se convierte en `SLOT_NOT_AVAILABLE`. Los demás errores, incluidos los de base de datos, se propagan como `UNKNOWN_ERROR` (400) y revierten la transacción (D81).
+- No hay restricción de base de datos que impida dos citas activas en el mismo horario. La protección es solo de aplicación (decisión de arquitectura del owner; ver `docs/architecture/data-model.md`).
 
 Google Calendar no es fuente de verdad.
 
@@ -483,7 +518,8 @@ Tabla: active_months
 - id (PK)
 - month CHAR(7) UNIQUE (`YYYY-MM`)
 - status ENUM('ACTIVE','INACTIVE')
-- slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') DEFAULT 'SECOND_ONLY_MODE'
+- slot_mode ENUM('BLOCK_MODE','SECOND_ONLY_MODE') DEFAULT 'BLOCK_MODE' (legado y derivado de las reglas hasta la fase 4; FR-033, D31)
+- availability_version INT (versión de las reglas del mes; se compara con `expectedVersion` al guardar)
 - created_at DATETIME
 - updated_at DATETIME
 
@@ -553,6 +589,25 @@ Reglas de integridad y auditoría:
 - INDEX(client_id)
 - INDEX(appointment_id)
 
+### 10.1 Disponibilidad por mes (spec 003)
+
+Tablas nuevas (detalle de columnas, claves, restricciones y migración en `docs/architecture/data-model.md`):
+
+- `availability_rules`: reglas del mes (rango de fechas, `minGapMinutes`, `preserveCapacity`, `maxPerDay`).
+- `availability_rule_weekdays` y `availability_rule_times`: días de la semana y horas de cada regla.
+- `availability_exceptions`: excepciones por fecha con sus tres parámetros. Una fecha es única por mes.
+- `availability_exception_times`: horas de cada excepción. Una lista vacía cierra el día.
+- `availability_migration_runs`: control de la migración idempotente de `slot_mode` a reglas (FR-031).
+
+Reglas de integridad y consistencia:
+
+- Las reglas y excepciones pertenecen a un mes; se borran en cascada con su mes (`docs/architecture/data-model.md`).
+- Un mes sin reglas se interpreta con el default D6 y `slot_mode = BLOCK_MODE` (D17, D31).
+- Las horas de una regla o excepción siguen el formato `HH:mm`, sin duplicados y ordenadas (D37). `00:00` no es una hora de reglas: es el marcador de bloqueo de día completo en `blocked_slots` (D41, D55).
+- `blocked_slots` mantiene su tabla y su restricción `UNIQUE(date, time_slot)`. Un bloqueo de horario puntual dura 1 hora en Calendar si fue creado desde el despliegue (D15, D30).
+- `appointments` no tiene restricción `UNIQUE(date, time_slot)`. Dos citas activas en el mismo horario se evitan solo con la lógica de aplicación y los locks de la sección 9.
+- Migración: el backfill desde `slot_mode` (D4) no modifica `appointments.date`, `time_slot`, `status` ni `google_event_id` (FR-032). El orden de migración, backfill, despliegue y limpieza está en `docs/architecture/data-model.md`.
+
 ---
 
 ## 11. Casos Edge
@@ -560,9 +615,9 @@ Reglas de integridad y auditoría:
 1. Acceso a mes no activo o mes pasado → Rechazar.
 2. Doble confirmación simultánea → Solo una gana.
 3. Fallo Google → Estado SYNC_FAILED.
-4. Reserva mismo día → Permitida solo para horarios futuros en `America/Mexico_City`.
+4. Reserva mismo día → Permitida solo para horarios iguales o posteriores a la hora actual en `America/Mexico_City` (D50).
 5. Usuario con cita activa intenta reservar → Bloquear.
-6. Día con 3 citas activas válidas (una por par) → Día no visible.
+6. Día con `maxPerDay` citas activas, o sin horarios que cumplan separación y capacidad → Día no ofrece horarios y no es visible en el flujo público (FR-011, FR-015).
 7. Manipulación frontend → Backend recalcula.
 8. Cancelación simultánea y nueva reserva → Resolver vía transacciones.
 9. Cambio horario verano → Usar siempre America/Mexico_City.
@@ -575,6 +630,15 @@ Reglas de integridad y auditoría:
 16. Acción de cita sin actor identificable → registrar evento de auditoría con actor `Sistema`.
 17. Consulta de logs de citas sin sesión admin válida → rechazar acceso y no exponer datos.
 18. Exportación PDF de logs sin resultados → generar PDF válido con filtros aplicados, fecha de generación y estado vacío.
+19. Mes sin reglas → usa el default de lunes a viernes (`09:00, 10:00, 13:00, 14:00, 17:00, 18:00`, `240/true/3`) en los días que ninguna excepción cubre; sábados y domingos cerrados (D6, D28). Al eliminar la última regla, el mes vuelve a ese default (D17).
+20. Primera regla de un mes sin reglas → los días que el default abría y que la nueva regla no cubre quedan cerrados (D28, D23). Se acepta sin advertencia extra (D42).
+21. Día sin horarios ofrecibles (regla o excepción vacía, bloqueo de día completo, horas transcurridas) → `SLOT_NOT_AVAILABLE` al reservar, reprogramar o agendar (D46). Ya no existe `WEEKDAY_ONLY`.
+22. Fecha de calendario inexistente o malformada (p. ej. `2026-02-30`) → `VALIDATION_ERROR` en reservas y reprogramaciones públicas (validación de calendario real de la fecha).
+23. Lock vigente sobre un horario que una regla eliminó después → el lock sigue hasta su TTL de 10 minutos; la confirmación valida contra las reglas vigentes y responde `SLOT_NOT_AVAILABLE` (D39).
+24. Cambio de reglas que deja citas activas fuera de la rejilla → las citas no cambian de fecha, hora ni estado (D5). Antes de guardar se listan las afectadas; las citas pasadas no se listan y los bloqueos manuales no entran en el cálculo (D18, D35, D40).
+25. Reprogramación admin de una cita `PENDING` → no es editable desde la agenda admin; la lectura filtra por estado y responde `APPOINTMENT_NOT_FOUND` (D72).
+26. Bloqueo admin sobre un horario con cita `PENDING` → `SLOT_NOT_AVAILABLE`: una cita `PENDING` ocupa horario también para bloqueos (D68, D71).
+27. Mes pasado → no se crean, editan ni eliminan reglas o excepciones, ni se ejecuta `PATCH slot-mode` (`MONTH_IN_PAST`, D36).
 
 ---
 
@@ -583,9 +647,9 @@ Reglas de integridad y auditoría:
 1. MySQL es fuente de verdad.
 2. Google Calendar es sistema espejo.
 3. No existen traslapes.
-4. Regla direccional por pares y máximo 3 citas activas por día.
+4. Separación mínima por regla o excepción (`minGapMinutes`, medida entre horas de inicio) y máximo `maxPerDay` citas activas por día (1 a 6). Con `preserveCapacity`, no se ofrece un horario que reduzca la capacidad alcanzable del día (sección 4.3).
 5. En flujo público: se permiten múltiples citas activas futuras por teléfono en el mismo mes; cuando existen citas activas futuras del mismo mes dentro del umbral de 15 días naturales, el sistema muestra una sugerencia de UX para reagendar o continuar como nueva cita. En admin: se permiten múltiples citas futuras por cliente.
-6. Solo lunes a viernes.
+6. Los días válidos los determinan las reglas y excepciones del mes (sección 4.1); no hay días fijos. Un mes sin reglas aplica el default D6.
 7. Mismo día permitido únicamente para horarios futuros (según hora actual en `America/Mexico_City`).
 8. Solo meses `ACTIVE` y nunca meses pasados.
 9. Confirmación atómica.
@@ -595,6 +659,8 @@ Reglas de integridad y auditoría:
 13. Lock temporal expira automáticamente por `expires_at` y no bloquea fuera de su ventana.
 14. Las rutas protegidas de admin requieren sesión NextAuth firmada y vigente.
 15. Los eventos de auditoría de citas son inmutables y se generan prospectivamente solo después de liberar el feature.
+16. Cambiar reglas o excepciones no modifica ni cancela citas ni eventos de Google Calendar (D5).
+17. Una cita `PENDING` ocupa horario en el flujo público y en las escrituras admin (D68), pero no cuenta en los contadores del admin (D66).
 
 ## 13. Stack de tecnologías
 
@@ -637,7 +703,7 @@ Reglas obligatorias:
     - `es`: `{Día de la semana} {d} de {Mes}` sin coma entre el día de la semana y la fecha, con día de la semana y mes capitalizados (ejemplo: `Lunes 13 de Abril`).
     - `en`: `{Weekday} {Month} {d}` (ejemplo: `Monday April 13`).
     - Aplica en todas las pantallas y en los mensajes de WhatsApp que usan la fecha larga, tanto de flujos públicos (reserva, pendiente, cancelación, `Mis citas`) como del admin (tarjeta de pendientes, detalle de clienta, modal de reserva admin).
-    - Cambio de formato: antes `es` usaba coma (`Lunes, 13 de Abril`). Decisión de la dueña, aplicada de forma global después de la ronda de pendientes; afecta por tanto a los flujos públicos, no solo al admin.
+    - Cambio de formato: antes `es` usaba coma (`Lunes, 13 de Abril`). Decisión de la dueña, aplicada de forma global; afecta por tanto a los flujos públicos, no solo al admin.
     - Excepción: los recordatorios de `Recordatorios` (`NEXT_DAY`/`NEXT_WEEK`) no usan este helper; arman día de la semana, día y mes por separado y conservan su plantilla propia.
 
 ## 15. Admin Panel
@@ -763,16 +829,16 @@ Reglas obligatorias:
 - La tarjeta muestra:
   - título `Ocupación semanal`,
   - indicador comparativo unificado `N% más|menos|similar Vs semana pasada`,
-  - gráfico de barras con 5 columnas (`lunes` a `viernes`) para la semana de negocio actual,
+  - gráfico de barras con una columna por día de la semana actual, de `lunes` a `domingo` (D57). La UI sigue mostrando 5 columnas (corrección pendiente de la Fase 4),
   - tooltip por barra con la cantidad de citas activas del día.
   - en dispositivos táctiles, el tooltip se abre al tocar la barra y se cierra al perder foco de esa barra.
 - Fuente de ocupación:
-  - citas activas (`CONFIRMED`, `SYNC_FAILED`) del rango lunes-viernes de la semana actual en zona `America/Mexico_City`.
+  - citas activas (`CONFIRMED`, `SYNC_FAILED`) del rango lunes a domingo de la semana actual en zona `America/Mexico_City`. Las citas `PENDING` no cuentan (D66).
 - Cálculo de barras por día:
-  - `% ocupación día = citas activas del día / 3 * 100` (redondeado entero).
+  - `% ocupación día = citas activas del día / capacidad del día * 100` (redondeado entero). La capacidad del día es su `maxPerDay` si está abierto y `0` si está cerrado o tiene bloqueo de día completo; con capacidad `0` el porcentaje es `0` (D44, D57).
 - Cálculo comparativo semanal:
-  - `% semana actual = citas activas lunes-viernes / 15 * 100`,
-  - `% semana anterior = citas activas lunes-viernes / 15 * 100`,
+  - `% semana actual = citas activas de la semana / capacidad de la semana * 100`, donde la capacidad es la suma de `maxPerDay` de los días abiertos (D44, D53). Sin capacidad, el porcentaje es `0`. No tiene tope: puede superar 100 % (aceptado, sin tope).
+  - `% semana anterior = citas activas de la semana anterior / capacidad de la semana anterior * 100`, con la misma regla,
   - `delta = semana actual - semana anterior` (puntos porcentuales).
 - Semántica del indicador:
   - `delta > 0` -> `más`,
@@ -786,10 +852,10 @@ Reglas obligatorias:
   - título, badge y etiquetas semánticas (`más|menos|similar`) se resuelven por `react-i18next` en `admin`.
 - Bloque `Día más ocupado`:
   - muestra título `Día más ocupado`,
-  - muestra el nombre del día (lunes-viernes) con mayor número de citas activas de la semana actual,
+  - muestra el nombre del día (lunes a domingo) con mayor número de citas activas de la semana actual,
   - muestra subtítulo `Máxima demanda de citas`,
   - usa iconografía de estrella en contenedor circular.
-  - en empate de ocupación, debe elegirse el primer día en orden semanal (`lunes` a `viernes`).
+  - en empate de ocupación, debe elegirse el primer día en orden semanal (`lunes` a `domingo`).
   - si la semana actual no tiene citas activas, el bloque no debe renderizarse.
 - Tarjeta `Ocupación del día`:
   - muestra título:
@@ -799,7 +865,7 @@ Reglas obligatorias:
   - muestra barra de progreso horizontal asociada al porcentaje,
   - debajo de la barra muestra texto `N citas agendadas para hoy` acompañado por icono `InfoCircle`.
   - cálculo:
-    - `% ocupación hoy = citas activas de hoy / 3 * 100` (redondeado entero, máximo visual 100%),
+    - `% ocupación hoy = citas activas de la fecha de agenda / capacidad de esa fecha * 100` (redondeado entero, máximo visual 100%); la capacidad sigue la misma regla que la barra diaria (D44, D57, D58),
     - `citas activas de hoy` incluye estados `CONFIRMED`, `SYNC_FAILED`.
 - Bloque `Agenda de Hoy`:
   - muestra título:
@@ -980,6 +1046,11 @@ Objetivo:
 
 - Exponer un catálogo operativo de meses para monitoreo admin con métricas, filtros, listado navegable y creación controlada de nuevos meses futuros.
 
+Estado de implementación de disponibilidad por mes (spec 003):
+
+- Motor, reglas, excepciones, API y métricas de disponibilidad: Fase 1 (sección 4.3 y `docs/architecture/api.md`).
+- Editor de reglas y excepciones, diálogo de citas afectadas, textos de `Bloquear espacios` y calendario: Fase 2 (implementada). Esta sección describe el comportamiento vigente.
+
 Flujo UI:
 
 1. Admin autenticado abre `/admin/months`.
@@ -1012,12 +1083,12 @@ Flujo UI:
        - `ArrowCircleDown` rojo para `menos`,
        - `MinusCircle` neutro cuando no hay cambio + texto `Misma ocupación comparada con el mes anterior`,
      - calendario operativo mensual.
-   - Fórmula de `Disponibles` (métrica mensual):
-     - `(días hábiles del mes * 3) - (citas activas + espacios bloqueados)`.
-     - `espacios bloqueados` se calcula como unidades de capacidad bloqueada por modalidad:
-       - `BLOCK_MODE`: cada par direccional completo bloqueado (`09:00+10:00`, `13:00+14:00`, `17:00+18:00`) cuenta como `1`.
-       - `SECOND_ONLY_MODE`: cada slot base bloqueado (`10:00`, `14:00`, `18:00`) cuenta como `1`.
-       - bloqueo de día completo cuenta como `3`.
+   - Fórmula de `Disponibles` (métrica mensual, FR-027, D12, D56):
+     - suma de `availableSpaces` de los días del mes, calculados con el resolvedor de la sección 4.3. Cada día aporta las citas adicionales alcanzables, acotadas por su `maxPerDay`.
+     - los días anteriores a hoy aportan `0` y se pintan cerrados (D56).
+     - los contadores no cuentan citas `PENDING` (D66). Una `PENDING` sí bloquea horario en el flujo público, así que `Disponibles` puede mostrar más espacios libres que los reservables. Es una consecuencia aceptada.
+   - `espacios bloqueados` (FR-029, D14, D41): cada horario de la rejilla del día con bloqueo manual cuenta como `1`. Un bloqueo de día completo cuenta `1` por cada horario de la rejilla del día según la regla vigente; si la regla no produce horarios, cuenta `0`. No hay vista `Por bloque` ni pares direccionales.
+   - Métricas de capacidad del dashboard: sección 15.1.4 (D44, D53).
    - En modal de agenda diaria, cada fila de cita muestra:
      - hora,
      - nombre del cliente,
@@ -1033,6 +1104,8 @@ Flujo UI:
      - CTA primaria `Agendar nueva cita` que abre el mismo `BottomSheetModal` de agendado del detalle mensual con la fecha del día preseleccionada.
      - CTA primaria `Bloquear espacios` que abre el mismo `BottomSheetModal` de bloqueo del detalle mensual con la fecha del día preseleccionada.
      - el bloque de acciones se oculta cuando el día no tiene espacios elegibles para operar.
+   - Horarios de `Agendar nueva cita` y de reagendado: vienen de la agenda del día del servidor (`availableSlots`). Al cambiar de día, la lista se vacía hasta que llega la agenda del nuevo día. Si el horario elegido sigue ofrecido al recargar, se conserva; si no, se usa el valor por defecto. En reagendado, el valor por defecto es la hora actual de la cita si se ofrece, si no la primera (D103, D104). `Guardar` y `Agendar cita` quedan deshabilitados sin horario seleccionado. Mientras la agenda del día nuevo carga en reagendado, el selector de horario queda vacío, `Guardar` deshabilitado, el selector marca `aria-busy` y se muestra el texto `Cargando horarios…` (`Loading times…` en inglés, clave `monthsDetail.dayModal.edit.loadingTimeSlots`) con `role="status"`; el texto no aparece en recargas de la misma fecha, con la lista ya cargada, ni si la carga falla.
+   - En reagendado, la agenda del día de la cita se pide con `excludeAppointmentId`: la hora actual de la cita aparece entre los horarios ofrecidos.
    - Restricción operativa para bloqueos manuales en modal diario:
      - editar motivo solo se permite en slots bloqueados futuros (no pasados).
      - eliminar bloqueo se permite en slots bloqueados pasados y futuros.
@@ -1046,19 +1119,24 @@ Flujo UI:
        - `{date}` y `{time}` usan la fecha y horario nuevos confirmados por la respuesta del backend, con el mismo formato del agendado admin (fecha capitalizada, p. ej. `Miércoles, 18 de Marzo`; hora en minúsculas, p. ej. `10:00 am`),
        - la acción es solo de feedback de UI: no se abre WhatsApp automáticamente y no persiste ningún dato (ni estado de cita ni log),
        - si la reprogramación falla, no se ofrece ni se abre WhatsApp; solo se muestra el toast de error.
-   - Semántica de color del calendario:
-     - azul (`availableSpaces >= 2`),
-     - amarillo (`availableSpaces = 1`),
-     - verde cuando no hay disponibilidad por citas agendadas (`availableSpaces = 0` con cupo cubierto por citas),
-     - gris cuando no hay disponibilidad por espacios bloqueados y en fines de semana (no operativos).
-   - A la derecha del encabezado del mes existe botón de acción `Modalidad` que abre `BottomSheetModal` únicamente cuando `isPastMonth=false`.
-   - En meses pasados (`isPastMonth=true`) el botón `Modalidad` no se renderiza.
-   - En el modal de modalidad:
-     - `Horario fijo` (`SECOND_ONLY_MODE`): base de slots `10:00,14:00,18:00`.
-     - `Bloques de horarios` (`BLOCK_MODE`): base de slots `09:00,10:00,13:00,14:00,17:00,18:00`.
-     - muestra texto de ayuda contextual según la modalidad seleccionada para anticipar cómo se verán los horarios en el flujo público.
-     - el cambio aplica a nuevas reservas, locks y reprogramaciones del mes.
-     - citas existentes en `09:00/13:00/17:00` se conservan sin alteración.
+   - Semántica de color del calendario (FR-028, D13, D34): umbrales de `availableSpaces`: `>= 2` azul, `= 1` amarillo. Para `= 0` (día lleno), la regla es: día lleno con al menos una cita activa = verde; día lleno sin citas o cerrado = gris (decisión del owner, D105).
+     - gris (`closed`): solo cuando, sin contar citas, no queda ningún horario de la rejilla del día tras quitar los horarios bloqueados y las horas transcurridas. Eso incluye un día sin regla o excepción que lo abra, un día con todos sus horarios bloqueados y un día con todas sus horas ya pasadas. También son grises los días anteriores a hoy (D56).
+     - lleno (`full`): un día que no es gris y tiene `availableSpaces = 0`, por ejemplo porque sus horarios están ocupados por citas activas o porque la capacidad diaria o la separación mínima ya no dejan espacio. Un día con algunos horarios bloqueados y el resto ocupado por citas es `full`, no gris. Su color es verde si tiene al menos una cita activa; si no tiene citas, es gris (D105).
+     - un sábado abierto por excepción usa el semáforo normal.
+   - Editor de reglas y excepciones (sustituye al antiguo botón y modal `Modalidad`):
+     - visible solo cuando `isPastMonth=false`; en meses pasados no se renderiza, y la API responde `MONTH_IN_PAST` (D36),
+     - permite listar, crear, editar y eliminar reglas y excepciones (sección 4.3),
+     - al guardar envía la versión de reglas que el admin editó; si ya cambió, no guarda nada (FR-041),
+     - si quedan citas activas futuras fuera de la rejilla vigente, muestra antes de guardar el listado de citas afectadas (FR-023, D18, D40); cancelar no guarda nada, y confirmar no cambia las citas,
+     - la API conserva `PATCH slot-mode`, que reemplaza las reglas del mes por el preset de D4 (`Horario fijo` o `Bloques de horarios`) y conserva las excepciones (D16, D33, D69). La UI ya no lo usa,
+     - los cambios aplican de inmediato a nuevas reservas, locks y reprogramaciones; no hay borrador ni publicación (D32),
+     - las citas existentes fuera de la rejilla se conservan sin alteración (D5),
+     - valores por defecto: regla nueva = mes completo, lunes a viernes, horario y parámetros de D6; excepción nueva = día 1 del mes, sin horas (día cerrado con aviso), `240` / `true` / `3` (D10, D99),
+     - validación por ítem al editar (rango dentro del mes, horas `HH:mm` distintas de `00:00`, días, separación 0 a 1440, máximo 1 a 6, máximo 24 horas por día). Los traslapes de reglas y las fechas de excepción repetidas se validan con el conjunto completo. `Guardar` queda deshabilitado con errores o sin cambios,
+     - cambios sin guardar: cancelar o cerrar pide confirmación `¿Descartar cambios?`, superpuesta al panel, con `Seguir editando` como acción por defecto (también con `Escape`). Tocar el fondo no descarta,
+     - guardado: antes de escribir se previsualizan las citas activas futuras que quedarían fuera de la rejilla (D18). Si hay citas afectadas, se pide confirmación. Cancelar no escribe nada. Confirmar envía `confirmAffectedAppointments: true`; las citas no cambian de fecha, hora ni estado. Riesgo residual aceptado por el owner: una cita creada entre la previsualización y `Confirmar` puede quedar fuera de horario sin mostrarse y sin cancelarse,
+     - conflicto de versión (`AVAILABILITY_VERSION_CONFLICT`): no se guarda nada y la UI indica cerrar y reabrir el editor,
+     - notificaciones: la carga usa `sileo.show` de tipo `loading`, que se descarta al terminar; el resultado usa `sileo.success` o `sileo.error`. No se usa `sileo.promise`: su notificación de error no se puede silenciar y el 409 de confirmación no es un error (D102).
    - Cuando `isPastMonth=false`, debajo del calendario se muestra CTA secundaria `Compartir agenda`.
    - `Compartir agenda` permanece deshabilitado cuando `monthStatus=INACTIVE`.
    - `Agendar cita` (mes y día) permanece habilitado aunque `monthStatus=INACTIVE`; `POST /api/admin/months/[month]/appointments` ya no responde `MONTH_NOT_ACTIVE` (solo exige mes registrado). El flujo público sigue requiriendo `ACTIVE`.
@@ -1096,10 +1174,9 @@ Flujo UI:
      - frontend refresca detalle mensual.
    - Al abrir `Bloquear espacios`, UI muestra `BottomSheetModal` con:
      - selección horizontal de días bloqueables,
-     - selector de visualización de espacios: `Por hora` y `Por bloque` solo en `Modalidad 1`,
-     - en `Modalidad 2` se fuerza visualización `Por hora`,
-     - selección múltiple de slots bloqueables (en `Por bloque`, cada tarjeta representa y selecciona el par direccional completo),
-     - acción `Día completo` para bloquear todo el día en una sola operación,
+     - visualización por horario (no hay vista `Por bloque`, D14),
+     - selección múltiple de horarios bloqueables (cada tarjeta es un horario),
+     - acción `Día completo` para bloquear todo el día en una sola operación (solo se habilita si el día tiene al menos un horario bloqueable),
      - acción masiva `Seleccionar todo` para seleccionar todos los slots bloqueables del día activo,
      - acción `Limpiar selección` para resetear selección del día activo,
      - selección única de motivo (`DESCANSO`, `PERSONAL`, `OTRO`),
@@ -1107,15 +1184,14 @@ Flujo UI:
    - Restricciones del modal de bloqueo:
      - solo días `>= currentDate` dentro del `month`,
      - solo se listan días que tengan al menos un slot bloqueable,
-     - slot bloqueable = no pasado (same-day), no ocupado por cita activa, sin lock temporal activo y no bloqueado manualmente.
-   - Regla de bloqueos manuales por modalidad:
-     - `BLOCK_MODE`:
-       - si se bloquea **una sola hora** dentro de un par direccional, se aplica propagación direccional en slots homólogos de pares posteriores/anteriores;
-       - si se bloquea el **par completo** (ej. `09:00` y `10:00`), no se propaga restricción direccional adicional y solo ese par queda fuera.
-     - `SECOND_ONLY_MODE`:
-       - no aplica propagación direccional entre pares;
-       - cada bloqueo manual afecta solo el slot bloqueado (`10:00`, `14:00` o `18:00`).
-     - bloquear día completo => sin slots disponibles.
+     - slot bloqueable = horario que el resolvedor de la sección 4.3 ofrece ese día en ese momento. Quedan excluidos: horas pasadas (same-day), horas ocupadas por cita activa (incluida `PENDING`, D71), horas con lock temporal activo, horas ya bloqueadas manualmente, y horas que la separación mínima (`minGapMinutes`) o la capacidad diaria (`maxPerDay`, `preserveCapacity`) ya excluyen.
+     - un bloqueo en un día sin horarios en las reglas responde `DATE_NOT_OPERATIONAL` (D76; código y HTTP en `docs/architecture/api.md`). Un día con horarios en la regla pero sin horario ofrecible responde `SLOT_NOT_AVAILABLE`.
+   - Efecto de un bloqueo manual (FR-013, D2, D43): cada horario bloqueado sale de la rejilla del día antes de calcular separación y capacidad. No hay propagación direccional entre horarios; el efecto depende de la regla vigente.
+     - bloquear día completo => sin horarios ofrecibles ese día. Reglas de la acción `Día completo`:
+       - se rechaza con `SLOT_LOCKED` si un lock temporal vigente cae en un horario de la rejilla de la regla del día,
+       - se rechaza con `DAY_ALREADY_BLOCKED` si el día ya tiene un bloqueo de día completo,
+       - se rechaza con `SLOT_NOT_AVAILABLE` si, con las citas activas, los locks y los bloqueos puntuales existentes, no queda ningún horario ofrecible,
+       - si se acepta, elimina los bloqueos puntuales que el día ya tenía (y sus eventos espejo en Google Calendar; los fallos de esa eliminación se devuelven como advertencias de sincronización) y crea el marcador único del día.
    - Al confirmar bloqueo:
      - durante la petición no se permite ninguna otra interacción del modal (incluyendo cerrar por `X`, overlay o `Escape`),
      - backend crea registro en `blocked_slots` por cada slot seleccionado,
@@ -1124,14 +1200,12 @@ Flujo UI:
      - título de evento espejo:
        - bloqueo por slot => `No disponible - [Motivo]`,
        - bloqueo de día completo => `Día libre - [Motivo]`,
-     - rango horario del evento espejo por `slot_mode`:
-       - `SECOND_ONLY_MODE`: se mantiene comportamiento actual (duración estándar del slot en Calendar),
-       - `BLOCK_MODE` + bloqueo de una sola hora: evento de `1 hora`,
-       - `BLOCK_MODE` + bloqueo de bloque (par direccional): se crea un evento por cada hora del bloque (cada evento de `1 hora`),
+     - rango horario del evento espejo (FR-036, D15, D29, D30):
+       - bloqueo de horario puntual creado desde el despliegue: evento de `1 hora`,
        - bloqueo de día completo: evento `06:00-23:00` del mismo día (`America/Mexico_City`),
+       - los eventos ya creados en Calendar no cambian,
      - si la sincronización externa falla, el bloqueo local se conserva y la UI muestra advertencia operativa.
-   - Persistencia de vista por bloque:
-     - la selección en vista `Por bloque` solo afecta UX; en backend se registran los mismos slots unitarios de siempre.
+   - Persistencia: un bloqueo de día completo es un marcador único en `blocked_slots` (D41, D55), no una fila por hora.
 6. Admin puede abrir modal `Registrar nuevo mes` desde CTA `Nuevo`:
    - Selector de año (`currentYear..currentYear+5`).
    - Grilla de meses del año seleccionado.
@@ -1139,7 +1213,7 @@ Flujo UI:
    - Selección múltiple.
 7. Admin confirma `Guardar`.
 8. Frontend ejecuta `POST /api/admin/months`.
-9. Backend persiste nuevos meses con `status=INACTIVE` y `slot_mode=SECOND_ONLY_MODE`, omite existentes y retorna resumen `created/skipped`.
+9. Backend persiste nuevos meses con `status=INACTIVE`, `slot_mode=BLOCK_MODE` y sin reglas guardadas (D17, D31), omite existentes y retorna resumen `created/skipped`. El mes usa el default de la sección 4.1 hasta que el admin crea reglas.
 10. UI cierra modal y refresca métricas/listado.
 
 Reglas de módulo:
@@ -1148,7 +1222,8 @@ Reglas de módulo:
 - En el modal, los meses ya creados (`ACTIVE` o `INACTIVE`) no deben mostrarse como opción seleccionable.
 - El registro de meses es idempotente parcial:
   - meses existentes se omiten,
-  - meses faltantes se crean con `INACTIVE` y `slot_mode=SECOND_ONLY_MODE`.
+  - meses faltantes se crean con `INACTIVE`, `slot_mode=BLOCK_MODE` y sin reglas (D17).
+- Agendado y reprogramación admin (D63, D68, D72, D73): el agendado y la reprogramación respetan las citas `PENDING` como ocupación; la reprogramación admin solo aplica a citas `CONFIRMED` o `SYNC_FAILED` (una `PENDING` responde `APPOINTMENT_NOT_FOUND`); una hora que no está en la rejilla del día responde `SLOT_NOT_AVAILABLE` (409); `LOCK_TIMEOUT` responde 409 (D78). Códigos completos en `docs/architecture/api.md`.
 - El módulo es mobile-first con contenedor centrado `max-width: 412px`.
 - Gaps visuales objetivo entre bloques/listas: `12px–16px`.
 - Todos los textos admin del módulo deben resolverse por `react-i18next`.
@@ -1215,6 +1290,7 @@ Contrato API:
   - `POST /api/admin/months/[month]/appointments`
   - `PATCH /api/admin/months/[month]/status`
   - `PATCH /api/admin/months/[month]/slot-mode`
+  - `GET /api/admin/months/[month]/availability`, `PUT /api/admin/months/[month]/availability` y `POST /api/admin/months/[month]/availability/preview` (reglas y excepciones; contrato en `docs/architecture/api.md`, sección "Disponibilidad mensual y reservas (spec 003)")
   - `GET /api/admin/months/[month]/days/[date]/agenda` (`date` en formato `YYYY-MM-DD`)
   - `GET /api/admin/months/[month]/blockable-slots?date=YYYY-MM-DD` (`date` opcional)
   - `POST /api/admin/months/[month]/blocked-slots`
@@ -1237,6 +1313,7 @@ Contrato API:
   - `PATCH /api/admin/months/[month]/slot-mode`:
     - payload `{ slotMode }`,
     - `slotMode` permitido: `BLOCK_MODE|SECOND_ONLY_MODE`,
+    - reemplaza las reglas del mes por el preset del modo indicado, conserva las excepciones e incrementa la versión de reglas (D16, D33, D69),
     - requiere mes registrado,
     - no permite actualizar meses pasados (`MONTH_IN_PAST`, `422`).
   - `PATCH /api/admin/months/[month]/status`:
@@ -1303,8 +1380,8 @@ Contrato API:
     - payload con cliente nuevo inline: `{ date, timeSlot, client: { name, phone, clientNumber? } }`,
     - para cliente nuevo inline, frontend debe enviar `client.name` en forma canónica (trim),
     - exactamente una modalidad de cliente por request,
-    - `month` debe existir y estar `ACTIVE`,
-    - aplica invariantes de disponibilidad (weekday, slot válido por modalidad, slot futuro, conflictos por lock/ocupación/bloqueo manual y reglas direccionales),
+    - `month` debe estar registrado; no requiere `ACTIVE` (D17 y sección "Edición admin"),
+    - aplica invariantes de disponibilidad (día con horarios según reglas y excepciones, hora ofrecida por el resolvedor, slot futuro, conflictos por lock/ocupación/bloqueo manual, separación y capacidad; D46, D68, D73),
     - permite múltiples citas activas futuras para el mismo cliente/teléfono cuando la creación la realiza admin,
     - `clientId` debe existir en modalidad de cliente existente,
     - en modalidad inline, nombre/teléfono deben cumplir validaciones de identidad del dominio,
@@ -1342,7 +1419,8 @@ Contrato API:
     - `appointmentId` válido (>0),
     - cita activa debe existir dentro del `month`,
     - la cita origen debe ser futura; si ya pasó responde `APPOINTMENT_NOT_EDITABLE` (`409`),
-    - destino debe cumplir reglas de disponibilidad (weekday, slot válido, no pasado, sin conflicto/lock).
+    - destino debe cumplir reglas de disponibilidad (hora ofrecida por el resolvedor, no pasado, sin conflicto/lock); si no, `SLOT_NOT_AVAILABLE` (`409`, D73),
+    - solo se reprograman citas `CONFIRMED` o `SYNC_FAILED` (D72); una cita `PENDING` responde `APPOINTMENT_NOT_FOUND`.
   - `POST /api/admin/appointments/[appointmentId]/confirm`:
     - `appointmentId` válido (>0),
     - solo permite transicionar una cita `PENDING`,
@@ -1408,6 +1486,7 @@ Contrato API:
   - `{ appointmentId, status, date, timeSlot, syncReason? }`
 - Success `GET /api/admin/months/[month]` (`200`):
   - `month`, `monthStatus`, `slotMode`, `currentMonth`, `currentDate`, `isPastMonth`
+  - campos aditivos de la spec 003: `rules`, `exceptions`, `availabilityVersion` y `usesDefaultRule` (D16, D6). `slotMode` se mantiene hasta la fase 4 y es legado (D19, D49).
   - `metrics`: `{ confirmedAppointments, cancelledAppointments, availableSpaces, blockedSpaces, occupiedSpaces }`
   - `projectedSaturationPercent`
   - `saturationComparison`: `{ previousMonth, previousProjectedSaturationPercent, deltaPercentPoints }`

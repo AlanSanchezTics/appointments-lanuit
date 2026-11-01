@@ -1,15 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/auth";
-import { updateAdminMonthSlotMode } from "@/lib/admin/months/service";
+import {
+  AffectedAppointmentsConfirmationError,
+  updateAdminMonthSlotMode,
+} from "@/lib/admin/months/service";
 
 vi.mock("@/auth", () => ({
   auth: vi.fn(),
 }));
 
-vi.mock("@/lib/admin/months/service", () => ({
-  updateAdminMonthSlotMode: vi.fn(),
-}));
+// La fábrica replica la clase real: la ruta hace instanceof sobre ella para armar el 409 con la lista.
+vi.mock("@/lib/admin/months/service", () => {
+  class AffectedAppointmentsConfirmationError extends Error {
+    readonly affectedAppointments: unknown[];
+
+    constructor(affectedAppointments: unknown[]) {
+      super("AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED");
+      this.name = "AffectedAppointmentsConfirmationError";
+      this.affectedAppointments = affectedAppointments;
+    }
+  }
+
+  return {
+    updateAdminMonthSlotMode: vi.fn(),
+    AffectedAppointmentsConfirmationError,
+  };
+});
 
 const authMock = vi.mocked(auth);
 const updateAdminMonthSlotModeMock = vi.mocked(updateAdminMonthSlotMode);
@@ -83,6 +100,7 @@ describe("PATCH /api/admin/months/[month]/slot-mode", () => {
     updateAdminMonthSlotModeMock.mockResolvedValueOnce({
       month: "2026-05",
       slotMode: "SECOND_ONLY_MODE",
+      availabilityVersion: 4,
     });
 
     const { PATCH } = await import("@/app/api/admin/months/[month]/slot-mode/route");
@@ -98,11 +116,61 @@ describe("PATCH /api/admin/months/[month]/slot-mode", () => {
     expect(response.status).toBe(200);
     expect(updateAdminMonthSlotModeMock).toHaveBeenCalledWith(
       "2026-05",
-      "SECOND_ONLY_MODE",
+      expect.objectContaining({ slotMode: "SECOND_ONLY_MODE" }),
     );
     await expect(response.json()).resolves.toEqual({
       month: "2026-05",
       slotMode: "SECOND_ONLY_MODE",
+      availabilityVersion: 4,
+    });
+  });
+
+  it("returns 409 with the affected appointments when confirmation is required (D18, D45)", async () => {
+    authMock.mockResolvedValueOnce({ user: { id: "1" } } as never);
+    const affectedAppointments = [
+      { appointmentId: 87, date: "2026-05-04", timeSlot: "17:00", status: "CONFIRMED", clientName: "Ana" },
+    ];
+    updateAdminMonthSlotModeMock.mockRejectedValueOnce(
+      new AffectedAppointmentsConfirmationError(affectedAppointments),
+    );
+
+    const { PATCH } = await import("@/app/api/admin/months/[month]/slot-mode/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/months/2026-05/slot-mode", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slotMode: "SECOND_ONLY_MODE" }),
+      }),
+      { params: Promise.resolve({ month: "2026-05" }) },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED",
+      error: "AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED",
+      affectedCount: 1,
+      affectedAppointments,
+    });
+  });
+
+  it("returns 409 when expectedVersion is stale (FR-041)", async () => {
+    authMock.mockResolvedValueOnce({ user: { id: "1" } } as never);
+    updateAdminMonthSlotModeMock.mockRejectedValueOnce(new Error("AVAILABILITY_VERSION_CONFLICT"));
+
+    const { PATCH } = await import("@/app/api/admin/months/[month]/slot-mode/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/months/2026-05/slot-mode", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slotMode: "SECOND_ONLY_MODE", expectedVersion: 2 }),
+      }),
+      { params: Promise.resolve({ month: "2026-05" }) },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "AVAILABILITY_VERSION_CONFLICT",
+      error: "AVAILABILITY_VERSION_CONFLICT",
     });
   });
 });

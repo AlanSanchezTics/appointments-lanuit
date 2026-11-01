@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { getAdminDayAgenda } from "@/lib/admin/appointments/service";
-import { parseAdminDayAgendaParams } from "@/lib/admin/appointments/validation";
+import {
+  parseAdminDayAgendaParams,
+  parseAgendaExcludeAppointmentId,
+} from "@/lib/admin/appointments/validation";
 import { buildErrorPayload, normalizeErrorCode } from "@/lib/api/error-response";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +30,7 @@ function resolveStatusCode(errorCode: string) {
   return 400;
 }
 
-export async function GET(_request: Request, { params }: AdminDayAgendaRouteProps) {
+export async function GET(request: Request, { params }: AdminDayAgendaRouteProps) {
   const session = await auth();
 
   if (!session) {
@@ -39,7 +42,10 @@ export async function GET(_request: Request, { params }: AdminDayAgendaRouteProp
   try {
     const { month, date } = await params;
     const parsed = parseAdminDayAgendaParams({ month, date });
-    const response = await getAdminDayAgenda(parsed);
+    const excludeAppointmentId = parseAgendaExcludeAppointmentId(
+      new URL(request.url).searchParams.get("excludeAppointmentId"),
+    );
+    const response = await getAdminDayAgenda({ ...parsed, excludeAppointmentId });
 
     return NextResponse.json(response);
   } catch (error) {

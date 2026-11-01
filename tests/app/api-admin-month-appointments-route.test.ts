@@ -225,6 +225,36 @@ describe("POST /api/admin/months/[month]/appointments", () => {
     });
   });
 
+  // NB-3 (D78): LOCK_TIMEOUT es conflicto de concurrencia, no petición inválida.
+  it("returns 409 when the booking lock times out", async () => {
+    authMock.mockResolvedValueOnce({ user: { id: "1", name: "admin" } } as never);
+    createAdminAppointmentMock.mockRejectedValueOnce(new Error("LOCK_TIMEOUT"));
+
+    const { POST } = await import("@/app/api/admin/months/[month]/appointments/route");
+    const response = await POST(
+      new Request("http://localhost/api/admin/months/2026-03/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: "2026-03-21",
+          timeSlot: "10:00",
+          clientId: 1,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          month: "2026-03",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "LOCK_TIMEOUT",
+      error: "LOCK_TIMEOUT",
+    });
+  });
+
   it("returns 400 for invalid payload", async () => {
     authMock.mockResolvedValueOnce({ user: { id: "1", name: "admin" } } as never);
 

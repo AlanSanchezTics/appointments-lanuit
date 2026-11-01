@@ -1,4 +1,3 @@
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 import type { BlockReason } from "@/lib/admin/blocked-spaces/types";
 
 export type AdminDayAgendaItem = {
@@ -25,6 +24,8 @@ export type AdminDayAgendaResponse = {
   month: string;
   date: string;
   total: number;
+  // Horarios ofrecibles ese día (resolvedor del servidor); sin la cita de excludeAppointmentId si se envió.
+  availableSlots: string[];
   appointments: AdminDayAgendaItem[];
   blockedSlots: Array<{
     blockedSlotId: number;
@@ -37,7 +38,7 @@ export type AdminDayAgendaResponse = {
 export type AdminRescheduleAppointmentPayload = {
   month: string;
   date: string;
-  timeSlot: (typeof BASE_TIME_SLOTS)[number];
+  timeSlot: string;
 };
 
 export type AdminRescheduleAppointmentResponse = {
@@ -75,14 +76,14 @@ export type AdminCreateAppointmentPayload =
   | {
       month: string;
       date: string;
-      timeSlot: (typeof BASE_TIME_SLOTS)[number];
+      timeSlot: string;
       clientId: number;
       client?: never;
     }
   | {
       month: string;
       date: string;
-      timeSlot: (typeof BASE_TIME_SLOTS)[number];
+      timeSlot: string;
       client: AdminCreateAppointmentClientInput;
       clientId?: never;
     };

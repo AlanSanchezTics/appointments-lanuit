@@ -130,6 +130,21 @@ describe("admin months catalog validation", () => {
       }),
     ).toEqual({
       slotMode: "SECOND_ONLY_MODE",
+      confirmAffectedAppointments: false,
+    });
+  });
+
+  it("parses optional expectedVersion and confirmAffectedAppointments (A-01, D51)", () => {
+    expect(
+      parseUpdateMonthSlotModePayload({
+        slotMode: "BLOCK_MODE",
+        expectedVersion: 3,
+        confirmAffectedAppointments: true,
+      }),
+    ).toEqual({
+      slotMode: "BLOCK_MODE",
+      expectedVersion: 3,
+      confirmAffectedAppointments: true,
     });
   });
 

@@ -63,4 +63,54 @@ describe("POST /api/my-appointments/reschedule", () => {
       error: "APPOINTMENT_NOT_MODIFIABLE",
     });
   });
+
+  // N3 (D87): destino ocupado o retenido por otra clienta responde 409 SLOT_NOT_AVAILABLE.
+  it("returns 409 when the destination is held by another client's lock (N3)", async () => {
+    rescheduleMyAppointmentMock.mockRejectedValueOnce(new Error("SLOT_NOT_AVAILABLE"));
+
+    const { POST } = await import("@/app/api/my-appointments/reschedule/route");
+    const response = await POST(
+      new Request("http://localhost/api/my-appointments/reschedule", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: "5512345678",
+          appointmentId: 12,
+          month: "2026-07",
+          date: "2026-07-10",
+          timeSlot: "14:00",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "SLOT_NOT_AVAILABLE",
+      error: "SLOT_NOT_AVAILABLE",
+    });
+  });
+
+  // NB-4 (1D): el timeout de named locks en la reprogramación pública responde 409, como en reservar/lock y confirm.
+  it("returns 409 when the reschedule lock times out (NB-4)", async () => {
+    rescheduleMyAppointmentMock.mockRejectedValueOnce(new Error("LOCK_TIMEOUT"));
+
+    const { POST } = await import("@/app/api/my-appointments/reschedule/route");
+    const response = await POST(
+      new Request("http://localhost/api/my-appointments/reschedule", {
+        method: "POST",
+        body: JSON.stringify({
+          phone: "5512345678",
+          appointmentId: 12,
+          month: "2026-07",
+          date: "2026-07-10",
+          timeSlot: "14:00",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "LOCK_TIMEOUT",
+      error: "LOCK_TIMEOUT",
+    });
+  });
 });

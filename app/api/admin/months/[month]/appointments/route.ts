@@ -19,7 +19,8 @@ function resolveStatusCode(errorCode: string) {
     return 404;
   }
 
-  if (errorCode === "SLOT_NOT_AVAILABLE" || errorCode === "SLOT_LOCKED") {
+  // LOCK_TIMEOUT (D78): conflicto de concurrencia, igual que la ruta pública de reprogramación.
+  if (errorCode === "SLOT_NOT_AVAILABLE" || errorCode === "SLOT_LOCKED" || errorCode === "LOCK_TIMEOUT") {
     return 409;
   }
 

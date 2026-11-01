@@ -1,4 +1,3 @@
-import { BASE_TIME_SLOTS } from "@/lib/constants/slots";
 
 export const BLOCK_REASON_VALUES = ["DESCANSO", "PERSONAL", "OTRO"] as const;
 
@@ -22,7 +21,7 @@ export type BlockedSlotSyncSummary = {
 
 export type AdminBlockableDay = {
   date: string;
-  slots: (typeof BASE_TIME_SLOTS)[number][];
+  slots: string[];
 };
 
 export type GetAdminBlockableSlotsResponse = {
@@ -34,7 +33,7 @@ export type GetAdminBlockableSlotsResponse = {
 export type CreateAdminBlockedSlotsPayload = {
   month: string;
   date: string;
-  slots: (typeof BASE_TIME_SLOTS)[number][];
+  slots: string[];
   fullDay?: false;
   reason: BlockReason;
 } | {
@@ -53,7 +52,7 @@ export type CreateAdminBlockedSlotsResponse = {
   totalCreated: number;
   blockedSlots: Array<{
     date: string;
-    timeSlot: (typeof BASE_TIME_SLOTS)[number];
+    timeSlot: string;
     reason: BlockReason;
   }>;
   syncSummary: BlockedSlotSyncSummary;
@@ -70,7 +69,7 @@ export type UpdateAdminBlockedSlotResponse = {
   month: string;
   blockedSlotId: number;
   date: string;
-  timeSlot: (typeof BASE_TIME_SLOTS)[number];
+  timeSlot: string;
   reason: BlockReason;
   syncSummary: BlockedSlotSyncSummary;
   syncWarnings: BlockedSlotSyncWarning[];

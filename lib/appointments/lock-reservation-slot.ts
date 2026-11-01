@@ -2,8 +2,7 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 
 import { getBookableMonthConfig } from "@/lib/active-months/service";
-import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import { resolveDay } from "@/lib/availability/resolver";
 import { splitBlockedTimeSlots } from "@/lib/admin/blocked-spaces/day-block";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import { prisma } from "@/lib/db/prisma";
@@ -16,6 +15,7 @@ import {
   lockConflictingAppointments,
   releaseBookingLocks,
 } from "@/lib/db/appointments";
+import { findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
 import { isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { lockReservationSchema, validateBookingRules } from "@/lib/validation/appointment";
@@ -104,16 +104,24 @@ async function listActiveFutureAppointmentsInMonth(
 
 async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date()) {
   const input = validateBookingRules(lockReservationSchema.parse(rawInput), now);
-  const monthConfig = await getBookableMonthConfig(input.date.slice(0, 7), now);
-  const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
+  await getBookableMonthConfig(input.date.slice(0, 7), now);
   const expiresAt = computeLockExpiration(now);
 
   const result = await prisma.$transaction(async (tx) => {
-    await acquireBookingLocks(tx, input.date, input.phone);
-
     try {
-      await cleanupExpiredReservationLocks(tx, now);
+      // NB-3 (D65): locks dentro del try para que el finally los libere si fallan.
+      await acquireBookingLocks(tx, input.date, input.phone);
+
+      // PD-08 / R-06: reglas dentro de la transacción, con FOR SHARE, después de acquireBookingLocks.
+      const config = await findMonthAvailabilityForShare(tx, input.date.slice(0, 7));
+
+      if (!config) {
+        throw new Error("MONTH_NOT_ALLOWED");
+      }
+
+      // D89: la limpieza de RL va después de los conflictos de citas (ninguna ruta invierte RL -> citas).
       await lockConflictingAppointments(tx, input.date, input.phone);
+      await cleanupExpiredReservationLocks(tx, input.date, now);
 
       const existingClient = await tx.client.findUnique({
         where: {
@@ -161,19 +169,19 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
       const activeLocks = await listActiveReservationLocksForDate(tx, input.date, now);
       const occupiedSlots = occupied.map((item) => item.timeSlot.toISOString().slice(11, 16));
       const lockedSlots = activeLocks.map((item) => item.timeSlot);
-      const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
-      const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(blockedTimeSlots);
-
-      if (hasFullDayBlock) {
-        throw new Error("SLOT_NOT_AVAILABLE");
-      }
-
-      const availableSlots = getAvailableStartSlotsWithManualBlocks(
-        baseSlots,
-        [...occupiedSlots, ...lockedSlots],
-        Array.from(blockedSlotsSet),
-        monthConfig.slotMode,
+      // D54/D55: "00:00" en bloqueos es el centinela de día completo, no una hora.
+      const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(
+        blockedSlots.map((slot) => slot.timeSlot),
       );
+      // A-05: los locks activos cuentan como ocupados en el flujo público. D46: día sin horarios → slots vacíos.
+      const availableSlots = resolveDay(config, input.date, {
+        now,
+        occupancy: {
+          occupiedTimes: [...occupiedSlots, ...lockedSlots],
+          blockedTimes: Array.from(blockedSlotsSet),
+          fullDayBlocked: hasFullDayBlock,
+        },
+      }).slots;
 
       if (!availableSlots.includes(input.timeSlot)) {
         if (lockedSlots.includes(input.timeSlot)) {

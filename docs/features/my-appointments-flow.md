@@ -75,7 +75,7 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
    - estado `PENDING`, `CONFIRMED` o `SYNC_FAILED`,
    - cita futura,
    - al menos 3 horas de anticipación,
-   - nuevo slot disponible según reglas del booking público.
+   - nuevo horario ofrecido por el resolvedor de disponibilidad del día (reglas, excepciones, ocupación incluida `PENDING`, locks, bloqueos, separación mínima y capacidad), sin lock vigente de otra clienta (D87, D88), en un mes `ACTIVE` y no pasado. Si no se cumple, responde `SLOT_NOT_AVAILABLE`. Un error de infraestructura responde `UNKNOWN_ERROR` y revierte la transacción (D81).
 4. El flujo no aplica:
    - `isLoyal`
    - sugerencia/umbral de 15 días
@@ -101,6 +101,7 @@ Describir el flujo público unificado para consultar, modificar o cancelar citas
 - Modificación web requiere al menos 3 horas.
 - La cita origen debe seguir siendo futura al confirmar.
 - El nuevo slot debe seguir disponible al confirmar.
+- El destino debe ser un horario que el resolvedor ofrece ese día, en un mes `ACTIVE` y no pasado.
 
 ## Concurrency Considerations
 

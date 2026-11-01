@@ -444,9 +444,16 @@ export async function lockConflictingAppointments(tx: Prisma.TransactionClient, 
   `;
 }
 
-export async function cleanupExpiredReservationLocks(tx: Prisma.TransactionClient, now = new Date()) {
+// D88/B1: limitada a la fecha procesada. Sin fecha, el DELETE recorre toda la tabla y bloquea filas de otras fechas
+// (deadlock con la reprogramación pública). Los lectores ya filtran expires_at > now; esto es solo limpieza.
+export async function cleanupExpiredReservationLocks(
+  tx: Prisma.TransactionClient,
+  date: string,
+  now = new Date(),
+) {
   await tx.reservationLock.deleteMany({
     where: {
+      date: new Date(`${date}T00:00:00.000Z`),
       expiresAt: {
         lte: now,
       },
@@ -486,9 +493,10 @@ export async function createReservationLock(
   return mapReservationLock(row);
 }
 
+// Devuelve solo locks vigentes de otra clienta (N4): el filtro por teléfono va en SQL, no depende de que haya un único lock por horario.
 export async function findActiveReservationLockForSlotForUpdate(
   tx: Prisma.TransactionClient,
-  input: { date: string; timeSlot: string; now?: Date },
+  input: { date: string; timeSlot: string; phone: string; now?: Date },
 ) {
   const now = input.now ?? new Date();
   const records = await tx.$queryRaw<
@@ -506,6 +514,7 @@ export async function findActiveReservationLockForSlotForUpdate(
     WHERE date = ${input.date}
       AND time_slot = ${input.timeSlot}
       AND expires_at > ${now}
+      AND phone <> ${input.phone}
     ORDER BY id ASC
     LIMIT 1
     FOR UPDATE

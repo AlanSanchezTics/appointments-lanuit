@@ -459,7 +459,8 @@
       },
       "edit": {
         "date": "Fecha",
-        "timeSlot": "Horario"
+        "timeSlot": "Horario",
+        "loadingTimeSlots": "Cargando horarios…"
       },
       "confirmCancel": {
         "question": "¿Confirmas cancelar la cita de {{name}} a las {{time}}?"
@@ -653,6 +654,101 @@
         "shareSuccess": "Agenda compartida",
         "copyError": "No se pudo copiar el enlace."
       }
+    },
+    "availability": {
+      "title": "Disponibilidad del mes",
+      "close": "Cerrar editor de disponibilidad",
+      "loading": "Cargando disponibilidad…",
+      "loadFailed": "No se pudo cargar la disponibilidad del mes.",
+      "retry": "Reintentar",
+      "defaultRuleNotice": "Este mes no tiene reglas. Se usa el horario por defecto: lunes a viernes, con fin de semana cerrado.",
+      "rulesSection": "Reglas semanales",
+      "rulesEmpty": "Sin reglas. El mes usa el horario por defecto.",
+      "exceptionsSection": "Excepciones por fecha",
+      "exceptionsEmpty": "Sin excepciones.",
+      "closedDayNotice": "Sin horas: este día quedará cerrado.",
+      "addRule": "Agregar regla",
+      "addException": "Agregar excepción",
+      "removeItem": "Quitar",
+      "save": "Guardar disponibilidad",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "discard": {
+        "title": "¿Descartar cambios?",
+        "description": "Hay cambios sin guardar en la disponibilidad del mes.",
+        "confirm": "Descartar",
+        "keep": "Seguir editando"
+      },
+      "affected": {
+        "title": "Hay citas que quedarían fuera del horario",
+        "description": "{{total}} citas activas quedarían fuera del horario propuesto. Guardar no modifica las citas.",
+        "confirm": "Confirmar y guardar",
+        "cancel": "Cancelar",
+        "fields": {
+          "date": "Fecha",
+          "time": "Hora",
+          "status": "Estado",
+          "client": "Cliente"
+        },
+        "statuses": {
+          "PENDING": "Solicitada",
+          "CONFIRMED": "Confirmada",
+          "SYNC_FAILED": "Confirmada (sincronización fallida)",
+          "unknown": "Estado desconocido"
+        }
+      },
+      "fields": {
+        "startDate": "Desde",
+        "endDate": "Hasta",
+        "date": "Fecha",
+        "weekdays": "Días de la semana",
+        "times": "Horario",
+        "addTime": "Agregar hora",
+        "removeTime": "Quitar hora",
+        "minGap": "Separación mínima (min)",
+        "maxPerDay": "Máximo de citas por día",
+        "preserveCapacity": "Conservar capacidad",
+        "preserveCapacityHelpLabel": "Ayuda: conservar capacidad",
+        "preserveCapacityHelp": "Activada, solo se ofrecen las horas que no le quitan lugar a otras citas. Desactivada, se ofrecen todas las horas libres. Ejemplo: horas 9:00 AM, 11:00 AM, 12:00 PM y 1:00 PM, separación de 120 min y máximo de 3 citas. Activada, las 12:00 PM no se ofrecen: si alguien las toma, ese día solo cabrían 2 citas en lugar de 3. Desactivada, sí se ofrecen."
+      },
+      "periods": {
+        "am": "AM",
+        "pm": "PM"
+      },
+      "weekdays": {
+        "1": "Lun",
+        "2": "Mar",
+        "3": "Mié",
+        "4": "Jue",
+        "5": "Vie",
+        "6": "Sáb",
+        "7": "Dom"
+      },
+      "notifications": {
+        "saveLoading": "Guardando disponibilidad…",
+        "saveSuccess": "Disponibilidad guardada",
+        "saveError": "No se pudo guardar la disponibilidad"
+      },
+      "errors": {
+        "unknown": "Ocurrió un error inesperado. Intenta de nuevo.",
+        "invalidRequest": "Revisa los datos del formulario.",
+        "monthNotRegistered": "El mes no está registrado.",
+        "monthInPast": "Los meses pasados no se pueden editar.",
+        "versionConflict": "La disponibilidad cambió mientras editabas. Cierra el editor y ábrelo de nuevo para cargar la versión actual.",
+        "affectedConfirmationRequired": "Hay citas afectadas. Revísalas antes de guardar.",
+        "rangeOutsideMonth": "El rango debe estar dentro del mes.",
+        "rangeInvalid": "La fecha inicial no puede ser posterior a la final.",
+        "ruleOverlap": "Dos reglas no pueden cubrir las mismas fechas.",
+        "weekdaysRequired": "Selecciona al menos un día de la semana.",
+        "timesRequired": "Agrega al menos una hora a la regla.",
+        "timeInvalid": "Hay una hora no válida. 12:00 AM no se puede usar.",
+        "minGapOutOfRange": "La separación debe estar entre 0 y 1440 minutos.",
+        "maxPerDayOutOfRange": "El máximo de citas por día debe estar entre 1 y 6.",
+        "timesLimitExceeded": "Hay demasiadas horas en un mismo día.",
+        "exceptionDateDuplicate": "Ya existe una excepción para esa fecha.",
+        "exceptionDateOutsideMonth": "La fecha debe estar dentro del mes."
+      },
+      "openCta": "Reglas"
     }
   },
   "appointmentLogs": {

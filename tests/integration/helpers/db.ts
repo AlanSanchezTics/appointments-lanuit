@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db/prisma";
 export async function resetAppointmentsTable() {
   await prisma.activeMonth.deleteMany();
   await prisma.reservationLock.deleteMany();
+  // appointment_logs referencia appointments (FK); sin borrarla antes, deleteMany de citas falla.
+  await prisma.appointmentLog.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.client.deleteMany();
 

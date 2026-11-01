@@ -12,6 +12,8 @@ type BottomSheetModalProps = {
   onClose: () => void;
   disableClose?: boolean;
   children: React.ReactNode;
+  // Se superpone al panel, fuera del área con scroll (p. ej. confirmaciones que deben verse siempre).
+  overlay?: React.ReactNode;
 };
 
 const EXIT_ANIMATION_MS = 260;
@@ -23,6 +25,7 @@ export function BottomSheetModal({
   onClose,
   disableClose = false,
   children,
+  overlay,
 }: BottomSheetModalProps) {
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -115,6 +118,7 @@ export function BottomSheetModal({
         <div className="max-h-[70vh] overflow-y-auto px-6 pb-[5rem]">
           {children}
         </div>
+        {overlay}
       </section>
     </div>
   );

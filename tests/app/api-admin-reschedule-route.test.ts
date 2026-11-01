@@ -90,6 +90,33 @@ describe("PATCH /api/admin/appointments/[appointmentId]/reschedule", () => {
     expect(response.status).toBe(409);
   });
 
+  // NB-3 (D78): LOCK_TIMEOUT es conflicto de concurrencia (409), igual que en la ruta pública.
+  it("returns 409 when the booking lock times out", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    rescheduleAdminAppointmentMock.mockRejectedValueOnce(new Error("LOCK_TIMEOUT"));
+
+    const { PATCH } = await import("@/app/api/admin/appointments/[appointmentId]/reschedule/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/admin/appointments/11/reschedule", {
+        method: "PATCH",
+        body: JSON.stringify({
+          month: "2026-03",
+          date: "2026-03-17",
+          timeSlot: "14:00",
+        }),
+      }),
+      {
+        params: Promise.resolve({ appointmentId: "11" }),
+      },
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "LOCK_TIMEOUT",
+      error: "LOCK_TIMEOUT",
+    });
+  });
+
   it("returns 409 when appointment is not editable", async () => {
     authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
     rescheduleAdminAppointmentMock.mockRejectedValueOnce(

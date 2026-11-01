@@ -19,7 +19,7 @@ import type { AppLanguage } from "@/lib/i18n/config";
 import type { AdminCreateAppointmentResponse } from "@/lib/admin/appointments/types";
 import type { AdminBlockableDay } from "@/lib/admin/blocked-spaces/types";
 import type { AdminClientSearchItem } from "@/lib/admin/clients/types";
-import type { BaseTimeSlot } from "@/lib/constants/slots";
+// Mínimo para tsc (T030-T039): horarios del resolvedor son HH:mm libres; T052 rehace el tipo.
 import { resolveClientDisplayName } from "@/lib/shared/client-name";
 import { formatWhatsappAppointmentLabels } from "@/lib/whatsapp/appointment-labels";
 import { buildWhatsappUrlFromMessage } from "@/lib/whatsapp/message";
@@ -43,8 +43,8 @@ type BookAppointmentModalProps = {
   fieldErrors: FieldErrors;
   days: AdminBlockableDay[];
   selectedDate: string | null;
-  selectedDaySlots: BaseTimeSlot[];
-  selectedTimeSlot: BaseTimeSlot | null;
+  selectedDaySlots: string[];
+  selectedTimeSlot: string | null;
   clientMode: ClientMode;
   searchQuery: string;
   searchResults: AdminClientSearchItem[];
@@ -57,7 +57,7 @@ type BookAppointmentModalProps = {
   successResult: AdminCreateAppointmentResponse | null;
   onClose: () => void;
   onSelectDate: (date: string) => void;
-  onSelectTimeSlot: (timeSlot: BaseTimeSlot) => void;
+  onSelectTimeSlot: (timeSlot: string) => void;
   onChangeClientMode: (mode: ClientMode) => void;
   onSearchQueryChange: (query: string) => void;
   onSelectClient: (client: AdminClientSearchItem) => void;

@@ -25,7 +25,8 @@ function resolveStatusCode(errorCode: string) {
   if (
     errorCode === "SLOT_NOT_AVAILABLE" ||
     errorCode === "SLOT_LOCKED" ||
-    errorCode === "APPOINTMENT_NOT_EDITABLE"
+    errorCode === "APPOINTMENT_NOT_EDITABLE" ||
+    errorCode === "LOCK_TIMEOUT"
   ) {
     return 409;
   }

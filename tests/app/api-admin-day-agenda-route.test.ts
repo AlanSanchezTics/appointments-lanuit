@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/auth";
 import { getAdminDayAgenda } from "@/lib/admin/appointments/service";
@@ -15,6 +15,10 @@ const authMock = vi.mocked(auth);
 const getAdminDayAgendaMock = vi.mocked(getAdminDayAgenda);
 
 describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("returns 401 when there is no admin session", async () => {
     authMock.mockResolvedValueOnce(null as never);
 
@@ -60,6 +64,7 @@ describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
           reason: "DESCANSO",
         },
       ],
+      availableSlots: ["10:00", "18:00"],
     });
 
     const { GET } = await import("@/app/api/admin/months/[month]/days/[date]/agenda/route");
@@ -96,6 +101,7 @@ describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
           reason: "DESCANSO",
         },
       ],
+      availableSlots: ["10:00", "18:00"],
     });
     expect(getAdminDayAgendaMock).toHaveBeenCalledWith({
       month: "2026-03",
@@ -123,5 +129,69 @@ describe("GET /api/admin/months/[month]/days/[date]/agenda", () => {
       errorCode: "MONTH_NOT_REGISTERED",
       error: "MONTH_NOT_REGISTERED",
     });
+  });
+
+  it("forwards excludeAppointmentId and returns availableSlots (A-07, PD-09)", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    getAdminDayAgendaMock.mockResolvedValueOnce({
+      month: "2026-03",
+      date: "2026-03-13",
+      total: 1,
+      appointments: [],
+      blockedSlots: [],
+      availableSlots: ["10:00", "14:00", "18:00"],
+    } as never);
+
+    const { GET } = await import("@/app/api/admin/months/[month]/days/[date]/agenda/route");
+    const response = await GET(
+      new Request("http://localhost/api/admin/months/2026-03/days/2026-03-13/agenda?excludeAppointmentId=100"),
+      { params: Promise.resolve({ month: "2026-03", date: "2026-03-13" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(getAdminDayAgendaMock).toHaveBeenCalledWith({
+      month: "2026-03",
+      date: "2026-03-13",
+      excludeAppointmentId: 100,
+    });
+    await expect(response.json()).resolves.toMatchObject({ availableSlots: ["10:00", "14:00", "18:00"] });
+  });
+
+  it("returns 400 APPOINTMENT_ID_INVALID for a malformed excludeAppointmentId without calling the service", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+
+    const { GET } = await import("@/app/api/admin/months/[month]/days/[date]/agenda/route");
+    const response = await GET(
+      new Request("http://localhost/api/admin/months/2026-03/days/2026-03-13/agenda?excludeAppointmentId=abc"),
+      { params: Promise.resolve({ month: "2026-03", date: "2026-03-13" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "APPOINTMENT_ID_INVALID",
+      error: "APPOINTMENT_ID_INVALID",
+    });
+    expect(getAdminDayAgendaMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 with empty availableSlots for a day without offered times (D46)", async () => {
+    authMock.mockResolvedValueOnce({ user: { name: "admin" } } as never);
+    getAdminDayAgendaMock.mockResolvedValueOnce({
+      month: "2026-03",
+      date: "2026-03-14",
+      total: 0,
+      appointments: [],
+      blockedSlots: [],
+      availableSlots: [],
+    } as never);
+
+    const { GET } = await import("@/app/api/admin/months/[month]/days/[date]/agenda/route");
+    const response = await GET(
+      new Request("http://localhost/api/admin/months/2026-03/days/2026-03-14/agenda"),
+      { params: Promise.resolve({ month: "2026-03", date: "2026-03-14" }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ availableSlots: [] });
   });
 });

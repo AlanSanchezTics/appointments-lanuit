@@ -7,7 +7,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - Usuario final: selecciona fecha/horario, captura teléfono, confirma la cita y completa la acción de WhatsApp (automática o manual según estado final).
 - UI pública (`/` y `/booking`): muestra portada, guía el wizard, muestra disponibilidad, errores y estado de lock.
 - API de reservas: ejecuta `check + lock`, confirmación y liberación de lock.
-- Servicios de dominio: validan reglas de negocio (mes activo, disponibilidad, teléfono, restricciones por pares y máximo diario).
+- Servicios de dominio: validan reglas de negocio (mes activo, disponibilidad, teléfono, separación mínima y capacidad diaria).
 - Base de datos (fuente de verdad): persiste clientes, citas y locks temporales; aplica transacciones y bloqueos.
 - Google Calendar: integración espejo posterior al commit (no fuente de verdad).
 - WhatsApp: canal externo abierto desde la UI de éxito (auto-intento único en `CONFIRMED`/`SYNC_FAILED`, manual en `PENDING`).
@@ -15,10 +15,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 ## Preconditions
 - El mes solicitado en la ruta (`/citas/YYYY-MM`) debe estar en `active_months` con estado `ACTIVE`.
 - El flujo opera en zona horaria `America/Mexico_City`.
-- Solo se pueden reservar días lunes a viernes.
-- Los horarios válidos dependen de `slotMode` del mes:
-  - `BLOCK_MODE`: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
-  - `SECOND_ONLY_MODE`: `10:00`, `14:00`, `18:00`.
+- Los días válidos los determinan las reglas y excepciones del mes; no hay días fijos (sección 4.1 de la spec).
+- Los horarios válidos son los que el resolvedor de disponibilidad ofrece para ese día: reglas y excepciones del mes, separación mínima, capacidad diaria, bloqueos, locks y horas ya transcurridas. No hay lista fija de horarios.
 - Para el mismo día, solo se permiten horarios futuros (no transcurridos).
 - El teléfono se valida/persiste normalizado a 10 dígitos.
 - Un teléfono puede tener más de una cita activa futura por mes (`CONFIRMED` o `SYNC_FAILED`).
@@ -129,7 +127,8 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - `Editar información` regresa a paso de identificación y conserva lock vigente.
   - previo al `POST /api/reservar/confirm`, frontend envía `name` en forma canónica (trim).
 - Backend (transaccional):
-  - limpia locks expirados,
+  - toma con bloqueo los conflictos de citas del día y del teléfono,
+  - limpia locks expirados de la fecha de la reserva (no de otras fechas),
   - valida lock vigente por `lock_token`, fecha, horario y teléfono,
   - valida disponibilidad final bajo bloqueo,
   - si llega `appointmentIdToReschedule`, reprograma esa cita,
@@ -171,18 +170,18 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
   - Mes marcado `ACTIVE` en `active_months`.
 - Fecha:
   - Debe pertenecer al mes activo solicitado.
-  - Solo lunes a viernes.
+  - Debe estar cubierta por una regla o excepción del mes que produzca horarios ofrecibles.
   - Si es hoy, el horario debe ser futuro en `America/Mexico_City`.
 - Horario:
-  - Debe ser uno de los slots base oficiales.
-  - Debe cumplir disponibilidad global del día (ocupados + locks + bloqueos manuales + máximo diario).
-  - En `BLOCK_MODE` aplica regla direccional por pares.
-  - En `SECOND_ONLY_MODE` no aplica propagación direccional entre pares.
+  - Debe ser una hora que el resolvedor ofrece ese día (sección 4.3 de la spec).
+  - Las citas `PENDING`, `CONFIRMED` y `SYNC_FAILED` ocupan su horario. Los locks vigentes y los bloqueos manuales también lo ocupan.
+  - No hay propagación direccional entre horarios.
 - Teléfono:
   - Se normaliza a 10 dígitos.
   - Puede tener más de una cita activa futura en el mismo mes.
   - Un teléfono puede tener citas activas futuras en meses distintos.
   - El umbral `<15 días` se usa para mostrar sugerencia de UX (reagendar o continuar como nueva), no como bloqueo de creación.
+  - Implementación pendiente (D95): la regla objetivo cuenta `PENDING`, `CONFIRMED` y `SYNC_FAILED` como citas activas para el umbral. El código vigente cuenta solo `CONFIRMED` y `SYNC_FAILED` (ver sección 7 paso 5 de la spec).
 - Nombre:
   - Requerido para cliente nuevo.
   - Mínimo 3 caracteres.
@@ -213,7 +212,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 ## Error Scenarios
 - Mes inválido/inactivo/pasado: rechazo de disponibilidad y/o reserva.
 - Fecha fuera de reglas (fin de semana o slot pasado en mismo día): rechazo.
-- Slot no disponible por ocupación, lock activo o restricciones direccionales: conflicto.
+- Hora no ofrecida por el resolvedor (ocupación, bloqueo, separación mínima o capacidad diaria): `SLOT_NOT_AVAILABLE`. Lock vigente de otra clienta: `SLOT_LOCKED` (D46).
 - Lock inexistente, expirado o no coincidente: conflicto en confirmación.
 - Timeout al adquirir locks de concurrencia: conflicto.
 - Validación de payload inválida: error de validación.
@@ -224,7 +223,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 ## Concurrency Considerations
 - Modelo aplicado: `first-commit-wins`.
 - Confirmación se ejecuta en transacción con bloqueo pesimista.
-- Se limpian locks expirados antes de validar lock/confirmar.
+- Se limpian locks expirados de la fecha de la reserva antes de validar lock/confirmar, después de bloquear las citas en conflicto del día y del teléfono (D88, D89).
 - El lock temporal evita captura simultánea del mismo slot durante confirmación.
 - La validación final de disponibilidad ocurre dentro de la transacción de confirmación.
 - Locks de aplicación por fecha/teléfono reducen carreras entre intentos concurrentes.
@@ -234,7 +233,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 - El usuario selecciona un slot válido y, antes de confirmar, ese slot deja de ser válido por competencia concurrente.
 - El lock expira mientras el usuario completa nombre o revisa confirmación.
 - El horario del mismo día cruza el umbral temporal durante el flujo y deja de ser elegible.
-- El día queda sin slots por combinación de citas activas + locks + regla direccional.
+- El día queda sin horarios ofrecibles por la combinación de citas activas, locks, bloqueos, separación mínima y capacidad diaria.
 - Reintentos tras error de conflicto requieren refrescar disponibilidad y re-seleccionar slot.
 - Re-reserva de un slot previamente cancelado genera una nueva cita (histórico preservado).
 - Una cita `PENDING` sí participa en la lógica de ocupación del slot hasta resolverse (`CONFIRMED` o `REJECTED`).

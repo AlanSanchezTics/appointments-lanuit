@@ -30,6 +30,15 @@ export function Input({
       hideLabel: t("common.hidePassword"),
     });
 
+  // Safari iOS: los inputs date/time/datetime-local tienen ancho intrínseco y apariencia nativa que ignoran
+  // width:100%; sin min-w-0 y appearance:none se salen de la tarjeta y se superponen a los elementos vecinos.
+  // Solo aplica a esos tipos; el resto de inputs no cambia.
+  const isDateTimeInput =
+    props.type === "date" || props.type === "time" || props.type === "datetime-local";
+  const dateTimeClassName = isDateTimeInput
+    ? "box-border block min-w-0 max-w-full appearance-none [-webkit-appearance:none]"
+    : "";
+
   const inputPaddingClassName = isPasswordInput
     ? icon
       ? "pl-12 pr-14"
@@ -39,8 +48,8 @@ export function Input({
       : "px-6";
 
   return (
-    <div className="relative block">
-      <label className="relative block" htmlFor={id}>
+    <div className={isDateTimeInput ? "relative block min-w-0 w-full" : "relative block"}>
+      <label className={isDateTimeInput ? "relative block min-w-0" : "relative block"} htmlFor={id}>
         {label ? (
           <span className="absolute left-5 top-0 -translate-y-1/2 bg-[var(--surface)] px-1 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
             {label}
@@ -48,7 +57,7 @@ export function Input({
         ) : null}
         <input
           id={id}
-          className={`w-full rounded-full border border-[var(--admin-border)] bg-white py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] ${inputPaddingClassName} ${className}`}
+          className={`w-full rounded-full border border-[var(--admin-border)] bg-white py-4 text-[0.96rem] font-medium tracking-[-0.01em] text-[var(--foreground)] outline-none transition focus:border-[var(--accent)] ${inputPaddingClassName} ${dateTimeClassName} ${className}`}
           {...props}
           type={isPasswordInput ? inputType : props.type}
         />

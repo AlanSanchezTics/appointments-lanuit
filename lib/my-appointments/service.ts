@@ -9,15 +9,17 @@ import {
 } from "@/lib/admin/appointment-logs/service";
 import { updateCalendarEvent, createCalendarEvent, deleteCalendarEvent } from "@/lib/calendar/google";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
-import {
-  getCurrentDateKey,
-  isFutureDateTime,
-  isWeekdayInMexicoCity,
-} from "@/lib/datetime/mexico-city";
+import { getCurrentDateKey, isFutureDateTime } from "@/lib/datetime/mexico-city";
 import { prisma } from "@/lib/db/prisma";
+import { findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
-import { getAvailableStartSlotsWithManualBlocks } from "@/lib/availability/rules";
-import { resolveBaseSlotsByMonthMode } from "@/lib/availability/month-slot-mode";
+import {
+  acquireBookingLocks,
+  findActiveReservationLockForSlotForUpdate,
+  lockConflictingAppointments,
+  releaseBookingLocks,
+} from "@/lib/db/appointments";
+import { resolveDay } from "@/lib/availability/resolver";
 import {
   canCancelPublicAppointment,
   canModifyPublicAppointment,
@@ -325,75 +327,78 @@ export async function cancelMyAppointments(
   };
 }
 
+type RescheduleRules = Awaited<ReturnType<typeof findMonthAvailabilityForShare>>;
+
 async function validateRescheduleDestination(
   input: {
     month: string;
     date: string;
     timeSlot: string;
     appointmentId: number;
+    phone: string;
   },
+  config: RescheduleRules,
   tx: Prisma.TransactionClient,
   now = new Date(),
 ) {
+  if (input.date.slice(0, 7) !== input.month) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  if (!isFutureDateTime(input.date, input.timeSlot, now)) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  // BLK-2 (D81/D88): solo los errores de dominio (mes no reservable) se convierten en SLOT_NOT_AVAILABLE.
+  // Las lecturas de transacción de abajo (deadlock, timeout) no pasan por aquí y se propagan.
   try {
-    if (input.date.slice(0, 7) !== input.month) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
-
-    if (!isFutureDateTime(input.date, input.timeSlot, now)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
-
-    if (!isWeekdayInMexicoCity(input.date)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
-
-    const monthConfig = await getBookableMonthConfig(input.month);
-    const baseSlots = resolveBaseSlotsByMonthMode(monthConfig.slotMode);
-    const [occupiedAppointments, blockedSlots] = await Promise.all([
-      tx.appointment.findMany({
-        where: {
-          date: new Date(`${input.date}T00:00:00.000Z`),
-          status: {
-            in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
-          },
-          id: {
-            not: input.appointmentId,
-          },
-        },
-        select: {
-          timeSlot: true,
-        },
-      }),
-      listBlockedSlotsByDateForUpdate(tx, input.date),
-    ]);
-
-    const occupiedSlots = occupiedAppointments.map((record) =>
-      record.timeSlot.toISOString().slice(11, 16),
-    );
-    const blockedTimeSlots = blockedSlots.map((slot) => slot.timeSlot);
-    const { hasFullDayBlock, blockedSlots: blockedSlotsSet } =
-      splitBlockedTimeSlots(blockedTimeSlots);
-
-    if (hasFullDayBlock) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
-
-    const availableSlots = getAvailableStartSlotsWithManualBlocks(
-      baseSlots,
-      occupiedSlots,
-      Array.from(blockedSlotsSet),
-      monthConfig.slotMode,
-    );
-
-    if (!availableSlots.some((slot) => slot === input.timeSlot)) {
-      throw new Error("SLOT_NOT_AVAILABLE");
-    }
+    await getBookableMonthConfig(input.month);
   } catch (error) {
-    if (error instanceof Error && error.message === "SLOT_NOT_AVAILABLE") {
-      throw error;
+    if (error instanceof Error && error.message === "MONTH_NOT_ALLOWED") {
+      throw new Error("SLOT_NOT_AVAILABLE");
     }
+    throw error;
+  }
 
+  if (!config) {
+    throw new Error("SLOT_NOT_AVAILABLE");
+  }
+
+  const [occupiedAppointments, blockedSlots] = await Promise.all([
+    tx.appointment.findMany({
+      where: {
+        date: new Date(`${input.date}T00:00:00.000Z`),
+        status: {
+          in: SLOT_BLOCKING_APPOINTMENT_STATUSES,
+        },
+        id: {
+          not: input.appointmentId,
+        },
+      },
+      select: {
+        timeSlot: true,
+      },
+    }),
+    listBlockedSlotsByDateForUpdate(tx, input.date),
+  ]);
+
+  const occupiedSlots = occupiedAppointments.map((record) =>
+    record.timeSlot.toISOString().slice(11, 16),
+  );
+  // D54/D55: "00:00" en bloqueos es el centinela de día completo, no una hora. D46: día sin horarios → slots vacíos.
+  const { hasFullDayBlock, blockedSlots: blockedSlotsSet } = splitBlockedTimeSlots(
+    blockedSlots.map((slot) => slot.timeSlot),
+  );
+  const availableSlots = resolveDay(config, input.date, {
+    now,
+    occupancy: {
+      occupiedTimes: occupiedSlots,
+      blockedTimes: Array.from(blockedSlotsSet),
+      fullDayBlocked: hasFullDayBlock,
+    },
+  }).slots;
+
+  if (!availableSlots.some((slot) => slot === input.timeSlot)) {
     throw new Error("SLOT_NOT_AVAILABLE");
   }
 }
@@ -405,69 +410,97 @@ export async function rescheduleMyAppointment(
   const input = myAppointmentsRescheduleSchema.parse(rawInput);
 
   const source = await prisma.$transaction(async (tx) => {
-    const current = await findAppointmentForRescheduleForUpdate(tx, {
-      appointmentId: input.appointmentId,
-      phone: input.phone,
-    });
+    // PD-08 / R-06, mismo orden que reserva y confirmación: GET_LOCK (fecha, teléfono) → FOR SHARE → conflictos → fila de la cita.
+    // Sin los bloqueos de nombre, dos reprogramaciones a la misma hora pueden leer ocupación vieja (escritura sesgada).
+    try {
+      // NB-3 (D65): locks dentro del try para que el finally los libere si fallan.
+      await acquireBookingLocks(tx, input.date, input.phone);
+      // PD-08 / R-06 (NB-5, D78): un error de FOR SHARE (deadlock, timeout) se propaga; no es "horario no ofrecido".
+      const rules = await findMonthAvailabilityForShare(tx, input.month);
+      await lockConflictingAppointments(tx, input.date, input.phone);
 
-    if (!current) {
-      throw new Error("APPOINTMENT_NOT_FOUND");
-    }
+      const current = await findAppointmentForRescheduleForUpdate(tx, {
+        appointmentId: input.appointmentId,
+        phone: input.phone,
+      });
 
-    if (!isPublicAppointmentFuture(current, now)) {
-      throw new Error("APPOINTMENT_NOT_MODIFIABLE");
-    }
+      if (!current) {
+        throw new Error("APPOINTMENT_NOT_FOUND");
+      }
 
-    if (getHoursUntilAppointment(current, now) < 3) {
-      throw new Error("APPOINTMENT_NOT_MODIFIABLE");
-    }
+      if (!isPublicAppointmentFuture(current, now)) {
+        throw new Error("APPOINTMENT_NOT_MODIFIABLE");
+      }
 
-    await validateRescheduleDestination(
-      {
-        month: input.month,
+      if (getHoursUntilAppointment(current, now) < 3) {
+        throw new Error("APPOINTMENT_NOT_MODIFIABLE");
+      }
+
+      // D87: un lock vigente de otra clienta bloquea el destino (reserva pública y creación admin lo tratan igual).
+      // Va fuera de validateRescheduleDestination: su catch convierte cualquier error en SLOT_NOT_AVAILABLE y un
+      // deadlock o timeout debe llegar como error de transacción (D88/B2, D81).
+      const activeLock = await findActiveReservationLockForSlotForUpdate(tx, {
         date: input.date,
         timeSlot: input.timeSlot,
+        phone: input.phone,
+        now,
+      });
+
+      if (activeLock) {
+        throw new Error("SLOT_NOT_AVAILABLE");
+      }
+
+      await validateRescheduleDestination(
+        {
+          month: input.month,
+          date: input.date,
+          timeSlot: input.timeSlot,
+          appointmentId: current.id,
+          phone: input.phone,
+        },
+        rules,
+        tx,
+        now,
+      );
+
+      await tx.appointment.update({
+        where: {
+          id: current.id,
+        },
+        data: {
+          date: new Date(`${input.date}T00:00:00.000Z`),
+          timeSlot: timeSlotToDate(input.timeSlot),
+          googleEventId: current.status === "PENDING" ? null : current.googleEventId,
+        },
+      });
+
+      await createAppointmentLogEvent(tx, {
         appointmentId: current.id,
-      },
-      tx,
-      now,
-    );
-
-    await tx.appointment.update({
-      where: {
-        id: current.id,
-      },
-      data: {
-        date: new Date(`${input.date}T00:00:00.000Z`),
-        timeSlot: timeSlotToDate(input.timeSlot),
-        googleEventId: current.status === "PENDING" ? null : current.googleEventId,
-      },
-    });
-
-    await createAppointmentLogEvent(tx, {
-      appointmentId: current.id,
-      actionType: "MODIFIED",
-      actor: {
-        type: "CLIENT",
-      },
-      clientId: current.clientId,
-      payload: {
-        appointment: {
-          date: input.date,
-          timeSlot: input.timeSlot,
+        actionType: "MODIFIED",
+        actor: {
+          type: "CLIENT",
         },
-        previous: {
-          date: current.date,
-          timeSlot: current.timeSlot,
+        clientId: current.clientId,
+        payload: {
+          appointment: {
+            date: input.date,
+            timeSlot: input.timeSlot,
+          },
+          previous: {
+            date: current.date,
+            timeSlot: current.timeSlot,
+          },
+          next: {
+            date: input.date,
+            timeSlot: input.timeSlot,
+          },
         },
-        next: {
-          date: input.date,
-          timeSlot: input.timeSlot,
-        },
-      },
-    });
+      });
 
-    return current;
+      return current;
+    } finally {
+      await releaseBookingLocks(tx, input.date, input.phone);
+    }
   });
 
   if (source.status === "PENDING") {

@@ -58,7 +58,7 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
    - el chip cambia a fondo primario y texto blanco.
 7. Admin pulsa `Guardar`.
 8. Frontend ejecuta `POST /api/admin/months`.
-9. Backend crea faltantes como `INACTIVE` con `slot_mode=SECOND_ONLY_MODE`, omite existentes, y devuelve resumen `created/skipped`.
+9. Backend crea faltantes como `INACTIVE` con `slot_mode=BLOCK_MODE` y sin reglas guardadas, omite existentes, y devuelve resumen `created/skipped`. Los días del mes usan la regla por defecto D6 (lunes a viernes; 09:00, 10:00, 13:00, 14:00, 17:00, 18:00; separación 240; conservar capacidad activo; máximo 3) hasta que el admin cree reglas en el detalle del mes.
 10. UI refresca catálogo y cierra modal.
 
 ## Flujo alterno: error de carga
@@ -80,6 +80,6 @@ Describir el flujo operativo del módulo `/admin/months` para catálogo de meses
 
 - El filtro `past` no cambia `GET /api/admin/months/catalog`, Prisma ni el service; se resuelve en UI (hook `useMonthsCatalog`).
 
-- La creación solo registra meses y deja estado inicial `INACTIVE` con `slot_mode=SECOND_ONLY_MODE`.
+- La creación solo registra meses y deja estado inicial `INACTIVE`, con `slot_mode=BLOCK_MODE` (legado, derivado de las reglas) y sin reglas (D17, D31). No crea reglas.
 - Edición de estado/activación queda fuera de este flujo.
 - El detalle mensual consume `GET /api/admin/months/[month]`; si el mes no existe en catálogo responde `MONTH_NOT_REGISTERED` (404).
