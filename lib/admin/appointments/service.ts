@@ -26,6 +26,7 @@ import {
 } from "@/lib/db/admin-appointments";
 import {
   acquireBookingLocks,
+  BOOKING_TRANSACTION_OPTIONS,
   cleanupExpiredReservationLocks,
   findActiveReservationLockForSlotForUpdate,
   listMonthActiveReservationLocks,
@@ -344,7 +345,7 @@ export async function createAdminAppointment(
     } finally {
       await releaseBookingLocks(tx, input.date, lockPhone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   const syncResult = await syncAppointmentToCalendar({
     appointmentId: created.appointmentId,
@@ -538,7 +539,7 @@ export async function rescheduleAdminAppointment(
     } finally {
       await releaseBookingLocks(tx, input.date, ownerPhone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   return syncRescheduledAppointment(updated);
 }

@@ -581,9 +581,21 @@ export async function deleteReservationLockByToken(tx: Prisma.TransactionClient,
   });
 }
 
+// F1 (D82): GET_LOCK es de sesión; el ROLLBACK no lo libera. Si Prisma expira la transacción antes del finally,
+// el lock queda en la conexión del pool. Por eso el timeout de la transacción supera el caso de una sola espera de
+// cada tipo, y la espera de fila de InnoDB corta antes que la transacción (una espera fallida aborta el callback y el
+// finally libera con la transacción viva). Caso de una sola espera de cada tipo: 2 x 5 s de GET_LOCK + 1 x 5 s de fila
+// = 15 s < 30 s. El timeout protege frente a esperas aisladas; las cadenas de esperas exitosas casi al límite son el
+// riesgo residual H1. Ver docs/decisions/0006-concurrencia-reservas-orden-de-locks.md.
+export const NAMED_LOCK_WAIT_SECONDS = 5;
+export const ROW_LOCK_WAIT_SECONDS = 5;
+export const BOOKING_TRANSACTION_TIMEOUT_MS = 30_000;
+// maxWait no aplica: espera una conexión del pool antes de empezar la transacción, sin locks tomados.
+export const BOOKING_TRANSACTION_OPTIONS = { timeout: BOOKING_TRANSACTION_TIMEOUT_MS } as const;
+
 async function acquireNamedLock(tx: Prisma.TransactionClient, lockName: string) {
   const rows = await tx.$queryRaw<Array<{ acquired: number | bigint | null }>>`
-    SELECT GET_LOCK(${lockName}, 5) AS acquired
+    SELECT GET_LOCK(${lockName}, ${NAMED_LOCK_WAIT_SECONDS}) AS acquired
   `;
 
   const acquired = rows[0]?.acquired;
@@ -594,6 +606,9 @@ async function acquireNamedLock(tx: Prisma.TransactionClient, lockName: string) 
 }
 
 export async function acquireBookingLocks(tx: Prisma.TransactionClient, date: string, phone: string) {
+  // Constante entera propia, no entrada del usuario. Se restaura en releaseBookingLocks (la sesión vuelve al pool).
+  await tx.$executeRawUnsafe(`SET SESSION innodb_lock_wait_timeout = ${ROW_LOCK_WAIT_SECONDS}`);
+
   const orderedLocks = [`booking:date:${date}`, `booking:phone:${phone}`].sort();
 
   for (const lockName of orderedLocks) {
@@ -613,4 +628,6 @@ export async function releaseBookingLocks(tx: Prisma.TransactionClient, date: st
   for (const lockName of orderedLocks) {
     await releaseNamedLock(tx, lockName);
   }
+
+  await tx.$executeRawUnsafe("SET SESSION innodb_lock_wait_timeout = DEFAULT");
 }

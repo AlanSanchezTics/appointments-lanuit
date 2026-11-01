@@ -439,7 +439,7 @@ Errores:
 - 409 `SLOT_NOT_AVAILABLE`, `SLOT_LOCKED`, `LOCK_TIMEOUT` (D78).
 - 400 para el resto, incluidos `VALIDATION_ERROR` y `UNKNOWN_ERROR`.
 
-Nota: `LOCK_TIMEOUT` se mapea a 409, pero según la medición de F1 (D82; ADR 0006) ese 409 casi no se alcanza hoy. Si la transacción de Prisma expira antes que `GET_LOCK`, la respuesta es 400 `UNKNOWN_ERROR`. La corrección está planificada en D82 (F1).
+Nota: `LOCK_TIMEOUT` se mapea a 409. Desde la corrección F1 (D82; ADR 0006) la transacción tiene 30 s de timeout, mayor que la espera de `GET_LOCK` (5 s por nombre), así que el 409 se alcanza. Si una transacción supera 30 s y expira, la respuesta es 400 `UNKNOWN_ERROR` (riesgo residual de F1).
 
 ### PATCH /api/admin/appointments/[appointmentId]/reschedule
 
@@ -471,7 +471,7 @@ Respuesta 200: `{ "month": "2026-12", "days": [{ "date": "2026-12-03", "slots": 
 - Mes no reservable (sin registro, inactivo o pasado) en `reservar/lock`, `client-check-lock` o `confirm`: 400 `MONTH_NOT_ALLOWED`. En la reprogramación pública de Mi cita el mismo caso responde `SLOT_NOT_AVAILABLE` (D91).
 - `POST /api/reservar/client-check-lock` devuelve `futureAppointmentsInMonth[]` (`{ appointmentId, date, timeSlot }`) y `canBookAsNewAppointment`. La lista incluye las citas activas del mismo teléfono y mes (`PENDING`, `CONFIRMED`, `SYNC_FAILED`; D95) que quedan a menos de 15 días naturales de la fecha elegida. Si no hay ninguna, la lista va vacía y no hay sugerencia. El umbral nunca bloquea la creación.
 - `POST /api/reservar/confirm` con `appointmentIdToReschedule` reprograma una cita activa del mismo teléfono y mes (`PENDING`, `CONFIRMED` o `SYNC_FAILED`; D95). Si no existe, es de otro teléfono o mes, o ya pasó, responde 409 `APPOINTMENT_NOT_FOUND`. Una `PENDING` sigue `PENDING`, no crea ni borra evento de calendario y registra `MODIFIED` en la bitácora. `CONFIRMED` y `SYNC_FAILED` recrean el evento de calendario, y el reagendado del wizard no escribe bitácora para ellos (inconsistencia aceptada por el owner, candidata a Fase 4).
-- Las reglas se leen dentro de la transacción, después de los bloqueos de reserva, con `FOR SHARE` (PD-08). Si `GET_LOCK` no obtiene el bloqueo en 5 s, `LOCK_TIMEOUT` (409). Misma salvedad que en la creación admin: hasta corregir F1 (D82), si la transacción de Prisma expira antes, la respuesta puede ser 400 `UNKNOWN_ERROR`.
+- Las reglas se leen dentro de la transacción, después de los bloqueos de reserva, con `FOR SHARE` (PD-08). Si `GET_LOCK` no obtiene el bloqueo en 5 s, `LOCK_TIMEOUT` (409). La transacción tiene 30 s de timeout (F1, D82). Si aun así expira, la respuesta es 400 `UNKNOWN_ERROR` (riesgo residual de F1, ADR 0006).
 
 ### Reprogramación pública `POST /api/my-appointments/reschedule`
 

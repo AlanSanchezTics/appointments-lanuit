@@ -8,6 +8,7 @@ import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-
 import { prisma } from "@/lib/db/prisma";
 import {
   acquireBookingLocks,
+  BOOKING_TRANSACTION_OPTIONS,
   cleanupExpiredReservationLocks,
   createReservationLock,
   deleteActiveReservationLocksByPhone,
@@ -212,7 +213,7 @@ async function acquireReservationSlotLockCore(rawInput: unknown, now = new Date(
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   return {
     lockToken: result.lock.lockToken,

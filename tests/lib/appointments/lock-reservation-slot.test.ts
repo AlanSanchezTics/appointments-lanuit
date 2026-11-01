@@ -40,6 +40,7 @@ vi.mock("@/lib/db/appointments", () => ({
   listActiveReservationLocksForDate: listActiveReservationLocksForDateMock,
   deleteActiveReservationLocksByPhone: deleteActiveReservationLocksByPhoneMock,
   createReservationLock: createReservationLockMock,
+  BOOKING_TRANSACTION_OPTIONS: { timeout: 30_000 },
 }));
 
 vi.mock("@/lib/db/prisma", () => ({
@@ -121,6 +122,8 @@ describe("reservation slot locks", () => {
 
     expect(result.lockToken).toBe("lock-123");
     expect(result.expiresAt).toBe("2026-03-13T12:10:00.000Z");
+    // F1 (D82): timeout explícito de la transacción con named locks.
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
     expect(createReservationLockMock).toHaveBeenCalledOnce();
     // D89: conflictos de citas antes de la limpieza de RL (ninguna ruta invierte RL -> citas).
     expect(lockConflictingAppointmentsMock).toHaveBeenCalledOnce();

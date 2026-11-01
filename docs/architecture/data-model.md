@@ -196,9 +196,9 @@ No hay cambio de tabla. Un bloqueo de día completo es una fila de `blocked_slot
 
 ## Concurrencia a nivel de datos
 
-Orden de bloqueo en las escrituras que tocan horarios (D63, D77). Reservas públicas, reprogramación pública, creación admin y reprogramación admin siguen el mismo orden:
+Orden de bloqueo en las escrituras que tocan horarios (D63, D77). Reservas públicas, confirmación pública, bloqueo de horario del wizard, reprogramación pública, creación admin y reprogramación admin siguen el mismo orden (son las seis transacciones que toman `GET_LOCK`; los bloqueos manuales siguen los pasos 2 a 5 sin el paso 1, F2):
 
-1. `GET_LOCK` con nombres `booking:date:<fecha>` y `booking:phone:<teléfono>`, en orden alfabético (`acquireBookingLocks`). Espera máxima de 5 s; si no se obtiene, `LOCK_TIMEOUT`.
+1. `GET_LOCK` con nombres `booking:date:<fecha>` y `booking:phone:<teléfono>`, en orden alfabético (`acquireBookingLocks`). Espera máxima de 5 s por nombre; si no se obtiene, `LOCK_TIMEOUT`. La transacción que los toma usa `timeout` de 30 s (`BOOKING_TRANSACTION_OPTIONS`) y `acquireBookingLocks` fija `innodb_lock_wait_timeout` de sesión en 5 s, restaurado a `DEFAULT` en `releaseBookingLocks` (F1, D82; ADR 0006).
 2. `SELECT ... FOR SHARE` sobre la fila de `active_months` del mes (`findMonthAvailabilityForShare`). Espera a cualquier escritura del editor.
 3. `FOR UPDATE` sobre las citas de la fecha o del teléfono (`lockConflictingAppointments`).
 4. Lectura de ocupación. En la creación admin y en la reprogramación admin es bloqueante (`listActiveAppointmentSlotsByDateForUpdate`, `listActiveAppointmentsByDateExcludingForUpdate`, D77): un `findMany` plano puede usar un snapshot de REPEATABLE READ anterior al COMMIT de una reserva pública. En las reservas y reprogramaciones públicas la ocupación se lee con `findMany` después del paso 3.
@@ -215,7 +215,12 @@ Los bloqueos manuales de horario (`createAdminBlockedSlots`) toman `FOR SHARE` s
 Limitaciones conocidas (ver las decisiones D82 y D83 y ADR 0006):
 
 - Los bloqueos con nombre se liberan dentro de la transacción, antes del COMMIT (F3).
-- Si la transacción de Prisma expira antes de que termine `GET_LOCK`, el bloqueo de sesión puede no liberarse (F1, medido por el Reviewer).
+- F1 (D82): un `GET_LOCK` de sesión no se libera con el ROLLBACK. Con los tiempos actuales, una espera normal no hace expirar la transacción. Si una transacción supera 30 s, Prisma la expira, el `finally` no puede liberar el lock y este queda en la conexión del pool hasta que se cierre (medido: 2 de 2 con timeout forzado de 500 ms). Residual aceptado por el owner (ronda 26) con este impacto:
+  - Mientras la conexión viva, las reservas de esa fecha o de ese teléfono responden `LOCK_TIMEOUT` (409) tras 5 s. Denegación por fecha o teléfono, no solo fuga de lock. Medido: `IS_USED_LOCK` devuelve la conexión que lo retiene; la respuesta de `GET_LOCK` desde otra sesión se infiere de la semántica de MySQL, no se midió directamente.
+  - Si el pool reutiliza la conexión, el lock puede persistir tras `RELEASE_LOCK` (contador re-entrante; no medido). La duración del lock huérfano no se midió.
+  - Tras la expiración la conexión conserva `innodb_lock_wait_timeout = 5` (medido); esa conexión afecta a otras consultas, también fuera de reserva, hasta que una transacción de reserva la restaure o se cierre. Revertir el código no limpia esos valores.
+  - Caso de una sola espera de cada tipo: 15 s < 30 s. Las cadenas de esperas exitosas casi al límite (10 + 5k s; k >= 4 llega a 30 s) son el riesgo residual.
+  - Corrección completa pendiente de decisión del owner: liberar en la misma sesión o sustituir `GET_LOCK` por bloqueos de fila transaccionales (rediseño).
 - `listBlockedSlotsByDateForUpdate` (`lib/db/blocked-slots.ts`) es una lectura plana, sin `FOR UPDATE`, pese a su nombre (F2).
 - Deadlock raro (1213) entre la confirmación admin de una `PENDING` y el reagendado público de otra `PENDING` del mismo cliente. Es preexistente y riesgo residual aceptado por el owner (NB-1, ADR 0006). El admin recibe error y puede reintentar; no hay pérdida de datos.
 

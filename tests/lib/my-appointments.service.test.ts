@@ -281,6 +281,8 @@ describe("my appointments service", () => {
 
     expect(acquireBookingLocksMock).toHaveBeenCalledWith(expect.anything(), "2026-07-21", "5512345678");
     expect(releaseBookingLocksMock).toHaveBeenCalledWith(expect.anything(), "2026-07-21", "5512345678");
+    // F1 (D82): timeout explícito de la transacción de reagendado público.
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
     const acquireOrder = acquireBookingLocksMock.mock.invocationCallOrder[0];
     expect(acquireOrder).toBeLessThan(findMonthAvailabilityForShareMock.mock.invocationCallOrder[0]);
     expect(findMonthAvailabilityForShareMock.mock.invocationCallOrder[0]).toBeLessThan(

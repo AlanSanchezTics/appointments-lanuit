@@ -102,6 +102,8 @@ describe("admin appointments service", () => {
     ).catch((error: Error) => error);
 
     expect(result).not.toEqual(new Error("MONTH_NOT_ACTIVE"));
+    // F1 (D82): timeout explícito de la transacción de creación admin (named locks).
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
   });
 
   it("confirms a pending appointment", async () => {

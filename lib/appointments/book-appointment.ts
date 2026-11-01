@@ -10,6 +10,7 @@ import { syncAppointmentToCalendar } from "@/lib/calendar/sync-appointment";
 import { SLOT_BLOCKING_APPOINTMENT_STATUSES } from "@/lib/constants/appointment-statuses";
 import {
   acquireBookingLocks,
+  BOOKING_TRANSACTION_OPTIONS,
   cleanupExpiredReservationLocks,
   deleteReservationLockByToken,
   findReservationLockByTokenForUpdate,
@@ -488,7 +489,7 @@ export async function bookAppointment(rawInput: unknown, now = new Date()) {
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   return finalizeCreatedAppointment({
     appointmentId: appointment.id,
@@ -579,7 +580,7 @@ export async function confirmAppointmentWithLock(rawInput: unknown, now = new Da
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   if (result.type === "rescheduled") {
     return finalizeRescheduledAppointment({

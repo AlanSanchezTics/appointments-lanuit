@@ -70,6 +70,7 @@ vi.mock("@/lib/db/appointments", () => ({
   cleanupExpiredReservationLocks: cleanupExpiredReservationLocksMock,
   findReservationLockByTokenForUpdate: findReservationLockByTokenForUpdateMock,
   deleteReservationLockByToken: deleteReservationLockByTokenMock,
+  BOOKING_TRANSACTION_OPTIONS: { timeout: 30_000 },
 }));
 
 vi.mock("@/lib/db/prisma", () => ({
@@ -253,6 +254,8 @@ describe("bookAppointment", () => {
     );
 
     expect(createMock).toHaveBeenCalledOnce();
+    // F1 (D82): timeout explícito de la transacción de reserva pública.
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
     expect(syncAppointmentToCalendarMock).toHaveBeenCalledWith({
       appointmentId: 77,
       date: "2026-03-04",
@@ -316,6 +319,8 @@ describe("bookAppointment", () => {
     );
     // D89: en la confirmación, el primer bloqueo de conflictos va antes de la limpieza de RL. El segundo (dentro de
     // createAppointmentInTransaction) reusa filas que la misma transacción ya tiene bloqueadas.
+    // F1 (D82): timeout explícito de la transacción de confirmación.
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
     expect(lockConflictingAppointmentsMock).toHaveBeenCalled();
     expect(cleanupExpiredReservationLocksMock).toHaveBeenCalledOnce();
     expect(lockConflictingAppointmentsMock.mock.invocationCallOrder[0]).toBeLessThan(

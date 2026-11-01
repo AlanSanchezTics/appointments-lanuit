@@ -68,6 +68,7 @@ vi.mock("@/lib/db/appointments", () => ({
   lockConflictingAppointments: lockConflictingAppointmentsMock,
   findActiveReservationLockForSlotForUpdate: vi.fn(async () => null),
   listMonthActiveReservationLocks: listMonthActiveReservationLocksMock,
+  BOOKING_TRANSACTION_OPTIONS: { timeout: 30_000 },
 }));
 
 vi.mock("@/lib/db/admin-appointments", () => ({
@@ -178,6 +179,8 @@ describe("admin appointments: lock order (D63) and blocking occupancy (D68)", ()
     // Las claves de los named locks usan el teléfono del dueño de la cita (D63).
     expect(acquireBookingLocksMock).toHaveBeenCalledWith({ tag: "tx" }, "2026-04-22", OWNER_PHONE);
     expect(lockConflictingAppointmentsMock).toHaveBeenCalledWith({ tag: "tx" }, "2026-04-22", OWNER_PHONE);
+    // F1 (D82): timeout explícito para que la expiración no deje el GET_LOCK retenido.
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function), { timeout: 30_000 });
   });
 
   it("does not take the FOR UPDATE row when the owner phone changed before the locks (D63)", async () => {

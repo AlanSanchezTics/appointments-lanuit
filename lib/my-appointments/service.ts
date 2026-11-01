@@ -15,6 +15,7 @@ import { findMonthAvailabilityForShare } from "@/lib/db/availability-rules";
 import { listBlockedSlotsByDateForUpdate } from "@/lib/db/blocked-slots";
 import {
   acquireBookingLocks,
+  BOOKING_TRANSACTION_OPTIONS,
   findActiveReservationLockForSlotForUpdate,
   lockConflictingAppointments,
   releaseBookingLocks,
@@ -501,7 +502,7 @@ export async function rescheduleMyAppointment(
     } finally {
       await releaseBookingLocks(tx, input.date, input.phone);
     }
-  });
+  }, BOOKING_TRANSACTION_OPTIONS);
 
   if (source.status === "PENDING") {
     return {
