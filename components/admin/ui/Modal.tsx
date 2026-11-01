@@ -94,7 +94,7 @@ export function Modal({ isOpen, title, closeLabel, onClose, children }: ModalPro
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(28,25,23,0.35)] px-3 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--admin-scrim)] px-3 py-6 backdrop-blur-sm"
       role="presentation"
       onClick={onClose}
     >

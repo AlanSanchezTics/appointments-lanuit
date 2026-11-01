@@ -36,6 +36,7 @@
   --admin-text-primary: #1c1917;
   --admin-text-secondary: #6b7280;
   --admin-border: #e5e7eb;
+  --admin-scrim: rgba(28, 25, 23, 0.35);
   --admin-sidebar-width: 270px;
   --admin-header-height: 64px;
   --admin-shell-z-header: 30;

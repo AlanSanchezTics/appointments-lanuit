@@ -545,6 +545,8 @@ Para notificaciones de tipo `success`, `warning`, `error`, `info`, notificacione
 
 No se permite introducir librerías alternativas de `toast`/`notification` para esos casos, salvo que exista una excepción explícita y documentada en este archivo.
 
+**Excepción documentada: guardado del editor de disponibilidad.** `hooks/admin/months/useAvailabilitySave.ts` no usa `sileo.promise`. Motivo: `sileo.promise` muestra error ante cualquier rechazo, y el 409 `AFFECTED_APPOINTMENTS_CONFIRMATION_REQUIRED` no es un fallo (abre el diálogo de citas afectadas), así que no se puede silenciar. Ese hook usa `sileo.show` (tipo `loading`, descartado al terminar), `sileo.success` y `sileo.error`, con control propio del estado de guardado. Decisión D102; detalle en `docs/ui/admin/components.md`, componente `AvailabilityEditorModal`, subsección «Guardado y notificaciones». Fuera de esta excepción rige la regla general.
+
 ### Implementaciones permitidas
 
 Ejemplos de implementación directa:

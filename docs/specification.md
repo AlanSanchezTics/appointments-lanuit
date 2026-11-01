@@ -431,6 +431,8 @@ Excepción: el bloqueo de espacios (bloqueos manuales de horario y de día compl
 
 El editor de reglas toma `FOR UPDATE` sobre la misma fila de `active_months`: espera a las escrituras en curso y ninguna escritura mezcla reglas viejas con un cambio en curso.
 
+Confirmar o rechazar una cita `PENDING` desde el admin toma `FOR UPDATE` sobre la fila de la cita y la de su cliente, y nada más: no toma los locks con nombre, ni `FOR SHARE` de reglas, ni los conflictos del día. Por eso esta transición no sigue el orden de seis pasos. Riesgo residual aceptado por el owner: un deadlock InnoDB (1213) raro entre esta confirmación y el reagendado público de otra `PENDING` del mismo cliente; preexistente; el admin recibe error y puede reintentar; no hay pérdida de datos (ADR 0006).
+
 Orden de confirmación de una reserva pública:
 
 1. Inicia transacción.

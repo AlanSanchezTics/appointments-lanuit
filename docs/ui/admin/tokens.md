@@ -69,10 +69,18 @@ No deben usarse en:
   - día con disponibilidad baja (`availableSpaces = 1`)
 
 - `availability-full`: `rgb(195 236 215)`
-  - día sin disponibilidad por citas agendadas (`availableSpaces = 0` y ocupación por citas)
+  - día lleno con al menos una cita activa (`tone` `full`, `availableSpaces = 0`; D105)
 
 - `availability-weekend`: `rgb(228 226 222 / 0.5)`
-  - fin de semana no operativo y día sin disponibilidad por espacios bloqueados
+  - día cerrado (`tone` `closed`) o lleno sin citas activas. El nombre es histórico: no hay tono de fin de semana; un sábado o domingo sin regla ni excepción queda `closed`.
+
+### Overlay (scrim)
+
+- `scrim`: `rgba(28, 25, 23, 0.35)` (variable CSS `--admin-scrim`, `app/globals.css`)
+  - fondo de superposición de `Modal` y `BottomSheetModal`, y del scrim del descarte del editor de disponibilidad (`AvailabilityEditorModal`). Se usa con `backdrop-blur-sm`.
+  - uso en Tailwind: `bg-[var(--admin-scrim)]`. No escribir el `rgba(...)` literal en componentes.
+  - no hay variante de modo oscuro para los tokens admin en `app/globals.css`; el valor es único.
+  - decisión D105b: el literal se tokenizó sin cambiar su color.
 
 ### Text
 

@@ -208,6 +208,8 @@ Los bloqueos con nombre se liberan dentro de la transacción, antes de su COMMIT
 
 El editor de disponibilidad (`saveAvailability`, `updateAdminMonthSlotMode`) toma `FOR UPDATE` sobre la fila de `active_months` (`findMonthAvailabilityForUpdate` y `replaceMonthAvailability`). No toma bloqueos de reserva.
 
+La confirmación o el rechazo admin de una cita `PENDING` toma `FOR UPDATE` sobre la fila de la cita y la de su cliente (`transitionPendingAppointment`). No sigue el orden de seis pasos (ADR 0006, riesgo NB-1).
+
 Los bloqueos manuales de horario (`createAdminBlockedSlots`) toman `FOR SHARE` sobre las reglas, después `lockConflictingAppointments` y la lectura de ocupación bloqueante. No toman los bloqueos con nombre de las reservas.
 
 Limitaciones conocidas (ver las decisiones D82 y D83 y ADR 0006):
@@ -215,6 +217,7 @@ Limitaciones conocidas (ver las decisiones D82 y D83 y ADR 0006):
 - Los bloqueos con nombre se liberan dentro de la transacción, antes del COMMIT (F3).
 - Si la transacción de Prisma expira antes de que termine `GET_LOCK`, el bloqueo de sesión puede no liberarse (F1, medido por el Reviewer).
 - `listBlockedSlotsByDateForUpdate` (`lib/db/blocked-slots.ts`) es una lectura plana, sin `FOR UPDATE`, pese a su nombre (F2).
+- Deadlock raro (1213) entre la confirmación admin de una `PENDING` y el reagendado público de otra `PENDING` del mismo cliente. Es preexistente y riesgo residual aceptado por el owner (NB-1, ADR 0006). El admin recibe error y puede reintentar; no hay pérdida de datos.
 
 ---
 
@@ -238,7 +241,7 @@ Limitaciones conocidas (ver las decisiones D82 y D83 y ADR 0006):
 
 No hay restricción de base de datos que impida dos citas activas en el mismo horario. Esta es una decisión de arquitectura del owner que la spec 003 registra: la protección es únicamente de aplicación. Este documento no propone cambiarla.
 
-Las restricciones `CHECK` existen en la migración `0022`. Su aplicación depende de que el servidor MySQL las haga cumplir (MySQL 8.0.16 o posterior; versión mínima pendiente, Q-T2 de D84).
+Las restricciones `CHECK` existen en la migración `0022`. Su aplicación depende de que el servidor MySQL las haga cumplir (MySQL 8.0.16 o posterior; la versión mínima que el proyecto debe exigir está pendiente de confirmar).
 
 ---
 
@@ -293,7 +296,7 @@ Advertencia: los pasos 3 y 4 borran datos. Un rollback de release no requiere bo
 
 | Migración | Fecha | Cambio | Tablas afectadas | Reversibilidad |
 |---|---|---|---|---|
-| `0022_availability_rules` | 2026-10-28 (pendiente de despliegue) | Seis tablas de reglas y excepciones con PK, UNIQUE, FK CASCADE y CHECK; `availability_version`; default de `slot_mode` a `BLOCK_MODE`; backfill D4 idempotente | `active_months`, `availability_rules`, `availability_rule_weekdays`, `availability_rule_times`, `availability_exceptions`, `availability_exception_times`, `availability_migration_runs` | Sin rollback automático de DDL. Recuperación manual en la sección correspondiente |
+| `0022_availability_rules` | 2026-10-28 (aplicada en copia local de la base, 2026-10-31; pendiente de despliegue en producción con la release combinada) | Seis tablas de reglas y excepciones con PK, UNIQUE, FK CASCADE y CHECK; `availability_version`; default de `slot_mode` a `BLOCK_MODE`; backfill D4 idempotente | `active_months`, `availability_rules`, `availability_rule_weekdays`, `availability_rule_times`, `availability_exceptions`, `availability_exception_times`, `availability_migration_runs` | Sin rollback automático de DDL. Recuperación manual en la sección correspondiente |
 | `0023_drop_active_months_slot_mode` (fase 4, T078) | Pendiente de autorización del owner | Eliminar `slot_mode` (y, si el owner lo decide, `availability_migration_runs`) | `active_months`, `availability_migration_runs` | No sin restaurar desde respaldo |
 
 ---

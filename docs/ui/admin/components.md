@@ -295,7 +295,7 @@ El agente debe:
 El agente no debe:
 
 - hardcodear etiquetas de UI
-- incluir sábados o domingos en el gráfico
+- omitir sábados o domingos del gráfico: debe mostrar lunes a domingo (D57). La implementación actual todavía muestra 5 columnas; la corrección es de Fase 4
 
 ---
 
@@ -373,7 +373,7 @@ Uso:
 El agente debe:
 
 - calcular ocupación diaria con citas activas (`CONFIRMED`, `SYNC_FAILED`) del día actual
-- usar capacidad diaria `3` para porcentaje
+- usar como capacidad del día su `maxPerDay` si está abierto, y `0` si está cerrado o tiene bloqueo de día completo (D44, D53); no usar una constante 3
 - resolver copy visible vía `react-i18next`
 
 El agente no debe:
@@ -950,7 +950,7 @@ Editar las reglas semanales y las excepciones por fecha de un mes no pasado. Se 
 - el contenido del editor queda `inert` mientras la confirmación está abierta.
 - el foco inicial va a `Seguir editando`. `Escape` equivale a `Seguir editando`. Al cerrar la confirmación, el foco vuelve al elemento que lo tenía antes.
 - `Descartar` cierra el editor y pierde el borrador.
-- el color del scrim es el literal `rgba(28,25,23,0.35)`, igual que el fondo de `BottomSheetModal` y `Modal`. No hay token de scrim documentado en `tokens.md`. Pendiente: tokenizarlo.
+- el color del scrim es el token `--admin-scrim` (`rgba(28, 25, 23, 0.35)`), el mismo fondo de `BottomSheetModal` y `Modal`. Está definido en `app/globals.css` y documentado en `tokens.md` (D105b; el color no cambió al tokenizarlo).
 
 ### Guardado y notificaciones
 
@@ -1208,7 +1208,7 @@ Nota:
   - `availableSpaces`
   - `blockedSpaces` (MVP: `0`)
 - calendario:
-  - `calendarDays[]` con `tone` (`available`, `low`, `full`, `weekend`)
+  - `calendarDays[]` con `tone` (`available`, `low`, `full`, `closed`) e `isWeekend`
 
 ### Behavior
 

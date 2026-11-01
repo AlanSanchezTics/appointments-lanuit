@@ -42,10 +42,10 @@ export function AvailabilityEditorModal({ month, editor, save }: AvailabilityEdi
         overlay={
           editor.isDiscardConfirmOpen ? (
             <>
-              {/* Scrim sin manejador de clic: tocarlo no descarta ni cierra. Color = el backdrop de BottomSheetModal/Modal (no hay token de scrim). */}
+              {/* Scrim sin manejador de clic: tocarlo no descarta ni cierra. Usa el mismo token --admin-scrim que el backdrop de BottomSheetModal/Modal. */}
               <div
                 aria-hidden="true"
-                className="absolute inset-0 z-10 rounded-t-3xl bg-[rgba(28,25,23,0.35)] backdrop-blur-sm"
+                className="absolute inset-0 z-10 rounded-t-3xl bg-[var(--admin-scrim)] backdrop-blur-sm"
               />
               <div
                 ref={discardDialog.dialogRef}

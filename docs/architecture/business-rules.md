@@ -191,6 +191,8 @@ Business behavior is defined by:
   5. Occupancy is read. In admin creation and admin reschedule the read is exclusive (D77). In manual blocks the appointment read is exclusive, but the blocked-slot read is plain (limitation F2). The public flows also read blocked slots plainly (F2).
   6. The appointment or block is written, then the named locks are released in the flows that took them.
 
+- Admin confirmation or rejection of a `PENDING` appointment locks only the appointment row and its client row (`FOR UPDATE`). It takes no named locks, no shared rule lock, and no conflicting-appointment lock, so it is outside this order. Accepted residual risk (owner decision, ADR 0006): a rare InnoDB deadlock (1213) between this confirmation and a public reschedule of another `PENDING` appointment of the same client. The admin gets an error and can retry; no data is lost.
+
 - Infrastructure errors (deadlock, transaction or InnoDB lock wait timeout, connection pool) raised during a write are not business rejections. The transaction is rolled back and the request fails with `UNKNOWN_ERROR` (400). A `GET_LOCK` timeout is `LOCK_TIMEOUT` instead (D81).
 
 - Rule editor:

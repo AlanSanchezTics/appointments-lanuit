@@ -212,7 +212,7 @@ Describir de forma estructurada el flujo end-to-end de reserva de citas, desde l
 
 ## Error Scenarios
 - Mes inválido/inactivo/pasado: rechazo de disponibilidad y/o reserva.
-- Fecha fuera de reglas (fin de semana o slot pasado en mismo día): rechazo.
+- Día sin horarios ofrecibles (por ejemplo, un sábado o domingo que ninguna regla o excepción abre, o un día cuyas horas ya pasaron): `SLOT_NOT_AVAILABLE` (D46).
 - Hora no ofrecida por el resolvedor (ocupación, bloqueo, separación mínima o capacidad diaria): `SLOT_NOT_AVAILABLE`. Lock vigente de otra clienta: `SLOT_LOCKED` (D46).
 - Lock inexistente, expirado o no coincidente: conflicto en confirmación.
 - Timeout al adquirir locks de concurrencia: conflicto.

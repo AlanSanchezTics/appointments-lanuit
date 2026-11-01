@@ -84,7 +84,7 @@ export function BottomSheetModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(28,25,23,0.35)] px-0 backdrop-blur-sm sm:px-3">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-[var(--admin-scrim)] px-0 backdrop-blur-sm sm:px-3">
       <button
         type="button"
         aria-label={closeLabel}

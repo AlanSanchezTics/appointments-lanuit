@@ -364,11 +364,11 @@ Excepción documentada:
   - grid de métricas `2x2`,
   - tarjeta de saturación (porcentaje + barra),
   - calendario mensual de 7 columnas.
-- Semántica de color para disponibilidad diaria:
+- Semántica de color para disponibilidad diaria (D105):
   - alta (`availableSpaces >= 2`) -> `availability-high` (azul),
   - baja (`availableSpaces = 1`) -> `availability-low`,
-  - sin espacios por citas agendadas (`availableSpaces = 0` y cupo lleno por citas) -> `availability-full` (verde),
-  - sin espacios por bloqueos manuales o fin de semana no operativo -> `availability-weekend` (gris).
+  - lleno (`availableSpaces = 0`) con al menos una cita activa -> `availability-full` (verde). Incluye los días con horarios bloqueados y citas,
+  - lleno sin citas activas, o cerrado (`closed`, incluido un sábado o domingo que ninguna regla o excepción abre) -> `availability-weekend` (gris). El nombre del token es histórico: el fin de semana no tiene tono propio.
 
 ---
 

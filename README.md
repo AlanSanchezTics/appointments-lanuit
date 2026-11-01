@@ -148,10 +148,10 @@ También puede ejecutarse en modo interactivo sin argumentos.
 
 - Zona horaria de negocio: `America/Mexico_City`.
 - Solo se agenda en meses `ACTIVE`.
-- Slots base: `09:00`, `10:00`, `13:00`, `14:00`, `17:00`, `18:00`.
-- Límite diario: máximo 3 citas activas.
+- Horarios: los define la regla de disponibilidad del mes que cubre cada día (horas `HH:mm` distintas de `00:00`, hasta 24 por regla). Un mes sin reglas usa `09:00`, `10:00`, `13:00`, `14:00`, `17:00` y `18:00` de lunes a viernes; sábados y domingos quedan cerrados.
+- Límite diario: lo define cada regla de disponibilidad del mes, de 1 a 6 citas activas por día. Un mes sin reglas usa 3 citas activas por día.
 - Lock temporal por slot en reserva: TTL 10 minutos.
-- En flujo público, un teléfono puede tener varias citas activas en el mismo mes solo si existe separación mínima de 15 días naturales.
+- En flujo público, un teléfono puede tener varias citas activas en el mismo mes. Si la nueva fecha queda a menos de 15 días naturales de una cita activa del mismo mes (`PENDING`, `CONFIRMED` o `SYNC_FAILED`), el flujo ofrece reagendar esa cita o continuar como nueva; el umbral nunca bloquea la reserva.
 - Cancelación web permitida solo para citas elegibles con al menos 24 horas de anticipación.
 - MySQL es fuente de verdad; Google Calendar se sincroniza después del commit.
 

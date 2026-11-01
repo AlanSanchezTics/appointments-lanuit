@@ -29,6 +29,8 @@ Las escrituras que tocan horarios siguen el mismo orden dentro de una transacci�
 
 Seis rutas aplican este orden: reserva pública, confirmación, reprogramación pública, creación admin, reprogramación admin y bloqueo de espacios. Ninguna toma un lock de reserva antes que las citas (paso 3 antes que paso 4).
 
+Excepción fuera del orden: la transición admin de una cita `PENDING` (confirmar o rechazar, `transitionPendingAppointment` en `lib/admin/appointments/service.ts`) bloquea solo la fila de la cita y la de su cliente con `FOR UPDATE`. No toma `GET_LOCK`, no toma `FOR SHARE` de reglas y no bloquea los conflictos del día. Su riesgo residual es NB-1 (abajo).
+
 El editor de disponibilidad toma `FOR UPDATE` sobre la misma fila de `active_months`. Así espera a las reservas en curso (que toman `FOR SHARE`) y ninguna reserva mezcla reglas viejas con un cambio en curso (D39).
 
 Propagación de errores (D81, D88, D91):
@@ -43,6 +45,7 @@ Riesgos conocidos que esta decisión acepta:
 - **F2 (D83).** `listBlockedSlotsByDateForUpdate` (`lib/db/blocked-slots.ts`) es una lectura plana, pese a su nombre. Además, los bloqueos manuales no toman los bloqueos con nombre (paso 1). Medido en carrera simultánea: bloqueo admin frente a creación admin, 17 de 40 lotes con doble ocupación; frente a reserva pública, 10 de 40. Aceptado por el owner. La opción `FOR UPDATE` tocaría los flujos públicos.
 - **F3.** Los bloqueos con nombre de la reserva pública se liberan antes del COMMIT. No se midió ningún doble atribuible después de B-1.
 - **F4 (corregido, D88 y D91).** Antes, cualquier error dentro de la validación del destino de la reprogramación pública se convertía en `SLOT_NOT_AVAILABLE`. Ahora solo `MONTH_NOT_ALLOWED` se convierte; los errores de infraestructura se propagan (ver "Propagación de errores").
+- **NB-1 (C4, aceptado por el owner como riesgo residual).** Puede haber un deadlock InnoDB (1213), raro, entre la confirmación admin de una `PENDING` y el reagendado público de otra `PENDING` del mismo cliente. Causa probable: la transición admin toma cita→cliente, mientras la reserva pública toma cliente→citas en `lockConflictingAppointments`. Es preexistente en HEAD; en estrés sintético se midió cerca de 0,75-0,8 % con desfase de 0-3 ms, y el arreglo de C4 no cambia la tasa. Siempre falla el admin con rollback limpio; el público tiene éxito. El admin recibe error y puede reintentar; no hay pérdida de datos.
 - **F5 (cubierta por prueba de integración).** La carrera reprogramación admin frente a pública tiene prueba de integración que pausa la operación dentro de su transacción, justo después de la limpieza de locks real, y espera a que la otra quede en `LOCK WAIT` (`tests/integration/reschedule-reservation-lock.integration.test.ts`, D89, D91).
 
 ## Consecuencias
